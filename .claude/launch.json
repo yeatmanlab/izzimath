@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "mockup",
+      "name": "izzimath",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8899", "--directory", "docs/mockup"],
-      "port": 8899
+      "runtimeArgs": ["-m", "http.server", "8890", "--directory", "dist"],
+      "port": 8890
     }
   ]
 }

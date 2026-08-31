@@ -17,7 +17,7 @@ export function mountGame(activity, root) {
   let round = 0, score = 0, streak = 0, best = 0, over = false;
   let timed = false, tLeft = 0, tHandle = null;
 
-  const problemFor = (i) => activity.generate(deriveSeed(seed, `r${i}`), i, ch, rng(deriveSeed(seed, `r${i}`)));
+  const problemFor = (i) => activity.generate(deriveSeed(seed, `r${i}`), i, ch, rng(deriveSeed(seed, `r${i}`)), seed);
 
   function paintBar() {
     bar.innerHTML = `

@@ -243,7 +243,20 @@ const RENDERERS = {
 export function renderProblem(host, p, onAnswer) {
   host.innerHTML = '';
   if (p.prompt) host.appendChild(el(`<p class="qtext">${p.prompt}</p>`));
-  if (p.visual) host.appendChild(el(`<div class="svgwrap" style="margin:0 auto 26px;max-width:${p.visualWidth || 420}px">${p.visual}</div>`));
+  if (p.visual) {
+    const v = el(`<div class="svgwrap" style="margin:0 auto 26px;max-width:${p.visualWidth || 420}px">${p.visual}</div>`);
+    host.appendChild(v);
+    // Subitizing needs BRIEF exposure — if the dots stay on screen the child just
+    // counts them one by one, which trains the wrong thing. flashMs hides the
+    // visual after a beat and leaves a reminder in its place.
+    if (p.flashMs) {
+      setTimeout(() => {
+        const h = v.offsetHeight;
+        v.style.minHeight = h + 'px';
+        v.innerHTML = `<p style="color:var(--txt3);font-family:var(--fdisp);font-size:13px;display:grid;place-items:center;height:${h}px;margin:0">(hidden — how many did you see?)</p>`;
+      }, p.flashMs);
+    }
+  }
   const r = RENDERERS[p.type];
   if (!r) { host.appendChild(el(`<p class="fb bad">Unknown problem type: ${esc(p.type)}</p>`)); return null; }
   return r(host, p, onAnswer);

@@ -18,13 +18,13 @@ export function mountBook(activity, root) {
   let answered = new Array(total).fill(null);
   let widget = null;
 
-  const problemFor = (i) => activity.generate(deriveSeed(seed, `p${i}`), i, ch, rng(deriveSeed(seed, `p${i}`)));
+  const problemFor = (i) => activity.generate(deriveSeed(seed, `p${i}`), i, ch, rng(deriveSeed(seed, `p${i}`)), seed);
 
   function paintBar() {
     const done = answered.filter((x) => x !== null).length;
     bar.innerHTML = `
       <h2>${activity.title}</h2>
-      <span class="tag">${fill(activity.chapterLabel || 'Page {n} of {total}', ch).replace('{n}', page + 1).replace('{total}', total)}</span>
+      <span class="tag">${fill((activity.chapterLabel || 'Page {n} of {total}').replace('{n}', page + 1).replace('{total}', total), ch)}</span>
       <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><i style="width:${(done / total) * 100}%"></i></div>
       <span class="seed">seed ${seed}</span>
       <a class="btn sm" href="${base()}/print/${activity.id}/?seed=${seed}">Print this book</a>`;
