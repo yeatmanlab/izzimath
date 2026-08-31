@@ -11,7 +11,7 @@ const placeValuePalace = {
   blurb: 'Build the number from hundreds, tens and ones — then say which is bigger.',
   ccss: ['2.NBT.A.1', '2.NBT.A.3', '2.NBT.A.4'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'roamMagpi', subscale: 'symbolic' }],
-  evidence: 'ALPACA’s grade-2 band includes a 1–1000 number line and "what comes next" past a hundreds boundary (198, 199, __). Comparison items here use MagPI’s decade-incompatible pattern, where the tens and ones point in opposite directions.',
+  evidence: 'Three-digit place value, with comparison pairs chosen to expose the classic error rather than to be easy. When the tens and the ones point in opposite directions — 71 against 25 — children who compare digit by digit get it wrong, and a random pair rarely catches that.',
   pages: 12, printItems: 14,
   printInstruction: 'Write each number, then compare the pairs.',
   printInstructions: {
@@ -86,7 +86,7 @@ const carryAndBorrow = {
     { task: 'fluencyCalf', subscale: 'sub-noborrow' },
     { task: 'fluencyCalf', subscale: 'sub-borrow' },
   ],
-  evidence: 'CALF names these four skills explicitly and parameterises them separately, because they fail separately. The book walks them in CALF’s own order: A1 no-carry, A2–A4 carry, S1 no-borrow, S2 borrow.',
+  evidence: 'Four procedures that fail separately, so they are practised separately and then interleaved: add without carrying, add with carrying, subtract without borrowing, subtract with borrowing. Interleaving matters here — mixing the four is what forces a child to read the problem rather than repeat the last method.',
   pages: 16, printItems: 14,
   printInstruction: 'Work these out. Watch for the ones that regroup.',
   generate(seed, i, ch, r) {
@@ -136,7 +136,7 @@ const arraysAndEqualGroups = {
   blurb: 'Count the rows, count the columns, find the total.',
   ccss: ['2.OA.C.4'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
-  evidence: 'The array is the representation that carries children from repeated addition into multiplication, and later into the area model. Introducing it in grade 2 means grade 3 multiplication has somewhere to stand.',
+  evidence: 'The array is the representation that carries children from repeated addition into multiplication, and later into the area model and volume. Introducing it in grade 2 means grade 3 multiplication has something to stand on besides memorisation.',
   pages: 10, printItems: 12,
   printInstruction: 'Write the total for each array.',
   printInstructions: {
@@ -188,7 +188,7 @@ const hundredLineHop = {
   blurb: 'No tick marks this time. Where does 63 go?',
   ccss: ['2.NBT.A.1'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
-  evidence: 'MagPI moves children from 0–20 to 0–100. Removing the tick marks is the point: the child has to use landmarks (0, 50, 100) rather than counting, which is what the estimation task actually measures.',
+  evidence: 'The same number line, now without tick marks. Removing them is the point: the child has to reason from landmarks (nought, fifty, one hundred) instead of counting, which is what estimating a magnitude actually is.',
   rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
@@ -215,7 +215,7 @@ const decadeDuel = {
   blurb: 'Which is bigger: 65 or 49? Careful — the ones digit lies.',
   ccss: ['2.NBT.A.4'],
   roam: [{ task: 'roamMagpi', subscale: 'symbolic' }],
-  evidence: 'Directly built from MagPI’s double-digit bins. Rounds cycle through decade-compatible, decade-incompatible, decade-matched (compare the ones) and reversed-digit pairs — the four specific place-value confusions the assessment isolates.',
+  evidence: 'Rounds cycle through the four specific ways two-digit comparison goes wrong: tens and ones agreeing, tens and ones disagreeing, a shared tens digit, and the same two digits reversed. Practising the traps deliberately is more useful than practising random pairs.',
   rounds: 16, seconds: 45, printItems: 12,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {

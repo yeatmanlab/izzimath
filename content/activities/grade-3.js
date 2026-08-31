@@ -12,7 +12,7 @@ const timesTableTower = {
   blurb: 'Build the tower one times table at a time.',
   ccss: ['3.OA.C.7', '3.OA.A.1'],
   roam: [{ task: 'fluencyArf', subscale: 'mult' }, { task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'ARF walks multiplication from M1 (1×1) through M5 (4×8) — easy identities first, then the genuinely hard middle facts. This book follows that order rather than going 2s, 3s, 4s, which front-loads the wrong difficulty.',
+  evidence: 'Facts are ordered by how hard they actually are, not by table. The identities and the twos, fives and tens come first; the awkward middle of the grid (six sevens, seven eights) comes last. Going 2s, 3s, 4s in order front-loads the wrong difficulty. Each block ends with the matching division fact.',
   pages: 14, printItems: 16,
   printInstruction: 'Work these out. Write the answer.',
   generate(seed, i, ch, r) {
@@ -52,7 +52,7 @@ const fractionNumberLine = {
   blurb: 'Halves, thirds, fourths and eighths — find them on the line.',
   ccss: ['3.NF.A.2', '3.NF.A.3'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_1' }, { task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'MagPI’s 0–1 number line block is made of fractions (1/5, 1/6, 1/3, 1/4, 5/8, 3/8, 4/5, 5/6). Fraction placement on a line is therefore not an analogy for a ROAM construct — it is one, which makes this the highest-value activity on the site.',
+  evidence: 'A fraction placed on a number line is a fraction understood as a number, rather than as one whole number stacked on another. That shift is the single best predictor of later fraction competence, and the number line is the representation that produces it — which is why this is the flagship of the site.',
   pages: 14, printItems: 10,
   printInstruction: 'Mark each fraction on the number line.',
   printInstructions: {
@@ -152,7 +152,7 @@ const areaAndPerimeter = {
   blurb: 'Squares inside, or fence around the edge?',
   ccss: ['3.MD.C.7', '3.MD.D.8'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'Area on a grid is the same array model used for multiplication, which is why it belongs immediately after the times tables. Perimeter is interleaved deliberately — mixing the two is what forces children to read the question.',
+  evidence: 'Area on a grid is the same array model used for multiplication, which is why it belongs immediately after the times tables. Perimeter is interleaved deliberately: mixing the two is what forces a child to read the question instead of multiplying whatever they are given.',
   pages: 12, printItems: 12,
   printInstruction: 'Find the area or perimeter as asked.',
   generate(seed, i, ch, r) {
@@ -182,7 +182,7 @@ const factFamilyForge = {
   blurb: 'Three numbers make four facts. Find the missing one.',
   ccss: ['3.OA.B.6', '3.OA.C.7'],
   roam: [{ task: 'fluencyArf', subscale: 'mult' }, { task: 'fluencyArf', subscale: 'div' }],
-  evidence: 'ARF parameterises multiplication and division separately, but they are one fact family. Practising them together halves what has to be memorised and is why division facts usually lag: they are rarely rehearsed as the inverse.',
+  evidence: 'Multiplication and division are one fact seen from two directions, and practising them together roughly halves what has to be memorised. Division facts usually lag precisely because they are rarely rehearsed as the inverse.',
   rounds: 14, seconds: 60, printItems: 12,
   printInstruction: 'Fill in the missing number in each fact.',
   generate(seed, i, ch, r) {
@@ -213,7 +213,7 @@ const arrayArchitect = {
   blurb: 'How many squares? Then: does 4×6 match 6×4?',
   ccss: ['3.OA.A.1', '3.OA.B.5'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
-  evidence: 'The commutative property is obvious in an array and invisible in a symbol string — turning the rectangle a quarter turn is the proof. That halves the number of facts a child has to store.',
+  evidence: 'The commutative property is obvious in an array and invisible in a string of symbols — turning the rectangle a quarter turn is the whole proof. Seeing it halves the number of facts a child has to store.',
   rounds: 12, seconds: 60, printItems: 12,
   printInstruction: 'Write the total for each array.',
   printInstructions: {

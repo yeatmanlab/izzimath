@@ -11,7 +11,7 @@ const longMultiplication = {
   blurb: 'Break it into parts, multiply, put it back together.',
   ccss: ['4.NBT.B.5'],
   roam: [{ task: 'fluencyCalf', subscale: 'mult' }, { task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'CALF’s M1–M3 bands walk two-digit × one-digit from 11×2 up to 76×4, then ALPACA’s grade-4 items jump to genuine two-by-two (17×42). The area model is kept visible for the first pages because it shows why the partial products are what they are.',
+  evidence: 'Concreteness fading: the area model is visible for the early pages, then withdrawn, so partial products are understood before they become a written ritual. Two-digit by one-digit is secure before two-digit by two-digit appears.',
   pages: 14, printItems: 16,
   printInstruction: 'Work these out. Show your partial products.',
   generate(seed, i, ch, r) {
@@ -47,7 +47,7 @@ const equivalentFractions = {
   blurb: 'Same amount, different name. 2/4 is 1/2.',
   ccss: ['4.NF.A.1', '4.NF.A.2'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'roamMagpi', subscale: 'numberline', block: '0_1' }],
-  evidence: 'Equivalence is the hinge between grade-3 fraction placement and the grade-5 arithmetic ROAM tests with unlike denominators (3/4 + 5/6). If equivalence is not secure, common denominators are a memorised ritual.',
+  evidence: 'Equivalence is the hinge between placing a fraction on a line and doing arithmetic with unlike denominators. Without it, finding a common denominator is a memorised ritual with no meaning attached, and it collapses under any variation.',
   pages: 14, printItems: 14,
   printInstruction: 'Complete each equivalent fraction, or simplify it.',
   printInstructions: {
@@ -112,7 +112,7 @@ const anglesAndLines = {
   blurb: 'Acute, right, obtuse — then work out the missing angle.',
   ccss: ['4.MD.C.5', '4.MD.C.7', '4.G.A.1'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'Angle sums are the first place children meet an unknown that must be deduced rather than computed, which is the step towards the algebraic reasoning ROAM tests from grade 6 on.',
+  evidence: 'Angle sums are among the first places a child meets an unknown that has to be deduced rather than computed, which is the beginning of algebraic reasoning rather than the end of arithmetic.',
   pages: 12, printItems: 12,
   printInstruction: 'Name each angle, or find the missing one.',
   printInstructions: {
@@ -171,7 +171,7 @@ const divisionDescent = {
   blurb: 'Climb down: how many times does it go?',
   ccss: ['4.NBT.B.6'],
   roam: [{ task: 'fluencyCalf', subscale: 'div' }],
-  evidence: 'CALF’s D1–D3 bands run 22÷2 up to 304÷4 — always by a single digit, and always exact. Rounds here follow the same ranges and stay exact, so the child is practising the procedure rather than wrestling remainders.',
+  evidence: 'Every division here comes out exactly. That is deliberate: remainders are a separate idea, and introducing them while the procedure is still being learned means failures are ambiguous — did the method go wrong, or is the answer just untidy?',
   rounds: 12, seconds: 90, printItems: 14,
   printInstruction: 'Work these out. Every one divides exactly.',
   generate(seed, i, ch, r) {
@@ -197,7 +197,7 @@ const decimalDrop = {
   blurb: 'Where does 0.35 land? And what fraction is that?',
   ccss: ['4.NF.C.6', '4.NF.C.7'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_1' }, { task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'MagPI’s 0–1 block and ALPACA’s grade-4 decimal items (0.65 + 0.3) both live in this space. Putting decimals and fractions on the same line is what makes them one idea rather than two notations.',
+  evidence: 'Decimals and fractions on the same number line, so they read as one idea in two notations rather than two unrelated topics. Matching 0.25 to a quarter is the link that makes both easier.',
   rounds: 12, seconds: 0, timerAvailable: true, printItems: 10,
   printInstruction: 'Mark each decimal on the line.',
   printInstructions: {

@@ -267,3 +267,21 @@ URL today. Nothing about the content model changes.
    content. Recommend keeping it strictly cosmetic.
 4. **How many characters is too many?** Three plus opt-out is a good launch set. The
    cost is art, not engineering, so the ceiling is a design-quality question.
+
+## 12. What the content is grounded in
+
+Three separate inputs, in order of how much they shape the site:
+
+1. **Illustrative Mathematics K–5** — the topic order and the choice of
+   representations (ten-frames, number lines, arrays, area models, fraction bars).
+   Free, openly licensed, and coherent across the whole grade band.
+2. **Maths education research** — which activities are worth building at all. Linear
+   number line work, conceptual subitizing, part-whole number bonds, fact families,
+   area models, and interleaved practice all have real evidence behind them; most
+   gamified drill does not.
+3. **ROAM** — used for difficulty progressions and for which misconceptions to target
+   deliberately, because its item corpora encode that unusually well. Deliberately
+   kept subtle in the interface: see the restraint section in `docs/ROAM.md`.
+
+The rule of thumb: a family should be able to use every part of this site, and
+understand why each activity exists, without ever hearing the word ROAM.

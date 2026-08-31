@@ -11,7 +11,7 @@ const fractionFoundry = {
   blurb: 'Common denominators, then the four operations.',
   ccss: ['5.NF.A.1', '5.NF.B.4', '5.NF.B.7'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'These are ALPACA’s actual grade-5 items: 3/4 + 5/6, 5/8 + 5/6, 2/9 ÷ 1/3. Answers are checked as exact fractions, so 19/12 and 1 7/12 are both accepted and neither is rounded.',
+  evidence: 'The four operations on fractions with unlike denominators. Answers are compared as exact fractions rather than decimals, so 19/12 and 1 7/12 are both accepted and nothing is ever wrong by a rounding error.',
   pages: 16, printItems: 14,
   printInstruction: 'Work these out. Give each answer in its simplest form.',
   generate(seed, i, ch, r) {
@@ -77,7 +77,7 @@ const decimalPlace = {
   blurb: 'Tenths, hundredths, thousandths — line up the point.',
   ccss: ['5.NBT.A.3', '5.NBT.B.7'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'roamMagpi', subscale: 'symbolic' }],
-  evidence: 'ALPACA tests decimal arithmetic from grade 4 (0.65 + 0.3). Comparison items here use the classic trap — a longer decimal that is actually smaller (0.4 vs 0.38) — which is the decimal analogue of MagPI’s decade-incompatible pairs.',
+  evidence: 'Comparison pairs use the durable misconception that a longer decimal is a bigger number — 0.4 against 0.38. It is the decimal cousin of comparing two-digit numbers digit by digit, and it survives a long time unless it is confronted directly.',
   pages: 14, printItems: 14,
   printInstruction: 'Compare or add each pair. Line up the decimal points.',
   printInstructions: {
@@ -138,7 +138,7 @@ const volumeAndSpace = {
   blurb: 'Length times width times height — how many cubes fit?',
   ccss: ['5.MD.C.3', '5.MD.C.5'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'Volume extends the area model into a third dimension, reusing exactly the multiplicative structure built in grades 3 and 4 rather than introducing a new formula to memorise.',
+  evidence: 'Volume extends the area model into a third dimension, reusing the multiplicative structure built in grades 3 and 4 rather than arriving as a new formula to memorise.',
   pages: 12, printItems: 12,
   printInstruction: 'Find the volume of each prism.',
   printInstructions: {
@@ -189,7 +189,7 @@ const mixedNumberLine = {
   blurb: 'Past one and under two. Where does 7/4 go?',
   ccss: ['5.NF.A.1', '4.NF.B.3'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_2' }],
-  evidence: 'MagPI’s 0–2 block is made of exactly these: 1 2/4, 1 5/6, 7/4, 5/4, 7/6, 6/5. An improper fraction on a 0–2 line is the clearest test of whether a child understands a fraction as a number rather than as two numbers.',
+  evidence: 'An improper fraction on a nought-to-two line is the clearest test of whether a child treats a fraction as a number: 7/4 has to go somewhere specific, and "seven over four" gives no help in finding it.',
   rounds: 12, seconds: 0, timerAvailable: true, printItems: 8,
   printInstruction: 'Mark each value on the 0 to 2 line.',
   generate(seed, i, ch, r) {
@@ -222,7 +222,7 @@ const coordinateQuest = {
   blurb: 'Across first, then up. Where is (3, 5)?',
   ccss: ['5.G.A.1', '5.G.A.2'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
-  evidence: 'The x-before-y convention is a common and durable error. Presenting the grid with the point already plotted and asking for its name isolates the ordering rather than the plotting.',
+  evidence: 'Reading x before y is a convention, and swapping them is a common and durable error. Showing the point already plotted and asking for its name isolates the ordering from the mechanics of plotting.',
   rounds: 12, seconds: 60, printItems: 10,
   printInstruction: 'Write the coordinates of each marked point.',
   generate(seed, i, ch, r) {

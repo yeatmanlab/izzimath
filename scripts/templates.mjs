@@ -57,7 +57,6 @@ function nav(b, active) {
     ${link('/books/', 'Books', 'books')}
     ${link('/games/', 'Games', 'games')}
     ${link('/printables/', 'Printables', 'printables')}
-    ${link('/roam/', 'ROAM', 'roam')}
     <div class="nav-r">
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
         ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg>${esc(characters[id].name === 'Just math' ? 'Just math' : characters[id].name)}</button>`).join('')}
@@ -78,8 +77,8 @@ function footer(b) {
   return `<footer class="foot noprint"><div class="wrap fin">
   <span>Izzi Math — free math practice for families.</span>
   <a href="${b}/about/">About &amp; credits</a>
-  <a href="${b}/roam/">Linked to ROAM</a>
   <a href="${b}/printables/">All printables</a>
+  <a href="${b}/roam/">Have an assessment score?</a>
   <a href="https://github.com/yeatmanlab/izzimath">Source</a>
 </div></footer>`;
 }
@@ -98,7 +97,6 @@ export function activityCard(b, a) {
       <span class="tag ok">Prints</span>
       <span class="tag">${esc(gradeName(a.grade).replace(' grade', ''))}</span>
       ${(a.ccss || []).slice(0, 1).map((c) => `<span class="tag">${esc(c)}</span>`).join('')}
-      ${(a.roam || []).slice(0, 1).map((l) => `<span class="tag roam">${esc(roamLabel(l))}</span>`).join('')}
     </div>
   </div></a>`;
 }

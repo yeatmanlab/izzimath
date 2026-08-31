@@ -159,3 +159,23 @@ That gives us both directions:
 
 Izzi Math is **practice, not assessment**. It never produces a score, never claims to
 predict one, and never replaces ROAM. The link is a recommendation, in one direction.
+
+### Keep it subtle
+
+ROAM is **one influence among several**, not the frame the site is built around. The
+topic order comes from Illustrative Mathematics; the activity designs come from the
+wider maths education research. Where ROAM earns its place is in the *difficulty
+progressions* — its corpora encode which cases are genuinely hard and which
+misconceptions are worth targeting, and that is unusually good information to have.
+
+So the linkage lives mostly in the code rather than on the page:
+
+- **In the content** — difficulty bands and target pools are drawn from the corpora,
+  documented in code comments. Invisible to families, useful to maintainers.
+- **On an activity page** — one quiet trailing line naming the related measured skill.
+  Not a badge, not a table, not on the cards.
+- **On one opt-in page** — `/roam/` exists for families who happen to have a score.
+  It is linked from the footer, not the main navigation.
+
+Nothing on the site requires a ROAM score, mentions one before the footer, or implies
+a family should go and get one.

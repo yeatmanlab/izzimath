@@ -11,7 +11,7 @@ const addingToTwenty = {
   blurb: 'Sums and differences to 20, starting with the easy ones.',
   ccss: ['1.OA.C.6', '1.OA.B.4'],
   roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'fluencyArf', subscale: 'minus' }, { task: 'roamAlpaca', subscale: 'cat2' }],
-  evidence: 'Follows ARF’s own difficulty walk: A1–A2 sums within ten first, then A4 sums that cross ten, then the matching subtractions. Crossing ten is the step that separates counting from retrieval.',
+  evidence: 'Sums within ten come first, then the sums that cross ten, then the matching subtractions. Crossing ten is the genuine step change: it is where counting on stops being efficient and a strategy (make ten, then add the rest) has to take over.',
   pages: 12, printItems: 10,
   printInstruction: 'Work out each one. Write the answer.',
   printInstructions: {
@@ -60,7 +60,7 @@ const tensAndOnes = {
   blurb: 'How many tens? How many ones? Then add them up.',
   ccss: ['1.NBT.B.2', '1.NBT.C.4'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'fluencyCalf', subscale: 'add-nocarry' }],
-  evidence: 'CALF separates addition without carry (A1) from addition with carry deliberately. This book stays entirely in the no-carry case so place value is secure before regrouping is introduced in grade 2.',
+  evidence: 'Place value before regrouping. This book stays deliberately inside the no-carry case, because a child who is still working out what the tens digit means cannot also be learning to carry — the two together overload working memory.',
   pages: 12, printItems: 10,
   printInstruction: 'Write how many tens and ones, then find each total.',
   printInstructions: {
@@ -111,7 +111,7 @@ const halvesAndQuarters = {
   blurb: 'Split the shape fairly. Is that a half or a quarter?',
   ccss: ['1.G.A.3'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
-  evidence: 'ALPACA asks grade-1 children to "select the rectangle where a fourth of it is yellow" — a visual, area-based fraction item. This book practises exactly that recognition before any fraction symbols appear.',
+  evidence: 'Fractions begin as fair shares of a shape, with no symbols at all. The emphasis is on equal parts, since "split into four" and "split into four equal parts" are different claims and children routinely conflate them.',
   pages: 8, printItems: 8,
   printInstruction: 'Shade the part named under each shape.',
   printInstructions: {
@@ -170,7 +170,7 @@ const numberLineHop = {
   blurb: 'Slide the marker to the right spot on the line.',
   ccss: ['1.NBT.B.3'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }],
-  evidence: 'MagPI’s number line subtest starts children on a 0–20 block. Linear number line practice is among the best-evidenced early number interventions (Siegler & Ramani), and it transfers to broader math achievement.',
+  evidence: 'Linear number line practice is among the best-evidenced early number interventions there is — Siegler and Ramani’s work on linear board games showed gains in numerical magnitude that transferred to broader arithmetic. Ticks are provided at this stage so the child can count as well as estimate.',
   rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
@@ -197,7 +197,7 @@ const makeTenRace = {
   blurb: 'One number shows. Tap what it needs to make ten.',
   ccss: ['1.OA.C.6'],
   roam: [{ task: 'fluencyArf', subscale: 'sum' }],
-  evidence: 'Pairs to ten are the highest-leverage addition facts to automate: they underwrite the make-ten strategy for every sum that crosses ten, which is the ARF A4 band.',
+  evidence: 'Automaticity on the pairs to ten frees working memory for everything built on top of them. This is short and repetitive on purpose: retrieval practice, not explanation, is what moves a fact from worked out to known.',
   rounds: 14, seconds: 45, printItems: 12,
   printInstruction: 'Write the number that makes ten.',
   generate(seed, i, ch, r) {

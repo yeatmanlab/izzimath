@@ -98,12 +98,13 @@ fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 
 <section class="wrap sec" style="padding-bottom:10px">
   <div class="roam">
-    <h3>Linked to ROAM</h3>
-    <p>Every book and game says which measured math skill it practises, using the
-    <a href="${ROAM_URL}" style="color:var(--a1)">Rapid Online Assessment of Math</a> from the
-    Stanford Brain Development &amp; Education Lab. If you have a ROAM result, we can point you
-    straight at the right practice.</p>
-    <a class="btn sm" href="${b}/roam/">See the mapping</a>
+    <h3>Where the content comes from</h3>
+    <p>The order topics appear in follows the free
+    <a href="https://illustrativemathematics.org/math-curriculum/" style="color:var(--a1)">Illustrative Mathematics</a>
+    K&ndash;5 sequence, cross-checked against other well-evidenced curricula. The activity choices lean
+    on what maths research actually supports &mdash; number line work, subitizing, fact families,
+    area models &mdash; rather than on what gamifies most easily.</p>
+    <a class="btn sm" href="${b}/about/">Read more</a>
   </div>
 </section>`,
   }));
@@ -215,15 +216,10 @@ for (const a of activities) {
         <div class="roam">
           <h3>What this practises</h3>
           <p>${esc(a.skill)}</p>
-          <table class="tbl"><tbody>
-            ${(a.roam || []).map((l) => {
-              const t = tasks[l.task]; const s = t?.subscales?.[l.subscale];
-              return `<tr><td><strong>${esc(t?.short ?? l.task)}</strong> — ${esc(t?.name ?? '')}</td>
-                <td>${esc(s?.name ?? l.subscale)}${l.block ? ` (${esc(l.block.replace('_', '–'))})` : ''}</td>
-                <td>${esc(s?.blurb ?? '')}</td></tr>`;
-            }).join('')}
-          </tbody></table>
-          ${a.evidence ? `<p style="margin-top:12px;font-size:13px">${esc(a.evidence)}</p>` : ''}
+          ${a.evidence ? `<p style="font-size:13px">${esc(a.evidence)}</p>` : ''}
+          ${(a.roam || []).length ? `<p style="font-size:12.5px;color:var(--txt3);margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px">
+            Related measured skill${a.roam.length > 1 ? 's' : ''}: ${a.roam.map((l) => esc(roamLabel(l))).join(', ')}.
+            <a href="${b}/roam/" style="color:var(--txt2)">What this means</a></p>` : ''}
         </div>
       </div>
     </section>`,
@@ -278,12 +274,11 @@ write('printables/index.html', page({
       const l = byGrade(g);
       if (!l.length) return '';
       return `<div class="sec"><h2 style="font-size:20px">${gradeName(g)}</h2>
-        <table class="tbl"><thead><tr><th>Sheet</th><th>Strand</th><th>Standard</th><th>Practises</th><th></th></tr></thead>
+        <table class="tbl"><thead><tr><th>Sheet</th><th>Skill</th><th>Standard</th><th></th></tr></thead>
         <tbody>${l.map((a) => `<tr>
           <td><strong>${esc(a.title)}</strong></td>
-          <td>${esc(a.strand)}</td>
+          <td>${esc(a.skill)}</td>
           <td>${esc((a.ccss || []).join(', '))}</td>
-          <td>${(a.roam || []).map((x) => esc(roamLabel(x))).join('<br>')}</td>
           <td><a class="btn sm" href="${b}/print/${a.id}/">Print</a></td></tr>`).join('')}
         </tbody></table></div>`;
     }).join('')}
@@ -292,11 +287,11 @@ write('printables/index.html', page({
 
 /* --------------------------------------------------------------------- roam */
 write('roam/index.html', page({
-  base: b, active: 'roam', title: 'Linked to ROAM', desc: 'How Izzi Math activities map onto the Rapid Online Assessment of Math, and what to practise for each score band.',
-  crumbs: [{ label: 'Home', href: '/' }, { label: 'ROAM' }],
+  base: b, active: '', title: 'Have an assessment score?', desc: 'If your child has taken the Rapid Online Assessment of Math, find matching Izzi Math practice for each score band.',
+  crumbs: [{ label: 'Home', href: '/' }, { label: 'Assessment scores' }],
   body: `<section class="wrap">
-    <div class="ahead"><div><h1>Linked to ROAM</h1>
-      <p>Every activity says which measured skill it practises.</p></div></div>
+    <div class="ahead"><div><h1>Have an assessment score?</h1>
+      <p>If your child has taken ROAM, this page points you at matching practice.</p></div></div>
 
     <div class="sec"><div class="roam">
       <h3>What ROAM is</h3>
@@ -304,8 +299,11 @@ write('roam/index.html', page({
       free, fast math assessment from the Brain Development &amp; Education Lab at Stanford. It has
       four parts, and each one measures something different.</p>
       <p><strong>Izzi Math is practice, not assessment.</strong> It never produces a score, never
-      predicts one, and never replaces ROAM. The link runs one way: a ROAM result can point you at
-      the right practice here.</p>
+      predicts one, and never replaces ROAM. The link runs one way: if you happen to have a ROAM
+      result, this page can point you at the right practice here.</p>
+      <p>ROAM is one of several influences on what Izzi Math contains &mdash; the topic order comes
+      from Illustrative Mathematics, and the activity designs come from the wider maths education
+      research. You do not need a ROAM score, or any score, to use this site.</p>
     </div></div>
 
     <div class="sec"><h2>The four parts</h2>

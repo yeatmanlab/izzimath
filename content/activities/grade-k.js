@@ -11,7 +11,7 @@ const countingCrew = {
   blurb: 'Count them, name the next number, and find who is 4th in line.',
   ccss: ['K.CC.A.2', 'K.CC.B.4', 'K.CC.B.5'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
-  evidence: 'Mirrors ALPACA’s own cat1 item formats — "what number comes next", "how many dots", give-N, and ordinal position — so the practice matches the response formats a child already met in ROAM.',
+  evidence: 'Counting, cardinality and ordinality are separate skills that develop separately — a child who can recite "one two three" may still not know that the last word said is how many there are. This book keeps all four apart: count a set, name the next number, produce a set of a given size, and find a position in a line.',
   pages: 10, printItems: 8,
   printInstruction: 'Count carefully. Write how many.',
   printInstructions: {
@@ -73,7 +73,7 @@ const numberFriends = {
   blurb: 'Find the missing part. 6 and what make 10?',
   ccss: ['K.OA.A.3', 'K.OA.A.4'],
   roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'roamAlpaca', subscale: 'cat1' }],
-  evidence: 'Bonds to 10 are the substrate for ARF addition-fact retrieval. Presented as a bond rather than a sum so the part-whole relationship is visible, then practised in both directions.',
+  evidence: 'Part-whole reasoning, in the Singapore-style bond rather than as a sum, so the relationship is visible rather than procedural. Pairs to ten are the highest-leverage facts in early arithmetic: they underwrite every make-ten strategy that follows.',
   pages: 10, printItems: 8,
   printInstruction: 'Fill in the missing number in each bond.',
   generate(seed, i, ch, r) {
@@ -112,7 +112,7 @@ const shapeSorter = {
   blurb: 'Name the shape, then count its sides.',
   ccss: ['K.G.A.2', 'K.G.B.4'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
-  evidence: 'ALPACA cat1 includes shape and attribute items alongside counting. Kiwi’s scale tessellation makes this the natural home for early geometry.',
+  evidence: 'Naming shapes and counting their attributes is where children learn that a shape is defined by its properties, not its orientation — a triangle stood on its point is still a triangle. Kiwi’s scale tessellation makes this the natural home for early geometry.',
   pages: 8, printItems: 8,
   printInstruction: 'Name each shape and write how many sides it has.',
   generate(seed, i, ch, r) {
@@ -148,7 +148,7 @@ const tenFrameFlash = {
   blurb: 'The dots flash up. How many did you see?',
   ccss: ['K.CC.B.4', 'K.CC.B.5'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
-  evidence: 'Conceptual subitizing depends on brief exposure — if the dots stay visible the child counts them one at a time, which trains counting rather than quantity recognition. The pattern is hidden after a beat.',
+  evidence: 'Conceptual subitizing depends on brief exposure. If the dots stay visible a child simply counts them one at a time, which trains counting rather than recognising quantity, so the pattern is hidden after a beat. Ten-frames and dot patterns are the two representations with the strongest early-number evidence behind them.',
   rounds: 12, seconds: 60, printItems: 10,
   printInstruction: 'How many dots in each frame? Write the number.',
   generate(seed, i, ch, r) {
@@ -176,7 +176,7 @@ const whichIsMore = {
   blurb: 'Two numbers. Tap the bigger one.',
   ccss: ['K.CC.C.6', 'K.CC.C.7'],
   roam: [{ task: 'roamMagpi', subscale: 'symbolic' }],
-  evidence: 'Built on MagPI’s own difficulty structure: pairs are drawn by ratio so the numerical distance effect is exercised deliberately — 9 vs 1 is easy, 9 vs 8 is not.',
+  evidence: 'Comparing quantities is the foundation the rest of arithmetic sits on. Pairs are drawn by ratio rather than at random, because the difficulty of a comparison depends on how close the two numbers are — 9 against 1 is nearly automatic, 9 against 8 is not.',
   rounds: 14, seconds: 45, printItems: 12,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {
