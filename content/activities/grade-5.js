@@ -190,6 +190,7 @@ const mixedNumberLine = {
   ccss: ['5.NF.A.1', '4.NF.B.3'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_2' }],
   evidence: 'An improper fraction on a nought-to-two line is the clearest test of whether a child treats a fraction as a number: 7/4 has to go somewhere specific, and "seven over four" gives no help in finding it.',
+  strategy: { name: 'Whole first', text: 'Decide which two whole numbers it sits between, then split that gap.' },
   rounds: 12, seconds: 0, timerAvailable: true, printItems: 8,
   printInstruction: 'Mark each value on the 0 to 2 line.',
   generate(seed, i, ch, r) {
@@ -223,6 +224,7 @@ const coordinateQuest = {
   ccss: ['5.G.A.1', '5.G.A.2'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Reading x before y is a convention, and swapping them is a common and durable error. Showing the point already plotted and asking for its name isolates the ordering from the mechanics of plotting.',
+  strategy: { name: 'Across, then up', text: 'Always read the across number first, then the up number. (3, 5) means 3 across and 5 up.' },
   rounds: 12, seconds: 60, printItems: 10,
   printInstruction: 'Write the coordinates of each marked point.',
   generate(seed, i, ch, r) {

@@ -189,6 +189,7 @@ const hundredLineHop = {
   ccss: ['2.NBT.A.1'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
   evidence: 'The same number line, now without tick marks. Removing them is the point: the child has to reason from landmarks (nought, fifty, one hundred) instead of counting, which is what estimating a magnitude actually is.',
+  strategy: { name: 'Use landmarks', text: 'Fifty is the middle. Twenty-five is halfway to the middle. Work from those.' },
   rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
@@ -216,6 +217,7 @@ const decadeDuel = {
   ccss: ['2.NBT.A.4'],
   roam: [{ task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Rounds cycle through the four specific ways two-digit comparison goes wrong: tens and ones agreeing, tens and ones disagreeing, a shared tens digit, and the same two digits reversed. Practising the traps deliberately is more useful than practising random pairs.',
+  strategy: { name: 'Tens first', text: 'Compare the tens digits. Only look at the ones if the tens are the same.' },
   rounds: 16, seconds: 45, printItems: 12,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {

@@ -216,3 +216,9 @@ footer.foot a:hover { color: var(--txt) }
 .bsq.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok) }
 .bsq.wrong { border-color: var(--pink); background: color-mix(in srgb, var(--pink) 16%, transparent); color: var(--pink) }
 .btrail { font-family: var(--fdisp); font-size: 15px; color: var(--txt2); margin-top: 16px; min-height: 24px }
+
+/* ---------- strategy card (shown before a game, per WWC fluency guidance) ---------- */
+.strat { border: 1px solid var(--line2); background: var(--glass2); border-radius: 14px; padding: 18px 22px; max-width: 46ch; margin: 0 auto 4px; text-align: left }
+.strat h3 { font-size: 15px; color: var(--a1); margin-bottom: 6px }
+.strat p { font-size: 14.5px; color: var(--txt2) }
+.strathint { margin-top: 20px }

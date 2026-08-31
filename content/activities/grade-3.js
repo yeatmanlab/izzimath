@@ -183,6 +183,7 @@ const factFamilyForge = {
   ccss: ['3.OA.B.6', '3.OA.C.7'],
   roam: [{ task: 'fluencyArf', subscale: 'mult' }, { task: 'fluencyArf', subscale: 'div' }],
   evidence: 'Multiplication and division are one fact seen from two directions, and practising them together roughly halves what has to be memorised. Division facts usually lag precisely because they are rarely rehearsed as the inverse.',
+  strategy: { name: 'Use the family', text: 'Three numbers make four facts. If 6 × 7 = 42, then 42 ÷ 7 = 6.' },
   rounds: 14, seconds: 60, printItems: 12,
   printInstruction: 'Fill in the missing number in each fact.',
   generate(seed, i, ch, r) {
@@ -214,6 +215,7 @@ const arrayArchitect = {
   ccss: ['3.OA.A.1', '3.OA.B.5'],
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
   evidence: 'The commutative property is obvious in an array and invisible in a string of symbols — turning the rectangle a quarter turn is the whole proof. Seeing it halves the number of facts a child has to store.',
+  strategy: { name: 'Rows times columns', text: 'Count one row, then count how many rows. Turning the array does not change the total.' },
   rounds: 12, seconds: 60, printItems: 12,
   printInstruction: 'Write the total for each array.',
   printInstructions: {

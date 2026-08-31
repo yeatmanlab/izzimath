@@ -171,6 +171,7 @@ const numberLineHop = {
   ccss: ['1.NBT.B.3'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }],
   evidence: 'Linear number line practice is among the best-evidenced early number interventions there is — Siegler and Ramani’s work on linear board games showed gains in numerical magnitude that transferred to broader arithmetic. Ticks are provided at this stage so the child can count as well as estimate.',
+  strategy: { name: 'Use the middle', text: 'Find the halfway mark first, then decide if your number is before or after it.' },
   rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
@@ -198,6 +199,7 @@ const makeTenRace = {
   ccss: ['1.OA.C.6'],
   roam: [{ task: 'fluencyArf', subscale: 'sum' }],
   evidence: 'Automaticity on the pairs to ten frees working memory for everything built on top of them. This is short and repetitive on purpose: retrieval practice, not explanation, is what moves a fact from worked out to known.',
+  strategy: { name: 'Fill the frame', text: 'Count the empty spaces in the ten-frame — that is the number you need.' },
   rounds: 14, seconds: 45, printItems: 12,
   printInstruction: 'Write the number that makes ten.',
   generate(seed, i, ch, r) {

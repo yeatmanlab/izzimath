@@ -35,9 +35,13 @@ wrap arithmetic in an unrelated reward loop do not show these effects.
 
 ## Design rules that follow
 
-**Number lines everywhere, and linear.** The circular-board comparison in Siegler &
-Ramani is the cleanest natural experiment available: same game, same dose, and the
-left-to-right layout more than doubled the effect. Six activities use a number line.
+**Number lines everywhere, and linear.** The number line is the only representation
+with a WWC strong-evidence recommendation of its own, it is the best-validated
+correlate of broad maths competence in this age range (r=.443 across 263 effect sizes),
+and it is a causal lever in randomised experiments. The circular-board comparison in
+Siegler & Ramani is the cleanest natural experiment available: same game, same dose,
+and the left-to-right layout more than doubled the effect (d=1.01 vs 0.43). Seven
+activities use a number line, and none of them loops.
 
 **Count on from where you are.** Any movement along a line starts from the token's
 current position, never from 1. In The Great Race, tapping "1, 2" — the documented
@@ -63,22 +67,83 @@ bigger error. Coordinates isolate x-before-y.
 
 ## On timers
 
-The popular framing is "timed drills cause maths anxiety, so avoid timers". The
-evidence is more specific than that: WWC gives a **STRONG** rating to timed activities
-for building fluency. What the anxiety literature actually indicts is *high-stakes,
-publicly-compared, whole-class* timed testing — not a self-paced game a child chooses
-to play.
+The popular framing is "timed drills cause maths anxiety, so avoid timers." That is
+not what the evidence says, in either direction.
 
-So Izzi Math's position:
+**For timed practice:** WWC 2021 Recommendation 6 gives timed fluency activities a
+**STRONG** rating across 27 studies. Two independent meta-analyses put fluency practice
+at around g=0.76. A speeded-versus-non-speeded RCT found ES 0.51 on arithmetic **with
+no difference in attitudes, motivation or effort**.
 
-- **Books are never timed.** They are for learning, where thinking time is the point.
-- **Games have timers off by default**, and every timer is one click to disable.
-- **Nothing is scored against anyone else.** No leaderboards, no percentiles.
-- Characters carry a default: Kiwi off, Georgie on, Flame optional. A child who finds
-  the clock stressful picks Kiwi and never sees one, without being told that is what
-  they have done.
+**Against the critique:** Boaler's *Fluency Without Fear*, the usual source for "timed
+tests cause anxiety", cites no experiment that manipulated timing in children. Maths
+anxiety is real and matters — it correlates r=-.26 with achievement across 90 countries,
+and counterintuitively it hurts *higher*-attaining children more, because they rely on
+working-memory-intensive strategies. But the intervention evidence says the way to
+reduce it is to build competence: skill-building raises achievement (g=0.76) *and*
+reduces anxiety (g=-0.32), while digital games as such do almost nothing for anxiety
+(ES -0.13).
 
-## On Illustrative Mathematics — and being honest about it
+What the critique is actually about is **long, graded, publicly-compared timed tests on
+unpractised content.** That is a specific thing, and we do not do it.
+
+So the design follows the WWC constraints rather than a slogan:
+
+- **A game never introduces a concept.** Games sit downstream of books. Each one opens
+  with a "learn it first" link.
+- **Every game names its strategy before play starts**, and keeps it one tap away
+  during play. This is the biggest single lever in the whole literature: the WWC's own
+  contrast of fluency-with-strategy against fluency-without produced **g=1.48 versus
+  g=0.37** — a larger swing than timing itself.
+- **Clocks run 60–90 seconds**, one item on screen, and only correct answers count.
+- **No clock starts until the child presses Start.**
+- **Nothing is compared between children.** No leaderboards, no percentiles, no public
+  scores, no streak-loss punishment.
+- Timers are off by default and one click to disable. Characters carry a default —
+  Kiwi off, Georgie on — so a child who finds clocks stressful can pick Kiwi and never
+  meet one, without being told that is what they have done.
+
+## What we deliberately did NOT build, and why
+
+**Approximate-quantity (ANS) training.** Dot-cloud comparison and approximate
+arithmetic games are popular and do not work: the meta-analytic effect of ANS training
+on symbolic maths is **g=0.11 (not significant), and −0.04 after bias correction**. A
+six-week, 30-minutes-a-day first-grade programme improved children's ANS acuity and
+transferred to nothing at all.
+
+So *Which Is More* compares **numerals, not dot clouds** (symbolic comparison
+correlates better with achievement: r=.302 against .241), graded by numerical distance
+so the ladder runs from far pairs to adjacent ones. Where dots do appear — the
+subitizing flash — the quantities are exact, small, structured, and always mapped to a
+numeral. Dots as a bridge to symbols is fine; dots as the mechanism is not.
+
+**Discovery-first tasks for this age range.** Productive-failure effects are positive
+overall (53-study meta, g=0.36) but **reverse for grades 2–5**. Books lead with a
+worked path, not with unguided exploration.
+
+**Themed manipulatives.** This one was a live risk in the original design, which said a
+character's collectible "drives every manipulative". Petersen & McNeil found
+perceptually rich objects *help* children with low knowledge of the object and *hurt*
+children who know it well — so precisely the children most attached to Georgie are the
+ones tennis-ball counters would hurt most. A character now owns the palette, the voice
+and the word-problem nouns, and never the countable units. `scripts/check.mjs` renders
+every problem under all four characters and fails if a manipulative differs.
+
+## A frozen set of representations
+
+WWC 2021 Recommendation 3 (also STRONG) asks for "a well-chosen set" of
+representations, kept the same as children move up the grades — rather than variety for
+its own sake. Ours, used from K to 5:
+
+1. **The number line** (whole numbers, fractions, decimals, 0–20 → 0–100 → 0–1 → 0–2)
+2. **The ten-frame** and structured dot patterns
+3. **The array**, becoming the area model
+4. **The bar**, for fractions and part-whole
+
+Base-ten blocks and number bonds are the two additions, both for place value and
+part-whole specifically. Nothing else gets invented per-activity.
+
+## On Illustrative Mathematics## On Illustrative Mathematics — and being honest about it
 
 IM K–5 supplies the topic order and the choice of representations. It is free, openly
 licensed, and coherent across the grade band, and EdReports rates it **Meets

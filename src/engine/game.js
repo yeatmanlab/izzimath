@@ -11,6 +11,7 @@ import { currentCharacter } from '../lib/theme.js';
 export function mountGame(activity, root) {
   const host = root.querySelector('[data-stage]');
   const bar = root.querySelector('[data-bar]');
+  let started = false;
   let seed = readSeed(4242);
   let ch = getCharacter(currentCharacter());
   const total = activity.rounds ?? 12;
@@ -36,7 +37,7 @@ export function mountGame(activity, root) {
     if (timed) startTimer(); else paintBar();
   }
   function startTimer() {
-    tLeft = activity.seconds ?? 60;
+    tLeft = Math.min(90, Math.max(60, activity.seconds || 60));
     clearInterval(tHandle);
     tHandle = setInterval(() => {
       tLeft--;
@@ -46,7 +47,36 @@ export function mountGame(activity, root) {
     paintBar();
   }
 
+  // The strategy card. WWC's guidance on fluency practice is explicit that a
+  // timed activity must never introduce a concept and must never run without
+  // reminding the child of the taught strategy first — the with-strategy versus
+  // without-strategy contrast is a larger effect than timing itself.
+  function paintStart() {
+    paintBar();
+    const st = activity.strategy;
+    host.innerHTML = `
+      <div class="qnum">Before you start</div>
+      <p class="qtext">${activity.title}</p>
+      ${st ? `<div class="strat">
+        <h3>${st.name}</h3>
+        <p>${st.text}</p>
+      </div>` : ''}
+      <div class="sfoot">
+        <button class="btn pri" data-go>Start playing</button>
+        <a class="btn" href="${base()}/grades/${activity.grade}/">Learn it first</a>
+      </div>
+      <p style="color:var(--txt3);font-size:12.5px;margin-top:16px">
+        Games are for getting quicker at something you have already met. If this is new,
+        do the book first.</p>`;
+    host.querySelector('[data-go]').addEventListener('click', () => {
+      started = true;
+      if (timed) startTimer();
+      paint();
+    });
+  }
+
   function paint() {
+    if (!started) return paintStart();
     if (round >= total) return finish();
     paintBar();
     const p = problemFor(round);
@@ -56,8 +86,16 @@ export function mountGame(activity, root) {
         <span>Streak<b>${streak}</b></span>
         <span>Best<b>${best}</b></span>
       </div>
-      <div data-slot></div>`;
+      <div data-slot></div>
+      ${activity.strategy ? `<p class="strathint noprint"><button class="btn sm" data-strat>◆ ${activity.strategy.name}</button></p>` : ''}`;
     const slot = host.querySelector('[data-slot]');
+    host.querySelector('[data-strat]')?.addEventListener('click', (e) => {
+      if (host.querySelector('[data-stratbox]')) return;
+      const d = document.createElement('div');
+      d.dataset.stratbox = '1'; d.style.marginTop = '12px';
+      d.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${activity.strategy.text}</span></p>`;
+      e.currentTarget.parentElement.appendChild(d);
+    });
     renderProblem(slot, p, (response, ok) => {
       if (ok) { score++; streak++; best = Math.max(best, streak); } else { streak = 0; }
       const voice = ok ? ch.voice.correct : ch.voice.wrong;
@@ -101,6 +139,5 @@ export function mountGame(activity, root) {
 
   writeSeed(seed);
   timed = ch.timers === true;
-  if (timed) startTimer();
   paint();
 }

@@ -172,6 +172,7 @@ const divisionDescent = {
   ccss: ['4.NBT.B.6'],
   roam: [{ task: 'fluencyCalf', subscale: 'div' }],
   evidence: 'Every division here comes out exactly. That is deliberate: remainders are a separate idea, and introducing them while the procedure is still being learned means failures are ambiguous — did the method go wrong, or is the answer just untidy?',
+  strategy: { name: 'Multiply up', text: 'Ask how many of the smaller number fit. Try tens first: how about ten of them?' },
   rounds: 12, seconds: 90, printItems: 14,
   printInstruction: 'Work these out. Every one divides exactly.',
   generate(seed, i, ch, r) {
@@ -198,6 +199,7 @@ const decimalDrop = {
   ccss: ['4.NF.C.6', '4.NF.C.7'],
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_1' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Decimals and fractions on the same number line, so they read as one idea in two notations rather than two unrelated topics. Matching 0.25 to a quarter is the link that makes both easier.',
+  strategy: { name: 'Tenths first', text: 'The first digit after the point is tenths. 0.35 is between three tenths and four tenths.' },
   rounds: 12, seconds: 0, timerAvailable: true, printItems: 10,
   printInstruction: 'Mark each decimal on the line.',
   printInstructions: {

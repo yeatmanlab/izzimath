@@ -75,7 +75,7 @@ Character
 ├── identity     name, species, tagline, avatar (color + 1-bit line art for print)
 ├── palette      accent ramp overriding the default spectrum
 ├── world        setting and nouns for word problems and level names
-├── collectible  the thing that gets counted (drives every manipulative)
+├── collectible  nouns for word problems only — NEVER the countable units
 ├── voice        feedback and encouragement copy
 └── motif        decorative geometry, cursor, loading state, transitions
 ```
@@ -115,6 +115,30 @@ animals are actually coloured.
 a `?ch=kiwi` URL param overrides it for sharing. Character is a rendering concern —
 it never touches problem generation, so a shared `?seed=8817` link produces identical
 math for both characters. Stateless stays intact.
+
+### The one hard limit on a character
+
+**A character may never change the countable units inside a manipulative.** Ten-frame
+counters, array squares, dots and number line ticks stay plain and identical for
+everyone.
+
+This is not an aesthetic preference. Petersen and McNeil found that perceptually rich
+objects *help* children who do not know the object and *hurt* children who know it
+well — a child who loves Georgie and knows tennis balls will think about tennis balls
+instead of about quantity. Precisely the children most attached to a character are the
+ones a themed manipulative would hurt most.
+
+So the division of labour is:
+
+| Character owns | Character never touches |
+| -------------- | ----------------------- |
+| Palette, avatar, decorative frame | The countable units in any manipulative |
+| Word-problem nouns ("4 bags of treats") | Numerals, ticks, dots, squares, bars |
+| Voice and encouragement copy | Anything inside a ten-frame or array |
+| Level and chapter names | The maths, ever |
+
+`scripts/check.mjs` enforces this: it renders every problem under all four characters
+and fails if a manipulative differs.
 
 ### Print constraint
 

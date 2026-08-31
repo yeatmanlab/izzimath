@@ -127,6 +127,33 @@ for (const a of activities) {
   }
 }
 
+console.log(`\n=== manipulatives must not vary by character ===`);
+// Petersen & McNeil: perceptually rich, highly familiar objects HELP children who
+// don't know the object and HURT children who do — a child who loves Georgie thinks
+// about tennis balls instead of quantity. So characters own the word-problem nouns,
+// the palette and the voice, but the countable units inside a manipulative stay
+// plain and identical for everyone.
+{
+  let varied = 0;
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 8;
+    for (let i = 0; i < n; i++) {
+      const sd = deriveSeed(8817, `p${i}`);
+      const seen = new Map();
+      for (const cid of CHARS) {
+        const p = a.generate(sd, i, getCharacter(cid), rng(sd), 8817);
+        seen.set(cid, String(p.visual ?? '') + '\u0000' + String(p.printVisual ?? ''));
+      }
+      const distinct = new Set(seen.values());
+      if (distinct.size > 1) {
+        fail(a.id, `i=${i} manipulative differs by character (${distinct.size} variants) — countable units must stay plain`);
+        varied++;
+      }
+    }
+  }
+  if (!varied) console.log('  ok    every manipulative is identical across all 4 characters');
+}
+
 console.log(`\n=== print sheets (sheet + answer key, all characters) ===`);
 for (const a of activities) {
   for (const cid of CHARS) {
