@@ -430,6 +430,16 @@ write('about/index.html', page({
       <p class="sub">Every citation, what it found, how it is used, and which activities rest on it
       is on the <a href="${b}/references/" style="color:var(--a1)">references page</a> &mdash;
       including the sources that shape what we deliberately do <em>not</em> build.</p>
+      <h2 style="margin-top:30px">Which parts are evidence, and which are taste</h2>
+      <p class="sub">Worth separating, because almost nobody in this category does. <strong>The
+      mechanics are evidence-led:</strong> the number lines, the board game and its counting rule,
+      the interleaved review sheets, the strategy shown before any timer, the decision not to build
+      dot-comparison training. Each of those traces to a specific finding, named on the references
+      page.</p>
+      <p class="sub"><strong>The rest is craft judgement, and we are not going to dress it up:</strong>
+      the characters, the colours, the aesthetic, the paper-and-screen pairing, and the idea of
+      putting the seed in the address bar. Those are design bets. They may well be good ones. They
+      are not findings, and you should not weigh them as if they were.</p>
 
       <h2 style="margin-top:30px">Assessment</h2>
       <p class="sub">Izzi Math is practice, not assessment. It never produces a score and never

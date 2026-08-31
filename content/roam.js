@@ -128,36 +128,106 @@ export const RELIABILITY = {
   caveat: 'This score was flagged as unreliable because of very fast responses. Treat it as a hint, not a finding — and consider re-running ROAM when your child is fresh.',
 };
 
+/* How much practice a band actually warrants. The 6-8 week revisit window is
+   not arbitrary: the early-numeracy metaregression predicted LARGER effects for
+   interventions of eight weeks or less, so short and focused is the target. */
+export const DOSE = {
+  need: { minutesPerDay: 10, daysPerWeek: 4, revisitWeeks: 6, note: 'One activity at a time. Stop before it stops being fun.' },
+  dev:  { minutesPerDay: 12, daysPerWeek: 3, revisitWeeks: 8, note: 'Alongside whatever they are doing at school.' },
+  ach:  { minutesPerDay: 10, daysPerWeek: 1, revisitWeeks: 12, note: 'One sheet a week is enough to keep it warm.' },
+};
+
+/* Rules that fire BEFORE the per-task ordering, and can override it. Each one
+   exists because the naive recommendation is actively unhelpful. */
+export const CROSS_RULES = [
+  {
+    id: 'retrieval-before-procedure',
+    why: 'A multi-digit procedure stacked on missing facts fails, and the child reads that as "I cannot do division".',
+    // if both the fact and the procedure are weak, send them to the facts only
+    applies: (r) => ['mult', 'div'].some((op) =>
+      r[`fluencyArf:${op}`] === 'need' && r[`fluencyCalf:${op}`] === 'need'),
+    prefer: (r) => ['mult', 'div']
+      .filter((op) => r[`fluencyArf:${op}`] === 'need' && r[`fluencyCalf:${op}`] === 'need')
+      .map((op) => ({ task: 'fluencyArf', subscale: op })),
+  },
+  {
+    id: 'magnitude-before-fractions',
+    why: 'Fractions on a number line assume the line itself makes sense. If it does not, start with whole numbers.',
+    applies: (r) => r['roamMagpi:numberline'] === 'need',
+    suppressBlocks: ['0_1', '0_2'],
+  },
+  {
+    id: 'place-value-before-regrouping',
+    why: 'Carrying and borrowing are meaningless until a ten can be seen becoming ten ones.',
+    applies: (r) => r['roamAlpaca:cat2'] === 'need'
+      && ['add-carry', 'sub-borrow', 'add-nocarry', 'sub-noborrow'].some((k) => r[`fluencyCalf:${k}`] === 'need'),
+    prefer: () => [{ task: 'roamAlpaca', subscale: 'cat2' }],
+  },
+];
+
 /* ---------------------------------------------------------------------------
    Recommendation engine.
-   Given { task, subscale, band } plus the activity registry, return an ordered
-   list of activities to practise. Ordering rules:
-     need -> easiest first, and allow a grade below the child's
-     dev  -> at grade level, targeted at that subscale
-     ach  -> at or one above grade level, lighter touch
+   Ordering: need -> easiest first, and allow a grade below; dev -> at grade
+   level; ach -> at or one above, lighter touch.
+
+   Two guards matter more than the ordering:
+     - an UNRELIABLE score may never move a child down. ROAM flags a score when
+       the child clicked too fast; acting confidently on that is how a tired
+       afternoon becomes a two-grade demotion. A flagged score is neutral only.
+     - the cross-task rules above can override the per-task answer entirely.
 --------------------------------------------------------------------------- */
-export function recommend({ task, subscale, band, grade, activities, limit = 6 }) {
+export function recommend({ task, subscale, band, grade, activities, limit = 6, flagged = false, results = null }) {
   const gradeNum = (g) => (g === 'K' ? 0 : parseInt(g, 10));
   const g = gradeNum(grade ?? 'K');
 
-  const hits = activities.filter((a) =>
-    (a.roam || []).some((l) => l.task === task && (!subscale || l.subscale === subscale))
+  // A flagged score can never select a below-grade shelf or suppress anything.
+  const effBand = flagged && band === 'need' ? 'dev' : band;
+
+  let target = { task, subscale };
+  let suppressBlocks = [];
+  const fired = [];
+
+  if (results && !flagged) {
+    for (const rule of CROSS_RULES) {
+      if (!rule.applies(results)) continue;
+      fired.push(rule);
+      if (rule.suppressBlocks) suppressBlocks = suppressBlocks.concat(rule.suppressBlocks);
+      if (rule.prefer) {
+        const p = rule.prefer(results)[0];
+        if (p) target = p;
+      }
+    }
+  }
+
+  let hits = activities.filter((a) =>
+    (a.roam || []).some((l) => l.task === target.task && (!target.subscale || l.subscale === target.subscale))
   );
 
-  let window;
-  if (band === 'need') window = [g - 2, g];
-  else if (band === 'dev') window = [g - 1, g];
-  else window = [g, g + 1];
+  if (suppressBlocks.length) {
+    const kept = hits.filter((a) => !(a.roam || []).some((l) => suppressBlocks.includes(l.block)));
+    if (kept.length) hits = kept;
+  }
 
+  const window = effBand === 'need' ? [g - 2, g] : effBand === 'dev' ? [g - 1, g] : [g, g + 1];
   const inWindow = hits.filter((a) => {
     const ag = gradeNum(a.grade);
     return ag >= window[0] && ag <= window[1];
   });
 
   const pool = inWindow.length ? inWindow : hits;
-  const dir = band === 'ach' ? -1 : 1;
-  return pool
+  const dir = effBand === 'ach' ? -1 : 1;
+  // Books before games: a game is for getting quicker at something already met.
+  const items = pool
     .slice()
     .sort((a, b) => dir * (gradeNum(a.grade) - gradeNum(b.grade)) || (a.kind === b.kind ? 0 : a.kind === 'book' ? -1 : 1))
     .slice(0, limit);
+
+  return {
+    items,
+    band: effBand,
+    dose: DOSE[effBand] ?? DOSE.dev,
+    redirected: target.task !== task || target.subscale !== subscale ? target : null,
+    rules: fired.map((r) => ({ id: r.id, why: r.why })),
+    caveat: flagged ? RELIABILITY.caveat : null,
+  };
 }

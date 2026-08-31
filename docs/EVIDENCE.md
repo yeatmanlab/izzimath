@@ -201,3 +201,42 @@ reading directly:
 - Fuchs et al., *Fraction Face-Off!*
 - Clements & Sarama — learning trajectories, subitizing and "quick images"
 - Illustrative Mathematics K–5, via Kendall Hunt; EdReports reviews
+
+## The full specification, and what is deferred
+
+The research pass produced a complete build specification, kept verbatim at
+[`docs/SPEC.md`](SPEC.md) — scope and sequence per grade, a 30-activity catalogue, the
+full score-to-practice tables, print geometry measured from production worksheets, and
+the citation policy. **The shipped site does not implement all of it.**
+
+Implemented, because the evidence is strongest:
+
+- Number line as the spine (seven activities), never circular
+- The linear board game, faithfully, with count-on enforced
+- Interleaved eight-item review sheets alongside grouped practice sheets
+- Elaborated feedback on misses as well as hits
+- A named strategy before every game, and no clock until the child presses start
+- Symbolic rather than approximate comparison
+- Plain manipulatives, enforced by the checker
+- Guidance for the adult, and honest ceilings
+
+Deferred, and worth doing next in roughly this order:
+
+1. **IM's lesson skeleton** — warm-up, activities, synthesis, cool-down — and the ten
+   named warm-up routines (Number Talk, Which One Doesn't Belong, Choral Count,
+   Estimation Exploration) as parameterised generators. The largest single gap, and
+   the one most likely to be worth more than another ten activities.
+2. **Staging instead of duplication.** The spec folds `which-is-more` into
+   `decade-duel` stages 1–2 and `hundred-line-hop` into `number-line-hop` stages 3–4,
+   reaching them with `?stage=`. Same coverage, less code.
+3. **A target-number game** (`close-to-hundred`). The catalogue has no target-number
+   format, which is the one the evidence and the classroom tradition both single out.
+4. **Adaptive difficulty** targeting ~80–85% success, and **spaced review**. Both need
+   stored state, so both wait for accounts.
+5. **Print craft**: primary ruling for K–1 handwriting, opt-in Sprint sheets for
+   grades 3–5, and generator parameter controls.
+
+Of the 108 recommendations the research produced, roughly 37 are implemented, 15 are
+partial, and 56 are not built. The split is not accidental: everything with a
+replicated effect size behind it is in, and most of what is missing is structural
+apparatus and print detail.
