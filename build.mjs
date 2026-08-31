@@ -60,7 +60,7 @@ fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
   <div style="display:flex;gap:11px;flex-wrap:wrap">
     <a class="btn pri" href="${b}/grades/">Pick your grade</a>
     <a class="btn" href="${b}/printables/">Browse printables</a>
-    <a class="btn" href="${b}/roam/">Got a ROAM score?</a>
+    <a class="btn" href="${b}/parents/">How to help</a>
   </div>
 </section>
 
