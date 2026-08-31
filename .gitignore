@@ -20,4 +20,8 @@ venv/
 # Node
 node_modules/
 dist/
-build/
+# NB: do not add a bare `build/` here — build-time SOURCE lives in scripts/ and
+# was once silently excluded by that pattern, which broke CI while working locally.
+
+# local editor/agent settings
+.claude/settings.local.json

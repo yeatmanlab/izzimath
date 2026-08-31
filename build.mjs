@@ -4,7 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges } from './build/templates.mjs';
+import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges } from './scripts/templates.mjs';
 import { sheet } from './src/lib/printsheet.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
