@@ -1,0 +1,12 @@
+{
+  "name": "izzimath",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive math workbooks and games for K-5, every activity also printable.",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs && python3 -m http.server 8899 --directory dist",
+    "check": "node scripts/check.mjs"
+  }
+}

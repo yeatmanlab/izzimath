@@ -1,0 +1,85 @@
+/* Izzi Math print sheets.
+   Target: a parent's home inkjet. Ink is expensive and they are paying for it, so
+   this stylesheet is deliberately line-art only — no fills, no tints, no background
+   images anywhere. Everything is black on white at high contrast. */
+
+.sheet {
+  background: #fff; color: #111;
+  width: 100%; max-width: 8.5in; margin: 0 auto;
+  padding: 0.5in 0.55in;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+}
+.sheet * { box-sizing: border-box }
+
+/* screen preview only — never printed */
+.sheet-preview { border-radius: 8px; box-shadow: 0 30px 80px rgba(0,0,0,.55); margin: 20px auto }
+
+.sh-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 18px }
+.sh-id { display: flex; align-items: center; gap: 10px }
+.sh-id svg { width: 36px; height: 36px; flex: none }
+.sh-head b { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em; display: block; color: #111 }
+.sh-head small { display: block; font-size: 10px; color: #555; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px }
+.sh-name { font-size: 10.5px; color: #444; text-align: right; line-height: 2.2; white-space: nowrap }
+.sh-name u { display: inline-block; width: 92px; border-bottom: 1px solid #999; text-decoration: none }
+
+.sh-inst { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; margin: 0 0 12px; color: #111 }
+.sh-block { margin-bottom: 20px; break-inside: avoid }
+.sh-note { font-size: 10.5px; color: #666; font-style: italic; margin-top: 5px }
+
+/* Problem grids. Density is set per grade by the .dN class — younger kids get
+   fewer, larger problems with more writing room. */
+.sh-grid { display: grid; gap: 16px 22px }
+.sh-grid.d1 { grid-template-columns: repeat(2, 1fr); font-size: 20px; gap: 26px 30px }
+.sh-grid.d2 { grid-template-columns: repeat(3, 1fr); font-size: 17px; gap: 22px 24px }
+.sh-grid.d3 { grid-template-columns: repeat(4, 1fr); font-size: 15px }
+.sh-grid.d4 { grid-template-columns: repeat(5, 1fr); font-size: 14px }
+
+.pr { font-family: 'Space Grotesk', sans-serif; color: #111; break-inside: avoid }
+.pr .lbl { font-size: .62em; color: #777; margin-right: 5px }
+.pr .ansline { display: inline-block; min-width: 2.6em; border-bottom: 1.5px solid #111; margin-left: 6px; height: 1.15em; vertical-align: -.15em }
+.pr .workbox { border: 1px solid #bbb; height: 62px; margin-top: 6px; border-radius: 2px }
+
+/* stacked vertical algorithm (for CALF-style multi-digit work) */
+.vstack { font-family: 'Space Grotesk', sans-serif; display: inline-block; text-align: right; min-width: 3.4em }
+.vstack .op { display: inline-block; width: 1em; text-align: left }
+.vstack .rule { border-top: 2px solid #111; margin-top: 3px; height: 34px }
+
+/* number lines — pure stroke, no fill */
+.nl { position: relative; height: 2px; background: #111; margin: 22px 6px 30px }
+.nl .t { position: absolute; top: -5px; width: 1.5px; height: 11px; background: #111 }
+.nl .t.maj { top: -8px; height: 17px; width: 2px }
+.nl .lb { position: absolute; top: 14px; transform: translateX(-50%); font-size: 10px; color: #333; font-family: 'Space Grotesk', sans-serif; white-space: nowrap }
+
+/* ten-frames, arrays, grids — outline only */
+.tenframe { display: inline-grid; grid-template-columns: repeat(5, 1fr); border: 1.5px solid #111; width: 150px }
+.tenframe i { aspect-ratio: 1; border: .75px solid #666; display: grid; place-items: center }
+.tenframe i.f::after { content: ''; width: 62%; height: 62%; border-radius: 50%; border: 1.5px solid #111 }
+.arr { display: inline-grid; gap: 2px }
+.arr i { width: 15px; height: 15px; border: 1.2px solid #111; border-radius: 2px }
+.fbar { display: flex; border: 1.5px solid #111; height: 34px; width: 100% }
+.fbar i { flex: 1; border-right: 1px solid #111 }
+.fbar i:last-child { border-right: 0 }
+.fbar i.f { background: repeating-linear-gradient(45deg, #111 0 1.5px, transparent 1.5px 5px) }
+
+.sh-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid #ccc; margin-top: 22px; padding-top: 11px; font-size: 9.5px; color: #777 }
+.sh-foot .qr { width: 52px; height: 52px; flex: none }
+.sh-foot strong { color: #333 }
+
+/* answer key */
+.key .pr .ansline { border-bottom: 0; min-width: 0 }
+.key .ansval { font-weight: 700; color: #111; border-bottom: 0 }
+.key .sh-head b::after { content: ' — answer key' }
+
+@media print {
+  @page { size: letter portrait; margin: 0.45in }
+  html, body { background: #fff !important; color: #000 !important }
+  body { display: block !important }
+  .noprint, .nav, footer.foot, .grid-bg, .glow, .chpick, .sfoot, .sbar { display: none !important }
+  .sheet { box-shadow: none !important; margin: 0; padding: 0; max-width: none; border-radius: 0 }
+  .sheet-preview { box-shadow: none !important; border-radius: 0 }
+  .sh-block { page-break-inside: avoid }
+  a { text-decoration: none; color: #000 }
+  a[href]::after { content: '' }  /* never print raw URLs */
+  .pagebreak { page-break-before: always }
+}
