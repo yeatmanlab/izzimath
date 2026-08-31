@@ -260,6 +260,12 @@ for (const a of activities) {
         <button class="btn" data-togglekey aria-pressed="false">Show answer key</button>
         <button class="btn" data-mode aria-pressed="false">Mixed review sheet</button>
         <button class="btn" data-style aria-pressed="false">Plain black &amp; white</button>
+        <label class="btn" style="gap:6px">Text size
+          <select data-variant style="width:auto;height:auto;padding:2px 4px;font-size:12.5px">
+            <option value="">Normal</option>
+            <option value="large">Large print</option>
+            <option value="dyslexia">Extra spacing</option>
+          </select></label>
         <a class="btn" href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">Do it on screen</a>
       </div>
       <div data-sheet></div>
@@ -270,6 +276,12 @@ for (const a of activities) {
         <p style="font-size:13px"><strong>Two styles.</strong> The default has a proper header,
         rounded problem boxes and a self-check strip. <strong>Plain black and white</strong> strips all
         of that back to hairlines and nothing else — same problems, the least ink a printer can use.</p>
+        <p style="font-size:13px"><strong>Text size.</strong> <em>Large print</em> drops to fewer,
+        bigger problems per row. <em>Extra spacing</em> adds line height, letter spacing and wider
+        gutters, and removes italics — the layout usually recommended for dyslexic readers. Both are
+        the same problems, so a sheet can be reprinted in either without losing the seed.</p>
+        <p style="font-size:13px"><strong>The first problem is worked for you</strong>, with the next
+        one deliberately almost identical, so the method is visible before it has to be used.</p>
         <p style="font-size:13px">The <strong>mixed review sheet</strong> is a different thing: eight
         problems, shuffled so that no two next to each other need the same method. In a randomised
         trial of 787 students, sheets shuffled that way scored 61% against 38% for the same problems
@@ -519,6 +531,78 @@ write('parents/index.html', page({
       </p>
     </div></section>`,
 }));
+
+/* ------------------------------------------------------------------ by skill
+   The third navigation axis the research asks for, after grade and strand:
+   browse by what a child actually does. A parent who knows their child cannot
+   place a fraction has no way to find that from a grade list. */
+{
+  const { TYPES } = await import('./content/types.js');
+  const LABEL = {
+    numberline: 'Placing numbers on a line',
+    compare: 'Comparing two numbers',
+    input: 'Writing an answer',
+    choice: 'Choosing an answer',
+    bond: 'Number bonds',
+    tap: 'Counting out a set',
+    ordinal: 'Finding a position',
+    truefalse: 'True or false',
+    boardmove: 'Moving along a board',
+  };
+  const BLURB = {
+    numberline: 'Estimating where a value sits between two landmarks. The most heavily evidenced representation in primary maths.',
+    compare: 'Deciding which of two numbers is larger — the skill everything numerical rests on.',
+    input: 'Working something out and writing it down, with no options to choose between.',
+    choice: 'Picking from a few options, with the wrong ones chosen to catch a specific misunderstanding.',
+    bond: 'Two parts and a whole, with one of the three missing.',
+    tap: 'Producing a set of a given size, rather than counting one already made.',
+    ordinal: 'First, second, third — position rather than quantity.',
+    truefalse: 'Judging a statement without computing it.',
+    boardmove: 'Counting on along a numbered board from where you already are.',
+  };
+
+  // which types each activity actually generates, sampled across characters
+  const { rng, deriveSeed } = await import('./src/lib/rng.js');
+  const { getCharacter } = await import('./content/characters.js');
+  const typesOf = (a) => {
+    const found = new Set();
+    const n = a.pages ?? a.rounds ?? 10;
+    for (const cid of ['none', 'kiwi']) {
+      for (let i = 0; i < n; i++) {
+        const sd = deriveSeed(8817, `p${i}`);
+        try { found.add(a.generate(sd, i, getCharacter(cid), rng(sd), 8817).type); } catch {}
+      }
+    }
+    return found;
+  };
+  const index = {};
+  for (const a of activities) for (const t of typesOf(a)) (index[t] ||= []).push(a);
+
+  const present = TYPES.filter((t) => (index[t] || []).length);
+  write('skills/index.html', page({
+    base: b, active: 'skills', title: 'Browse by skill',
+    desc: 'Find practice by what your child actually does — placing numbers on a line, comparing, number bonds, writing an answer.',
+    crumbs: [{ label: 'Home', href: '/' }, { label: 'By skill' }],
+    body: `<section class="wrap">
+      <div class="ahead"><div><h1>Browse by skill</h1>
+        <p>By what your child does, rather than by grade.</p></div></div>
+      <div class="sec" style="max-width:74ch">
+        <p class="sub">Grade is the usual way in, and it is the front door of this site. But if you
+        already know the sticking point &mdash; they cannot place a fraction, or they read 43 as
+        bigger than 51 &mdash; this is the faster route. Activities appear under every skill they
+        use, so most appear more than once.</p>
+      </div>
+      ${present.map((t) => `<div class="sec">
+        <h2 style="font-size:20px">${esc(LABEL[t] || t)}</h2>
+        <p class="sub">${esc(BLURB[t] || '')}</p>
+        <div class="cards">${index[t]
+          .slice()
+          .sort((x, y) => gradeNum(x.grade) - gradeNum(y.grade))
+          .map((a) => activityCard(b, a)).join('')}</div>
+      </div>`).join('')}
+    </section>`,
+  }));
+}
 
 /* --------------------------------------------------------------- references */
 {

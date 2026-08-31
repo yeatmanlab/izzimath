@@ -93,12 +93,38 @@
 .pr .workbox { border: 1px solid var(--hair); border-radius: 4px; height: 58px; margin-top: 5px }
 .sh-grid.d1 .pr .workbox { height: 74px }
 
-/* primary ruling for the youngest hands: a dashed midline to form digits against */
-.sh-grid.d1 .pr .ruled {
-  height: 0.62in; margin-top: 6px; border: 1px solid var(--hair); border-radius: 4px;
+/* Primary ruling. A child still forming digits needs a midline to form them
+   against, not a plain box. Heights are the measured conventions: 3/4in for K,
+   5/8in for grade 1, 1/2in for grades 2-3. */
+.sheet .pr .ruled {
+  --rule-h: 0.5in;
+  height: var(--rule-h); margin-top: 6px;
+  border: 1px solid var(--hair); border-radius: 4px;
   background-image: linear-gradient(to bottom, transparent calc(50% - .5px), var(--hair) calc(50% - .5px), var(--hair) calc(50% + .5px), transparent calc(50% + .5px));
   background-repeat: no-repeat;
 }
+.sheet[data-grade="K"] .pr .ruled { --rule-h: 0.75in }
+.sheet[data-grade="1"] .pr .ruled { --rule-h: 0.625in }
+.sheet[data-grade="2"] .pr .ruled,
+.sheet[data-grade="3"] .pr .ruled { --rule-h: 0.5in }
+
+/* 89: two accessibility variants nobody in this category does well.
+   Both are layout switches on the same sheet, not a separate renderer. */
+.sheet.large { font-size: 1.22em }
+.sheet.large .sh-grid.d3, .sheet.large .sh-grid.d4 { grid-template-columns: repeat(2, 1fr); font-size: 19px }
+.sheet.large .sh-grid.d2 { grid-template-columns: repeat(2, 1fr); font-size: 20px }
+.sheet.large .sh-grid.d1 { grid-template-columns: 1fr; font-size: 24px }
+.sheet.large .pr .ansline { min-width: 3em; height: 1.9em }
+.sheet.large .sh-head b { font-size: 23px }
+
+/* Dyslexia-friendly: more leading, more letter spacing, wider gutters, no
+   italics, and headings clearly larger than body text. */
+.sheet.dyslexia { line-height: 1.85; letter-spacing: .022em; word-spacing: .12em }
+.sheet.dyslexia .sh-grid { gap: 22px 26px }
+.sheet.dyslexia .sh-inst { font-size: 14.5px; letter-spacing: .02em }
+.sheet.dyslexia .sh-head b { font-size: 23px }
+.sheet.dyslexia em, .sheet.dyslexia .sh-note { font-style: normal; font-weight: 500 }
+.sheet.dyslexia .pr { line-height: 1.9 }
 
 /* Figures are constrained by HEIGHT, not width. A viewBox that is tall and
    narrow (a 2x7 array, say) blows up to several inches if you set width:100%,
@@ -174,3 +200,12 @@
 /* word-problem key: number plus the working */
 .keyline { margin-top: 3px; font-size: .9em }
 .keyline em { color: #555; font-style: italic; font-family: Inter, sans-serif; font-size: .92em; margin-left: 6px }
+
+/* worked example: the first item solved, so the method is visible */
+.sh-example { border: 1px dashed var(--soft); border-radius: 6px; padding: 8px 10px 6px; margin-bottom: 12px; break-inside: avoid }
+.designed .sh-example { border-style: solid; border-color: var(--hair); background: none }
+.sh-example .ex-label { font-family: 'Space Grotesk', sans-serif; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); margin-bottom: 5px }
+.sh-example .ex-why { font-size: 10.5px; color: #444; margin-top: 4px }
+.sh-example .ex-next { font-size: 10px; color: var(--soft); font-style: italic; margin-top: 5px }
+.sh-example .sh-grid { grid-template-columns: 1fr !important; gap: 0 }
+.key .sh-example { display: none }

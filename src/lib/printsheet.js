@@ -150,7 +150,7 @@ const TYPE_INSTRUCTION = {
    filling the space between them.
      mode  'practice' groups by problem type | 'review' interleaves eight items
      style 'plain' is black-on-white and cheapest | 'designed' is the nicer one */
-export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed' }) {
+export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed', variant = null }) {
   const review = mode === 'review';
   const n = review ? 8 : (activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16);
   const density = DENSITY[activity.grade] ?? 'd2';
@@ -163,7 +163,7 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     g.items.push(p);
   }
 
-  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style });
+  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style, variant });
 
   const overrides = activity.printInstructions || {};
   const instFor = (type, isOnly) => {
@@ -172,18 +172,35 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     return TYPE_INSTRUCTION[type] || 'Answer each one.';
   };
 
+  // Worked example first. The first item of the first block is shown SOLVED,
+  // and the second is its minimal twin — one thing changed — so the child can
+  // see what the method was and then run it themselves. The worked-example
+  // effect is one of the better-replicated findings in instructional design,
+  // and variation theory supplies the "change exactly one thing" rule.
   const blocks = groups.map((g, gi) => {
     const wide = WIDE_TYPES.has(g.type);
+    const showExample = gi === 0 && !key && g.items.length >= 3 && !WIDE_TYPES.has(g.type);
+    const items = g.items;
+    const worked = showExample
+      ? `<div class="sh-example">
+          <p class="ex-label">Worked example</p>
+          <div class="sh-grid ${density}">${printProblem(items[0], 0, { key: true })}</div>
+          ${items[0].explain ? `<p class="ex-why">${esc(items[0].explain)}</p>` : ''}
+          <p class="ex-next">Now try the rest. The next one is almost the same.</p>
+        </div>`
+      : '';
+    const rest = showExample ? items.slice(1) : items;
+    const offset = showExample ? 1 : 0;
     const body = wide
-      ? g.items.map((p, i) => printProblem(p, i, { key })).join('')
-      : `<div class="sh-grid ${density}">${g.items.map((p, i) => printProblem(p, i, { key })).join('')}</div>`;
+      ? rest.map((p, i) => printProblem(p, i + offset, { key })).join('')
+      : `<div class="sh-grid ${density}">${rest.map((p, i) => printProblem(p, i + offset, { key })).join('')}</div>`;
     return `<div class="sh-block">
       <p class="sh-inst"><span class="n">${gi + 1}</span><span>${esc(instFor(g.type, groups.length === 1))}</span></p>
-      ${body}
+      ${worked}${body}
     </div>`;
   }).join('');
 
-  return shell({ activity, seed, ch, key, siteUrl, style, blocks, count: problems.length, problems });
+  return shell({ activity, seed, ch, key, siteUrl, style, variant, blocks, count: problems.length, problems });
 }
 
 /* Self-check. There is no teacher in the room, so every sheet carries a way for
@@ -226,13 +243,13 @@ function selfCheck(problems, seed) {
 }
 
 /* The page shell both sheet types use. */
-function shell({ activity, seed, ch, key, siteUrl, style, blocks, count, titleSuffix = '', footNote = '', problems = [] }) {
+function shell({ activity, seed, ch, key, siteUrl, style, variant, blocks, count, titleSuffix = '', footNote = '', problems = [] }) {
   const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
   const designed = style !== 'plain';
   const gradeLabel = activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade;
   // Line art only appears on the designed sheet; the plain one spends no ink on it.
   const art = designed && ch.id !== 'none' ? lineArt(ch.id) : '';
-  return `<div class="sheet sheet-preview ${designed ? 'designed' : 'plain'}${key ? ' key' : ''}">
+  return `<div class="sheet sheet-preview ${designed ? 'designed' : 'plain'}${key ? ' key' : ''}${variant ? ' ' + variant : ''}" data-grade="${esc(activity.grade)}">
   <div class="sh-head">
     <div class="sh-id">${art}
       <div><b>${esc(activity.title)}${titleSuffix}</b>
@@ -283,7 +300,7 @@ function interleave(groups) {
   return out;
 }
 
-function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style }) {
+function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style, variant }) {
   const order = interleave(groups);
   const density = DENSITY[activity.grade] ?? 'd2';
   const wide = order.filter((p) => WIDE_TYPES.has(p.type));
@@ -297,7 +314,7 @@ function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style
     ${wide.map((p, i) => printProblem(p, narrow.length + i, { key })).join('')}
   </div>`;
   return shell({
-    activity, seed, ch, key, siteUrl, style, blocks, count: order.length, problems: order,
+    activity, seed, ch, key, siteUrl, style, variant, blocks, count: order.length, problems: order,
     titleSuffix: ' — mixed review',
     footNote: 'Eight mixed problems. Keep the answer key back until afterwards.',
   });

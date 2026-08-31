@@ -12,14 +12,15 @@ let seed = readSeed(8817);
 let showKey = false;
 let mode = 'practice';
 let style = 'designed';
+let variant = '';
 
 function paint() {
   if (!a || !host) return;
   const ch = getCharacter(currentCharacter());
   const site = location.origin + base();
   host.innerHTML =
-    sheet({ activity: a, seed, ch, base: base(), siteUrl: site, key: false, mode, style }) +
-    (showKey ? `<div class="pagebreak"></div>` + sheet({ activity: a, seed, ch, base: base(), siteUrl: site, key: true, mode, style }) : '');
+    sheet({ activity: a, seed, ch, base: base(), siteUrl: site, key: false, mode, style, variant: variant || null }) +
+    (showKey ? `<div class="pagebreak"></div>` + sheet({ activity: a, seed, ch, base: base(), siteUrl: site, key: true, mode, style, variant: variant || null }) : '');
 }
 
 document.querySelector('[data-newseed]')?.addEventListener('click', () => { seed = newSeed(); paint(); });
@@ -40,6 +41,9 @@ document.querySelector('[data-style]')?.addEventListener('click', (e) => {
   e.currentTarget.setAttribute('aria-pressed', String(style === 'plain'));
   e.currentTarget.textContent = style === 'plain' ? 'Designed sheet' : 'Plain black & white';
   paint();
+});
+document.querySelector('[data-variant]')?.addEventListener('change', (e) => {
+  variant = e.target.value; paint();
 });
 document.addEventListener('characterchange', paint);
 writeSeed(seed);

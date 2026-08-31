@@ -57,6 +57,7 @@ function nav(b, active) {
     ${link('/books/', 'Books', 'books')}
     ${link('/games/', 'Games', 'games')}
     ${link('/printables/', 'Printables', 'printables')}
+    ${link('/skills/', 'By skill', 'skills')}
     ${link('/parents/', 'How to help', 'parents')}
     ${link('/references/', 'Research', 'references')}
     <div class="nav-r">
