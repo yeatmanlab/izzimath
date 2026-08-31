@@ -205,39 +205,64 @@ reading directly:
 ## The full specification, and what is deferred
 
 The research pass produced a complete build specification, kept verbatim at
-[`docs/SPEC.md`](SPEC.md) — scope and sequence per grade, a 30-activity catalogue, the
-full score-to-practice tables, print geometry measured from production worksheets, and
-the citation policy. **The shipped site does not implement all of it.**
+[`docs/SPEC.md`](SPEC.md) — scope and sequence per grade, an activity catalogue,
+the score-to-practice tables, print geometry measured from production worksheets,
+and the citation policy.
 
-Implemented, because the evidence is strongest:
+**Current state against its 108 recommendations: 62 implemented, 17 partial,
+22 not built, 7 not applicable** to a stateless home product (multiplayer barrier
+tasks, business-model calls, a "first unit builds classroom community" move, and
+the suggestion that the site measure its own effect, which is a research project
+rather than a feature).
 
-- Number line as the spine (seven activities), never circular
-- The linear board game, faithfully, with count-on enforced
-- Interleaved eight-item review sheets alongside grouped practice sheets
-- Elaborated feedback on misses as well as hits
+### Scope and sequence: complete
+
+All thirty strands (five per grade, six grades) have at least one activity — 41
+activities in total. The gaps the spec identified are closed, including the one it
+called the highest-value of them all: a grade-1 word-problem book covering every
+CGI structure, because WWC Recommendation 5 is rated STRONG on 18 studies while
+arithmetic fluency transfers to word problems only weakly (g=0.25).
+
+### Implemented, in rough order of how much the evidence supports it
+
+- Number line as the spine — seven activities, never circular
+- The linear board game, faithfully, with count-on enforced in the type system
+- Interleaved review: eight-item mixed sheets, and the last page of every book
+- Elaborated feedback on misses as well as hits, now **enforced by the checker**:
+  an activity without a worked explanation on every problem fails the build
+- Number line feedback names a reference point rather than a verdict — it draws
+  the gap and names the nearest landmark
 - A named strategy before every game, and no clock until the child presses start
-- Symbolic rather than approximate comparison
+- Symbolic rather than approximate comparison; no ANS training anywhere
+- Word problems tagged by schema, not by operation
 - Plain manipulatives, enforced by the checker
-- Guidance for the adult, and honest ceilings
+- Worked example first on every practice sheet, with its minimal twin second
+- Self-check on every sheet where one is honestly possible: a verified checksum
+  or a scrambled answer bank
+- Primary ruling at the measured per-grade heights; large-print and extra-spacing
+  variants; guidance for the adult on every key
+- Browse by skill as a third navigation axis, built by running the generators
+- Honest ceilings, and an explicit separation of what is evidence-led from what
+  is craft judgement
 
-Deferred, and worth doing next in roughly this order — each written up with file
-paths and acceptance criteria in [`next/`](next/README.md):
+### Not built, and worth doing next in this order
 
-1. **IM's lesson skeleton** — warm-up, activities, synthesis, cool-down — and the ten
-   named warm-up routines (Number Talk, Which One Doesn't Belong, Choral Count,
-   Estimation Exploration) as parameterised generators. The largest single gap, and
-   the one most likely to be worth more than another ten activities.
-2. **Staging instead of duplication.** The spec folds `which-is-more` into
-   `decade-duel` stages 1–2 and `hundred-line-hop` into `number-line-hop` stages 3–4,
-   reaching them with `?stage=`. Same coverage, less code.
-3. **A target-number game** (`close-to-hundred`). The catalogue has no target-number
-   format, which is the one the evidence and the classroom tradition both single out.
-4. **Adaptive difficulty** targeting ~80–85% success, and **spaced review**. Both need
-   stored state, so both wait for accounts.
-5. **Print craft**: primary ruling for K–1 handwriting, opt-in Sprint sheets for
-   grades 3–5, and generator parameter controls.
+1. **IM's lesson skeleton and the ten warm-up routines** (recs 1, 2, 4, 23). Still
+   the largest coherent gap, and still probably worth more than more content.
+   Two of the ten routines are nearly free: `truefalse` and the flash mechanic
+   already exist.
+2. **Staging** (recs 10, 47). One activity spanning several grades via `?stage=`
+   rather than near-duplicates. Reduces code.
+3. **Worked examples faded on measured performance** (rec 102). The static
+   version shipped; the adaptive fade needs to know how the child is doing.
+4. **Adaptive difficulty targeting 80–85% success** (recs 21, 105) and **spaced
+   review** (rec 98, partial). Both need stored state, so both wait for accounts —
+   though within-session adaptivity needs none, and is the honest interim.
+5. **Fraction Face-Off's four-part lesson template and 12-week sequence**
+   (recs 32, 33), which is the closest thing to a validated blueprint for the
+   grade-4 fraction book.
+6. **Printable manipulatives as a content line** (rec 53), **SSDD sheets**
+   (rec 72), **generator parameter controls** (recs 51, 87), **compare-two-works
+   and inverse-task formats** (recs 7, 8).
 
-Of the 108 recommendations the research produced, roughly 37 are implemented, 15 are
-partial, and 56 are not built. The split is not accidental: everything with a
-replicated effect size behind it is in, and most of what is missing is structural
-apparatus and print detail.
+See [`docs/next/`](next/README.md) for the pick-up notes on the largest of these.

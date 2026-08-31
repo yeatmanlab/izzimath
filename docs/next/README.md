@@ -12,8 +12,9 @@ next person (or the next session) does not have to reconstruct the reasoning.
 
 | | |
 | --- | --- |
-| Activities | 31 — 18 books, 13 games, across K–5 |
-| Pages | 78, statically generated |
+| Activities | 41 — 27 books, 14 games, across K–5 |
+| Strands | 30 of 30 covered (five per grade) |
+| Pages | 99, statically generated |
 | Problem types | 9, shared by every activity |
 | Characters | 4, each with 3 expressions |
 | References | 36 citations, linked both ways to activities |
@@ -46,12 +47,12 @@ longer contains its own answer.
 
 The research pass produced a full build specification, kept verbatim at
 [`../SPEC.md`](../SPEC.md). **It is a reference document, not a description of
-the build.** Roughly 37 of its 108 recommendations are implemented, 15 partial,
-56 not.
+the build.** 62 of its 108 recommendations are implemented, 17 partial, 22 not built and 7
+not applicable to a stateless home product.
 
-That split is deliberate rather than accidental: everything with a replicated
-effect size behind it is in, and most of what is missing is structural
-apparatus and print craft. [`../EVIDENCE.md`](../EVIDENCE.md) has the citations
+Everything with a replicated effect size behind it is in. What remains is mostly
+IM's structural apparatus (the lesson skeleton and warm-up routines) and things
+that need stored state (adaptive difficulty, spaced review). [`../EVIDENCE.md`](../EVIDENCE.md) has the citations
 and the reasoning; the site's `/references/` page has the same material for
 families.
 
