@@ -197,3 +197,22 @@ footer.foot a:hover { color: var(--txt) }
   * { animation: none !important; transition: none !important }
   html { scroll-behavior: auto }
 }
+
+/* ---------- linear number board (Siegler & Ramani mechanic) ---------- */
+.board { max-width: 660px; margin: 0 auto }
+.bspin { font-family: var(--fdisp); font-size: 17px; margin-bottom: 18px; color: var(--txt) }
+.bstrip { display: flex; align-items: stretch; gap: 4px; justify-content: center; flex-wrap: nowrap }
+.bend { font-family: var(--fdisp); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt3); align-self: center; padding: 0 4px }
+.bsq {
+  flex: 1 1 0; min-width: 0; aspect-ratio: 1 / 1.25; border-radius: 8px;
+  border: 2px solid var(--line2); background: var(--glass);
+  font-family: var(--fdisp); font-weight: 700; font-size: clamp(13px, 2.4vw, 20px);
+  color: var(--txt); cursor: pointer; transition: transform .08s, border-color .15s;
+}
+.bsq:hover { border-color: var(--a1) }
+.bsq:active { transform: scale(.96) }
+.bsq.here { border-color: var(--a2); background: color-mix(in srgb, var(--a2) 26%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--a2) 22%, transparent) }
+.bsq.tapped { border-color: var(--a1) }
+.bsq.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok) }
+.bsq.wrong { border-color: var(--pink); background: color-mix(in srgb, var(--pink) 16%, transparent); color: var(--pink) }
+.btrail { font-family: var(--fdisp); font-size: 15px; color: var(--txt2); margin-top: 16px; min-height: 24px }

@@ -12,11 +12,12 @@
 //   ordinal    pick the Nth item                <- ALPACA selectDuck
 //   bond       number bond with one part blank  (fact families)
 //   truefalse  is this equation true            (IM "True or False" routine)
+//   boardmove  move along a numbered board       (Siegler & Ramani linear board)
 //
 // A generator returns problems shaped like these. One renderer per type serves
 // every activity, on screen and in print.
 
-export const TYPES = ['choice', 'input', 'numberline', 'compare', 'tap', 'ordinal', 'bond', 'truefalse'];
+export const TYPES = ['choice', 'input', 'numberline', 'compare', 'tap', 'ordinal', 'bond', 'truefalse', 'boardmove'];
 
 // Answer checking. Kept in one place so screen and answer key never disagree.
 export function isCorrect(problem, response) {
@@ -35,6 +36,15 @@ export function isCorrect(problem, response) {
     case 'numberline': {
       const tol = problem.tolerance ?? (problem.hi - problem.lo) * 0.04;
       return Math.abs(Number(response) - problem.target) <= tol;
+    }
+    case 'boardmove': {
+      // The child must name the squares they pass THROUGH, counting on from
+      // where the token is — not "1, 2". That distinction is the entire
+      // intervention: count-on produced roughly double the gains of
+      // count-from-1 in Laski & Siegler (2014).
+      const want = problem.answer;
+      if (!Array.isArray(response) || response.length !== want.length) return false;
+      return want.every((v, i) => Number(response[i]) === Number(v));
     }
     case 'input': {
       if (problem.accept === 'fraction') return null; // caller uses frac compare
@@ -56,6 +66,7 @@ export function answerText(problem) {
     case 'truefalse': return problem.answer ? 'True' : 'False';
     case 'numberline': return String(problem.targetLabel ?? problem.target);
     case 'tap': case 'ordinal': return String(problem.answer ?? problem.n);
+    case 'boardmove': return problem.answer.join(', ');
     default: return String(problem.answer);
   }
 }

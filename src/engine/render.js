@@ -233,10 +233,69 @@ function renderTrueFalse(host, p, cb) {
   return { reset: () => { delete wrap.dataset.locked; [...wrap.children].forEach((x) => x.className = 'choice'); } };
 }
 
+
+/* ------------------------------------------------------------------ boardmove
+   The linear number board from Siegler & Ramani (2009) — the mechanic with the
+   largest effect size in early-number research (d=1.01 on number line
+   estimation, versus d=0.43 for the same game on a circular board).
+   Two details are load-bearing and both are enforced here:
+     1. The board is LINEAR with magnitudes increasing left to right.
+     2. The child names the squares they pass THROUGH, counting on from where
+        the token is. Saying "1, 2" (counting spaces moved) is the documented
+        common error, so tapping that sequence is rejected and corrected. */
+function renderBoardMove(host, p, cb) {
+  const N = p.hi ?? 10;
+  const picked = [];
+  const wrap = el(`<div class="board" role="group" aria-label="Number board from 1 to ${N}"></div>`);
+
+  const strip = el(`<div class="bstrip"></div>`);
+  strip.appendChild(el(`<span class="bend">Start</span>`));
+  for (let v = 1; v <= N; v++) {
+    const b = el(`<button type="button" class="bsq" data-v="${v}" aria-label="square ${v}">${v}</button>`);
+    if (v === p.from) b.classList.add('here');
+    strip.appendChild(b);
+  }
+  strip.appendChild(el(`<span class="bend">End</span>`));
+
+  const spin = el(`<p class="bspin">You are on <strong>${p.from === 0 ? 'Start' : p.from}</strong>.
+    You spun <strong>${p.spin}</strong>. Tap the ${p.spin === 1 ? 'square' : `${p.spin} squares`} you move through, in order.</p>`);
+  const trail = el(`<p class="btrail" aria-live="polite"></p>`);
+
+  strip.addEventListener('click', (ev) => {
+    const b = ev.target.closest('.bsq');
+    if (!b || wrap.dataset.locked) return;
+    const v = Number(b.dataset.v);
+    if (picked.includes(v)) return;
+    picked.push(v);
+    b.classList.add('tapped');
+    trail.textContent = picked.join(', ');
+    if (picked.length < p.answer.length) return;
+
+    wrap.dataset.locked = '1';
+    const ok = check(p, picked);
+    if (ok) {
+      picked.forEach((v2) => strip.querySelector(`[data-v="${v2}"]`)?.classList.add('right'));
+      strip.querySelector('.here')?.classList.remove('here');
+      strip.querySelector(`[data-v="${p.answer[p.answer.length - 1]}"]`)?.classList.add('here');
+    } else {
+      picked.forEach((v2) => strip.querySelector(`[data-v="${v2}"]`)?.classList.add('wrong'));
+      p.answer.forEach((v2) => strip.querySelector(`[data-v="${v2}"]`)?.classList.add('right'));
+      trail.innerHTML = `You tapped <strong>${picked.join(', ')}</strong>. Count on from
+        ${p.from === 0 ? 'Start' : p.from}: <strong>${p.answer.join(', ')}</strong>.`;
+    }
+    cb(picked, ok);
+  });
+
+  wrap.appendChild(spin); wrap.appendChild(strip); wrap.appendChild(trail);
+  host.appendChild(wrap);
+  return { reset: () => { delete wrap.dataset.locked; picked.length = 0; trail.textContent = '';
+    strip.querySelectorAll('.bsq').forEach((b) => b.className = 'bsq'); } };
+}
+
 const RENDERERS = {
   choice: renderChoice, input: renderInput, numberline: renderNumberLine,
   compare: renderCompare, tap: renderTap, ordinal: renderOrdinal,
-  bond: renderBond, truefalse: renderTrueFalse,
+  bond: renderBond, truefalse: renderTrueFalse, boardmove: renderBoardMove,
 };
 
 // Render the visual + prompt + interaction for one problem.

@@ -49,6 +49,23 @@ export function printProblem(p, i, { key = false } = {}) {
       return `<div class="pr">${lbl}Draw ${p.answer ?? p.n} ${p.itemLabel ?? 'counters'} in the box.
         <div class="workbox"></div>${key ? `<div class="sh-note">Answer: ${answerText(p)}</div>` : ''}</div>`;
 
+    case 'boardmove': {
+      const N = p.hi ?? 10;
+      const u = 30, ox = 2, oy = 2;
+      let board = `<svg viewBox="0 0 ${ox * 2 + N * u} 40" width="100%" height="40" role="img" aria-label="board 1 to ${N}"><g font-family="'Space Grotesk',sans-serif" font-size="14">`;
+      for (let v = 1; v <= N; v++) {
+        const x = ox + (v - 1) * u;
+        board += `<rect x="${x}" y="${oy}" width="${u - 1}" height="34" fill="none" stroke="#111" stroke-width="1.3"/>`;
+        board += `<text x="${x + u / 2}" y="${oy + 23}" text-anchor="middle" fill="#111">${v}</text>`;
+        if (v === p.from) board += `<circle cx="${x + u / 2}" cy="${oy + 30}" r="3.4" fill="#111"/>`;
+      }
+      board += `</g></svg>`;
+      return `<div class="pr" style="grid-column:1/-1">${lbl}You are on <strong>${p.from === 0 ? 'Start' : p.from}</strong>
+        (marked ●). You spin <strong>${p.spin}</strong>. Write the squares you move through.
+        <div class="pv" style="max-width:none">${board}</div>
+        ${key ? `<span class="ansval">${answerText(p)}</span>` : ansLine('7em')}</div>`;
+    }
+
     case 'numberline':
       return `<div class="pr" style="grid-column:1/-1">${lbl}${p.printStem ?? `Mark <strong>${esc(p.targetLabel ?? p.target)}</strong> on the line.`}
         ${numberLine({
@@ -81,8 +98,14 @@ const TYPE_INSTRUCTION = {
 };
 
 /* A full sheet: header, blocks grouped by problem type, footer with seed + QR. */
-export function sheet({ activity, seed, ch, base, key = false, siteUrl }) {
-  const n = activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 12;
+export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice' }) {
+  // A review sheet is eight problems, interleaved. Both numbers come from
+  // Rohrer, Dedrick, Hartwig & Cheung (2020): the RCT worksheets held exactly
+  // eight problems, and the only difference between conditions was that no two
+  // consecutive problems used the same strategy. Same problems, same total
+  // practice, 61% vs 38% on a delayed unannounced test (d = 0.83).
+  const review = mode === 'review';
+  const n = review ? 8 : (activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 12);
   const density = DENSITY[activity.grade] ?? 'd2';
   const problems = [];
   for (let i = 0; i < n; i++) {
@@ -96,6 +119,8 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl }) {
     if (!g) { g = { type: p.type, items: [] }; groups.push(g); }
     g.items.push(p);
   }
+
+  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups });
 
   const overrides = activity.printInstructions || {};
   const instFor = (type, isOnly) => {
@@ -132,6 +157,55 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl }) {
   <div class="sh-foot">
     <div>izzimath · seed ${seed} · ${esc((activity.ccss || []).join(', '))}
       ${key ? '' : `<br><strong>Scan to do this one on screen →</strong>`}</div>
+    ${key ? '' : qr(backUrl)}
+  </div>
+</div>`;
+}
+
+/* Round-robin the type groups so consecutive problems need different strategies.
+   Falls back gracefully when a sheet only has one type available. */
+function interleave(groups) {
+  const queues = groups.map((g) => g.items.slice());
+  const out = [];
+  let last = null;
+  while (queues.some((q) => q.length)) {
+    // prefer a queue whose type differs from the previous problem, longest first
+    const order = queues
+      .map((q, i) => ({ q, i, type: groups[i].type }))
+      .filter((x) => x.q.length)
+      .sort((a, b) => (a.type === last ? 1 : 0) - (b.type === last ? 1 : 0) || b.q.length - a.q.length);
+    const pick = order[0];
+    out.push(pick.q.shift());
+    last = pick.type;
+  }
+  return out;
+}
+
+function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups }) {
+  const order = interleave(groups);
+  const density = DENSITY[activity.grade] ?? 'd2';
+  const wide = order.filter((p) => p.type === 'numberline' || p.type === 'boardmove');
+  const narrow = order.filter((p) => p.type !== 'numberline' && p.type !== 'boardmove');
+  const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
+  const mixed = groups.length > 1;
+  return `<div class="sheet sheet-preview${key ? ' key' : ''}">
+  <div class="sh-head">
+    <div class="sh-id">${ch.id !== 'none' ? lineArt(ch.id) : ''}
+      <div><b>${esc(activity.title)} — review</b>
+        <small>${esc(activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade)} · mixed practice${ch.id !== 'none' ? ' · with ' + esc(ch.name) : ''}</small></div>
+    </div>
+    <div class="sh-name">Name <u></u><br>Date <u></u></div>
+  </div>
+  <div class="sh-block">
+    <p class="sh-inst">${mixed
+      ? 'Work these out. Read each one carefully — they are not all the same kind.'
+      : esc(fill(activity.printInstruction ?? 'Work these out.', ch))}</p>
+    ${narrow.length ? `<div class="sh-grid ${density}">${narrow.map((p, i) => printProblem(p, i, { key })).join('')}</div>` : ''}
+    ${wide.map((p, i) => printProblem(p, narrow.length + i, { key })).join('')}
+  </div>
+  <div class="sh-foot">
+    <div>izzimath · review · seed ${seed} · ${esc((activity.ccss || []).join(', '))}
+      ${key ? '' : `<br><strong>Eight mixed problems. Keep the key until afterwards.</strong>`}</div>
     ${key ? '' : qr(backUrl)}
   </div>
 </div>`;

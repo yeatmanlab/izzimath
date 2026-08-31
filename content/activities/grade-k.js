@@ -158,7 +158,9 @@ const tenFrameFlash = {
       type: 'choice', prompt: 'How many?',
       visual: useFrame ? tenFrame(n) : dots(n, { layout: n <= 6 ? 'dice' : 'random' }),
       visualWidth: useFrame ? 190 : 150,
-      flashMs: i < 4 ? 1600 : i < 8 ? 1200 : 900,
+      // Brief enough that counting one-by-one is impossible — that is the whole
+      // point of a subitizing flash. Starts generous and tightens.
+      flashMs: i < 4 ? 900 : i < 8 ? 650 : 450,
       choices: r.shuffle([n, n - 1, n + 1, n + 2].filter((x) => x > 0 && x <= 12).slice(0, 4)).map(String),
       answer: String(n),
       printStem: 'How many dots?',
@@ -204,4 +206,32 @@ const whichIsMore = {
   },
 };
 
-export default [countingCrew, numberFriends, shapeSorter, tenFrameFlash, whichIsMore];
+
+/* ------------------------------------------------------------- GAME: the great race */
+const greatRace = {
+  id: 'great-race', title: 'The Great Race', kind: 'game', grade: 'K', strand: S[0],
+  glyph: '⇉',
+  skill: 'Moving along a numbered line by counting on from where you are.',
+  blurb: 'Spin, then name the squares you move through. Not "one, two".',
+  ccss: ['K.CC.A.2', 'K.CC.B.4', 'K.CC.C.7'],
+  roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }, { task: 'roamAlpaca', subscale: 'cat1' }],
+  evidence: 'A linear number board is the single best-evidenced early-number activity there is: Siegler and Ramani (2009) found large gains in number line estimation from about an hour of play, and the same game on a circular board produced far less — the left-to-right layout is doing the work. The second detail matters as much: the child must name the squares they pass through, counting on from where their token is. Laski and Siegler (2014) found that counting on produced roughly double the gains of counting from one, so tapping "1, 2" is treated as the error it is and corrected.',
+  rounds: 12, seconds: 0, timerAvailable: false, printItems: 6,
+  printInstruction: 'Write the squares you move through each time.',
+  generate(seed, i, ch, r) {
+    const N = 10;
+    // The token walks up the board across rounds, so later rounds start further
+    // along — which is what makes counting on necessary rather than optional.
+    const spin = r.int(1, 2);
+    const from = Math.min(N - 2, (i * 2 + r.int(0, 1)) % (N - 1));
+    const answer = [];
+    for (let k = 1; k <= spin; k++) answer.push(from + k);
+    return {
+      type: 'boardmove', from, spin, hi: N, answer,
+      hint: `You are on ${from === 0 ? 'Start' : from}. The next square is ${from + 1}.`,
+      explain: `Counting on from ${from === 0 ? 'Start' : from}: ${answer.join(', ')}.`,
+    };
+  },
+};
+
+export default [countingCrew, numberFriends, shapeSorter, greatRace, tenFrameFlash, whichIsMore];

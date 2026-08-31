@@ -244,6 +244,7 @@ for (const a of activities) {
         <button class="btn pri" onclick="window.print()">↓ Print or save as PDF</button>
         <button class="btn" data-newseed>⟳ New problems</button>
         <button class="btn" data-togglekey aria-pressed="false">Show answer key</button>
+        <button class="btn" data-mode aria-pressed="false">Mixed review sheet</button>
         <a class="btn" href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">Do it on screen</a>
       </div>
       <div data-sheet></div>
@@ -251,6 +252,11 @@ for (const a of activities) {
         <h3>Printing notes</h3>
         <p>This sheet is line art only — no solid fills anywhere — so it stays cheap on a home
         inkjet. ${ITEMS_NOTE(a)} The answer key is a separate page.</p>
+        <p style="font-size:13px">The <strong>mixed review sheet</strong> is a different thing: eight
+        problems, shuffled so that no two next to each other need the same method. In a randomised
+        trial of 787 students, sheets shuffled that way scored 61% against 38% for the same problems
+        grouped by type, on a test a month later. Use the practice sheet while a skill is new, and the
+        review sheet a week or two afterwards.</p>
       </div>
     </section>`,
     scripts: ['/assets/src/mount/print.js'],
