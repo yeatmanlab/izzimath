@@ -62,8 +62,13 @@ export function tickRange(lo, hi, step) {
   return out;
 }
 
-/* ---------------- array / area model (multiplication) ---------------- */
-export function array2d(rows, cols, { print = false, cell = 17, gap = 2, shadeRows = 0, shadeCols = 0 } = {}) {
+/* ---------------- array / area model (multiplication) ----------------
+   `fit` sets the LONGEST side, and the cell size is derived from it. Without
+   that, a 2x1 array and a 9x9 array have wildly different aspect ratios, and
+   stretching either to a fixed container width makes one of them hundreds of
+   pixels tall — which is what pushed the answer box off the screen. */
+export function array2d(rows, cols, { print = false, cell = 17, gap = 2, shadeRows = 0, shadeCols = 0, fit = null } = {}) {
+  if (fit) cell = Math.max(6, Math.floor(fit / Math.max(rows, cols)) - gap);
   const W = cols * (cell + gap), H = rows * (cell + gap);
   let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${rows} by ${cols} array">`;
   for (let r = 0; r < rows; r++) {

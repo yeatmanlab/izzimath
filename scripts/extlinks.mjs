@@ -31,12 +31,20 @@ for (const f of files) {
 const list = [...urls.keys()].sort();
 console.log(`\nchecking ${list.length} distinct external URLs from ${files.length} pages\n`);
 
-const check = (u) => {
+// Retry once before believing a failure. Running six curls concurrently against
+// slow publisher sites produces the occasional spurious timeout, and a link
+// checker that cries wolf gets ignored.
+const attempt = (u, timeout) => {
   try {
-    const code = execFileSync('curl', ['-sL', '-o', '/dev/null', '-w', '%{http_code}',
-      '--max-time', '30', '-A', 'Mozilla/5.0 (izzimath link check)', u], { encoding: 'utf8' }).trim();
-    return code;
+    return execFileSync('curl', ['-sL', '-o', '/dev/null', '-w', '%{http_code}',
+      '--max-time', String(timeout), '-A', 'Mozilla/5.0 (izzimath link check)', u], { encoding: 'utf8' }).trim();
   } catch { return 'ERR'; }
+};
+const HARDFAIL = new Set(['404', '410', 'ERR', '000']);
+const check = (u) => {
+  const first = attempt(u, 30);
+  if (!HARDFAIL.has(first)) return first;
+  return attempt(u, 45);
 };
 
 const results = [];
@@ -51,7 +59,7 @@ await Promise.all(Array.from({ length: CONC }, async () => {
 }));
 
 // 403/999 are common for publishers that block automated agents — report but don't fail
-const HARD = (c) => c === '404' || c === '410' || c === 'ERR' || c === '000';
+const HARD = (c) => HARDFAIL.has(c);
 const bad = results.filter(([, c]) => HARD(c));
 const blocked = results.filter(([, c]) => !HARD(c) && c !== '200');
 

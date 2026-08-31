@@ -243,7 +243,7 @@ export const references = {
     authors: 'Kim et al.', year: 2018,
     title: 'Comprehensive early numeracy home training and transfer to symbolic mathematics',
     venue: 'Frontiers in Psychology 9:1775',
-    url: 'https://www.frontiersin.org/journals/psychology/articles/10.3389/fpsyg.2018.01775/full',
+    doi: '10.3389/fpsyg.2018.01775',
     kind: 'rct', strength: 'null_',
     finding: '56 first graders, six weeks of home training at 30 minutes a day on numerosity comparison, number line, approximate arithmetic and symbol-numerosity mapping. ANS acuity improved; there was no transfer to symbolic or exact calculation.',
     use: 'A home-delivered null on the same design we would otherwise have been tempted by. Corroborates the meta-analysis above.',

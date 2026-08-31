@@ -60,7 +60,13 @@ function renderInput(host, p, cb) {
   input.addEventListener('input', () => { err.hidden = true; });
   host.appendChild(row); host.appendChild(err);
   setTimeout(() => input.focus(), 40);
-  return { reset: () => { input.value = ''; err.hidden = true; input.focus(); }, focus: () => input.focus() };
+  return {
+    reset: () => { input.value = ''; err.hidden = true; input.focus(); },
+    focus: () => input.focus(),
+    // After a wrong answer, put the cursor back and SELECT what is there, so the
+    // next keystroke replaces it rather than appending to it.
+    refocus: () => { input.focus(); input.select(); },
+  };
 }
 
 /* -------------------------------------------------------------- numberline */

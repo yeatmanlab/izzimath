@@ -1,6 +1,7 @@
 import { array2d, numberLine, tickRange, fractionBar, esc } from '../../src/lib/widgets.js';
 import { frac, fracText, simplify, valF, gcd } from '../../src/lib/frac.js';
 import { fill } from '../characters.js';
+import { wordProblem } from '../wordproblems.js';
 
 const S = ['Multiplication and division', 'Fractions on the number line', 'Area and perimeter', 'Data and graphs'];
 
@@ -19,6 +20,15 @@ const timesTableTower = {
   pages: 14, printItems: 12,
   printInstruction: 'Work these out. Write the answer.',
   generate(seed, i, ch, r) {
+    // Every fifth item is a word problem, tagged by schema rather than by
+    // operation — the structure is the thing being taught. A fixed stride
+    // rather than a tail slice, for two reasons: the printable generates fewer
+    // items than the book, so a tail slice gave some sheets none and one sheet
+    // sixteen; and a stride of 5 does not collide with the i % 4 staging these
+    // activities already use, so no stage gets wiped out.
+    if (i % 5 === 4) {
+      return wordProblem(r.pick(['equalGroups','share']), ch, r, { max: 60, min: 6 });
+    }
     // ARF-style bands: identities and small first, then the hard middle facts.
     const band = i < 4 ? 1 : i < 8 ? 2 : i < 11 ? 3 : 4;
     let a, b;
@@ -38,9 +48,9 @@ const timesTableTower = {
     }
     return {
       type: 'input', prompt: `<strong>${a} × ${b} =</strong>`,
-      visual: band <= 2 ? array2d(a, b, { cell: 15 }) : null, visualWidth: 200,
+      visual: band <= 2 ? array2d(a, b, { fit: 150 }) : null, visualWidth: 200,
       answer: String(prod), placeholder: '?', printStem: `${a} × ${b} =`,
-      printVisual: band <= 2 ? array2d(a, b, { print: true, cell: 12 }) : null,
+      printVisual: band <= 2 ? array2d(a, b, { print: true, fit: 96 }) : null,
       hint: band <= 2 ? `Count the array: ${a} rows of ${b}.` : `${a} × ${b} is ${a} lots of ${b}. Try ${a} × ${b - 1} = ${a * (b - 1)}, then add ${a}.`,
       explain: `${a} × ${b} = ${prod}.`,
     };
@@ -171,10 +181,10 @@ const areaAndPerimeter = {
     return {
       type: 'input',
       prompt: `This rectangle is <strong>${w}</strong> by <strong>${h}</strong>. What is its <strong>${wantArea ? 'area' : 'perimeter'}</strong>?`,
-      visual: array2d(h, w, { cell: 16 }), visualWidth: 200,
+      visual: array2d(h, w, { fit: 150 }), visualWidth: 200,
       answer: String(wantArea ? area : per), placeholder: '?',
       printStem: `Find the ${wantArea ? 'area' : 'perimeter'}.`,
-      printVisual: array2d(h, w, { print: true, cell: 13 }),
+      printVisual: array2d(h, w, { print: true, fit: 96 }),
       hint: wantArea ? 'Area is how many squares fit inside: rows times columns.' : 'Perimeter is the distance all the way round the edge.',
       explain: wantArea
         ? `Area = ${w} × ${h} = ${area} square units.`
@@ -256,11 +266,11 @@ const arrayArchitect = {
     }
     return {
       type: 'choice', prompt: 'How many squares?',
-      visual: array2d(rows, cols, { cell: 15 }), visualWidth: 220,
+      visual: array2d(rows, cols, { fit: 150 }), visualWidth: 220,
       choices: r.shuffle([...new Set([rows * cols, rows * cols + rows, rows * cols - cols, rows + cols])].filter((x) => x > 0)).slice(0, 4).map(String),
       answer: String(rows * cols),
       printStem: 'How many squares?',
-      printVisual: array2d(rows, cols, { print: true, cell: 12 }),
+      printVisual: array2d(rows, cols, { print: true, fit: 96 }),
       explain: `${rows} × ${cols} = ${rows * cols}.`,
     };
   },

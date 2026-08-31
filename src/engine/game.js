@@ -8,6 +8,7 @@ import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter } from '../../content/characters.js';
 import { currentCharacter } from '../lib/theme.js';
 import { avatar } from '../lib/sprites.js';
+import { celebrate, streakNote } from './celebrate.js';
 
 export function mountGame(activity, root) {
   const host = root.querySelector('[data-stage]');
@@ -110,9 +111,12 @@ export function mountGame(activity, root) {
         ? `<p class="fb hint" style="margin-top:10px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
         : '';
       const face = ch.id === 'none' ? `<span aria-hidden="true">${ok ? '✦' : '↻'}</span>`
-        : avatar(ch.id, 'react', ok ? 'happy' : 'think');
+        : avatar(ch.id, `react${ok ? ' pop' : ''}`, ok ? 'happy' : 'think');
       fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}">${face}<span>${voice[round % voice.length]}</span></p>${worked}`;
+      slot.querySelector('[data-fbbox]')?.remove();
+      fb.dataset.fbbox = '1';
       slot.appendChild(fb);
+      if (ok) { celebrate(slot, ch); streakNote(slot, streak); }
       setTimeout(() => { round++; paint(); }, ok ? 620 : (worked ? 3200 : 1500));
     });
   }

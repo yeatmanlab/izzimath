@@ -1,4 +1,5 @@
 import { numberLine, tickRange, fractionBar, array2d, esc } from '../../src/lib/widgets.js';
+import { wordProblem } from '../wordproblems.js';
 import { frac, fracText, simplify, addF, subF, mulF, divF, valF, cmpF, lcm } from '../../src/lib/frac.js';
 
 const S = ['Decimals to thousandths', 'Fraction operations', 'Volume', 'The coordinate plane'];
@@ -18,6 +19,15 @@ const fractionFoundry = {
   pages: 16, printItems: 28,
   printInstruction: 'Work these out. Give each answer in its simplest form.',
   generate(seed, i, ch, r) {
+    // Every fifth item is a word problem, tagged by schema rather than by
+    // operation — the structure is the thing being taught. A fixed stride
+    // rather than a tail slice, for two reasons: the printable generates fewer
+    // items than the book, so a tail slice gave some sheets none and one sheet
+    // sixteen; and a stride of 5 does not collide with the i % 4 staging these
+    // activities already use, so no stage gets wiped out.
+    if (i % 5 === 4) {
+      return wordProblem(r.pick(['equalGroups','share']), ch, r, { max: 120, min: 12 });
+    }
     const stage = i < 5 ? 'add' : i < 9 ? 'sub' : i < 13 ? 'mul' : 'div';
     const dens = [2, 3, 4, 5, 6, 8, 9, 10, 12];
     const d1 = r.pick(dens);

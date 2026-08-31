@@ -1,5 +1,6 @@
 import { baseTen, numberLine, tickRange, array2d, tenFrame, esc } from '../../src/lib/widgets.js';
 import { fill } from '../characters.js';
+import { wordProblem } from '../wordproblems.js';
 
 const S = ['Place value to 1000', 'Add and subtract within 100', 'Measure and data', 'Arrays and equal groups'];
 
@@ -96,6 +97,15 @@ const carryAndBorrow = {
   pages: 16, printItems: 18,
   printInstruction: 'Work these out. Watch for the ones that regroup.',
   generate(seed, i, ch, r) {
+    // Every fifth item is a word problem, tagged by schema rather than by
+    // operation — the structure is the thing being taught. A fixed stride
+    // rather than a tail slice, for two reasons: the printable generates fewer
+    // items than the book, so a tail slice gave some sheets none and one sheet
+    // sixteen; and a stride of 5 does not collide with the i % 4 staging these
+    // activities already use, so no stage gets wiped out.
+    if (i % 5 === 4) {
+      return wordProblem(r.pick(['join','separate','compare']), ch, r, { max: 90, min: 12 });
+    }
     const stage = i % 4;
     if (stage === 0) {
       // CALF A1 — no carry
@@ -157,10 +167,10 @@ const arraysAndEqualGroups = {
     if (i % 2 === 0) {
       return {
         type: 'input', prompt: `How many altogether?`,
-        visual: array2d(rows, cols), visualWidth: 220,
+        visual: array2d(rows, cols, { fit: 150 }), visualWidth: 220,
         answer: String(rows * cols), placeholder: '?',
         printStem: 'How many altogether?',
-        printVisual: array2d(rows, cols, { print: true, cell: 13 }),
+        printVisual: array2d(rows, cols, { print: true, fit: 96 }),
         hint: `Count one row (${cols}), then add it ${rows} times.`,
         explain: `${rows} rows of ${cols} is ${rows * cols}.`,
       };
@@ -178,11 +188,11 @@ const arraysAndEqualGroups = {
     const distinct = [...new Set(cands)].filter((c) => c !== answer);
     return {
       type: 'choice', prompt: `Which addition matches this array?`,
-      visual: array2d(rows, cols), visualWidth: 220,
+      visual: array2d(rows, cols, { fit: 150 }), visualWidth: 220,
       choices: r.shuffle([answer, ...r.sample(distinct, 3)]),
       answer,
       printStem: 'Write this array as an addition.',
-      printVisual: array2d(rows, cols, { print: true, cell: 13 }),
+      printVisual: array2d(rows, cols, { print: true, fit: 96 }),
       hint: `There are ${rows} rows, and each has ${cols}.`,
       explain: `${rows} rows of ${cols}: ${Array(rows).fill(cols).join(' + ')} = ${total}.`,
     };

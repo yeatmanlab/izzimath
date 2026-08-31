@@ -1,5 +1,6 @@
 import { tenFrame, numberBond, numberLine, tickRange, baseTen, dots, esc } from '../../src/lib/widgets.js';
 import { fill } from '../characters.js';
+import { wordProblem } from '../wordproblems.js';
 
 const S = ['Addition and subtraction to 20', 'Place value to 100', 'Measure and tell time', 'Shapes and halves'];
 
@@ -22,6 +23,15 @@ const addingToTwenty = {
     input: 'Work these out. Write the answer.',
   },
   generate(seed, i, ch, r) {
+    // Every fifth item is a word problem, tagged by schema rather than by
+    // operation — the structure is the thing being taught. A fixed stride
+    // rather than a tail slice, for two reasons: the printable generates fewer
+    // items than the book, so a tail slice gave some sheets none and one sheet
+    // sixteen; and a stride of 5 does not collide with the i % 4 staging these
+    // activities already use, so no stage gets wiped out.
+    if (i % 5 === 4) {
+      return wordProblem(r.pick(['join','separate','compare']), ch, r, { max: 20 });
+    }
     const stage = i < 4 ? 'add-small' : i < 8 ? 'add-cross' : 'subtract';
     if (stage === 'add-small') {
       const a = r.int(1, 5), b = r.int(1, 9 - a);

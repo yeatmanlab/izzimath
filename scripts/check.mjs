@@ -12,6 +12,7 @@ import { sheet } from '../src/lib/printsheet.js';
 import { parseAnswer, cmpF } from '../src/lib/frac.js';
 import { references, refIds, getRef, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from '../content/references.js';
 import { IM_UNITS, imUnit } from '../content/curriculum.js';
+import { SCHEMAS } from '../content/wordproblems.js';
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
@@ -104,6 +105,15 @@ for (const a of activities) {
           const parsed = parseAnswer(String(p.answer));
           if (!parsed) fail(a.id, `i=${i} fraction answer unparseable: ${p.answer}`);
         }
+      }
+      // word problems must name a known schema and read as a sentence
+      if (p.schema) {
+        if (!SCHEMAS[p.schema]) fail(a.id, `i=${i} unknown word-problem schema "${p.schema}"`);
+        const stem = String(p.prompt || '');
+        if (!/[?.]$/.test(stem.trim())) fail(a.id, `i=${i} word problem does not end in punctuation: ${stem}`);
+        if (!/^[A-Z]/.test(stem.trim())) fail(a.id, `i=${i} word problem does not start capitalised: ${stem}`);
+        if (/\b(\w+)s\s+\1/.test(stem)) warn(a.id, `i=${i} possible doubled word: ${stem}`);
+        if (/ (gives away|eats) \?/.test(stem)) fail(a.id, `i=${i} malformed verb slot: ${stem}`);
       }
       if (p.type === 'bond') {
         const parts = { whole: p.whole, a: p.a, b: p.b };

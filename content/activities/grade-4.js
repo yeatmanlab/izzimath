@@ -1,4 +1,5 @@
 import { array2d, numberLine, tickRange, fractionBar, esc } from '../../src/lib/widgets.js';
+import { wordProblem } from '../wordproblems.js';
 import { frac, fracText, simplify, valF, gcd } from '../../src/lib/frac.js';
 
 const S = ['Multi-digit operations', 'Equivalent fractions and decimals', 'Angles and lines', 'Factors and multiples'];
@@ -18,6 +19,15 @@ const longMultiplication = {
   pages: 14, printItems: 28,
   printInstruction: 'Work these out. Show your partial products.',
   generate(seed, i, ch, r) {
+    // Every fifth item is a word problem, tagged by schema rather than by
+    // operation — the structure is the thing being taught. A fixed stride
+    // rather than a tail slice, for two reasons: the printable generates fewer
+    // items than the book, so a tail slice gave some sheets none and one sheet
+    // sixteen; and a stride of 5 does not collide with the i % 4 staging these
+    // activities already use, so no stage gets wiped out.
+    if (i % 5 === 4) {
+      return wordProblem(r.pick(['equalGroups','share']), ch, r, { max: 96, min: 12 });
+    }
     const stage = i < 4 ? 'm1' : i < 8 ? 'm2' : i < 11 ? 'm3' : 'two-digit';
     if (stage === 'two-digit') {
       const a = r.int(12, 49), b = r.int(12, 49);
@@ -34,7 +44,7 @@ const longMultiplication = {
     const tens = Math.floor(a / 10) * 10, ones = a % 10;
     return {
       type: 'input', prompt: `<strong>${a} × ${b} =</strong>`,
-      visual: stage === 'm1' ? array2d(b, Math.min(a, 12), { cell: 12 }) : null, visualWidth: 200,
+      visual: stage === 'm1' ? array2d(b, Math.min(a, 12), { fit: 150 }) : null, visualWidth: 200,
       answer: String(a * b), placeholder: '?', printStem: `${a} × ${b} =`,
       hint: `Split ${a} into ${tens} and ${ones}. Then ${tens} × ${b} and ${ones} × ${b}.`,
       explain: `${tens} × ${b} = ${tens * b}, ${ones} × ${b} = ${ones * b}. Add them: ${a * b}.`,

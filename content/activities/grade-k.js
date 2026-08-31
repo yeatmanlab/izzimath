@@ -1,5 +1,6 @@
 import { tenFrame, dots, numberBond, numberLine, tickRange, array2d, esc } from '../../src/lib/widgets.js';
 import { fill } from '../characters.js';
+import { wordProblem } from '../wordproblems.js';
 
 const S = ['Counting and cardinality', 'Number bonds to 10', 'Flat and solid shapes', 'Compare and measure'];
 
@@ -24,6 +25,15 @@ const countingCrew = {
   },
   chapterLabel: 'Page {n} of {total}',
   generate(seed, i, ch, r) {
+    // Every fifth item is a word problem, tagged by schema rather than by
+    // operation — the structure is the thing being taught. A fixed stride
+    // rather than a tail slice, for two reasons: the printable generates fewer
+    // items than the book, so a tail slice gave some sheets none and one sheet
+    // sixteen; and a stride of 5 does not collide with the i % 4 staging these
+    // activities already use, so no stage gets wiped out.
+    if (i % 5 === 4) {
+      return wordProblem(r.pick(['join','partWhole']), ch, r, { max: 10 });
+    }
     const mode = i % 4;
     if (mode === 0) {
       const n = r.int(3, 9);

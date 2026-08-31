@@ -8,6 +8,7 @@ import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter, fill } from '../../content/characters.js';
 import { currentCharacter } from '../lib/theme.js';
 import { avatar } from '../lib/sprites.js';
+import { celebrate } from './celebrate.js';
 
 export function mountBook(activity, root) {
   const host = root.querySelector('[data-stage]');
@@ -40,20 +41,34 @@ export function mountBook(activity, root) {
       answered[page] = { response, ok };
       const voice = ok ? ch.voice.correct : ch.voice.wrong;
       const msg = voice[page % voice.length];
+
+      // One feedback block at a time, REPLACED rather than appended. Appending
+      // meant a child who retyped an answer saw "Not quite" still sitting above
+      // "Correct", and the buttons pushed far enough down to look broken.
+      slot.querySelector('[data-fbbox]')?.remove();
       const fb = document.createElement('div');
-      fb.style.marginTop = '22px';
+      fb.dataset.fbbox = '1';
+      fb.style.marginTop = '20px';
+
       // Always show the working, and show it especially when the answer was
       // wrong — that is the whole point of elaborated feedback.
       const worked = p.explain
-        ? `<p class="fb hint" style="margin-top:12px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
+        ? `<p class="fb hint" style="margin-top:10px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
         : '';
+      // A plain invitation to correct it, so the next move is obvious.
+      const fixIt = ok ? '' :
+        `<p class="fixit">Change your answer and press <strong>Check</strong> again.</p>`;
       // The character reacts. Chrome only — never inside a manipulative.
       const face = ch.id === 'none' ? `<span aria-hidden="true">${ok ? '✦' : '↻'}</span>`
-        : avatar(ch.id, 'react', ok ? 'happy' : 'think');
+        : avatar(ch.id, `react${ok ? ' pop' : ''}`, ok ? 'happy' : 'think');
       fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}">
         ${face}
-        <span>${msg}${!ok && p.hint ? ' ' + p.hint : ''}</span></p>${worked}`;
+        <span>${msg}${!ok && p.hint ? ' ' + p.hint : ''}</span></p>${worked}${fixIt}`;
       slot.appendChild(fb);
+      if (ok) celebrate(slot, ch);
+      // Put the cursor back in the box with the wrong answer selected, so typing
+      // replaces it instead of appending to it.
+      if (!ok) widget?.refocus?.();
       paintBar();
       nav();
     });

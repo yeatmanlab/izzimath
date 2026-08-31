@@ -13,6 +13,7 @@ export const characters = {
     // `actor` is who appears in word problems; `name` is the UI label. They differ
     // for "none" so a word problem reads "Sam has 4 boxes", not "Just math has 4 boxes".
     actor: 'Sam',
+    verb: { consume: 'gives away', consumeBase: 'give away' },
     world: { place: 'the page', places: 'pages', feature: 'table', features: 'tables' },
     collectible: { one: 'counter', many: 'counters' },
     container: { one: 'box', many: 'boxes' },
@@ -31,6 +32,7 @@ export const characters = {
     name: 'Kiwi',
     species: 'Bearded dragon',
     actor: 'Kiwi',
+    verb: { consume: 'eats', consumeBase: 'eat' },
     tagline: '“Nice. No rush.”',
     blurb: 'Counts crickets, basks on warm rocks, and builds everything out of scales.',
     palette: { a1: '#FFC24D', a2: '#FF7A45', a3: '#C1440E', ok: '#7CE8B0' },
@@ -55,6 +57,7 @@ export const characters = {
     name: 'Georgie',
     species: 'Chihuahua',
     actor: 'Georgie',
+    verb: { consume: 'eats', consumeBase: 'eat' },
     tagline: '“YES! Again!”',
     blurb: 'Chases tennis balls down number lines and counts treats at top speed.',
     palette: { a1: '#FF4D9D', a2: '#A855F7', a3: '#22E0F0', ok: '#B6FF3D' },
@@ -79,6 +82,7 @@ export const characters = {
     name: 'Flame',
     species: 'Red panda',
     actor: 'Flame',
+    verb: { consume: 'eats', consumeBase: 'eat' },
     tagline: '“Ooh — try it this way.”',
     blurb: 'Climbs bamboo towers, hunts for the trick, and counts on a ringed tail.',
     palette: { a1: '#FFD166', a2: '#FF6B35', a3: '#D7263D', ok: '#8FE388' },
