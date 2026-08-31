@@ -7,6 +7,7 @@ import { rng, deriveSeed } from '../lib/rng.js';
 import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter } from '../../content/characters.js';
 import { currentCharacter } from '../lib/theme.js';
+import { avatar } from '../lib/sprites.js';
 
 export function mountGame(activity, root) {
   const host = root.querySelector('[data-stage]');
@@ -56,6 +57,7 @@ export function mountGame(activity, root) {
     const st = activity.strategy;
     host.innerHTML = `
       <div class="qnum">Before you start</div>
+      ${ch.id === 'none' ? '' : avatar(ch.id, 'bigface', 'idle')}
       <p class="qtext">${activity.title}</p>
       ${st ? `<div class="strat">
         <h3>${st.name}</h3>
@@ -107,7 +109,9 @@ export function mountGame(activity, root) {
       const worked = !ok && p.explain
         ? `<p class="fb hint" style="margin-top:10px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
         : '';
-      fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}"><span aria-hidden="true">${ok ? '✦' : '↻'}</span><span>${voice[round % voice.length]}</span></p>${worked}`;
+      const face = ch.id === 'none' ? `<span aria-hidden="true">${ok ? '✦' : '↻'}</span>`
+        : avatar(ch.id, 'react', ok ? 'happy' : 'think');
+      fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}">${face}<span>${voice[round % voice.length]}</span></p>${worked}`;
       slot.appendChild(fb);
       setTimeout(() => { round++; paint(); }, ok ? 620 : (worked ? 3200 : 1500));
     });
@@ -119,6 +123,7 @@ export function mountGame(activity, root) {
     const pct = total ? Math.round((score / Math.max(round, 1)) * 100) : 0;
     host.innerHTML = `
       <div class="qnum">${reason || 'Round complete'}</div>
+      ${ch.id === 'none' ? '' : avatar(ch.id, 'bigface', 'happy')}
       <p class="qtext">${ch.voice.done[0]}</p>
       <div class="scorebar" style="margin-bottom:22px">
         <span>Score<b>${score} / ${round}</b></span>

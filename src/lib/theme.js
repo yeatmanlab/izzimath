@@ -24,7 +24,10 @@ export function setCharacter(id, { persist = true } = {}) {
     b.setAttribute('aria-pressed', String(b.dataset.ch === id));
   });
   // Swap any avatar that opted in
-  document.querySelectorAll('svg[data-avatar] use').forEach((u) => u.setAttribute('href', `#av-${id}`));
+  document.querySelectorAll('svg[data-avatar] use').forEach((u) => {
+    const ex = u.closest('svg').dataset.avatar;
+    u.setAttribute('href', `#av-${id}${ex && ex !== 'idle' ? '-' + ex : ''}`);
+  });
   document.querySelectorAll('svg[data-lineart] use').forEach((u) => u.setAttribute('href', `#ln-${id === 'none' ? 'none' : id}`));
   document.dispatchEvent(new CustomEvent('characterchange', { detail: { id } }));
   return id;

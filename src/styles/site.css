@@ -243,3 +243,7 @@ footer.foot a:hover { color: var(--txt) }
 .tag.str-limited  { color: var(--txt2) }
 .tag.str-design   { color: #A8C7FF; border-color: rgba(168,199,255,.35) }
 .tag.str-null_    { color: #FF9BB5; border-color: rgba(255,155,181,.4) }
+
+/* ---------- character reactions (chrome only, never in a manipulative) ---------- */
+.fb svg.react { width: 30px; height: 30px; flex: none; border-radius: 50%; background: rgba(255,255,255,.07) }
+svg.bigface { width: 82px; height: 82px; margin: 0 auto 4px; display: block; border-radius: 22px; background: var(--glass) }

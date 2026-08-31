@@ -7,6 +7,7 @@ import { rng, deriveSeed } from '../lib/rng.js';
 import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter, fill } from '../../content/characters.js';
 import { currentCharacter } from '../lib/theme.js';
+import { avatar } from '../lib/sprites.js';
 
 export function mountBook(activity, root) {
   const host = root.querySelector('[data-stage]');
@@ -46,8 +47,11 @@ export function mountBook(activity, root) {
       const worked = p.explain
         ? `<p class="fb hint" style="margin-top:12px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
         : '';
+      // The character reacts. Chrome only — never inside a manipulative.
+      const face = ch.id === 'none' ? `<span aria-hidden="true">${ok ? '✦' : '↻'}</span>`
+        : avatar(ch.id, 'react', ok ? 'happy' : 'think');
       fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}">
-        <span aria-hidden="true">${ok ? '✦' : '↻'}</span>
+        ${face}
         <span>${msg}${!ok && p.hint ? ' ' + p.hint : ''}</span></p>${worked}`;
       slot.appendChild(fb);
       paintBar();
