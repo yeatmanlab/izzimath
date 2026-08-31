@@ -1,7 +1,8 @@
 # Izzi Math — first concept
 
 Interactive math workbooks and games for K–5, where every activity also exists as a
-printable sheet. Stateless to start; accounts later without re-architecting.
+printable sheet. Built for **parents at home**, not classrooms. Stateless to start;
+accounts later without re-architecting.
 
 ## 1. The core idea: one activity, three outputs
 
@@ -33,9 +34,9 @@ the URL:
 This gives us, with no backend and no login:
 
 - **Infinite practice** — new seed, new problems, same skill.
-- **"New sheet" button** — a teacher clicks and gets a fresh printable forever.
+- **"New sheet" button** — a parent clicks and gets a fresh printable forever.
 - **Shareable + reproducible** — the same link always renders the same problems, so a
-  teacher can assign one, and a kid can come back to it.
+  parent can hand the same page over tomorrow and a kid can come back to it.
 - **The paper and the screen can match** — same activity, same seed, same 20 problems.
 
 The URL is the save file. That is what makes "stateless now, accounts later" honest
@@ -50,7 +51,8 @@ Print sheets are a first-class product surface, not an export.
 ## 4. Characters: one math, many worlds
 
 Kids pick a character. That choice re-skins the whole site — palette, word problems,
-game mechanics, level names, encouragement copy, even the printable header.
+game mechanics, level names, encouragement copy, even the printable header. Three at
+launch, plus an opt-out.
 
 **The rule that makes this affordable:** a character changes the *skin*, never the
 *math*. If picking Georgie changed the problems, we would be authoring K–5 twice per
@@ -78,23 +80,34 @@ Character
 └── motif        decorative geometry, cursor, loading state, transitions
 ```
 
-### The first two
+### The first three
 
-|              | **Kiwi** the bearded dragon        | **Georgie** the chihuahua           |
-| ------------ | ---------------------------------- | ----------------------------------- |
-| Palette      | Desert sun — amber, coral, teal    | Zip — magenta, violet, cyan         |
-| World        | Canyon, basking rocks, heat lamps  | The park, the couch, the sidewalk   |
-| Collectible  | Crickets, mealworms                | Treats, tennis balls                |
-| Voice        | Calm, unbothered, dry — "Nice. No rush." | Fast, delighted — "YES! Again!" |
-| Motif        | Scales — hexagonal tessellation    | Bouncing arcs, paw prints           |
-| Pace         | Slow, steady, no timers by default | Quick rounds, streaks, timers       |
+|             | **Kiwi** bearded dragon             | **Georgie** chihuahua             | **Flame** red panda                |
+| ----------- | ----------------------------------- | --------------------------------- | ---------------------------------- |
+| Palette     | Desert — gold, orange, terracotta   | Zip — magenta, violet, cyan       | Ember — gold, orange, crimson      |
+| World       | Canyon, basking rocks, heat lamps   | The park, the couch, the sidewalk | Treetops, bamboo, misty cliffs     |
+| Collectible | Crickets, mealworms                 | Treats, tennis balls              | Bamboo shoots, berries             |
+| Voice       | Calm, dry — "Nice. No rush."        | Fast, delighted — "YES! Again!"   | Curious — "Ooh, try it this way."  |
+| Motif       | Scales — hexagonal tessellation     | Bouncing arcs, paw prints         | Climbing, ringed-tail stripes      |
+| Pace        | Steady, no timers by default        | Quick rounds, streaks, timers     | Puzzle-first, hints on tap         |
 
-The pairing is deliberate rather than cosmetic. Kiwi's scale tessellation is genuinely
-useful geometry art — tiling, area, symmetry. Georgie's bouncing ball is genuinely
-useful number-line art — skip counting, intervals, fractions. Each character makes a
-different part of the curriculum feel native, and a kid who bounces off one may click
-with the other. Kiwi also gives us a calm, timer-free mode without ever labelling it
+The trio is deliberate rather than cosmetic. Each one's motif is genuinely useful math
+art for a different part of the curriculum:
+
+- **Kiwi's scale tessellation** — tiling, area, symmetry. Geometry.
+- **Georgie's bouncing ball** — skip counting, intervals, fractions. The number line.
+- **Flame's climbing and ringed tail** — vertical stacking and repeating patterns.
+  Place value and skip-counting patterns.
+
+So a kid who bounces off one may click with another, and each character makes a
+different slice of K–5 feel like it was built for them. Kiwi also gives us a calm,
+timer-free mode and Flame a hint-forward puzzle mode, without ever labelling either
 "for kids who find timers stressful."
+
+**Kiwi's palette note** — the third stop is terracotta (`#C1440E`), a desert clay red,
+deliberately *not* the brighter crimson Flame uses. Two warm characters need two
+distinguishable reds; earthy-versus-ember is the split, and it matches how the two
+animals are actually coloured.
 
 ### Where the choice is stored
 
@@ -105,16 +118,26 @@ math for both characters. Stateless stays intact.
 
 ### Print constraint
 
-Sheets print in one ink colour on a school photocopier. Every character therefore
-needs a **1-bit line-art variant** alongside the colour avatar, and the palette must
-degrade to pure black on white without losing the header hierarchy. Worth designing
-the line art first — if the character does not read at 24px in black and white, it is
-the wrong character.
+Sheets print on a **home inkjet**, which is a tighter constraint than a school copier:
+ink is expensive and the parent is paying for it. So every character needs a **1-bit
+line-art variant** alongside the colour avatar, and sheets must be line-art-light with
+no heavy fills or background tints anywhere. Worth designing the line art first — if
+the character does not read at 24px in black and white, it is the wrong character.
 
-### Adding a third
+Low ink coverage is a feature, not a compromise: a sheet a parent can reprint all week
+without thinking about cartridges is a sheet they will actually use.
 
-A new character is one data file plus two art assets. No activity changes. The
-concept should ship with two and prove the third costs nearly nothing.
+### Adding a fourth
+
+A new character is one data file plus two art assets — no activity changes. Flame was
+added after Kiwi and Georgie without touching a single problem generator, which is the
+proof the model holds.
+
+### Opting out
+
+"Just math" is a first-class fourth option: plain problems, plain colours, lightest
+ink. Some kids want the maths without a story, and making opt-out a real choice now is
+cheaper than retrofitting it later.
 
 ## 5. Aesthetic direction: "hologrid"
 
@@ -136,7 +159,7 @@ are correct.
   Inter for body.
 - **Motion** — springy and physical, not cartoon-bouncy. Every input gets feedback.
 - **Print is the inverse** — the same system flipped to ink on white, high contrast,
-  generous work space. Deliberately calm. It has to survive a school photocopier.
+  generous work space. Deliberately calm, and cheap in ink.
 
 ## 6. Information architecture
 
@@ -157,8 +180,11 @@ Character is orthogonal to routing — it themes every route rather than nesting
 one, so there is no `/kiwi/grades/3`. One canonical URL per activity keeps sharing and
 SEO clean.
 
-Grade is the primary axis, as requested. Strand is secondary. A parent lands on
-`/grades/3`, a teacher lands on `/printables`.
+`/grades` is the front door. A parent arrives knowing exactly one thing — what grade
+their kid is in — so grade is the first and only question the home page asks.
+
+Grade is the primary axis, as requested. Strand is secondary — a parent generally does
+not arrive looking for "3.NF.A.2", they arrive looking for "third grade".
 
 ## 7. Books vs games
 
@@ -223,12 +249,21 @@ URL today. Nothing about the content model changes.
 
 ## 11. Open questions
 
-1. **Grade range** — assumed K–5. Extend to 6–8 later, or now?
-2. **Standards** — CCSS assumed. Worth surfacing standard codes in the UI for
-   teachers, or hiding them as metadata?
-3. **Is "Izzi" itself a character?** With Kiwi and Georgie in place, Izzi probably
-   works better as the brand and the guide than as a third pet. Recommend holding.
-4. **Does character gate anything?** Currently pure skin. Tempting to give each one
-   exclusive games — but that punishes the choice. Recommend keeping it cosmetic.
-5. **Audience priority** — parents at home, or teachers printing class sets? It
-   changes whether `/printables` or `/grades` is the real front door.
+**Settled**
+
+- **Grade range** — K–5. Not extending to middle school.
+- **Audience** — parents at home. Not schools. `/grades` is the front door, print
+  targets a home inkjet, and nothing in the UI assumes a class of 24.
+
+**Still open**
+
+1. **Standards** — CCSS codes are mostly noise to a parent but reassuring in
+   aggregate. Recommend keeping them as small metadata on the card, and saying
+   "covers the grade 3 standards" in plain language where it counts.
+2. **Is "Izzi" itself a character?** With three animals in place, Izzi probably works
+   better as the brand than a fourth pet. Recommend holding.
+3. **Does character gate anything?** Currently pure skin. Tempting to give each one
+   exclusive games — but that punishes the choice and forces kids to switch to reach
+   content. Recommend keeping it strictly cosmetic.
+4. **How many characters is too many?** Three plus opt-out is a good launch set. The
+   cost is art, not engineering, so the ceiling is a design-quality question.

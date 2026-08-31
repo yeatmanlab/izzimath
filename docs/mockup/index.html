@@ -15,8 +15,9 @@
   --lime:#B6FF3D; --amber:#FFB03A;
 }
 body[data-ch="none"]   {--a1:#22E0F0; --a2:#7C5CFF; --a3:#FF4D9D; --gA:rgba(124,92,255,.55); --gB:rgba(34,224,240,.32); --grid1:rgba(124,92,255,.07); --grid2:rgba(34,224,240,.06); --ok:#B6FF3D}
-body[data-ch="kiwi"]   {--a1:#FFC24D; --a2:#FF7A45; --a3:#2ED3B7; --gA:rgba(255,122,69,.45);  --gB:rgba(46,211,183,.28); --grid1:rgba(255,122,69,.07); --grid2:rgba(46,211,183,.06); --ok:#7CE8B0}
+body[data-ch="kiwi"]   {--a1:#FFC24D; --a2:#FF7A45; --a3:#C1440E; --gA:rgba(255,122,69,.45);  --gB:rgba(193,68,14,.3);   --grid1:rgba(255,122,69,.07); --grid2:rgba(193,68,14,.07); --ok:#7CE8B0}
 body[data-ch="georgie"]{--a1:#FF4D9D; --a2:#A855F7; --a3:#22E0F0; --gA:rgba(255,77,157,.5);   --gB:rgba(168,85,247,.32); --grid1:rgba(255,77,157,.08); --grid2:rgba(168,85,247,.06); --ok:#B6FF3D}
+body[data-ch="flame"]  {--a1:#FFD166; --a2:#FF6B35; --a3:#D7263D; --gA:rgba(255,107,53,.5);   --gB:rgba(215,38,61,.3);   --grid1:rgba(255,107,53,.08); --grid2:rgba(215,38,61,.06); --ok:#8FE388}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--ink);color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6}
 .sp{background:linear-gradient(100deg,var(--a1),var(--a2) 55%,var(--a3))}
@@ -75,12 +76,12 @@ nav a.on{color:var(--txt)}
 .fcard h4{font-size:17px;margin-bottom:8px}
 .fcard p{font-size:14px;color:var(--txt2)}
 /* character picker */
-.pick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:24px}
-.ccard{position:relative;border-radius:20px;border:1px solid var(--line);background:var(--glass);padding:26px 24px 24px;cursor:pointer;overflow:hidden;text-align:center;transition:transform .2s,box-shadow .3s}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(226px,1fr));gap:16px;margin-top:24px}
+.ccard{position:relative;border-radius:20px;border:1px solid var(--line);background:var(--glass);padding:24px 20px 22px;cursor:pointer;overflow:hidden;text-align:center;transition:transform .2s,box-shadow .3s}
 .ccard:hover{transform:translateY(-4px)}
 .ccard .halo{position:absolute;top:-70px;left:50%;transform:translateX(-50%);width:220px;height:180px;filter:blur(46px);opacity:.75}
 .ccard.sel{border-color:transparent;box-shadow:0 0 0 2px var(--pk2),0 16px 50px rgba(0,0,0,.5)}
-.ccard svg.av{position:relative;width:104px;height:104px}
+.ccard svg.av{position:relative;width:92px;height:92px}
 .ccard h4{position:relative;font-size:22px;margin-top:12px}
 .ccard .sub{position:relative;font-size:12px;font-family:'Space Grotesk';letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-top:6px}
 .ccard .qt{position:relative;font-size:13.5px;color:var(--txt2);margin-top:14px;min-height:44px}
@@ -164,45 +165,96 @@ footer{position:relative;z-index:1;margin-top:92px;border-top:1px solid var(--li
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="av-kiwi" viewBox="0 0 64 64">
-  <path d="M13 24 3 19l10-1zM11 33 1 31l10-3zM13 42 4 43l9 3z" fill="#C4692A"/>
-  <path d="M51 24l10-5-10-1zM53 33l10-2-10-3zM51 42l9 1-9 3z" fill="#C4692A"/>
-  <path d="M32 5c14 0 21 11 21 24s-9 25-21 25S11 42 11 29 18 5 32 5z" fill="#E4A257"/>
-  <path d="M32 9c11 0 17 9 17 19 0 5-1 9-3 13H18c-2-4-3-8-3-13 0-10 6-19 17-19z" fill="#F2BE7E"/>
-  <path d="M18 41c3 7 8 10 14 10s11-3 14-10c1 8-5 15-14 15s-15-7-14-15z" fill="#C4692A"/>
-  <ellipse cx="23" cy="28" rx="6.4" ry="5.8" fill="#2A1608"/>
-  <ellipse cx="41" cy="28" rx="6.4" ry="5.8" fill="#2A1608"/>
-  <ellipse cx="23" cy="26.4" rx="2.4" ry="1.5" fill="#FFD9A0"/>
-  <ellipse cx="41" cy="26.4" rx="2.4" ry="1.5" fill="#FFD9A0"/>
-  <circle cx="27.5" cy="39" r="1.3" fill="#8A4416"/><circle cx="36.5" cy="39" r="1.3" fill="#8A4416"/>
-  <path d="M27 46c2 1.6 8 1.6 10 0" stroke="#8A4416" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <g fill="#C4762F" stroke="#C4762F" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M14.4 20.6 5 17.8l8.2 8z"/><path d="M12.2 28.2 2.6 28.4l9.4 6.2z"/><path d="M12.6 36.2 3.6 39.4l10.2 4.2z"/><path d="M16.4 42.6 9.6 48.4l9.6.6z"/>
+    <path d="M49.6 20.6 59 17.8l-8.2 8z"/><path d="M51.8 28.2 61.4 28.4l-9.4 6.2z"/><path d="M51.4 36.2 60.4 39.4 50.2 43.6z"/><path d="M47.6 42.6 54.4 48.4l-9.6.6z"/>
+  </g>
+  <ellipse cx="32" cy="33" rx="21" ry="17.6" fill="#D89B54"/>
+  <path d="M32 15.6c11 0 17.4 5.6 17.4 12.4H14.6c0-6.8 6.4-12.4 17.4-12.4z" fill="#EDBB7C"/>
+  <ellipse cx="15.6" cy="36" rx="4.2" ry="2.6" fill="#F0805F" opacity=".4"/>
+  <ellipse cx="48.4" cy="36" rx="4.2" ry="2.6" fill="#F0805F" opacity=".4"/>
+  <ellipse cx="21.4" cy="24.6" rx="5" ry="3.2" fill="#F8DCAF" opacity=".7"/>
+  <ellipse cx="42.6" cy="24.6" rx="5" ry="3.2" fill="#F8DCAF" opacity=".7"/>
+  <circle cx="22" cy="30.6" r="5.9" fill="#261506"/><circle cx="42" cy="30.6" r="5.9" fill="#261506"/>
+  <circle cx="24.2" cy="28.3" r="2.5" fill="#fff"/><circle cx="44.2" cy="28.3" r="2.5" fill="#fff"/>
+  <circle cx="20" cy="32.8" r="1.1" fill="#fff" opacity=".7"/><circle cx="40" cy="32.8" r="1.1" fill="#fff" opacity=".7"/>
+  <path d="M17.6 38.4c0 6.2 6.4 10.6 14.4 10.6s14.4-4.4 14.4-10.6c0-2.6-6.4-4.2-14.4-4.2s-14.4 1.6-14.4 4.2z" fill="#F6DDB4"/>
+  <circle cx="29.4" cy="37.6" r="1.05" fill="#A5561A"/><circle cx="34.6" cy="37.6" r="1.05" fill="#A5561A"/>
+  <path d="M21.8 41.2c2.8 4.4 6.2 6.4 10.2 6.4s7.4-2 10.2-6.4" stroke="#A5561A" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M22.6 47.4c1.7 1.9 3.6 2.8 5.4 2.8 1.5 0 2.9-.6 4-1.8 1.1 1.2 2.5 1.8 4 1.8 1.8 0 3.7-.9 5.4-2.8" fill="none" stroke="#C4762F" stroke-width="2.4" stroke-linecap="round"/>
 </symbol>
 <symbol id="av-georgie" viewBox="0 0 64 64">
-  <path d="M15 32 4 3l24 15z" fill="#D9A07A"/><path d="M49 32 60 3 36 18z" fill="#D9A07A"/>
-  <path d="M17 28 9 10l16 10z" fill="#F5A9C0"/><path d="M47 28 55 10 39 20z" fill="#F5A9C0"/>
-  <path d="M32 11c13 0 20 10 20 22 0 13-9 22-20 22s-20-9-20-22c0-12 7-22 20-22z" fill="#EFC49A"/>
-  <path d="M32 15c9 0 15 7 16 16H16c1-9 7-16 16-16z" fill="#F8D9B6"/>
-  <circle cx="23" cy="33" r="6.6" fill="#241018"/><circle cx="41" cy="33" r="6.6" fill="#241018"/>
-  <circle cx="25.2" cy="30.8" r="2.3" fill="#fff"/><circle cx="43.2" cy="30.8" r="2.3" fill="#fff"/>
-  <ellipse cx="32" cy="46" rx="10" ry="7.6" fill="#FBE6CE"/>
-  <ellipse cx="32" cy="42.5" rx="4" ry="3.1" fill="#241018"/>
-  <path d="M32 46v3M32 49c-2.4 0-4 1.4-4 2.6M32 49c2.4 0 4 1.4 4 2.6" stroke="#241018" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M20 32C13 24 9 13.5 10.4 5.8 17 7.4 25.6 15.2 29.2 23.2z" fill="#D2966A"/>
+  <path d="M44 32c7-8 11-18.5 9.6-26.2C47 7.4 38.4 15.2 34.8 23.2z" fill="#D2966A"/>
+  <path d="M21.6 28.6C16.4 22 13.4 15 14.2 10.4c4.6 1.8 10 7.2 12 13z" fill="#F3A6BD"/>
+  <path d="M42.4 28.6C47.6 22 50.6 15 49.8 10.4c-4.6 1.8-10 7.2-12 13z" fill="#F3A6BD"/>
+  <ellipse cx="32" cy="35.5" rx="19.2" ry="18.2" fill="#E5AF80"/>
+  <ellipse cx="32" cy="28.5" rx="14" ry="9.5" fill="#F1C59B"/>
+  <ellipse cx="17.6" cy="40" rx="4.4" ry="2.9" fill="#F58FB0" opacity=".5"/>
+  <ellipse cx="46.4" cy="40" rx="4.4" ry="2.9" fill="#F58FB0" opacity=".5"/>
+  <circle cx="23.2" cy="34" r="6.4" fill="#2A1418"/><circle cx="40.8" cy="34" r="6.4" fill="#2A1418"/>
+  <circle cx="25.5" cy="31.4" r="2.6" fill="#fff"/><circle cx="43.1" cy="31.4" r="2.6" fill="#fff"/>
+  <circle cx="21.2" cy="36.4" r="1.2" fill="#fff" opacity=".75"/><circle cx="38.8" cy="36.4" r="1.2" fill="#fff" opacity=".75"/>
+  <ellipse cx="32" cy="45" rx="10.2" ry="7.6" fill="#FAE1C6"/>
+  <ellipse cx="32" cy="41.2" rx="3.7" ry="2.9" fill="#2A1418"/>
+  <ellipse cx="30.7" cy="40.4" rx="1.1" ry=".7" fill="#fff" opacity=".45"/>
+  <path d="M26.2 44.8C27.7 50.6 36.3 50.6 37.8 44.8z" fill="#2A1418"/>
+  <path d="M29 47.4h6c0 4.6-6 4.6-6 0z" fill="#F4879F"/>
+</symbol>
+<symbol id="av-flame" viewBox="0 0 64 64">
+  <ellipse cx="12.8" cy="19" rx="9.6" ry="9" fill="#A8431C"/>
+  <ellipse cx="51.2" cy="19" rx="9.6" ry="9" fill="#A8431C"/>
+  <ellipse cx="13.8" cy="20.6" rx="6" ry="5.5" fill="#F7E6CF"/>
+  <ellipse cx="50.2" cy="20.6" rx="6" ry="5.5" fill="#F7E6CF"/>
+  <path d="M32 12c12 0 20.5 8.5 20.5 20.5S44 55 32 55 11.5 44.5 11.5 32.5 20 12 32 12z" fill="#C0512A"/>
+  <path d="M32 15c8.6 0 14.8 5.4 16.4 13H15.6C17.2 20.4 23.4 15 32 15z" fill="#D66D3B"/>
+  <path d="M14.6 29.5c-1.2 9 2 16.8 8.4 21 2.7 1.8 5.9 2.6 9 2.6s6.3-.8 9-2.6c6.4-4.2 9.6-12 8.4-21-3.2 5.6-9.4 8.4-17.4 8.4s-14.2-2.8-17.4-8.4z" fill="#FCF1E2"/>
+  <ellipse cx="22.4" cy="26.2" rx="5.4" ry="3.8" fill="#FCF1E2"/>
+  <ellipse cx="41.6" cy="26.2" rx="5.4" ry="3.8" fill="#FCF1E2"/>
+  <path d="M22.6 33.8c-1.4 5.6-1 10.6 1.4 14.6" stroke="#B14A22" stroke-width="3.6" fill="none" stroke-linecap="round" opacity=".9"/>
+  <path d="M41.4 33.8c1.4 5.6 1 10.6-1.4 14.6" stroke="#B14A22" stroke-width="3.6" fill="none" stroke-linecap="round" opacity=".9"/>
+  <circle cx="22.8" cy="30.4" r="4.7" fill="#2B1508"/><circle cx="41.2" cy="30.4" r="4.7" fill="#2B1508"/>
+  <circle cx="24.5" cy="28.7" r="1.8" fill="#fff"/><circle cx="42.9" cy="28.7" r="1.8" fill="#fff"/>
+  <path d="M32 39.6c2.4 0 4 1.5 4 3.1s-1.8 2.9-4 2.9-4-1.3-4-2.9 1.6-3.1 4-3.1z" fill="#2B1508"/>
+  <path d="M32 45.6v2" stroke="#2B1508" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M27.8 47.6c1.2 2.9 3 3.4 4.2 1.5 1.2 1.9 3 1.4 4.2-1.5" stroke="#2B1508" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+</symbol>
+<symbol id="ln-flame" viewBox="0 0 64 64">
+  <ellipse cx="12.8" cy="19" rx="9.6" ry="9" fill="none" stroke="#111" stroke-width="2.5"/>
+  <ellipse cx="51.2" cy="19" rx="9.6" ry="9" fill="none" stroke="#111" stroke-width="2.5"/>
+  <ellipse cx="13.8" cy="20.6" rx="5.4" ry="5" fill="none" stroke="#111" stroke-width="1.6"/>
+  <ellipse cx="50.2" cy="20.6" rx="5.4" ry="5" fill="none" stroke="#111" stroke-width="1.6"/>
+  <path d="M32 12c12 0 20.5 8.5 20.5 20.5S44 55 32 55 11.5 44.5 11.5 32.5 20 12 32 12z" fill="none" stroke="#111" stroke-width="2.6"/>
+  <path d="M14.6 29.5c-1.2 9 2 16.8 8.4 21 2.7 1.8 5.9 2.6 9 2.6s6.3-.8 9-2.6c6.4-4.2 9.6-12 8.4-21" fill="none" stroke="#111" stroke-width="2"/>
+  <path d="M22.6 34.6c-1.2 5-.8 9.6 1.4 13.4" stroke="#111" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M41.4 34.6c1.2 5 .8 9.6-1.4 13.4" stroke="#111" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <circle cx="22.8" cy="30.4" r="4.3" fill="#111"/><circle cx="41.2" cy="30.4" r="4.3" fill="#111"/>
+  <path d="M32 39.6c2.4 0 4 1.5 4 3.1s-1.8 2.9-4 2.9-4-1.3-4-2.9 1.6-3.1 4-3.1z" fill="#111"/>
+  <path d="M27.8 47.6c1.2 2.9 3 3.4 4.2 1.5 1.2 1.9 3 1.4 4.2-1.5" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>
 </symbol>
 <symbol id="av-none" viewBox="0 0 64 64">
   <circle cx="32" cy="32" r="21" fill="none" stroke="#93A0C8" stroke-width="2" stroke-dasharray="5 5"/>
   <path d="M32 22v20M22 32h20" stroke="#93A0C8" stroke-width="2.4" stroke-linecap="round"/>
 </symbol>
 <symbol id="ln-kiwi" viewBox="0 0 64 64">
-  <path d="M13 24 3 19l10-1zM11 33 1 31l10-3zM13 42 4 43l9 3zM51 24l10-5-10-1zM53 33l10-2-10-3zM51 42l9 1-9 3z" fill="#111"/>
-  <path d="M32 5c14 0 21 11 21 24s-9 25-21 25S11 42 11 29 18 5 32 5z" fill="none" stroke="#111" stroke-width="3"/>
-  <path d="M18 41c3 7 8 10 14 10s11-3 14-10c1 8-5 15-14 15s-15-7-14-15z" fill="none" stroke="#111" stroke-width="2.4"/>
-  <ellipse cx="23" cy="28" rx="5" ry="4.4" fill="#111"/><ellipse cx="41" cy="28" rx="5" ry="4.4" fill="#111"/>
+  <g fill="#111" stroke="#111" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M14.4 20.6 5 17.8l8.2 8z"/><path d="M12.2 28.2 2.6 28.4l9.4 6.2z"/><path d="M12.6 36.2 3.6 39.4l10.2 4.2z"/><path d="M16.4 42.6 9.6 48.4l9.6.6z"/>
+    <path d="M49.6 20.6 59 17.8l-8.2 8z"/><path d="M51.8 28.2 61.4 28.4l-9.4 6.2z"/><path d="M51.4 36.2 60.4 39.4 50.2 43.6z"/><path d="M47.6 42.6 54.4 48.4l-9.6.6z"/>
+  </g>
+  <ellipse cx="32" cy="33" rx="21" ry="17.6" fill="none" stroke="#111" stroke-width="2.6"/>
+  <circle cx="22" cy="30.6" r="4.4" fill="#111"/><circle cx="42" cy="30.6" r="4.4" fill="#111"/>
+  <path d="M17.6 38.4c0 6.2 6.4 10.6 14.4 10.6s14.4-4.4 14.4-10.6c0-2.6-6.4-4.2-14.4-4.2s-14.4 1.6-14.4 4.2z" fill="none" stroke="#111" stroke-width="2"/>
+  <circle cx="29.4" cy="37.6" r="1" fill="#111"/><circle cx="34.6" cy="37.6" r="1" fill="#111"/>
+  <path d="M21.8 41.2c2.8 4.4 6.2 6.4 10.2 6.4s7.4-2 10.2-6.4" stroke="#111" stroke-width="2.2" fill="none" stroke-linecap="round"/>
 </symbol>
 <symbol id="ln-georgie" viewBox="0 0 64 64">
-  <path d="M15 32 4 3l24 15zM49 32 60 3 36 18z" fill="none" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
-  <path d="M32 11c13 0 20 10 20 22 0 13-9 22-20 22s-20-9-20-22c0-12 7-22 20-22z" fill="none" stroke="#111" stroke-width="3"/>
-  <circle cx="23" cy="33" r="4.4" fill="#111"/><circle cx="41" cy="33" r="4.4" fill="#111"/>
-  <ellipse cx="32" cy="46" rx="9" ry="6.8" fill="none" stroke="#111" stroke-width="2.2"/>
-  <ellipse cx="32" cy="42.5" rx="3.2" ry="2.5" fill="#111"/>
+  <path d="M20 32C13 24 9 13.5 10.4 5.8 17 7.4 25.6 15.2 29.2 23.2z" fill="none" stroke="#111" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M44 32c7-8 11-18.5 9.6-26.2C47 7.4 38.4 15.2 34.8 23.2z" fill="none" stroke="#111" stroke-width="2.6" stroke-linejoin="round"/>
+  <ellipse cx="32" cy="35.5" rx="19.2" ry="18.2" fill="none" stroke="#111" stroke-width="2.6"/>
+  <circle cx="23.2" cy="34" r="4.6" fill="#111"/><circle cx="40.8" cy="34" r="4.6" fill="#111"/>
+  <ellipse cx="32" cy="45" rx="10.2" ry="7.6" fill="none" stroke="#111" stroke-width="2"/>
+  <ellipse cx="32" cy="41.2" rx="3.4" ry="2.7" fill="#111"/>
+  <path d="M26.2 44.8C27.7 50.6 36.3 50.6 37.8 44.8" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round"/>
 </symbol>
 </defs></svg>
 
@@ -214,6 +266,7 @@ footer{position:relative;z-index:1;margin-top:92px;border-top:1px solid var(--li
     <button class="swb on" data-set="none"><svg><use href="#av-none"/></svg>No character</button>
     <button class="swb" data-set="kiwi"><svg><use href="#av-kiwi"/></svg>Kiwi</button>
     <button class="swb" data-set="georgie"><svg><use href="#av-georgie"/></svg>Georgie</button>
+    <button class="swb" data-set="flame"><svg><use href="#av-flame"/></svg>Flame</button>
   </div>
   <span style="font-size:12px;color:var(--txt3);margin-left:auto">The math never changes — only the skin</span>
 </div></div>
@@ -267,12 +320,12 @@ footer{position:relative;z-index:1;margin-top:92px;border-top:1px solid var(--li
   <h2 style="font-size:30px">Who's doing math with you?</h2>
   <p style="color:var(--txt2);font-size:15px;margin-top:10px">Your buddy changes the colours, the stories, and the games. You can switch any time.</p>
   <div class="pick">
-    <div class="ccard" data-set="kiwi" style="--pk1:#FFC24D;--pk2:#FF7A45;--pk3:#2ED3B7">
+    <div class="ccard" data-set="kiwi" style="--pk1:#FFC24D;--pk2:#FF7A45;--pk3:#C1440E">
       <div class="halo" style="background:radial-gradient(ellipse,rgba(255,122,69,.5),transparent 70%)"></div>
       <svg class="av"><use href="#av-kiwi"/></svg>
       <h4>Kiwi</h4><div class="sub">Bearded dragon</div>
       <div class="qt">“Nice. No rush.” Counts crickets, basks on warm rocks, and builds everything out of scales.</div>
-      <div class="swatch"><i style="background:#FFC24D"></i><i style="background:#FF7A45"></i><i style="background:#2ED3B7"></i></div>
+      <div class="swatch"><i style="background:#FFC24D"></i><i style="background:#FF7A45"></i><i style="background:#C1440E"></i></div>
       <div class="cta">Choose Kiwi →</div>
     </div>
     <div class="ccard" data-set="georgie" style="--pk1:#FF4D9D;--pk2:#A855F7;--pk3:#22E0F0">
@@ -283,11 +336,19 @@ footer{position:relative;z-index:1;margin-top:92px;border-top:1px solid var(--li
       <div class="swatch"><i style="background:#FF4D9D"></i><i style="background:#A855F7"></i><i style="background:#22E0F0"></i></div>
       <div class="cta">Choose Georgie →</div>
     </div>
+    <div class="ccard" data-set="flame" style="--pk1:#FFD166;--pk2:#FF6B35;--pk3:#D7263D">
+      <div class="halo" style="background:radial-gradient(ellipse,rgba(255,107,53,.5),transparent 70%)"></div>
+      <svg class="av"><use href="#av-flame"/></svg>
+      <h4>Flame</h4><div class="sub">Red panda</div>
+      <div class="qt">“Ooh — try it this way.” Climbs bamboo towers, hunts for the trick, and counts on a ringed tail.</div>
+      <div class="swatch"><i style="background:#FFD166"></i><i style="background:#FF6B35"></i><i style="background:#D7263D"></i></div>
+      <div class="cta">Choose Flame →</div>
+    </div>
     <div class="ccard sel" data-set="none" style="--pk1:#22E0F0;--pk2:#7C5CFF;--pk3:#FF4D9D">
       <div class="halo" style="background:radial-gradient(ellipse,rgba(124,92,255,.45),transparent 70%)"></div>
       <svg class="av"><use href="#av-none"/></svg>
       <h4>Just math</h4><div class="sub">No character</div>
-      <div class="qt">Plain problems, plain colours. Some kids — and most teachers printing class sets — want exactly this.</div>
+      <div class="qt">Plain problems, plain colours, lightest ink. Some kids just want the maths without a story.</div>
       <div class="swatch"><i style="background:#22E0F0"></i><i style="background:#7C5CFF"></i><i style="background:#FF4D9D"></i></div>
       <div class="cta">Currently on →</div>
     </div>
@@ -362,7 +423,7 @@ footer{position:relative;z-index:1;margin-top:92px;border-top:1px solid var(--li
       <div class="prow"><span class="dot"></span>Interactive page<em>live</em></div>
       <div class="prow"><span class="dot"></span>Print sheet<em>PDF</em></div>
       <div class="prow"><span class="dot"></span>Answer key<em>PDF</em></div>
-      <div class="prow" style="border-bottom:1px solid var(--line)"><span class="dot" style="background:var(--amber)"></span>Class set of 24<em>later</em></div>
+      <div class="prow" style="border-bottom:1px solid var(--line)"><span class="dot" style="background:var(--amber)"></span>Weekly practice pack<em>later</em></div>
       <a href="#" class="btn pri sp" style="margin-top:18px;width:100%;justify-content:center">↓ Download sheet</a>
       <a href="#" class="btn" style="margin-top:9px;width:100%;justify-content:center">⟳ Generate new problems</a>
     </div>
@@ -399,7 +460,7 @@ var CH = {
     fb:'Nice. No rush — 3⁄8 basks just left of one half.',
     psub:'Grade 3 · canyon 2 · sheet 4 · with Kiwi', p1:'1. Mark each fraction on Kiwi’s branch.',
     p2:'2. Kiwi ate crickets at each mark. Write the fraction.',
-    pside:'Kiwi prints as one-colour line art, so the sheet survives any school photocopier.'
+    pside:'Kiwi prints as one-colour line art \u2014 light on ink, so a home printer can run it all week.'
   },
   georgie: {
     whoami:'Georgie', art1:'Georgie’s park · G4', art2:'Treat ten-frame · G1',
@@ -413,7 +474,21 @@ var CH = {
     fb:'YES! Got it! 3⁄8 is just before one half — again again again!',
     psub:'Grade 3 · park 2 · sheet 4 · with Georgie', p1:'1. Mark where Georgie’s ball lands.',
     p2:'2. Georgie fetched a treat at each mark. Write the fraction.',
-    pside:'Georgie prints as one-colour line art, so the sheet survives any school photocopier.'
+    pside:'Georgie prints as one-colour line art \u2014 light on ink, so a home printer can run it all week.'
+  },
+  flame: {
+    whoami:'Flame', art1:'Flame\u2019s treetops \u00b7 G4', art2:'Bamboo ten-frame \u00b7 G1',
+    herosub:'Interactive workbooks and games for kindergarten through 5th grade \u2014 with Flame climbing you up through every puzzle. Play it, then print it.',
+    f2:'Puzzle-first rounds with a nudge whenever you want one. Flame likes finding the trick.',
+    hubsub:'Multiplication, division, fractions, area \u2014 6 books, 4 games, 62 printable sheets, all up in the treetops.',
+    b1:'Climb the bamboo tower to 12 \u00d7 12, one branch at a time.', b2:'Split Flame\u2019s bamboo shoot into halves, thirds, and fourths.',
+    g1:'Ring tail run', g1d:'Match fact families along Flame\u2019s striped tail before it loops.',
+    chap:'Canopy 2 \u00b7 branch 4 of 9',
+    q:'Flame is climbing the branch. Move Flame to <strong>3\u20448</strong>.',
+    fb:'Ooh \u2014 nice route. 3\u20448 sits just left of one half.',
+    psub:'Grade 3 \u00b7 canopy 2 \u00b7 sheet 4 \u00b7 with Flame', p1:'1. Mark each fraction on Flame\u2019s branch.',
+    p2:'2. Flame ate a berry at each mark. Write the fraction.',
+    pside:'Flame prints as one-colour line art \u2014 light on ink, so a home printer can run it all week.'
   }
 };
 function apply(k){
