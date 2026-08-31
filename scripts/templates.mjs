@@ -57,6 +57,7 @@ function nav(b, active) {
     ${link('/books/', 'Books', 'books')}
     ${link('/games/', 'Games', 'games')}
     ${link('/printables/', 'Printables', 'printables')}
+    ${link('/parents/', 'How to help', 'parents')}
     <div class="nav-r">
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
         ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg>${esc(characters[id].name === 'Just math' ? 'Just math' : characters[id].name)}</button>`).join('')}
@@ -76,6 +77,7 @@ function breadcrumbs(b, crumbs) {
 function footer(b) {
   return `<footer class="foot noprint"><div class="wrap fin">
   <span>Izzi Math — free math practice for families.</span>
+  <a href="${b}/parents/">How to help</a>
   <a href="${b}/about/">About &amp; credits</a>
   <a href="${b}/printables/">All printables</a>
   <a href="${b}/roam/">Have an assessment score?</a>
@@ -104,6 +106,39 @@ export function activityCard(b, a) {
 export function roamBadges(a) {
   if (!a.roam?.length) return '';
   return a.roam.map((l) => `<span class="tag roam">${esc(roamLabel(l))}</span>`).join(' ');
+}
+
+/* A short note for the adult, composed from what the activity already declares.
+   Nelson et al. (2024) synthesised 25 caregiver-delivered early maths programmes
+   (g=0.26) and found the effect moderated by how much guidance and follow-up the
+   caregiver got — so handing over materials with neither is choosing the bottom
+   of that interval. */
+export function grownUpsNote(a) {
+  const mins = a.kind === 'game' ? '5 to 10 minutes' : '10 to 15 minutes';
+  const lines = [];
+  lines.push(`<strong>How long:</strong> ${mins} is plenty. Short and frequent beats long and
+    occasional — the early-numeracy trials with the largest effects ran eight weeks or less.`);
+  if (a.strategy) {
+    lines.push(`<strong>The strategy to reinforce:</strong> &ldquo;${esc(a.strategy.name)}&rdquo; &mdash;
+      ${esc(a.strategy.text)} If they stall, remind them of this rather than giving the answer.`);
+  }
+  lines.push(`<strong>When they get one wrong:</strong> the page shows the working. Read it together
+    rather than moving straight on. Feedback that explains is worth several times more than feedback
+    that only marks right or wrong, and that gap is wider in maths than in any other subject.`);
+  if (a.kind === 'game') {
+    lines.push(`<strong>On the timer:</strong> it is off unless you turn it on, and it is never
+      needed. Use it only once the skill is comfortable, never to introduce it.`);
+  } else {
+    lines.push(`<strong>Not timed:</strong> thinking time is the point of a book. Let silences run.`);
+  }
+  lines.push(`<strong>Print it too:</strong> doing the same problems on paper a few days later is
+    worth more than doing twice as many today.`);
+  return `<div class="roam grownups">
+    <h2 style="font-size:15px">For grown-ups</h2>
+    <ul style="margin:0;padding-left:18px;display:grid;gap:9px">
+      ${lines.map((l) => `<li style="font-size:13.5px;color:var(--txt2)">${l}</li>`).join('')}
+    </ul>
+  </div>`;
 }
 
 export { tasks, ROAM_URL };

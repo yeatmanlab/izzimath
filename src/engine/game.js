@@ -101,9 +101,15 @@ export function mountGame(activity, root) {
       const voice = ok ? ch.voice.correct : ch.voice.wrong;
       const fb = document.createElement('div');
       fb.style.marginTop = '20px';
-      fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}"><span aria-hidden="true">${ok ? '✦' : '↻'}</span><span>${voice[round % voice.length]}</span></p>`;
+      // On a miss, show the working rather than just marking it wrong. Bare
+      // correct/incorrect feedback is worth g=0.05; with an explanation it is
+      // g=0.49. The pause is longer so there is time to read it.
+      const worked = !ok && p.explain
+        ? `<p class="fb hint" style="margin-top:10px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
+        : '';
+      fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}"><span aria-hidden="true">${ok ? '✦' : '↻'}</span><span>${voice[round % voice.length]}</span></p>${worked}`;
       slot.appendChild(fb);
-      setTimeout(() => { round++; paint(); }, ok ? 620 : 1500);
+      setTimeout(() => { round++; paint(); }, ok ? 620 : (worked ? 3200 : 1500));
     });
   }
 

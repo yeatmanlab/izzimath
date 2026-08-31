@@ -4,7 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges } from './scripts/templates.mjs';
+import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet } from './src/lib/printsheet.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
@@ -210,6 +210,10 @@ for (const a of activities) {
         <button class="btn" data-newseed>⟳ New problems</button>
         <a class="btn" href="${b}/print/${a.id}/">▤ Print this</a>
         <a class="btn" href="${b}/grades/${a.grade}/">All of ${gradeName(a.grade).toLowerCase()}</a>
+      </div>
+
+      <div class="sec">
+        ${grownUpsNote(a)}
       </div>
 
       <div class="sec">
@@ -425,6 +429,66 @@ write('about/index.html', page({
       from the maths education research literature, credited in full in the repository.</p>
       <p class="sub" style="margin-top:18px">
         <a class="btn sm" href="https://github.com/yeatmanlab/izzimath">Source on GitHub</a>
+        <a class="btn sm" href="${b}/printables/">All printables</a>
+      </p>
+    </div></section>`,
+}));
+
+/* ------------------------------------------------------------------ parents */
+write('parents/index.html', page({
+  base: b, active: 'parents', title: 'How to help', desc: 'Short, practical guidance for parents using Izzi Math at home — how long, how often, and what to say when your child is stuck.',
+  crumbs: [{ label: 'Home', href: '/' }, { label: 'How to help' }],
+  body: `<section class="wrap"><div class="ahead"><div><h1>How to help</h1>
+    <p>Six things that make more difference than which activity you pick.</p></div></div>
+
+    <div class="sec" style="max-width:76ch">
+      <p class="sub">This page exists because of a specific finding. A 2024 review of 25 maths
+      programmes delivered by parents at home found a modest average benefit &mdash; and that the
+      benefit depended on whether the adult got any guidance and follow-up. Handing over good
+      materials with no guidance is the version that barely works. So here is the guidance.</p>
+
+      <h2 style="margin-top:30px">1. Short and often, not long and occasional</h2>
+      <p class="sub">Ten minutes, a few times a week, for a few weeks. In the early-numeracy trials,
+      the programmes with the <em>largest</em> effects were eight weeks or shorter. Long diffuse
+      practice is not the thing that works.</p>
+
+      <h2 style="margin-top:26px">2. Say why, not just right or wrong</h2>
+      <p class="sub">This is the single easiest win available to you. Feedback that explains is worth
+      roughly ten times feedback that only says correct or incorrect &mdash; and the gap is larger in
+      maths than in any other subject. Every activity shows the working after an answer. Read it
+      together instead of clicking on.</p>
+
+      <h2 style="margin-top:26px">3. When they are stuck, give the strategy, not the answer</h2>
+      <p class="sub">Every game names a strategy before it starts, and keeps it one tap away. Practice
+      with a named strategy is dramatically more useful than the same practice without one &mdash; a
+      bigger difference than anything to do with speed or timing. So the useful prompt is
+      &ldquo;what did we say about counting on?&rdquo; rather than &ldquo;it&rsquo;s seven&rdquo;.</p>
+
+      <h2 style="margin-top:26px">4. Books first, games second</h2>
+      <p class="sub">Books are for learning something and are never timed. Games are for getting
+      quicker at something already learned. Doing it in that order matters: practising speed on
+      something not yet understood is the thing the research warns against most directly.</p>
+
+      <h2 style="margin-top:26px">5. Print the same problems again later</h2>
+      <p class="sub">Every activity prints. Doing the <em>same</em> page on paper a few days later is
+      worth more than doing twice as much today. There is also a <strong>mixed review sheet</strong>
+      on every print page &mdash; eight problems shuffled so no two in a row use the same method. It
+      will feel harder and it is meant to. In a trial of 787 children, shuffled sheets scored 61%
+      against 38% for the same problems grouped by type, on a test a month later.</p>
+
+      <h2 style="margin-top:26px">6. Do not compare them to anyone</h2>
+      <p class="sub">There are no leaderboards or percentiles here, on purpose. Maths anxiety is real,
+      it is measurable, and counterintuitively it affects capable children at least as much. The
+      evidence on reducing it is unglamorous: building competence lowers anxiety. Comparison does not.</p>
+
+      <h2 style="margin-top:30px">A realistic expectation</h2>
+      <p class="sub">The best-evidenced digital maths programmes, tested on thousands of children,
+      move attainment by a small amount &mdash; not by a grade level. Anything promising more than
+      that is overselling. What this site is for is regular, sensible, well-chosen practice that is
+      free and does not waste your child&rsquo;s time.</p>
+
+      <p class="sub" style="margin-top:22px">
+        <a class="btn sm" href="${b}/grades/">Pick a grade</a>
         <a class="btn sm" href="${b}/printables/">All printables</a>
       </p>
     </div></section>`,

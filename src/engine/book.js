@@ -41,9 +41,14 @@ export function mountBook(activity, root) {
       const msg = voice[page % voice.length];
       const fb = document.createElement('div');
       fb.style.marginTop = '22px';
+      // Always show the working, and show it especially when the answer was
+      // wrong — that is the whole point of elaborated feedback.
+      const worked = p.explain
+        ? `<p class="fb hint" style="margin-top:12px"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`
+        : '';
       fb.innerHTML = `<p class="fb ${ok ? 'good' : 'bad'}">
         <span aria-hidden="true">${ok ? '✦' : '↻'}</span>
-        <span>${msg}${ok && p.explain ? ' ' + p.explain : ''}</span></p>`;
+        <span>${msg}${!ok && p.hint ? ' ' + p.hint : ''}</span></p>${worked}`;
       slot.appendChild(fb);
       paintBar();
       nav();
@@ -60,7 +65,7 @@ export function mountBook(activity, root) {
       <button class="btn" ${page === 0 ? 'disabled' : ''} data-prev>← Back</button>
       ${p.hint && !done ? '<button class="btn" data-hint>Give me a hint</button>' : ''}
       ${done && !answered[page].ok ? '<button class="btn" data-retry>Try again</button>' : ''}
-      ${done && answered[page].ok && p.explain ? '<button class="btn" data-why>Show me why</button>' : ''}
+      ${done && !answered[page].ok ? '<button class="btn" data-skip>Show me and move on</button>' : ''}
       <button class="btn pri" ${page >= total - 1 ? 'disabled' : ''} data-next>Next →</button>`;
     host.querySelector('.sfoot')?.remove();
     host.appendChild(foot);
@@ -75,12 +80,8 @@ export function mountBook(activity, root) {
       h.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${p.hint}</span></p>`;
       host.querySelector('[data-slot]').appendChild(h);
     });
-    foot.querySelector('[data-why]')?.addEventListener('click', () => {
-      if (host.querySelector('[data-whybox]')) return;
-      const h = document.createElement('div');
-      h.dataset.whybox = '1'; h.style.marginTop = '14px';
-      h.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${p.explain}</span></p>`;
-      host.querySelector('[data-slot]').appendChild(h);
+    foot.querySelector('[data-skip]')?.addEventListener('click', () => {
+      if (page < total - 1) { page++; paint(); }
     });
   }
 
