@@ -9,253 +9,343 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#05060E; --ink2:#0A0D1C; --ink3:#111530;
-  --cyan:#22E0F0; --violet:#7C5CFF; --magenta:#FF4D9D; --lime:#B6FF3D; --amber:#FFB03A;
-  --txt:#EAF0FF; --txt2:#93A0C8; --txt3:#5A678F;
+  --ink:#05060E; --txt:#EAF0FF; --txt2:#93A0C8; --txt3:#5A678F;
   --glass:rgba(255,255,255,.035); --glass2:rgba(255,255,255,.06);
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
-  --spectrum:linear-gradient(100deg,var(--cyan),var(--violet) 55%,var(--magenta));
+  --lime:#B6FF3D; --amber:#FFB03A;
 }
+body[data-ch="none"]   {--a1:#22E0F0; --a2:#7C5CFF; --a3:#FF4D9D; --gA:rgba(124,92,255,.55); --gB:rgba(34,224,240,.32); --grid1:rgba(124,92,255,.07); --grid2:rgba(34,224,240,.06); --ok:#B6FF3D}
+body[data-ch="kiwi"]   {--a1:#FFC24D; --a2:#FF7A45; --a3:#2ED3B7; --gA:rgba(255,122,69,.45);  --gB:rgba(46,211,183,.28); --grid1:rgba(255,122,69,.07); --grid2:rgba(46,211,183,.06); --ok:#7CE8B0}
+body[data-ch="georgie"]{--a1:#FF4D9D; --a2:#A855F7; --a3:#22E0F0; --gA:rgba(255,77,157,.5);   --gB:rgba(168,85,247,.32); --grid1:rgba(255,77,157,.08); --grid2:rgba(168,85,247,.06); --ok:#B6FF3D}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--ink);color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6}
-.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:linear-gradient(rgba(124,92,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(34,224,240,.06) 1px,transparent 1px);
-  background-size:44px 44px;
-  mask-image:radial-gradient(ellipse 120% 80% at 50% 0%,#000 20%,transparent 75%)}
-.glow{position:fixed;z-index:0;pointer-events:none;filter:blur(90px);opacity:.5}
-.g1{top:-120px;left:8%;width:520px;height:340px;background:radial-gradient(ellipse,rgba(124,92,255,.55),transparent 70%)}
-.g2{top:80px;right:2%;width:440px;height:300px;background:radial-gradient(ellipse,rgba(34,224,240,.32),transparent 70%)}
+.sp{background:linear-gradient(100deg,var(--a1),var(--a2) 55%,var(--a3))}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;transition:background-image .5s;
+  background-image:linear-gradient(var(--grid1) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:radial-gradient(ellipse 120% 80% at 50% 0%,#000 20%,transparent 75%)}
+.glow{position:fixed;z-index:0;pointer-events:none;filter:blur(90px);opacity:.5;transition:background .5s}
+.g1{top:-120px;left:8%;width:520px;height:340px;background:radial-gradient(ellipse,var(--gA),transparent 70%)}
+.g2{top:80px;right:2%;width:440px;height:300px;background:radial-gradient(ellipse,var(--gB),transparent 70%)}
 .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 32px}
-h1,h2,h3,h4,.dsp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;line-height:1.1}
-.mono{font-variant-numeric:tabular-nums;font-family:'Space Grotesk',sans-serif}
-
-/* screen labels */
-.slab{position:relative;z-index:1;max-width:1180px;margin:96px auto 20px;padding:0 32px;display:flex;align-items:center;gap:14px}
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;line-height:1.1}
+.slab{position:relative;z-index:1;max-width:1180px;margin:92px auto 20px;padding:0 32px;display:flex;align-items:center;gap:14px}
 .slab span{font-family:'Space Grotesk';font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--txt3)}
 .slab i{flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
-
-/* nav */
-nav{position:relative;z-index:5;display:flex;align-items:center;gap:36px;padding:22px 0;border-bottom:1px solid var(--line)}
+nav{position:relative;z-index:5;display:flex;align-items:center;gap:34px;padding:22px 0;border-bottom:1px solid var(--line)}
 .logo{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk';font-weight:700;font-size:20px;letter-spacing:-.03em}
-.mark{width:32px;height:32px;border-radius:9px;background:var(--spectrum);display:grid;place-items:center;font-size:17px;color:#05060E;font-weight:700;box-shadow:0 0 22px rgba(124,92,255,.5)}
+.mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:17px;color:#05060E;font-weight:700}
 nav a{color:var(--txt2);text-decoration:none;font-size:14px;font-weight:500}
 nav a.on{color:var(--txt)}
 .navr{margin-left:auto;display:flex;gap:10px;align-items:center}
 .btn{font-family:'Space Grotesk';font-weight:500;font-size:13.5px;padding:9px 17px;border-radius:10px;border:1px solid var(--line2);background:var(--glass);color:var(--txt);cursor:pointer;display:inline-flex;align-items:center;gap:7px;text-decoration:none}
-.btn.pri{background:var(--spectrum);border:0;color:#05060E;font-weight:700;box-shadow:0 6px 26px rgba(124,92,255,.4)}
-
-/* hero */
-.hero{padding:76px 0 8px;display:grid;grid-template-columns:1.08fr .92fr;gap:52px;align-items:center}
-.pill{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-family:'Space Grotesk';letter-spacing:.13em;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(34,224,240,.32);background:rgba(34,224,240,.07);padding:6px 14px;border-radius:99px}
-.hero h1{font-size:66px;font-weight:700;margin:24px 0 0}
-.hero h1 em{font-style:normal;background:var(--spectrum);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p{color:var(--txt2);font-size:17.5px;max-width:47ch;margin:20px 0 30px}
-.hcta{display:flex;gap:12px}
-
-/* hero art: layered glass cards */
-.art{position:relative;height:380px}
+.btn.pri{border:0;color:#05060E;font-weight:700;background:linear-gradient(100deg,var(--a1),var(--a2) 55%,var(--a3))}
+.whoami{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);background:var(--glass);padding:5px 13px 5px 6px;border-radius:99px;cursor:pointer;font-family:'Space Grotesk';font-size:13px}
+.whoami svg{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.07)}
+.hero{padding:74px 0 8px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-family:'Space Grotesk';letter-spacing:.13em;text-transform:uppercase;color:var(--a1);border:1px solid var(--line2);background:var(--glass);padding:6px 14px;border-radius:99px}
+.hero h1{font-size:64px;font-weight:700;margin:24px 0 0}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,var(--a1),var(--a2) 55%,var(--a3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--txt2);font-size:17px;max-width:47ch;margin:20px 0 30px}
+.hcta{display:flex;gap:12px;flex-wrap:wrap}
+.art{position:relative;height:376px}
 .card3d{position:absolute;border-radius:18px;border:1px solid var(--line2);background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));backdrop-filter:blur(8px);padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
-.c-a{inset:24px 90px 130px 0;transform:rotate(-6deg)}
-.c-b{inset:104px 0 40px 120px;transform:rotate(4.5deg)}
+.c-a{inset:20px 86px 132px 0;transform:rotate(-6deg)}
+.c-b{inset:104px 0 34px 116px;transform:rotate(4.5deg)}
 .tinylab{font-family:'Space Grotesk';font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt3);margin-bottom:12px}
 .nline{position:relative;height:2px;background:var(--line2);margin:30px 8px}
 .nline b{position:absolute;top:-5px;width:2px;height:12px;background:var(--txt3)}
-.nline u{position:absolute;top:-9px;left:37.5%;width:20px;height:20px;border-radius:50%;background:var(--spectrum);box-shadow:0 0 18px var(--violet)}
+.nline u{position:absolute;top:-9px;left:37.5%;width:20px;height:20px;border-radius:50%}
 .nline s{position:absolute;top:16px;font-size:11px;color:var(--txt3);font-family:'Space Grotesk'}
 .tenframe{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
 .tenframe i{aspect-ratio:1;border-radius:7px;border:1px solid var(--line2)}
-.tenframe i.f{background:radial-gradient(circle at 35% 30%,var(--cyan),var(--violet));border-color:transparent;box-shadow:0 0 14px rgba(34,224,240,.4)}
-.eq{font-family:'Space Grotesk';font-size:30px;font-weight:700;text-align:center;margin-top:16px}
-.eq u{text-decoration:none;color:var(--lime)}
-
-/* grade picker */
-.gsec{padding:58px 0 0}
+.tenframe i.f{border-color:transparent}
+.eq{font-family:'Space Grotesk';font-size:29px;font-weight:700;text-align:center;margin-top:15px}
+.eq u{text-decoration:none;color:var(--ok)}
+.gsec{padding:56px 0 0}
 .grow{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:22px}
 .gtile{position:relative;border-radius:16px;border:1px solid var(--line);background:var(--glass);padding:20px 16px 17px;text-align:center;overflow:hidden;cursor:pointer}
-.gtile:after{content:'';position:absolute;inset:0;background:var(--spectrum);opacity:.11}
-.gtile.hot{border-color:transparent;box-shadow:0 0 0 1px var(--violet),0 10px 40px rgba(124,92,255,.36)}
+.gtile:after{content:'';position:absolute;inset:0;opacity:.11;background:linear-gradient(100deg,var(--a1),var(--a2) 55%,var(--a3))}
+.gtile.hot{border-color:transparent;box-shadow:0 0 0 1px var(--a2),0 10px 40px rgba(0,0,0,.4)}
 .gtile.hot:after{opacity:.26}
 .gtile b{position:relative;display:block;font-family:'Space Grotesk';font-size:40px;font-weight:700;line-height:1}
-.gtile span{position:relative;display:block;font-size:11.5px;color:var(--txt2);margin-top:7px;letter-spacing:.05em}
-
-/* feature cards */
+.gtile span{position:relative;display:block;font-size:11.5px;color:var(--txt2);margin-top:7px}
 .f3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}
 .fcard{border-radius:16px;border:1px solid var(--line);background:var(--glass);padding:24px}
-.ficon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;margin-bottom:16px}
-.i1{background:rgba(34,224,240,.14);border:1px solid rgba(34,224,240,.34)}
-.i2{background:rgba(124,92,255,.16);border:1px solid rgba(124,92,255,.36)}
-.i3{background:rgba(255,77,157,.14);border:1px solid rgba(255,77,157,.34)}
+.ficon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;margin-bottom:16px;border:1px solid var(--line2);background:var(--glass2);color:var(--a1)}
 .fcard h4{font-size:17px;margin-bottom:8px}
 .fcard p{font-size:14px;color:var(--txt2)}
-
-/* grade hub */
-.hubhead{padding:44px 0 0;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
-.gbadge{width:74px;height:74px;border-radius:18px;background:var(--spectrum);display:grid;place-items:center;font-family:'Space Grotesk';font-size:36px;font-weight:700;color:#05060E;box-shadow:0 0 34px rgba(124,92,255,.5)}
-.hubhead h2{font-size:38px}
+/* character picker */
+.pick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:24px}
+.ccard{position:relative;border-radius:20px;border:1px solid var(--line);background:var(--glass);padding:26px 24px 24px;cursor:pointer;overflow:hidden;text-align:center;transition:transform .2s,box-shadow .3s}
+.ccard:hover{transform:translateY(-4px)}
+.ccard .halo{position:absolute;top:-70px;left:50%;transform:translateX(-50%);width:220px;height:180px;filter:blur(46px);opacity:.75}
+.ccard.sel{border-color:transparent;box-shadow:0 0 0 2px var(--pk2),0 16px 50px rgba(0,0,0,.5)}
+.ccard svg.av{position:relative;width:104px;height:104px}
+.ccard h4{position:relative;font-size:22px;margin-top:12px}
+.ccard .sub{position:relative;font-size:12px;font-family:'Space Grotesk';letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin-top:6px}
+.ccard .qt{position:relative;font-size:13.5px;color:var(--txt2);margin-top:14px;min-height:44px}
+.swatch{position:relative;display:flex;gap:5px;justify-content:center;margin-top:16px}
+.swatch i{width:26px;height:6px;border-radius:99px}
+.ccard .cta{position:relative;margin-top:18px;font-family:'Space Grotesk';font-size:13px;font-weight:500;color:var(--txt3)}
+.ccard.sel .cta{color:var(--pk2)}
+.hubhead{padding:42px 0 0;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.gbadge{width:74px;height:74px;border-radius:18px;display:grid;place-items:center;font-family:'Space Grotesk';font-size:36px;font-weight:700;color:#05060E}
+.hubhead h2{font-size:37px}
 .hubhead p{color:var(--txt2);font-size:15px}
 .chips{display:flex;gap:9px;flex-wrap:wrap;margin:26px 0 24px}
 .chip{font-size:13px;font-family:'Space Grotesk';font-weight:500;padding:8px 15px;border-radius:99px;border:1px solid var(--line2);background:var(--glass);color:var(--txt2);cursor:pointer}
-.chip.on{background:rgba(34,224,240,.13);border-color:var(--cyan);color:var(--cyan)}
+.chip.on{border-color:var(--a1);color:var(--a1);background:var(--glass2)}
 .blist{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .bcard{border-radius:16px;border:1px solid var(--line);background:var(--glass);overflow:hidden;cursor:pointer}
-.bthumb{height:132px;position:relative;display:grid;place-items:center;border-bottom:1px solid var(--line)}
-.t1{background:linear-gradient(140deg,rgba(34,224,240,.2),rgba(124,92,255,.14))}
-.t2{background:linear-gradient(140deg,rgba(124,92,255,.22),rgba(255,77,157,.14))}
-.t3{background:linear-gradient(140deg,rgba(255,77,157,.18),rgba(255,176,58,.14))}
-.bthumb .big{font-family:'Space Grotesk';font-size:44px;font-weight:700;opacity:.92}
+.bthumb{height:134px;position:relative;display:grid;place-items:center;border-bottom:1px solid var(--line);background:linear-gradient(140deg,var(--gA),transparent)}
+.bthumb .big{font-family:'Space Grotesk';font-size:42px;font-weight:700;opacity:.95}
+.bthumb svg{width:64px;height:64px}
 .bbody{padding:18px}
 .bbody h4{font-size:16.5px;margin-bottom:6px}
-.bbody p{font-size:13px;color:var(--txt2);margin-bottom:14px}
+.bbody p{font-size:13px;color:var(--txt2);margin-bottom:14px;min-height:40px}
 .bmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.tag{font-size:10.5px;font-family:'Space Grotesk';letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:6px}
-.tg-i{background:rgba(34,224,240,.14);color:var(--cyan)}
-.tg-g{background:rgba(255,77,157,.15);color:var(--magenta)}
-.tg-p{background:rgba(182,255,61,.14);color:var(--lime)}
-.tg-s{background:rgba(255,255,255,.07);color:var(--txt3)}
-
-/* workbook */
+.tag{font-size:10.5px;font-family:'Space Grotesk';letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:var(--glass2);color:var(--txt3);border:1px solid var(--line)}
+.tag.acc{color:var(--a1);border-color:var(--line2)}
+.tag.ok{color:var(--ok);border-color:var(--line2)}
 .wb{margin-top:26px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));overflow:hidden}
-.wbbar{display:flex;align-items:center;gap:16px;padding:15px 22px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.24);flex-wrap:wrap}
+.wbbar{display:flex;align-items:center;gap:15px;padding:15px 22px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.24);flex-wrap:wrap}
 .wbbar h4{font-size:15px}
-.prog{flex:1;min-width:120px;height:6px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden}
-.prog i{display:block;width:45%;height:100%;background:var(--spectrum);border-radius:99px}
+.prog{flex:1;min-width:110px;height:6px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden}
+.prog i{display:block;width:45%;height:100%;border-radius:99px}
 .seed{font-family:'Space Grotesk';font-size:12px;color:var(--txt3);border:1px dashed var(--line2);padding:5px 11px;border-radius:8px}
-.wbbody{padding:40px 44px 44px;text-align:center}
+.wbbody{padding:38px 44px 42px;text-align:center}
 .qnum{font-family:'Space Grotesk';font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt3)}
-.wbbody h3{font-size:27px;margin:12px 0 44px;font-weight:500}
-.bigline{position:relative;max-width:620px;margin:0 auto 50px;height:3px;background:linear-gradient(90deg,transparent,var(--line2) 6%,var(--line2) 94%,transparent)}
+.wbbody h3{font-size:26px;margin:12px auto 46px;font-weight:500;max-width:30ch}
+.bigline{position:relative;max-width:620px;margin:0 auto 54px;height:3px;background:linear-gradient(90deg,transparent,var(--line2) 6%,var(--line2) 94%,transparent)}
 .bigline .tick{position:absolute;top:-7px;width:2px;height:17px;background:var(--txt3)}
 .bigline .lbl{position:absolute;top:22px;transform:translateX(-50%);font-family:'Space Grotesk';font-size:13px;color:var(--txt2)}
-.bigline .knob{position:absolute;top:-13px;left:37.5%;width:30px;height:30px;margin-left:-15px;border-radius:50%;background:var(--spectrum);box-shadow:0 0 26px rgba(124,92,255,.75),0 0 0 5px rgba(124,92,255,.14);cursor:grab}
-.bigline .cal{position:absolute;top:-52px;left:37.5%;transform:translateX(-50%);font-family:'Space Grotesk';font-weight:700;font-size:19px;background:var(--glass2);border:1px solid var(--line2);padding:5px 13px;border-radius:9px;white-space:nowrap}
-.feedback{display:inline-flex;align-items:center;gap:11px;background:rgba(182,255,61,.1);border:1px solid rgba(182,255,61,.36);color:var(--lime);padding:13px 22px;border-radius:12px;font-family:'Space Grotesk';font-weight:500;font-size:15px}
-.wbfoot{display:flex;gap:11px;justify-content:center;margin-top:32px;flex-wrap:wrap}
-
-/* print */
+.knob{position:absolute;top:-22px;left:37.5%;width:46px;height:46px;margin-left:-23px;border-radius:50%;display:grid;place-items:center;cursor:grab;border:2px solid rgba(255,255,255,.25)}
+.knob svg{width:34px;height:34px}
+.cal{position:absolute;top:-64px;left:37.5%;transform:translateX(-50%);font-family:'Space Grotesk';font-weight:700;font-size:18px;background:var(--glass2);border:1px solid var(--line2);padding:5px 13px;border-radius:9px;white-space:nowrap}
+.feedback{display:inline-flex;align-items:center;gap:11px;border:1px solid var(--line2);background:var(--glass2);color:var(--ok);padding:13px 22px;border-radius:12px;font-family:'Space Grotesk';font-weight:500;font-size:15px;max-width:52ch;text-align:left}
+.wbfoot{display:flex;gap:11px;justify-content:center;margin-top:30px;flex-wrap:wrap}
 .pflex{display:grid;grid-template-columns:1fr 300px;gap:26px;margin-top:26px;align-items:start}
-.paper{background:#fff;color:#111;border-radius:6px;padding:34px 36px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.paper{background:#fff;color:#111;border-radius:6px;padding:32px 36px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .paper .ph{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:13px;margin-bottom:22px}
-.paper .ph b{font-family:'Space Grotesk';font-size:19px;font-weight:700;letter-spacing:-.02em}
-.paper .ph small{display:block;font-size:11px;color:#666;font-weight:400;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.paper .ph .lt{display:flex;align-items:center;gap:11px}
+.paper .ph svg{width:38px;height:38px}
+.paper .ph b{font-family:'Space Grotesk';font-size:18px;font-weight:700;letter-spacing:-.02em;display:block}
+.paper .ph small{display:block;font-size:10.5px;color:#666;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
 .paper .nm{font-size:11px;color:#555;text-align:right;line-height:2.1}
-.paper .nm u{display:inline-block;width:96px;border-bottom:1px solid #999;text-decoration:none}
-.paper h5{font-family:'Space Grotesk';font-size:14px;margin-bottom:18px}
-.pq{display:grid;grid-template-columns:1fr 1fr;gap:22px 30px}
-.pq>div{font-size:13px;color:#222}
-.pline{position:relative;height:2px;background:#111;margin:26px 4px 30px}
+.paper .nm u{display:inline-block;width:94px;border-bottom:1px solid #999;text-decoration:none}
+.paper h5{font-family:'Space Grotesk';font-size:13.5px;margin-bottom:16px}
+.pq{display:grid;grid-template-columns:1fr 1fr;gap:20px 30px}
+.pq>div{font-size:12.5px;color:#222}
+.pline{position:relative;height:2px;background:#111;margin:24px 4px 30px}
 .pline b{position:absolute;top:-5px;width:2px;height:11px;background:#111}
 .pline s{position:absolute;top:14px;transform:translateX(-50%);font-size:10px;color:#444;text-decoration:none;font-family:'Space Grotesk'}
-.pfoot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ccc;margin-top:26px;padding-top:14px;font-size:10px;color:#777}
-.qr{width:56px;height:56px;display:grid;grid-template-columns:repeat(7,1fr);gap:1.5px}
+.pfoot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ccc;margin-top:24px;padding-top:13px;font-size:10px;color:#777;gap:16px}
+.qr{width:54px;height:54px;display:grid;grid-template-columns:repeat(7,1fr);gap:1.5px;flex:none}
 .qr i{background:#111;border-radius:1px}
 .qr i.o{background:transparent}
 .pside{border-radius:16px;border:1px solid var(--line);background:var(--glass);padding:22px}
 .pside h4{font-size:15px;margin-bottom:6px}
-.pside p{font-size:13px;color:var(--txt2);margin-bottom:18px}
+.pside p{font-size:13px;color:var(--txt2);margin-bottom:16px}
 .prow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txt2);padding:11px 0;border-top:1px solid var(--line)}
 .prow em{margin-left:auto;font-style:normal;font-family:'Space Grotesk';color:var(--txt);font-size:12.5px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
-footer{position:relative;z-index:1;margin-top:96px;border-top:1px solid var(--line);padding:30px 0;text-align:center;color:var(--txt3);font-size:12.5px}
-@media(max-width:900px){.hero,.pflex{grid-template-columns:1fr}.art{display:none}.grow{grid-template-columns:repeat(3,1fr)}.f3,.blist{grid-template-columns:1fr}.hero h1{font-size:44px}}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+.bar{position:sticky;top:0;z-index:20;background:rgba(5,6,14,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.barin{max-width:1180px;margin:0 auto;padding:11px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.barin strong{font-family:'Space Grotesk';font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt3);font-weight:500}
+.sw{display:flex;gap:8px}
+.swb{display:flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--glass);color:var(--txt2);padding:5px 14px 5px 6px;border-radius:99px;cursor:pointer;font-family:'Space Grotesk';font-size:13px;font-weight:500}
+.swb svg{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.06)}
+.swb.on{color:var(--txt);border-color:var(--a2);background:var(--glass2)}
+footer{position:relative;z-index:1;margin-top:92px;border-top:1px solid var(--line);padding:28px 0;text-align:center;color:var(--txt3);font-size:12.5px}
+@media(max-width:900px){.hero,.pflex{grid-template-columns:1fr}.art{display:none}.grow{grid-template-columns:repeat(3,1fr)}.f3,.blist,.pick{grid-template-columns:1fr}.hero h1{font-size:42px}}
 </style>
 </head>
-<body>
+<body data-ch="none">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="av-kiwi" viewBox="0 0 64 64">
+  <path d="M13 24 3 19l10-1zM11 33 1 31l10-3zM13 42 4 43l9 3z" fill="#C4692A"/>
+  <path d="M51 24l10-5-10-1zM53 33l10-2-10-3zM51 42l9 1-9 3z" fill="#C4692A"/>
+  <path d="M32 5c14 0 21 11 21 24s-9 25-21 25S11 42 11 29 18 5 32 5z" fill="#E4A257"/>
+  <path d="M32 9c11 0 17 9 17 19 0 5-1 9-3 13H18c-2-4-3-8-3-13 0-10 6-19 17-19z" fill="#F2BE7E"/>
+  <path d="M18 41c3 7 8 10 14 10s11-3 14-10c1 8-5 15-14 15s-15-7-14-15z" fill="#C4692A"/>
+  <ellipse cx="23" cy="28" rx="6.4" ry="5.8" fill="#2A1608"/>
+  <ellipse cx="41" cy="28" rx="6.4" ry="5.8" fill="#2A1608"/>
+  <ellipse cx="23" cy="26.4" rx="2.4" ry="1.5" fill="#FFD9A0"/>
+  <ellipse cx="41" cy="26.4" rx="2.4" ry="1.5" fill="#FFD9A0"/>
+  <circle cx="27.5" cy="39" r="1.3" fill="#8A4416"/><circle cx="36.5" cy="39" r="1.3" fill="#8A4416"/>
+  <path d="M27 46c2 1.6 8 1.6 10 0" stroke="#8A4416" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+</symbol>
+<symbol id="av-georgie" viewBox="0 0 64 64">
+  <path d="M15 32 4 3l24 15z" fill="#D9A07A"/><path d="M49 32 60 3 36 18z" fill="#D9A07A"/>
+  <path d="M17 28 9 10l16 10z" fill="#F5A9C0"/><path d="M47 28 55 10 39 20z" fill="#F5A9C0"/>
+  <path d="M32 11c13 0 20 10 20 22 0 13-9 22-20 22s-20-9-20-22c0-12 7-22 20-22z" fill="#EFC49A"/>
+  <path d="M32 15c9 0 15 7 16 16H16c1-9 7-16 16-16z" fill="#F8D9B6"/>
+  <circle cx="23" cy="33" r="6.6" fill="#241018"/><circle cx="41" cy="33" r="6.6" fill="#241018"/>
+  <circle cx="25.2" cy="30.8" r="2.3" fill="#fff"/><circle cx="43.2" cy="30.8" r="2.3" fill="#fff"/>
+  <ellipse cx="32" cy="46" rx="10" ry="7.6" fill="#FBE6CE"/>
+  <ellipse cx="32" cy="42.5" rx="4" ry="3.1" fill="#241018"/>
+  <path d="M32 46v3M32 49c-2.4 0-4 1.4-4 2.6M32 49c2.4 0 4 1.4 4 2.6" stroke="#241018" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</symbol>
+<symbol id="av-none" viewBox="0 0 64 64">
+  <circle cx="32" cy="32" r="21" fill="none" stroke="#93A0C8" stroke-width="2" stroke-dasharray="5 5"/>
+  <path d="M32 22v20M22 32h20" stroke="#93A0C8" stroke-width="2.4" stroke-linecap="round"/>
+</symbol>
+<symbol id="ln-kiwi" viewBox="0 0 64 64">
+  <path d="M13 24 3 19l10-1zM11 33 1 31l10-3zM13 42 4 43l9 3zM51 24l10-5-10-1zM53 33l10-2-10-3zM51 42l9 1-9 3z" fill="#111"/>
+  <path d="M32 5c14 0 21 11 21 24s-9 25-21 25S11 42 11 29 18 5 32 5z" fill="none" stroke="#111" stroke-width="3"/>
+  <path d="M18 41c3 7 8 10 14 10s11-3 14-10c1 8-5 15-14 15s-15-7-14-15z" fill="none" stroke="#111" stroke-width="2.4"/>
+  <ellipse cx="23" cy="28" rx="5" ry="4.4" fill="#111"/><ellipse cx="41" cy="28" rx="5" ry="4.4" fill="#111"/>
+</symbol>
+<symbol id="ln-georgie" viewBox="0 0 64 64">
+  <path d="M15 32 4 3l24 15zM49 32 60 3 36 18z" fill="none" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M32 11c13 0 20 10 20 22 0 13-9 22-20 22s-20-9-20-22c0-12 7-22 20-22z" fill="none" stroke="#111" stroke-width="3"/>
+  <circle cx="23" cy="33" r="4.4" fill="#111"/><circle cx="41" cy="33" r="4.4" fill="#111"/>
+  <ellipse cx="32" cy="46" rx="9" ry="6.8" fill="none" stroke="#111" stroke-width="2.2"/>
+  <ellipse cx="32" cy="42.5" rx="3.2" ry="2.5" fill="#111"/>
+</symbol>
+</defs></svg>
+
 <div class="grid-bg"></div><div class="glow g1"></div><div class="glow g2"></div>
+
+<div class="bar"><div class="barin">
+  <strong>Try a character →</strong>
+  <div class="sw">
+    <button class="swb on" data-set="none"><svg><use href="#av-none"/></svg>No character</button>
+    <button class="swb" data-set="kiwi"><svg><use href="#av-kiwi"/></svg>Kiwi</button>
+    <button class="swb" data-set="georgie"><svg><use href="#av-georgie"/></svg>Georgie</button>
+  </div>
+  <span style="font-size:12px;color:var(--txt3);margin-left:auto">The math never changes — only the skin</span>
+</div></div>
 
 <div class="slab"><span>Screen 1 — home</span><i></i></div>
 <div class="wrap">
   <nav>
-    <div class="logo"><div class="mark">∞</div>Izzi Math</div>
+    <div class="logo"><div class="mark sp">∞</div>Izzi Math</div>
     <a href="#" class="on">Grades</a><a href="#">Books</a><a href="#">Games</a><a href="#">Printables</a>
-    <div class="navr"><a href="#" class="btn">Print library</a><a href="#" class="btn pri">Start grade 3 →</a></div>
+    <div class="navr">
+      <button class="whoami"><svg><use href="#av-none" data-avatar/></svg><span data-slot="whoami">Pick a buddy</span></button>
+      <a href="#" class="btn pri sp">Start grade 3 →</a>
+    </div>
   </nav>
-
   <section class="hero">
     <div>
       <div class="pill">◆ Every book prints</div>
       <h1>Math that <em>glows</em><br>on screen and<br>on paper.</h1>
-      <p>Interactive workbooks and games for kindergarten through 5th grade. Play it, then print it — same problems, same page, no account needed.</p>
-      <div class="hcta"><a href="#" class="btn pri">Pick your grade</a><a href="#" class="btn">⌘ Browse printables</a></div>
+      <p data-slot="herosub">Interactive workbooks and games for kindergarten through 5th grade. Play it, then print it — same problems, same page, no account needed.</p>
+      <div class="hcta"><a href="#" class="btn pri sp">Pick your grade</a><a href="#" class="btn">⌘ Browse printables</a></div>
     </div>
     <div class="art">
       <div class="card3d c-a">
-        <div class="tinylab">Fraction foundry · G4</div>
-        <div class="nline"><b style="left:0"></b><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b><b style="left:100%"></b><u></u><s style="left:0">0</s><s style="left:96%">1</s></div>
+        <div class="tinylab" data-slot="art1">Fraction foundry · G4</div>
+        <div class="nline"><b style="left:0"></b><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b><b style="left:100%"></b><u class="sp"></u><s style="left:0">0</s><s style="left:96%">1</s></div>
       </div>
       <div class="card3d c-b">
-        <div class="tinylab">Ten-frame blitz · G1</div>
-        <div class="tenframe"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div>
+        <div class="tinylab" data-slot="art2">Ten-frame blitz · G1</div>
+        <div class="tenframe"><i class="f sp"></i><i class="f sp"></i><i class="f sp"></i><i class="f sp"></i><i></i><i class="f sp"></i><i class="f sp"></i><i></i><i></i><i></i></div>
         <div class="eq">6 + <u>?</u> = 10</div>
       </div>
     </div>
   </section>
-
   <section class="gsec">
     <h2 style="font-size:24px">Choose a grade</h2>
     <div class="grow">
-      <div class="gtile"><b>K</b><span>Counting</span></div>
-      <div class="gtile"><b>1</b><span>Adding to 20</span></div>
-      <div class="gtile"><b>2</b><span>Place value</span></div>
-      <div class="gtile hot"><b>3</b><span>Multiplying</span></div>
-      <div class="gtile"><b>4</b><span>Fractions</span></div>
-      <div class="gtile"><b>5</b><span>Decimals</span></div>
+      <div class="gtile"><b>K</b><span>Counting</span></div><div class="gtile"><b>1</b><span>Adding to 20</span></div>
+      <div class="gtile"><b>2</b><span>Place value</span></div><div class="gtile hot"><b>3</b><span>Multiplying</span></div>
+      <div class="gtile"><b>4</b><span>Fractions</span></div><div class="gtile"><b>5</b><span>Decimals</span></div>
     </div>
     <div class="f3">
-      <div class="fcard"><div class="ficon i1">◈</div><h4>Interactive books</h4><p>Chaptered workbooks with hints, instant feedback, and worked solutions when a kid gets stuck.</p></div>
-      <div class="fcard"><div class="ficon i2">◉</div><h4>Fluency games</h4><p>Fast, replayable loops built on the same skills. Score and streak, never a leaderboard.</p></div>
-      <div class="fcard"><div class="ficon i3">▤</div><h4>Infinite printables</h4><p>Every activity generates a fresh sheet plus an answer key. Click again, get new problems.</p></div>
+      <div class="fcard"><div class="ficon">◈</div><h4>Interactive books</h4><p>Chaptered workbooks with hints, instant feedback, and worked solutions when a kid gets stuck.</p></div>
+      <div class="fcard"><div class="ficon">◉</div><h4>Fluency games</h4><p data-slot="f2">Fast, replayable loops built on the same skills. Score and streak, never a leaderboard.</p></div>
+      <div class="fcard"><div class="ficon">▤</div><h4>Infinite printables</h4><p>Every activity generates a fresh sheet plus an answer key. Click again, get new problems.</p></div>
     </div>
   </section>
 </div>
 
-<div class="slab"><span>Screen 2 — grade hub</span><i></i></div>
+<div class="slab"><span>Screen 2 — pick your buddy</span><i></i></div>
 <div class="wrap">
-  <section class="hubhead">
-    <div class="gbadge">3</div>
-    <div><h2>Third grade</h2><p>Multiplication, division, fractions, area — 6 books, 4 games, 62 printable sheets.</p></div>
-  </section>
-  <div class="chips"><div class="chip on">All</div><div class="chip">Multiplication and division</div><div class="chip">Fractions</div><div class="chip">Area and perimeter</div><div class="chip">Data</div></div>
-  <div class="blist">
-    <div class="bcard"><div class="bthumb t1"><div class="big">7 × 8</div></div><div class="bbody"><h4>Times table tower</h4><p>Build fluency to 12 × 12, one floor at a time.</p><div class="bmeta"><span class="tag tg-i">Book</span><span class="tag tg-p">Prints</span><span class="tag tg-s">3.OA.C.7</span></div></div></div>
-    <div class="bcard"><div class="bthumb t2"><div class="big">¾</div></div><div class="bbody"><h4>Fraction first light</h4><p>Halves, thirds, fourths on the number line.</p><div class="bmeta"><span class="tag tg-i">Book</span><span class="tag tg-p">Prints</span><span class="tag tg-s">3.NF.A.2</span></div></div></div>
-    <div class="bcard"><div class="bthumb t3"><div class="big">⬚</div></div><div class="bbody"><h4>Fact family forge</h4><p>Beat the clock forging matched fact families.</p><div class="bmeta"><span class="tag tg-g">Game</span><span class="tag tg-p">Prints</span><span class="tag tg-s">3.OA.B.6</span></div></div></div>
+  <h2 style="font-size:30px">Who's doing math with you?</h2>
+  <p style="color:var(--txt2);font-size:15px;margin-top:10px">Your buddy changes the colours, the stories, and the games. You can switch any time.</p>
+  <div class="pick">
+    <div class="ccard" data-set="kiwi" style="--pk1:#FFC24D;--pk2:#FF7A45;--pk3:#2ED3B7">
+      <div class="halo" style="background:radial-gradient(ellipse,rgba(255,122,69,.5),transparent 70%)"></div>
+      <svg class="av"><use href="#av-kiwi"/></svg>
+      <h4>Kiwi</h4><div class="sub">Bearded dragon</div>
+      <div class="qt">“Nice. No rush.” Counts crickets, basks on warm rocks, and builds everything out of scales.</div>
+      <div class="swatch"><i style="background:#FFC24D"></i><i style="background:#FF7A45"></i><i style="background:#2ED3B7"></i></div>
+      <div class="cta">Choose Kiwi →</div>
+    </div>
+    <div class="ccard" data-set="georgie" style="--pk1:#FF4D9D;--pk2:#A855F7;--pk3:#22E0F0">
+      <div class="halo" style="background:radial-gradient(ellipse,rgba(255,77,157,.5),transparent 70%)"></div>
+      <svg class="av"><use href="#av-georgie"/></svg>
+      <h4>Georgie</h4><div class="sub">Chihuahua</div>
+      <div class="qt">“YES! Again!” Chases tennis balls down number lines and counts treats at top speed.</div>
+      <div class="swatch"><i style="background:#FF4D9D"></i><i style="background:#A855F7"></i><i style="background:#22E0F0"></i></div>
+      <div class="cta">Choose Georgie →</div>
+    </div>
+    <div class="ccard sel" data-set="none" style="--pk1:#22E0F0;--pk2:#7C5CFF;--pk3:#FF4D9D">
+      <div class="halo" style="background:radial-gradient(ellipse,rgba(124,92,255,.45),transparent 70%)"></div>
+      <svg class="av"><use href="#av-none"/></svg>
+      <h4>Just math</h4><div class="sub">No character</div>
+      <div class="qt">Plain problems, plain colours. Some kids — and most teachers printing class sets — want exactly this.</div>
+      <div class="swatch"><i style="background:#22E0F0"></i><i style="background:#7C5CFF"></i><i style="background:#FF4D9D"></i></div>
+      <div class="cta">Currently on →</div>
+    </div>
   </div>
 </div>
 
-<div class="slab"><span>Screen 3 — interactive book page</span><i></i></div>
+<div class="slab"><span>Screen 3 — grade hub</span><i></i></div>
+<div class="wrap">
+  <section class="hubhead">
+    <div class="gbadge sp">3</div>
+    <div><h2>Third grade</h2><p data-slot="hubsub">Multiplication, division, fractions, area — 6 books, 4 games, 62 printable sheets.</p></div>
+  </section>
+  <div class="chips"><div class="chip on">All</div><div class="chip">Multiplication and division</div><div class="chip">Fractions</div><div class="chip">Area and perimeter</div><div class="chip">Data</div></div>
+  <div class="blist">
+    <div class="bcard"><div class="bthumb"><div class="big">7 × 8</div></div><div class="bbody"><h4>Times table tower</h4><p data-slot="b1">Build fluency to 12 × 12, one floor at a time.</p><div class="bmeta"><span class="tag acc">Book</span><span class="tag ok">Prints</span><span class="tag">3.OA.C.7</span></div></div></div>
+    <div class="bcard"><div class="bthumb"><div class="big">¾</div></div><div class="bbody"><h4>Fraction first light</h4><p data-slot="b2">Halves, thirds, fourths on the number line.</p><div class="bmeta"><span class="tag acc">Book</span><span class="tag ok">Prints</span><span class="tag">3.NF.A.2</span></div></div></div>
+    <div class="bcard"><div class="bthumb"><svg data-avatar><use href="#av-none"/></svg></div><div class="bbody"><h4 data-slot="g1">Fact family forge</h4><p data-slot="g1d">Beat the clock forging matched fact families.</p><div class="bmeta"><span class="tag acc">Game</span><span class="tag ok">Prints</span><span class="tag">3.OA.B.6</span></div></div></div>
+  </div>
+</div>
+
+<div class="slab"><span>Screen 4 — interactive book page</span><i></i></div>
 <div class="wrap">
   <div class="wb">
     <div class="wbbar">
-      <h4>Fraction first light</h4><span class="tag tg-s">Chapter 2 · page 4 of 9</span>
-      <div class="prog"><i></i></div>
+      <h4>Fraction first light</h4><span class="tag" data-slot="chap">Chapter 2 · page 4 of 9</span>
+      <div class="prog"><i class="sp"></i></div>
       <span class="seed">seed 8817</span>
       <a href="#" class="btn">▤ Print this chapter</a>
     </div>
     <div class="wbbody">
       <div class="qnum">Question 4</div>
-      <h3>Drag the marker to <strong style="font-weight:700">3⁄8</strong> on the number line.</h3>
+      <h3 data-slot="q">Drag the marker to <strong style="font-weight:700">3⁄8</strong> on the number line.</h3>
       <div class="bigline">
-        <div class="cal">3⁄8</div><div class="knob"></div>
+        <div class="cal">3⁄8</div>
+        <div class="knob sp"><svg data-avatar><use href="#av-none"/></svg></div>
         <div class="tick" style="left:0"></div><div class="tick" style="left:25%"></div><div class="tick" style="left:50%"></div><div class="tick" style="left:75%"></div><div class="tick" style="left:100%"></div>
         <div class="lbl" style="left:0">0</div><div class="lbl" style="left:50%">1⁄2</div><div class="lbl" style="left:100%">1</div>
       </div>
-      <div class="feedback">✦ Exactly right — 3⁄8 sits just left of one half.</div>
-      <div class="wbfoot"><a href="#" class="btn">← Back</a><a href="#" class="btn">Show me why</a><a href="#" class="btn pri">Next question →</a></div>
+      <div class="feedback"><span>✦</span><span data-slot="fb">Exactly right — 3⁄8 sits just left of one half.</span></div>
+      <div class="wbfoot"><a href="#" class="btn">← Back</a><a href="#" class="btn">Show me why</a><a href="#" class="btn pri sp">Next question →</a></div>
     </div>
   </div>
 </div>
 
-<div class="slab"><span>Screen 4 — the printable twin</span><i></i></div>
+<div class="slab"><span>Screen 5 — the printable twin</span><i></i></div>
 <div class="wrap">
   <div class="pflex">
     <div class="paper">
       <div class="ph">
-        <div><b>Fraction first light</b><small>Grade 3 · chapter 2 · sheet 4</small></div>
+        <div class="lt">
+          <svg data-lineart style="display:none"><use href="#ln-kiwi"/></svg>
+          <div><b>Fraction first light</b><small data-slot="psub">Grade 3 · chapter 2 · sheet 4</small></div>
+        </div>
         <div class="nm">Name <u></u><br>Date <u></u></div>
       </div>
-      <h5>1. Mark each fraction on the number line.</h5>
+      <h5 data-slot="p1">1. Mark each fraction on the number line.</h5>
       <div class="pline"><b style="left:0"></b><b style="left:12.5%"></b><b style="left:25%"></b><b style="left:37.5%"></b><b style="left:50%"></b><b style="left:62.5%"></b><b style="left:75%"></b><b style="left:87.5%"></b><b style="left:100%"></b><s style="left:0">0</s><s style="left:50%">1/2</s><s style="left:100%">1</s></div>
-      <h5>2. Write the fraction shown by each mark.</h5>
+      <h5 data-slot="p2">2. Write the fraction shown by each mark.</h5>
       <div class="pq">
         <div>a)&nbsp; 3 eighths &nbsp;=&nbsp; ______</div><div>d)&nbsp; 6 eighths &nbsp;=&nbsp; ______</div>
         <div>b)&nbsp; 1 half &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp; ______</div><div>e)&nbsp; 2 fourths &nbsp;=&nbsp; ______</div>
@@ -268,17 +358,86 @@ footer{position:relative;z-index:1;margin-top:96px;border-top:1px solid var(--li
     </div>
     <div class="pside">
       <h4>Same activity, same seed</h4>
-      <p>The sheet and the screen render from one source. The QR code returns to seed 8817.</p>
+      <p data-slot="pside">The sheet and the screen render from one source. The QR code returns to seed 8817.</p>
       <div class="prow"><span class="dot"></span>Interactive page<em>live</em></div>
       <div class="prow"><span class="dot"></span>Print sheet<em>PDF</em></div>
       <div class="prow"><span class="dot"></span>Answer key<em>PDF</em></div>
-      <div class="prow" style="border-bottom:1px solid var(--line)"><span class="dot" style="background:var(--amber);box-shadow:0 0 10px var(--amber)"></span>Class set of 24<em>later</em></div>
-      <a href="#" class="btn pri" style="margin-top:18px;width:100%;justify-content:center">↓ Download sheet</a>
+      <div class="prow" style="border-bottom:1px solid var(--line)"><span class="dot" style="background:var(--amber)"></span>Class set of 24<em>later</em></div>
+      <a href="#" class="btn pri sp" style="margin-top:18px;width:100%;justify-content:center">↓ Download sheet</a>
       <a href="#" class="btn" style="margin-top:9px;width:100%;justify-content:center">⟳ Generate new problems</a>
     </div>
   </div>
 </div>
 
-<footer>Izzi Math — concept mockup, not a build. Aesthetic direction: graph paper, lit from behind.</footer>
+<footer>Izzi Math — concept mockup, not a build. “Graph paper, lit from behind.”</footer>
+
+<script>
+var CH = {
+  none: {
+    whoami:'Pick a buddy', art1:'Fraction foundry · G4', art2:'Ten-frame blitz · G1',
+    herosub:'Interactive workbooks and games for kindergarten through 5th grade. Play it, then print it — same problems, same page, no account needed.',
+    f2:'Fast, replayable loops built on the same skills. Score and streak, never a leaderboard.',
+    hubsub:'Multiplication, division, fractions, area — 6 books, 4 games, 62 printable sheets.',
+    b1:'Build fluency to 12 × 12, one floor at a time.', b2:'Halves, thirds, fourths on the number line.',
+    g1:'Fact family forge', g1d:'Beat the clock forging matched fact families.',
+    chap:'Chapter 2 · page 4 of 9',
+    q:'Drag the marker to <strong>3⁄8</strong> on the number line.',
+    fb:'Exactly right — 3⁄8 sits just left of one half.',
+    psub:'Grade 3 · chapter 2 · sheet 4', p1:'1. Mark each fraction on the number line.',
+    p2:'2. Write the fraction shown by each mark.',
+    pside:'The sheet and the screen render from one source. The QR code returns to seed 8817.'
+  },
+  kiwi: {
+    whoami:'Kiwi', art1:'Kiwi’s canyon · G4', art2:'Cricket ten-frame · G1',
+    herosub:'Interactive workbooks and games for kindergarten through 5th grade — with Kiwi taking it one warm rock at a time. Play it, then print it.',
+    f2:'Steady rounds with no timer unless you want one. Kiwi does not believe in hurrying.',
+    hubsub:'Multiplication, division, fractions, area — 6 books, 4 games, 62 printable sheets, all in the canyon.',
+    b1:'Stack basking rocks to 12 × 12, one warm ledge at a time.', b2:'Split Kiwi’s cricket log into halves, thirds, and fourths.',
+    g1:'Cricket catch', g1d:'Match fact families before the crickets hop away. No clock.',
+    chap:'Canyon 2 · ledge 4 of 9',
+    q:'Kiwi is crawling along the branch. Move Kiwi to <strong>3⁄8</strong>.',
+    fb:'Nice. No rush — 3⁄8 basks just left of one half.',
+    psub:'Grade 3 · canyon 2 · sheet 4 · with Kiwi', p1:'1. Mark each fraction on Kiwi’s branch.',
+    p2:'2. Kiwi ate crickets at each mark. Write the fraction.',
+    pside:'Kiwi prints as one-colour line art, so the sheet survives any school photocopier.'
+  },
+  georgie: {
+    whoami:'Georgie', art1:'Georgie’s park · G4', art2:'Treat ten-frame · G1',
+    herosub:'Interactive workbooks and games for kindergarten through 5th grade — with Georgie bouncing you through every page. Play it, then print it.',
+    f2:'Quick rounds, big streaks, instant replay. Georgie would like to go again immediately.',
+    hubsub:'Multiplication, division, fractions, area — 6 books, 4 games, 62 printable sheets, all at the park.',
+    b1:'Toss treats into 12 × 12 bags and count them fast.', b2:'Bounce the tennis ball onto halves, thirds, and fourths.',
+    g1:'Fetch frenzy', g1d:'Throw the ball to the matching fact family before the timer runs out.',
+    chap:'Park 2 · lap 4 of 9',
+    q:'Georgie’s ball landed at <strong>3⁄8</strong>. Drag Georgie to fetch it.',
+    fb:'YES! Got it! 3⁄8 is just before one half — again again again!',
+    psub:'Grade 3 · park 2 · sheet 4 · with Georgie', p1:'1. Mark where Georgie’s ball lands.',
+    p2:'2. Georgie fetched a treat at each mark. Write the fraction.',
+    pside:'Georgie prints as one-colour line art, so the sheet survives any school photocopier.'
+  }
+};
+function apply(k){
+  document.body.dataset.ch = k;
+  var d = CH[k];
+  for (var s in d){
+    document.querySelectorAll('[data-slot="'+s+'"]').forEach(function(el){ el.innerHTML = d[s] });
+  }
+  document.querySelectorAll('svg[data-avatar] use').forEach(function(u){ u.setAttribute('href','#av-'+k) });
+  document.querySelectorAll('.swb').forEach(function(b){ b.classList.toggle('on', b.dataset.set===k) });
+  document.querySelectorAll('.ccard').forEach(function(c){
+    var on = c.dataset.set===k;
+    c.classList.toggle('sel', on);
+    c.querySelector('.cta').textContent = on ? 'Currently on →'
+      : 'Choose ' + (c.dataset.set==='none' ? 'just math' : c.dataset.set[0].toUpperCase()+c.dataset.set.slice(1)) + ' →';
+  });
+  var la = document.querySelector('svg[data-lineart]');
+  if (k==='none'){ la.style.display='none' }
+  else { la.style.display='block'; la.querySelector('use').setAttribute('href','#ln-'+k) }
+}
+document.querySelectorAll('[data-set]').forEach(function(el){
+  el.addEventListener('click', function(){ apply(el.dataset.set) });
+});
+apply('none');
+</script>
 </body>
 </html>

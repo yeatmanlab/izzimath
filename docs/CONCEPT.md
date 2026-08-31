@@ -47,7 +47,76 @@ Every printable carries a QR code in the footer pointing at the interactive vers
 *with the same seed*. Finish the sheet on paper, scan, check your answers on screen.
 Print sheets are a first-class product surface, not an export.
 
-## 4. Aesthetic direction: "hologrid"
+## 4. Characters: one math, many worlds
+
+Kids pick a character. That choice re-skins the whole site — palette, word problems,
+game mechanics, level names, encouragement copy, even the printable header.
+
+**The rule that makes this affordable:** a character changes the *skin*, never the
+*math*. If picking Georgie changed the problems, we would be authoring K–5 twice per
+character and CCSS alignment would drift. Instead activities are authored
+character-agnostic with named slots, and the character pack fills them.
+
+```ts
+// authored once, renders for every character
+stem: (ch) => `${ch.collectible.plural} come in ${ch.container.plural} of 8.
+               ${ch.name} has 4 ${ch.container.plural}. How many ${ch.collectible.plural}?`
+```
+
+Kiwi gets "crickets come in cups of 8." Georgie gets "treats come in bags of 8."
+Same numbers, same standard, same answer key. Authoring cost stays at 1×.
+
+### The character pack
+
+```
+Character
+├── identity     name, species, tagline, avatar (color + 1-bit line art for print)
+├── palette      accent ramp overriding the default spectrum
+├── world        setting and nouns for word problems and level names
+├── collectible  the thing that gets counted (drives every manipulative)
+├── voice        feedback and encouragement copy
+└── motif        decorative geometry, cursor, loading state, transitions
+```
+
+### The first two
+
+|              | **Kiwi** the bearded dragon        | **Georgie** the chihuahua           |
+| ------------ | ---------------------------------- | ----------------------------------- |
+| Palette      | Desert sun — amber, coral, teal    | Zip — magenta, violet, cyan         |
+| World        | Canyon, basking rocks, heat lamps  | The park, the couch, the sidewalk   |
+| Collectible  | Crickets, mealworms                | Treats, tennis balls                |
+| Voice        | Calm, unbothered, dry — "Nice. No rush." | Fast, delighted — "YES! Again!" |
+| Motif        | Scales — hexagonal tessellation    | Bouncing arcs, paw prints           |
+| Pace         | Slow, steady, no timers by default | Quick rounds, streaks, timers       |
+
+The pairing is deliberate rather than cosmetic. Kiwi's scale tessellation is genuinely
+useful geometry art — tiling, area, symmetry. Georgie's bouncing ball is genuinely
+useful number-line art — skip counting, intervals, fractions. Each character makes a
+different part of the curriculum feel native, and a kid who bounces off one may click
+with the other. Kiwi also gives us a calm, timer-free mode without ever labelling it
+"for kids who find timers stressful."
+
+### Where the choice is stored
+
+`localStorage` is the primary home, so it survives across visits with no account, and
+a `?ch=kiwi` URL param overrides it for sharing. Character is a rendering concern —
+it never touches problem generation, so a shared `?seed=8817` link produces identical
+math for both characters. Stateless stays intact.
+
+### Print constraint
+
+Sheets print in one ink colour on a school photocopier. Every character therefore
+needs a **1-bit line-art variant** alongside the colour avatar, and the palette must
+degrade to pure black on white without losing the header hierarchy. Worth designing
+the line art first — if the character does not read at 24px in black and white, it is
+the wrong character.
+
+### Adding a third
+
+A new character is one data file plus two art assets. No activity changes. The
+concept should ship with two and prove the third costs nearly nothing.
+
+## 5. Aesthetic direction: "hologrid"
 
 The brief is futuristic and impressive to adults *and* kids. Those usually pull in
 opposite directions — kid-appealing means bright and rounded, adult-futuristic means
@@ -69,7 +138,7 @@ are correct.
 - **Print is the inverse** — the same system flipped to ink on white, high contrast,
   generous work space. Deliberately calm. It has to survive a school photocopier.
 
-## 5. Information architecture
+## 6. Information architecture
 
 ```
 /                                 hero, grade picker, featured book + game
@@ -84,10 +153,14 @@ are correct.
 /about
 ```
 
+Character is orthogonal to routing — it themes every route rather than nesting under
+one, so there is no `/kiwi/grades/3`. One canonical URL per activity keeps sharing and
+SEO clean.
+
 Grade is the primary axis, as requested. Strand is secondary. A parent lands on
 `/grades/3`, a teacher lands on `/printables`.
 
-## 6. Books vs games
+## 7. Books vs games
 
 |            | Books                          | Games                              |
 | ---------- | ------------------------------ | ---------------------------------- |
@@ -96,7 +169,7 @@ Grade is the primary axis, as requested. Strand is secondary. A parent lands on
 | Feedback   | Hints, worked solutions        | Score, streak, timer               |
 | Print twin | Workbook pages + answer key    | Puzzle page version of the mechanic |
 
-## 7. Grade + strand map (CCSS-aligned)
+## 8. Grade + strand map (CCSS-aligned)
 
 | Grade | Strands                                                              |
 | ----- | -------------------------------------------------------------------- |
@@ -107,7 +180,7 @@ Grade is the primary axis, as requested. Strand is secondary. A parent lands on
 | 4     | Multi-digit operations · Equivalent fractions · Angles · Factors     |
 | 5     | Decimals · Fraction operations · Volume · Coordinate plane           |
 
-## 8. Launch content (proof the model works)
+## 9. Launch content (proof the model works)
 
 Three books and three games, one per grade band, chosen to stress-test different
 renderer needs:
@@ -122,7 +195,7 @@ Fraction Foundry is the flagship — a number line activity is the hardest thing
 render well on both screen and paper, so if the two-output model survives it, it
 survives everything.
 
-## 9. Technical plan
+## 10. Technical plan
 
 **Stack** — Next.js (App Router) + TypeScript, static export. Tailwind v4 with the
 design tokens above as CSS custom properties. Framer Motion for the springy feel.
@@ -148,12 +221,14 @@ it is code-shaped (generators are functions), and it wants type-checking.
 progress table is keyed on `(user, activity_id, seed)` — which already exists in the
 URL today. Nothing about the content model changes.
 
-## 10. Open questions
+## 11. Open questions
 
 1. **Grade range** — assumed K–5. Extend to 6–8 later, or now?
 2. **Standards** — CCSS assumed. Worth surfacing standard codes in the UI for
    teachers, or hiding them as metadata?
-3. **Mascot** — does "Izzi" become a character? A friendly geometric creature would
-   land with K–2 but risks undercutting the adult-facing polish. Recommend holding.
-4. **Audience priority** — parents at home, or teachers printing class sets? It
+3. **Is "Izzi" itself a character?** With Kiwi and Georgie in place, Izzi probably
+   works better as the brand and the guide than as a third pet. Recommend holding.
+4. **Does character gate anything?** Currently pure skin. Tempting to give each one
+   exclusive games — but that punishes the choice. Recommend keeping it cosmetic.
+5. **Audience priority** — parents at home, or teachers printing class sets? It
    changes whether `/printables` or `/grades` is the real front door.
