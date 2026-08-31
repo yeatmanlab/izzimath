@@ -222,3 +222,24 @@ footer.foot a:hover { color: var(--txt) }
 .strat h3 { font-size: 15px; color: var(--a1); margin-bottom: 6px }
 .strat p { font-size: 14.5px; color: var(--txt2) }
 .strathint { margin-top: 20px }
+
+/* ---------- references ---------- */
+.reflist { display: grid; gap: 16px }
+.ref { border: 1px solid var(--line); background: var(--glass); border-radius: 14px; padding: 20px 22px; scroll-margin-top: 90px }
+.ref:target { border-color: var(--a2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--a2) 30%, transparent) }
+.refhead { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 6px }
+.refhead h3 { font-size: 16px; margin: 0 }
+.reftitle { font-size: 14.5px; color: var(--txt); margin-bottom: 3px }
+.refvenue { font-size: 12.5px; color: var(--txt3); margin-bottom: 14px }
+.refvenue a { color: var(--txt2) }
+.refbody { display: grid; gap: 4px; margin: 0 }
+.refbody dt { font-family: var(--fdisp); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt3); margin-top: 9px }
+.refbody dd { margin: 0; font-size: 13.5px; color: var(--txt2); line-height: 1.6 }
+.refbody dd a { color: var(--a1); text-decoration: none }
+.refbody dd a:hover { text-decoration: underline }
+.refn { background: var(--glass2); border-radius: 99px; padding: 1px 7px; margin-left: 5px; letter-spacing: 0 }
+.tag.str-strong   { color: #9BE8A8; border-color: rgba(155,232,168,.4) }
+.tag.str-moderate { color: #FFD27A; border-color: rgba(255,210,122,.4) }
+.tag.str-limited  { color: var(--txt2) }
+.tag.str-design   { color: #A8C7FF; border-color: rgba(168,199,255,.35) }
+.tag.str-null_    { color: #FF9BB5; border-color: rgba(255,155,181,.4) }

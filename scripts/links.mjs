@@ -42,18 +42,47 @@ for (const f of htmlFiles) {
   }
 }
 
+// In-page anchors: every #ref-... style link must have a matching id somewhere.
+const idsByPage = new Map();
+for (const f of htmlFiles) {
+  const h = fs.readFileSync(f, 'utf8');
+  idsByPage.set(f, new Set([...h.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1])));
+}
+let badAnchors = 0;
+for (const f of htmlFiles) {
+  const h = fs.readFileSync(f, 'utf8');
+  for (const m of h.matchAll(/(?:href)="([^"]*#[^"]+)"/g)) {
+    const [pathPart, frag] = m[1].split('#');
+    if (!frag) continue;
+    let targetFile = f;
+    if (pathPart) {
+      let p2 = path.join(OUT, pathPart.replace(new RegExp('^' + BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), ''));
+      if (fs.existsSync(p2) && fs.statSync(p2).isDirectory()) p2 = path.join(p2, 'index.html');
+      else if (pathPart.endsWith('/')) p2 = path.join(p2, 'index.html');
+      if (!fs.existsSync(p2)) continue; // already reported as a broken path
+      targetFile = p2;
+    }
+    const ids = idsByPage.get(targetFile) || new Set();
+    if (!ids.has(frag)) {
+      badAnchors++;
+      console.log(`  MISSING ANCHOR #${frag} in ${targetFile.replace(OUT + '/', '')} (from ${f.replace(OUT + '/', '')})`);
+    }
+  }
+}
+
 console.log(`\n=== links ===`);
 console.log(`${htmlFiles.length} pages · ${checked} internal refs · ${external} external refs`);
-if (broken) {
+if (badAnchors) console.log(`${badAnchors} broken in-page anchors`);
+if (broken || badAnchors) {
   console.log(`\n${missing.size} distinct broken targets:`);
   for (const [r, from] of [...missing].sort()) {
     console.log(`  MISSING ${r}`);
     console.log(`          referenced by ${from.slice(0, 4).join(', ')}${from.length > 4 ? ` (+${from.length - 4} more)` : ''}`);
   }
-  console.log(`\nLINK CHECK FAILED (${broken} broken refs)\n`);
+  console.log(`\nLINK CHECK FAILED (${broken} broken refs, ${badAnchors} broken anchors)\n`);
   process.exit(1);
 }
-console.log(`all internal links resolve\n`);
+console.log(`all internal links and in-page anchors resolve\n`);
 
 // Every activity must have all four surfaces reachable.
 const acts = JSON.parse(fs.readFileSync('dist/_manifest.json', 'utf8'));

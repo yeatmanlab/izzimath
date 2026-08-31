@@ -7,6 +7,8 @@ import path from 'node:path';
 import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet } from './src/lib/printsheet.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
+import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from './content/references.js';
+import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
@@ -221,6 +223,14 @@ for (const a of activities) {
           <h2 style="font-size:15px">What this practises</h2>
           <p>${esc(a.skill)}</p>
           ${a.evidence ? `<p style="font-size:13px">${esc(a.evidence)}</p>` : ''}
+          ${a.theory ? `<dl class="refbody" style="margin-top:12px">
+            <dt>The underlying idea</dt><dd>${esc(a.theory)}</dd>
+            ${(a.im || []).length ? `<dt>Where this sits in Illustrative Mathematics</dt>
+              <dd>${imUnitsFor(a.grade, a.im).map((u) => `<a href="${esc(u.url)}">${gradeName(a.grade)} Unit ${u.n}: ${esc(u.title)}</a>`).join(' &middot; ')}</dd>` : ''}
+            ${(a.refs || []).length ? `<dt>Sources</dt>
+              <dd>${a.refs.map((id) => `<a href="${b}/references/#ref-${esc(id)}">${esc(refShort(id))}</a>`).join(' &middot; ')}
+              &nbsp;<a href="${b}/references/" style="color:var(--txt3)">all references &rarr;</a></dd>` : ''}
+          </dl>` : ''}
           ${(a.roam || []).length ? `<p style="font-size:12.5px;color:var(--txt3);margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px">
             Related measured skill${a.roam.length > 1 ? 's' : ''}: ${a.roam.map((l) => esc(roamLabel(l))).join(', ')}.
             <a href="${b}/roam/" style="color:var(--txt2)">What this means</a></p>` : ''}
@@ -249,13 +259,17 @@ for (const a of activities) {
         <button class="btn" data-newseed>⟳ New problems</button>
         <button class="btn" data-togglekey aria-pressed="false">Show answer key</button>
         <button class="btn" data-mode aria-pressed="false">Mixed review sheet</button>
+        <button class="btn" data-style aria-pressed="false">Plain black &amp; white</button>
         <a class="btn" href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">Do it on screen</a>
       </div>
       <div data-sheet></div>
       <div class="roam noprint" style="margin-top:22px">
         <h2 style="font-size:15px">Printing notes</h2>
-        <p>This sheet is line art only — no solid fills anywhere — so it stays cheap on a home
-        inkjet. ${ITEMS_NOTE(a)} The answer key is a separate page.</p>
+        <p>Every sheet is one full page, line art only, with no solid fills anywhere.
+        ${ITEMS_NOTE(a)} The answer key is a separate page.</p>
+        <p style="font-size:13px"><strong>Two styles.</strong> The default has a proper header,
+        rounded problem boxes and a self-check strip. <strong>Plain black and white</strong> strips all
+        of that back to hairlines and nothing else — same problems, the least ink a printer can use.</p>
         <p style="font-size:13px">The <strong>mixed review sheet</strong> is a different thing: eight
         problems, shuffled so that no two next to each other need the same method. In a randomised
         trial of 787 students, sheets shuffled that way scored 61% against 38% for the same problems
@@ -413,8 +427,9 @@ write('about/index.html', page({
       That is not the same as proof that it raises attainment, and there are no high-quality studies of
       IM K&ndash;5 learning outcomes. The impressive effect sizes usually quoted for IM come from
       grades 6&ndash;8, not from primary. We use it as a well-vetted plan, not as a guarantee.</p>
-      <p class="sub">The full set of citations, effect sizes, and the places where the evidence is thin
-      is written up in the repository.</p>
+      <p class="sub">Every citation, what it found, how it is used, and which activities rest on it
+      is on the <a href="${b}/references/" style="color:var(--a1)">references page</a> &mdash;
+      including the sources that shape what we deliberately do <em>not</em> build.</p>
 
       <h2 style="margin-top:30px">Assessment</h2>
       <p class="sub">Izzi Math is practice, not assessment. It never produces a score and never
@@ -489,10 +504,125 @@ write('parents/index.html', page({
 
       <p class="sub" style="margin-top:22px">
         <a class="btn sm" href="${b}/grades/">Pick a grade</a>
+        <a class="btn sm" href="${b}/references/">See the research</a>
         <a class="btn sm" href="${b}/printables/">All printables</a>
       </p>
     </div></section>`,
 }));
+
+/* --------------------------------------------------------------- references */
+{
+  const rev = buildReverseIndex(activities);
+  const actLink = (a) => `<a href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">${esc(a.title)}</a> <span style="color:var(--txt3)">(${a.grade})</span>`;
+
+  const strengthOrder = ['strong', 'moderate', 'limited', 'design', 'null_'];
+  const sorted = refIds.slice().sort((x, y) => {
+    const rx = getRef(x), ry = getRef(y);
+    return strengthOrder.indexOf(rx.strength) - strengthOrder.indexOf(ry.strength)
+      || (rx.authors > ry.authors ? 1 : -1);
+  });
+
+  const card = (id) => {
+    const r = refCitation(id);
+    const cites = rev[id] || [];
+    const st = STRENGTH[r.strength];
+    return `<div class="ref" id="ref-${esc(id)}">
+      <div class="refhead">
+        <h3>${esc(r.authors)} (${r.year})</h3>
+        <span class="tag str-${esc(r.strength)}">${esc(st.label)}</span>
+        <span class="tag">${esc(KINDS[r.kind] || r.kind)}</span>
+      </div>
+      <p class="reftitle">${esc(r.title)}</p>
+      <p class="refvenue">${esc(r.venue)}${r.link ? ` &middot; <a href="${r.link}">${r.doi ? 'doi:' + esc(r.doi) : 'link'}</a>` : ''}</p>
+      <dl class="refbody">
+        <dt>What it found</dt><dd>${esc(r.finding)}</dd>
+        <dt>How Izzi Math uses it</dt><dd>${esc(r.use)}</dd>
+        ${cites.length
+          ? `<dt>Activities built on it <span class="refn">${cites.length}</span></dt><dd>${cites.map(actLink).join(' &middot; ')}</dd>`
+          : `<dt>Scope</dt><dd>Informs a site-wide decision rather than one activity.</dd>`}
+      </dl>
+    </div>`;
+  };
+
+  write('references/index.html', page({
+    base: b, active: 'references', title: 'References',
+    desc: 'The research behind Izzi Math: every citation, what it found, how it is used, and which activities are built on it.',
+    crumbs: [{ label: 'Home', href: '/' }, { label: 'References' }],
+    body: `<section class="wrap">
+      <div class="ahead"><div><h1>References</h1>
+        <p>${refIds.length} sources. What each found, how it is used, and which activities rest on it.</p></div></div>
+
+      <div class="sec" style="max-width:78ch">
+        <p class="sub">This page exists so the research behind the site can be checked rather than
+        taken on trust. Every activity page links to the citations behind it, and every citation
+        below links back to the activities built on it. Where a source is a practitioner document or
+        a null result rather than a trial, it says so &mdash; nothing here borrows authority from the
+        references around it.</p>
+        <p class="sub">The headline finding worth repeating: <strong>the strongest evidence in
+        primary maths attaches to instructional practices, not to any brand of curriculum.</strong>
+        That is why the design anchors on the WWC practice guide, and treats
+        <a href="${esc(imCourseGuide('3'))}" style="color:var(--a1)">Illustrative Mathematics</a> as
+        a well-built plan for topic order rather than as proof of outcomes.</p>
+      </div>
+
+      <div class="sec">
+        <h2>How to read the strength labels</h2>
+        <table class="tbl"><tbody>
+          ${strengthOrder.map((k) => `<tr><td><span class="tag str-${k}">${esc(STRENGTH[k].label)}</span></td>
+            <td>${esc(STRENGTH[k].blurb)}</td>
+            <td style="color:var(--txt3)">${refIds.filter((i) => getRef(i).strength === k).length} sources</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+
+      <div class="sec">
+        <h2>Curriculum map</h2>
+        <p class="sub">Which Illustrative Mathematics unit each activity belongs to. Unit links go
+        straight to that unit&rsquo;s lesson list.</p>
+        ${GRADES.map((g) => {
+          const list = byGrade(g);
+          if (!list.length) return '';
+          return `<div style="margin-bottom:26px">
+            <h3 style="font-size:16px;margin-bottom:4px">${gradeName(g)}</h3>
+            <p class="sub" style="margin-bottom:10px"><a href="${esc(imCourseGuide(g))}" style="color:var(--txt2)">IM ${gradeName(g).toLowerCase()} scope and sequence &rarr;</a></p>
+            <table class="tbl"><thead><tr><th>Activity</th><th>IM unit</th><th>Underlying idea</th></tr></thead>
+            <tbody>${list.map((a) => `<tr>
+              <td>${actLink(a)}</td>
+              <td>${imUnitsFor(a.grade, a.im || []).map((u) => `<a href="${esc(u.url)}">Unit ${u.n}: ${esc(u.title)}</a>`).join('<br>')}</td>
+              <td>${esc(a.theory || '')}</td></tr>`).join('')}
+            </tbody></table></div>`;
+        }).join('')}
+      </div>
+
+      <div class="sec">
+        <h2>Activity to citation</h2>
+        <p class="sub">Every activity and the sources it rests on.</p>
+        <table class="tbl"><thead><tr><th>Activity</th><th>Grade</th><th>Sources</th></tr></thead>
+        <tbody>${activities.map((a) => `<tr>
+          <td>${actLink(a)}</td><td>${a.grade}</td>
+          <td>${(a.refs || []).map((id) => `<a href="#ref-${esc(id)}">${esc(refShort(id))}</a>`).join(' &middot; ')}</td>
+        </tr>`).join('')}</tbody></table>
+      </div>
+
+      <div class="sec">
+        <h2>The sources</h2>
+        <p class="sub">Ordered by how much weight each can carry.</p>
+        <div class="reflist">${sorted.map(card).join('')}</div>
+      </div>
+
+      <div class="sec">
+        <h2>What we deliberately do not build</h2>
+        <p class="sub">Null results are as useful as positive ones. These sources shape what is
+        absent from the site.</p>
+        <ul style="display:grid;gap:10px;padding-left:18px">
+          ${refIds.filter((i) => getRef(i).strength === 'null_').map((i) => {
+            const r = refCitation(i);
+            return `<li style="font-size:14px;color:var(--txt2)"><a href="#ref-${esc(i)}" style="color:var(--a1)">${esc(r.short)}</a> &mdash; ${esc(r.use)}</li>`;
+          }).join('')}
+        </ul>
+      </div>
+    </section>`,
+  }));
+}
 
 /* -------------------------------------------------------------------- 404 */
 write('404.html', page({

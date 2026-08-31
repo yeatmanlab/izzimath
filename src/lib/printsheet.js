@@ -12,7 +12,11 @@ import { fill } from '../../content/characters.js';
    more room to write. Grounded in the printables research: density, not volume,
    is what makes a sheet usable. */
 export const DENSITY = { K: 'd1', 1: 'd1', 2: 'd2', 3: 'd2', 4: 'd3', 5: 'd3' };
-export const ITEMS_PER_SHEET = { K: 8, 1: 10, 2: 14, 3: 16, 4: 20, 5: 20 };
+// Enough problems to fill one full page at the density that grade uses. Two
+// columns of large problems for K-1, up to four narrow columns by grade 4.
+export const ITEMS_PER_SHEET = { K: 10, 1: 12, 2: 18, 3: 21, 4: 28, 5: 28 };
+// Problems that need the full width, so they count for more vertical space.
+const WIDE_TYPES = new Set(['numberline', 'boardmove']);
 
 const ansLine = (w = '2.6em') => `<span class="ansline" style="min-width:${w}"></span>`;
 
@@ -60,19 +64,18 @@ export function printProblem(p, i, { key = false } = {}) {
         if (v === p.from) board += `<circle cx="${x + u / 2}" cy="${oy + 30}" r="3.4" fill="#111"/>`;
       }
       board += `</g></svg>`;
-      return `<div class="pr" style="grid-column:1/-1">${lbl}You are on <strong>${p.from === 0 ? 'Start' : p.from}</strong>
-        (marked ●). You spin <strong>${p.spin}</strong>. Write the squares you move through.
+      return `<div class="pr wide" style="grid-column:1/-1">${lbl}On <strong>${p.from === 0 ? 'Start' : p.from}</strong> (●), spin <strong>${p.spin}</strong> — write the squares you pass.
         <div class="pv" style="max-width:none">${board}</div>
         ${key ? `<span class="ansval">${answerText(p)}</span>` : ansLine('7em')}</div>`;
     }
 
     case 'numberline':
-      return `<div class="pr" style="grid-column:1/-1">${lbl}${p.printStem ?? `Mark <strong>${esc(p.targetLabel ?? p.target)}</strong> on the line.`}
+      return `<div class="pr wide" style="grid-column:1/-1">${lbl}${p.printStem ?? `Mark <strong>${esc(p.targetLabel ?? p.target)}</strong> on the line.`}
         ${numberLine({
           lo: p.lo, hi: p.hi, ticks: p.ticks ?? [], majors: p.majors ?? [p.lo, p.hi],
           labels: p.labels ?? [[p.lo, String(p.lo)], [p.hi, String(p.hi)]],
           marker: key ? p.target : null, markerLabel: key ? (p.targetLabel ?? p.target) : null,
-          print: true, width: 620,
+          print: true, width: 620, height: 54,
         })}</div>`;
 
     default:
@@ -81,6 +84,44 @@ export function printProblem(p, i, { key = false } = {}) {
 }
 
 const stripTags = (s) => String(s ?? '').replace(/<svg[\s\S]*?<\/svg>/g, '□').replace(/<[^>]+>/g, '');
+
+/* Generate n problems, skipping ones identical to a problem already on the sheet.
+   Two adjacent copies of "5 x 2 =" looks like a mistake even when it is a fair
+   draw, so we resample with a nudged sub-seed a few times before giving up. */
+function collect(activity, seed, ch, n) {
+  const out = [];
+  const seen = new Set();
+  // The key has to include whatever actually distinguishes two problems of this
+  // type. Prompt plus answer is not enough: every comparison says "Which is
+  // greater?" and answers left or right, so without the operands the whole
+  // activity collapses to two keys.
+  const key = (p) => JSON.stringify([
+    p.type,
+    p.printStem ?? p.prompt ?? '',
+    p.answer ?? '', p.target ?? '', p.n ?? '',
+    p.left ?? '', p.right ?? '',
+    p.whole ?? '', p.a ?? '', p.b ?? '', p.blank ?? '',
+    p.from ?? '', p.spin ?? '',
+    p.printVisual ?? '', p.visual ?? '',
+  ]);
+  for (let i = 0; i < n; i++) {
+    let p = null;
+    // First try fresh seeds at this index, which preserves the activity's
+    // difficulty progression. If the pool at this index is too small to escape a
+    // collision, walk the index as well — a repeated item on paper reads as a
+    // mistake, and variety matters more there than exact ordering.
+    for (let tries = 0; tries < 24 && (p === null || seen.has(key(p))); tries++) {
+      const idx = tries < 8 ? i : i + tries * 7;
+      const sd = deriveSeed(seed, `pr${i}` + (tries ? `#${tries}` : ''));
+      const cand = activity.generate(sd, idx, ch, rng(sd), seed);
+      if (p === null || seen.has(key(p))) p = cand;
+      if (!seen.has(key(cand))) { p = cand; break; }
+    }
+    seen.add(key(p));
+    out.push(p);
+  }
+  return out;
+}
 
 /* Default instruction per problem type. A sheet usually holds more than one
    kind of problem, and one blanket instruction would misdescribe most of them,
@@ -97,22 +138,16 @@ const TYPE_INSTRUCTION = {
   input: 'Work these out. Write the answer.',
 };
 
-/* A full sheet: header, blocks grouped by problem type, footer with seed + QR. */
-export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice' }) {
-  // A review sheet is eight problems, interleaved. Both numbers come from
-  // Rohrer, Dedrick, Hartwig & Cheung (2020): the RCT worksheets held exactly
-  // eight problems, and the only difference between conditions was that no two
-  // consecutive problems used the same strategy. Same problems, same total
-  // practice, 61% vs 38% on a delayed unannounced test (d = 0.83).
+/* A full sheet. One page of US Letter, header and footer pinned, problem blocks
+   filling the space between them.
+     mode  'practice' groups by problem type | 'review' interleaves eight items
+     style 'plain' is black-on-white and cheapest | 'designed' is the nicer one */
+export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed' }) {
   const review = mode === 'review';
-  const n = review ? 8 : (activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 12);
+  const n = review ? 8 : (activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16);
   const density = DENSITY[activity.grade] ?? 'd2';
-  const problems = [];
-  for (let i = 0; i < n; i++) {
-    problems.push(activity.generate(deriveSeed(seed, `pr${i}`), i, ch, rng(deriveSeed(seed, `pr${i}`)), seed));
-  }
+  const problems = collect(activity, seed, ch, n);
 
-  // Group by type, preserving first-appearance order.
   const groups = [];
   for (const p of problems) {
     let g = groups.find((x) => x.type === p.type);
@@ -120,43 +155,57 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     g.items.push(p);
   }
 
-  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups });
+  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style });
 
   const overrides = activity.printInstructions || {};
   const instFor = (type, isOnly) => {
     if (overrides[type]) return fill(overrides[type], ch);
-    // A single-type sheet can use the activity's own headline instruction.
     if (isOnly && activity.printInstruction) return fill(activity.printInstruction, ch);
     return TYPE_INSTRUCTION[type] || 'Answer each one.';
   };
 
   const blocks = groups.map((g, gi) => {
-    const wide = g.type === 'numberline';
+    const wide = WIDE_TYPES.has(g.type);
     const body = wide
       ? g.items.map((p, i) => printProblem(p, i, { key })).join('')
       : `<div class="sh-grid ${density}">${g.items.map((p, i) => printProblem(p, i, { key })).join('')}</div>`;
     return `<div class="sh-block">
-      <p class="sh-inst">${gi + 1}. ${esc(instFor(g.type, groups.length === 1))}</p>
+      <p class="sh-inst"><span class="n">${gi + 1}</span><span>${esc(instFor(g.type, groups.length === 1))}</span></p>
       ${body}
     </div>`;
   }).join('');
 
-  const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
+  return shell({ activity, seed, ch, key, siteUrl, style, blocks, count: problems.length });
+}
 
-  return `<div class="sheet sheet-preview${key ? ' key' : ''}">
+/* The page shell both sheet types use. */
+function shell({ activity, seed, ch, key, siteUrl, style, blocks, count, titleSuffix = '', footNote = '' }) {
+  const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
+  const designed = style !== 'plain';
+  const gradeLabel = activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade;
+  // Line art only appears on the designed sheet; the plain one spends no ink on it.
+  const art = designed && ch.id !== 'none' ? lineArt(ch.id) : '';
+  return `<div class="sheet sheet-preview ${designed ? 'designed' : 'plain'}${key ? ' key' : ''}">
   <div class="sh-head">
-    <div class="sh-id">${ch.id !== 'none' ? lineArt(ch.id) : ''}
-      <div><b>${esc(activity.title)}</b>
-        <small>${esc(activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade)} · ${esc(activity.strand)}${ch.id !== 'none' ? ' · with ' + esc(ch.name) : ''}</small></div>
+    <div class="sh-id">${art}
+      <div><b>${esc(activity.title)}${titleSuffix}</b>
+        <small>${esc(gradeLabel)} &middot; ${esc(activity.strand)}${designed && ch.id !== 'none' ? ' &middot; with ' + esc(ch.name) : ''}</small></div>
     </div>
     <div class="sh-name">Name <u></u><br>Date <u></u></div>
   </div>
+  ${designed ? `<div class="sh-rule"><i></i><i></i><i></i><i></i></div>` : ''}
 
-  ${blocks}
+  <div class="sh-body">${blocks}</div>
+
+  ${key ? '' : `<div class="sh-check">
+    <strong>How did it go?</strong>
+    <span>Colour one for every question you got right.</span>
+    <span class="boxes">${Array.from({ length: Math.min(count, 12) }, () => '<i></i>').join('')}</span>
+  </div>`}
 
   <div class="sh-foot">
-    <div>izzimath · seed ${seed} · ${esc((activity.ccss || []).join(', '))}
-      ${key ? '' : `<br><strong>Scan to do this one on screen →</strong>`}</div>
+    <div>izzimath &middot; ${gradeLabel} &middot; seed ${seed} &middot; ${esc((activity.ccss || []).join(', '))}
+      ${key ? '' : `<br><strong>${footNote || 'Scan to do this one on screen &mdash; same problems.'}</strong>`}</div>
     ${key ? '' : qr(backUrl)}
   </div>
 </div>`;
@@ -181,34 +230,24 @@ function interleave(groups) {
   return out;
 }
 
-function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups }) {
+function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style }) {
   const order = interleave(groups);
   const density = DENSITY[activity.grade] ?? 'd2';
-  const wide = order.filter((p) => p.type === 'numberline' || p.type === 'boardmove');
-  const narrow = order.filter((p) => p.type !== 'numberline' && p.type !== 'boardmove');
-  const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
+  const wide = order.filter((p) => WIDE_TYPES.has(p.type));
+  const narrow = order.filter((p) => !WIDE_TYPES.has(p.type));
   const mixed = groups.length > 1;
-  return `<div class="sheet sheet-preview${key ? ' key' : ''}">
-  <div class="sh-head">
-    <div class="sh-id">${ch.id !== 'none' ? lineArt(ch.id) : ''}
-      <div><b>${esc(activity.title)} — review</b>
-        <small>${esc(activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade)} · mixed practice${ch.id !== 'none' ? ' · with ' + esc(ch.name) : ''}</small></div>
-    </div>
-    <div class="sh-name">Name <u></u><br>Date <u></u></div>
-  </div>
-  <div class="sh-block">
-    <p class="sh-inst">${mixed
+  const blocks = `<div class="sh-block">
+    <p class="sh-inst"><span class="n">1</span><span>${mixed
       ? 'Work these out. Read each one carefully — they are not all the same kind.'
-      : esc(fill(activity.printInstruction ?? 'Work these out.', ch))}</p>
+      : esc(fill(activity.printInstruction ?? 'Work these out.', ch))}</span></p>
     ${narrow.length ? `<div class="sh-grid ${density}">${narrow.map((p, i) => printProblem(p, i, { key })).join('')}</div>` : ''}
     ${wide.map((p, i) => printProblem(p, narrow.length + i, { key })).join('')}
-  </div>
-  <div class="sh-foot">
-    <div>izzimath · review · seed ${seed} · ${esc((activity.ccss || []).join(', '))}
-      ${key ? '' : `<br><strong>Eight mixed problems. Keep the key until afterwards.</strong>`}</div>
-    ${key ? '' : qr(backUrl)}
-  </div>
-</div>`;
+  </div>`;
+  return shell({
+    activity, seed, ch, key, siteUrl, style, blocks, count: order.length,
+    titleSuffix: ' — mixed review',
+    footNote: 'Eight mixed problems. Keep the answer key back until afterwards.',
+  });
 }
 
 /* A deterministic decorative QR-ish block. Real QR encoding is a later job; the

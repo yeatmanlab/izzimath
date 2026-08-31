@@ -1,89 +1,162 @@
 /* Izzi Math print sheets.
-   Target: a parent's home inkjet. Ink is expensive and they are paying for it, so
-   this stylesheet is deliberately line-art only — no fills, no tints, no background
-   images anywhere. Everything is black on white at high contrast. */
+   Every sheet is ONE FULL PAGE of US Letter. Two styles, chosen by the reader:
+
+     .plain     pure black on white, hairlines only, no tints, no decoration.
+                The cheapest thing a home inkjet can produce.
+     .designed  the same maths with a proper header, rounded problem cards,
+                numbered badges and a self-check strip. Still stroke-led and
+                still light on ink — no flood fills anywhere — but it looks like
+                something made on purpose.
+
+   Both keep the site's typography so a printed page and the screen feel related. */
 
 .sheet {
-  background: #fff; color: #111;
-  width: 100%; max-width: 8.5in; margin: 0 auto;
-  padding: 0.5in 0.55in;
+  --ink: #111;
+  --rule: #111;
+  --hair: #b9b9b9;
+  --soft: #6b6b6b;
+  --pad: 0.42in;
+  background: #fff; color: var(--ink);
+  width: 7.5in; min-height: 10in;
+  margin: 0 auto; padding: var(--pad);
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  line-height: 1.5;
+  line-height: 1.45;
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
 }
 .sheet * { box-sizing: border-box }
+.sheet-preview { border-radius: 6px; box-shadow: 0 24px 70px rgba(0,0,0,.55); margin: 20px auto }
 
-/* screen preview only — never printed */
-.sheet-preview { border-radius: 8px; box-shadow: 0 30px 80px rgba(0,0,0,.55); margin: 20px auto }
+/* ------------------------------------------------------------------ header */
+.sh-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex: none }
+.sh-id { display: flex; align-items: center; gap: 11px; min-width: 0 }
+.sh-id svg { width: 40px; height: 40px; flex: none }
+.sh-head b { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; letter-spacing: -.02em; display: block; line-height: 1.15 }
+.sh-head small { display: block; font-size: 9.5px; color: var(--soft); letter-spacing: .07em; text-transform: uppercase; margin-top: 3px }
+.sh-name { font-size: 10px; color: var(--soft); text-align: right; line-height: 2.1; white-space: nowrap; flex: none }
+.sh-name u { display: inline-block; width: 88px; border-bottom: 1px solid var(--hair); text-decoration: none }
 
-.sh-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; border-bottom: 2px solid #111; padding-bottom: 10px; margin-bottom: 18px }
-.sh-id { display: flex; align-items: center; gap: 10px }
-.sh-id svg { width: 36px; height: 36px; flex: none }
-.sh-head b { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -.02em; display: block; color: #111 }
-.sh-head small { display: block; font-size: 10px; color: #555; letter-spacing: .06em; text-transform: uppercase; margin-top: 2px }
-.sh-name { font-size: 10.5px; color: #444; text-align: right; line-height: 2.2; white-space: nowrap }
-.sh-name u { display: inline-block; width: 92px; border-bottom: 1px solid #999; text-decoration: none }
+.plain .sh-head { border-bottom: 2px solid var(--rule); padding-bottom: 9px; margin-bottom: 16px }
 
-.sh-inst { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; margin: 0 0 12px; color: #111 }
-.sh-block { margin-bottom: 20px; break-inside: avoid }
-.sh-note { font-size: 10.5px; color: #666; font-style: italic; margin-top: 5px }
+.designed .sh-head { padding-bottom: 10px; margin-bottom: 4px }
+/* A short tapered accent, not a full-width rule — it reads as a mark rather
+   than a broken underline. */
+.designed .sh-rule { flex: none; height: 4px; width: 132px; margin: 0 0 15px; display: flex; gap: 3px; align-items: stretch }
+.designed .sh-rule i { background: var(--ink); border-radius: 2px }
+.designed .sh-rule i:nth-child(1) { flex: 6 }
+.designed .sh-rule i:nth-child(2) { flex: 3 }
+.designed .sh-rule i:nth-child(3) { flex: 1.4 }
+.designed .sh-rule i:nth-child(4) { flex: .7 }
 
-/* Problem grids. Density is set per grade by the .dN class — younger kids get
-   fewer, larger problems with more writing room. */
-.sh-grid { display: grid; gap: 16px 22px }
-.sh-grid.d1 { grid-template-columns: repeat(2, 1fr); font-size: 20px; gap: 26px 30px }
-.sh-grid.d2 { grid-template-columns: repeat(3, 1fr); font-size: 17px; gap: 22px 24px }
-.sh-grid.d3 { grid-template-columns: repeat(4, 1fr); font-size: 15px }
-.sh-grid.d4 { grid-template-columns: repeat(5, 1fr); font-size: 14px }
+/* ------------------------------------------------------------------ blocks */
+.sh-body { flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0 }
+.sh-block { break-inside: avoid; page-break-inside: avoid }
+.sh-block + .sh-block { margin-top: 15px }
+.sh-inst { font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; font-weight: 500; margin: 0 0 11px; display: flex; align-items: baseline; gap: 7px }
+.sh-inst .n { font-family: 'Space Grotesk', sans-serif; font-size: 11px; flex: none }
+.plain .sh-inst .n { font-weight: 700 }
+.designed .sh-inst .n {
+  width: 17px; height: 17px; border-radius: 50%; background: var(--ink); color: #fff;
+  display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; align-self: center;
+}
+.sh-note { font-size: 9.5px; color: var(--soft); font-style: italic; margin-top: 5px }
 
-.pr { font-family: 'Space Grotesk', sans-serif; color: #111; break-inside: avoid }
-.pr .lbl { font-size: .62em; color: #777; margin-right: 5px }
-.pr .ansline { display: inline-block; min-width: 2.6em; border-bottom: 1.5px solid #111; margin-left: 6px; height: 1.15em; vertical-align: -.15em }
-.pr .workbox { border: 1px solid #bbb; height: 62px; margin-top: 6px; border-radius: 2px }
+/* ------------------------------------------------------------------ grids */
+.sh-grid { display: grid; gap: 14px 18px }
+.sh-grid.d1 { grid-template-columns: repeat(2, 1fr); font-size: 19px; gap: 22px 26px }
+.sh-grid.d2 { grid-template-columns: repeat(3, 1fr); font-size: 16px; gap: 18px 20px }
+.sh-grid.d3 { grid-template-columns: repeat(4, 1fr); font-size: 14.5px }
+.sh-grid.d4 { grid-template-columns: repeat(5, 1fr); font-size: 13.5px }
 
-/* stacked vertical algorithm (for CALF-style multi-digit work) */
+.pr { font-family: 'Space Grotesk', sans-serif; break-inside: avoid }
+/* NOT a column flexbox: that turns inline text and <strong> into separate flex
+   items, so "Mark 2/5 on the line." stacked onto three lines. */
+.pr > .pv, .pr > svg, .pr > .workbox, .pr > .ruled { margin-top: 5px }
+.pr .lbl { font-size: .6em; color: var(--soft); margin-right: 5px }
+.designed .pr { padding: 9px 11px; border: 1px solid var(--hair); border-radius: 7px }
+.designed .sh-grid.d1 .pr { padding: 13px 14px }
+.designed .pr .lbl {
+  display: inline-grid; place-items: center; width: 1.15em; height: 1.15em;
+  border: 1px solid var(--soft); border-radius: 50%; font-size: .52em; color: var(--soft); margin-right: 6px;
+}
+
+/* answer boxes, not lines — sized to a child's hand, not to the type */
+.pr .ansline {
+  display: inline-block; border-bottom: 1.5px solid var(--ink);
+  min-width: 2.4em; height: 1.1em; vertical-align: -.15em; margin-left: 6px;
+}
+.designed .pr .ansline {
+  border: 1.4px solid var(--ink); border-radius: 5px; background: none;
+  min-width: 2.5em; height: 1.5em; vertical-align: -.35em;
+}
+.sh-grid.d1 .pr .ansline { min-width: 2.8em; height: 1.7em }
+.pr .workbox { border: 1px solid var(--hair); border-radius: 4px; height: 58px; margin-top: 5px }
+.sh-grid.d1 .pr .workbox { height: 74px }
+
+/* primary ruling for the youngest hands: a dashed midline to form digits against */
+.sh-grid.d1 .pr .ruled {
+  height: 0.62in; margin-top: 6px; border: 1px solid var(--hair); border-radius: 4px;
+  background-image: linear-gradient(to bottom, transparent calc(50% - .5px), var(--hair) calc(50% - .5px), var(--hair) calc(50% + .5px), transparent calc(50% + .5px));
+  background-repeat: no-repeat;
+}
+
+/* Figures are constrained by HEIGHT, not width. A viewBox that is tall and
+   narrow (a 2x7 array, say) blows up to several inches if you set width:100%,
+   which is what pushed sheets to three pages. */
+.pr .pv { margin: 5px 0 4px }
+.pr .pv svg { display: block; width: auto; height: auto; max-width: 100%; max-height: 0.72in }
+.sh-grid.d1 .pr .pv svg { max-height: 1in }
+.sh-grid.d2 .pr .pv svg { max-height: 0.8in }
+/* full-width figures (number lines, the board) are width-driven by design */
+.pr.wide { padding: 5px 9px; font-size: 13.5px }
+.pr.wide > svg { margin: 1px 0 0 }
+.pr.wide .pv { max-width: none }
+.pr.wide .pv svg { width: 100%; max-height: none }
+.pr .pv .tenframe { width: 118px }
+.sh-grid.d1 .pr .pv .tenframe { width: 140px }
+
+/* stacked vertical algorithm */
 .vstack { font-family: 'Space Grotesk', sans-serif; display: inline-block; text-align: right; min-width: 3.4em }
-.vstack .op { display: inline-block; width: 1em; text-align: left }
-.vstack .rule { border-top: 2px solid #111; margin-top: 3px; height: 34px }
+.vstack .rule { border-top: 2px solid var(--ink); margin-top: 3px; height: 32px }
 
-/* number lines — pure stroke, no fill */
-.nl { position: relative; height: 2px; background: #111; margin: 22px 6px 30px }
-.nl .t { position: absolute; top: -5px; width: 1.5px; height: 11px; background: #111 }
-.nl .t.maj { top: -8px; height: 17px; width: 2px }
-.nl .lb { position: absolute; top: 14px; transform: translateX(-50%); font-size: 10px; color: #333; font-family: 'Space Grotesk', sans-serif; white-space: nowrap }
-
-/* ten-frames, arrays, grids — outline only */
-.tenframe { display: inline-grid; grid-template-columns: repeat(5, 1fr); border: 1.5px solid #111; width: 150px }
-.tenframe i { aspect-ratio: 1; border: .75px solid #666; display: grid; place-items: center }
-.tenframe i.f::after { content: ''; width: 62%; height: 62%; border-radius: 50%; border: 1.5px solid #111 }
+/* ---------------------------------------------------- number line + figures */
+.tenframe { display: inline-grid; grid-template-columns: repeat(5, 1fr); border: 1.5px solid var(--ink); width: 148px }
+.tenframe i { aspect-ratio: 1; border: .75px solid var(--hair); display: grid; place-items: center }
+.tenframe i.f::after { content: ''; width: 60%; height: 60%; border-radius: 50%; border: 1.5px solid var(--ink) }
 .arr { display: inline-grid; gap: 2px }
-.arr i { width: 15px; height: 15px; border: 1.2px solid #111; border-radius: 2px }
-.fbar { display: flex; border: 1.5px solid #111; height: 34px; width: 100% }
-.fbar i { flex: 1; border-right: 1px solid #111 }
-.fbar i:last-child { border-right: 0 }
-.fbar i.f { background: repeating-linear-gradient(45deg, #111 0 1.5px, transparent 1.5px 5px) }
+.arr i { width: 15px; height: 15px; border: 1.2px solid var(--ink); border-radius: 2px }
 
-.sh-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid #ccc; margin-top: 22px; padding-top: 11px; font-size: 9.5px; color: #777 }
-.sh-foot .qr { width: 52px; height: 52px; flex: none }
+/* ------------------------------------------------------------- self-check */
+.sh-check { flex: none; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--hair); display: flex; align-items: center; gap: 12px; font-size: 10px; color: var(--soft) }
+.sh-check .boxes { display: flex; gap: 5px }
+.sh-check .boxes i { width: 15px; height: 15px; border: 1.2px solid var(--soft); border-radius: 3px; display: block }
+.designed .sh-check .boxes i { border-radius: 50% }
+.sh-check strong { font-family: 'Space Grotesk', sans-serif; color: var(--ink); font-size: 10.5px }
+
+/* ------------------------------------------------------------------ footer */
+.sh-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  border-top: 1px solid var(--hair); margin-top: 10px; padding-top: 9px; font-size: 9px; color: var(--soft) }
+.sh-foot .qr { width: 50px; height: 50px; flex: none }
 .sh-foot strong { color: #333 }
+.designed .sh-foot { border-top: 2px solid var(--ink) }
 
-/* answer key */
-.key .pr .ansline { border-bottom: 0; min-width: 0 }
-.key .ansval { font-weight: 700; color: #111; border-bottom: 0 }
+/* ------------------------------------------------------------- answer key */
+.key .pr .ansline { border: 0; border-radius: 0; min-width: 0; height: auto; background: none }
+.key .ansval { font-weight: 700; color: var(--ink) }
 .key .sh-head b::after { content: ' — answer key' }
+.key .workbox, .key .ruled { display: none }
+.key .sh-check { display: none }
 
 @media print {
   @page { size: letter portrait; margin: 0.45in }
   html, body { background: #fff !important; color: #000 !important }
   body { display: block !important }
   .noprint, .nav, footer.foot, .grid-bg, .glow, .chpick, .sfoot, .sbar { display: none !important }
-  .sheet { box-shadow: none !important; margin: 0; padding: 0; max-width: none; border-radius: 0 }
+  .sheet { box-shadow: none !important; margin: 0; padding: 0; width: 100%; min-height: 9.9in; border-radius: 0 }
   .sheet-preview { box-shadow: none !important; border-radius: 0 }
-  .sh-block { page-break-inside: avoid }
-  a { text-decoration: none; color: #000 }
-  a[href]::after { content: '' }  /* never print raw URLs */
+  .sheet + .sheet { page-break-before: always }
   .pagebreak { page-break-before: always }
+  a { text-decoration: none; color: #000 }
+  a[href]::after { content: '' }
+  .sh-block { page-break-inside: avoid }
 }
-
-/* print-mode visual inside a problem cell */
-.pr .pv { margin: 6px 0 5px; max-width: 210px }
-.pr .pv svg { width: 100%; height: auto; display: block }

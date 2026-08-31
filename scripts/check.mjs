@@ -10,6 +10,8 @@ import { isCorrect, answerText, TYPES } from '../content/types.js';
 import { rng, deriveSeed } from '../src/lib/rng.js';
 import { sheet } from '../src/lib/printsheet.js';
 import { parseAnswer, cmpF } from '../src/lib/frac.js';
+import { references, refIds, getRef, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from '../content/references.js';
+import { IM_UNITS, imUnit } from '../content/curriculum.js';
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
@@ -171,6 +173,37 @@ for (const a of activities) {
       } catch (e) { fail(a.id, `${cid} key=${key} sheet threw:`, e.message); }
     }
   }
+}
+
+console.log(`\n=== references and curriculum wiring ===`);
+{
+  // every reference must be well formed
+  for (const id of refIds) {
+    const r = getRef(id);
+    for (const f of ['authors', 'year', 'title', 'venue', 'kind', 'strength', 'finding', 'use'])
+      if (!r[f]) fail(`ref:${id}`, 'missing ' + f);
+    if (!STRENGTH[r.strength]) fail(`ref:${id}`, 'unknown strength ' + r.strength);
+    if (!KINDS[r.kind]) fail(`ref:${id}`, 'unknown kind ' + r.kind);
+    if (!r.url && !r.doi) fail(`ref:${id}`, 'no url or doi');
+  }
+  // every activity must cite something real and sit in a real IM unit
+  for (const a of activities) {
+    if (!a.refs?.length) fail(a.id, 'no refs');
+    if (!a.im?.length) fail(a.id, 'no IM unit');
+    if (!a.theory) fail(a.id, 'no theory line');
+    for (const id of a.refs || []) if (!getRef(id)) fail(a.id, 'unknown ref ' + id);
+    for (const n of a.im || []) if (!imUnit(a.grade, n)) fail(a.id, `IM unit ${n} does not exist for grade ${a.grade}`);
+    if (new Set(a.refs).size !== a.refs.length) fail(a.id, 'duplicate refs');
+  }
+  // no activity-scope reference should be unused
+  const rev = buildReverseIndex(activities);
+  for (const id of refIds) {
+    if (!isSiteScope(id) && !(rev[id] || []).length)
+      fail(`ref:${id}`, 'activity-scope reference cited by no activity (mark scope:"site" if intended)');
+  }
+  const units = Object.values(IM_UNITS).reduce((n, u) => n + u.length, 0);
+  console.log(`  ok    ${refIds.length} references (${refIds.filter((i) => !isSiteScope(i)).length} activity-scope, ${refIds.filter(isSiteScope).length} site-scope)`);
+  console.log(`  ok    ${units} IM units mapped; every activity cites >=1 source and >=1 unit`);
 }
 
 console.log(`\n=== ROAM coverage ===`);

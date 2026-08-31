@@ -10,9 +10,12 @@ const placeValuePalace = {
   skill: 'Reading, building and comparing numbers to 1000 in hundreds, tens and ones.',
   blurb: 'Build the number from hundreds, tens and ones — then say which is bigger.',
   ccss: ['2.NBT.A.1', '2.NBT.A.3', '2.NBT.A.4'],
+  im: [5, 7],
+  refs: ['im-scope-sequence', 'holloway-ansari-2009'],
+  theory: 'Place value determines magnitude; digit-by-digit comparison is the classic failure.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Three-digit place value, with comparison pairs chosen to expose the classic error rather than to be easy. When the tens and the ones point in opposite directions — 71 against 25 — children who compare digit by digit get it wrong, and a random pair rarely catches that.',
-  pages: 12, printItems: 14,
+  pages: 12, printItems: 12,
   printInstruction: 'Write each number, then compare the pairs.',
   printInstructions: {
     input: 'Write each number.',
@@ -80,6 +83,9 @@ const carryAndBorrow = {
   skill: 'Two-digit addition and subtraction, with and without regrouping.',
   blurb: 'The four cases: add with and without a carry, subtract with and without a borrow.',
   ccss: ['2.NBT.B.5', '2.NBT.B.7'],
+  im: [2, 7],
+  refs: ['im-scope-sequence', 'rohrer-2020', 'barton-variation'],
+  theory: 'Regrouping as composing and decomposing a unit of ten.',
   roam: [
     { task: 'fluencyCalf', subscale: 'add-nocarry' },
     { task: 'fluencyCalf', subscale: 'add-carry' },
@@ -87,7 +93,7 @@ const carryAndBorrow = {
     { task: 'fluencyCalf', subscale: 'sub-borrow' },
   ],
   evidence: 'Four procedures that fail separately, so they are practised separately and then interleaved: add without carrying, add with carrying, subtract without borrowing, subtract with borrowing. Interleaving matters here — mixing the four is what forces a child to read the problem rather than repeat the last method.',
-  pages: 16, printItems: 14,
+  pages: 16, printItems: 18,
   printInstruction: 'Work these out. Watch for the ones that regroup.',
   generate(seed, i, ch, r) {
     const stage = i % 4;
@@ -135,9 +141,12 @@ const arraysAndEqualGroups = {
   skill: 'Seeing repeated addition as rows and columns — the groundwork for multiplication.',
   blurb: 'Count the rows, count the columns, find the total.',
   ccss: ['2.OA.C.4'],
+  im: [8],
+  refs: ['im-scope-sequence', 'youcubed-close-to-100', 'fyfe-2014-fading'],
+  theory: 'The array turns repeated addition into a two-dimensional structure.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
   evidence: 'The array is the representation that carries children from repeated addition into multiplication, and later into the area model and volume. Introducing it in grade 2 means grade 3 multiplication has something to stand on besides memorisation.',
-  pages: 10, printItems: 12,
+  pages: 10, printItems: 7,
   printInstruction: 'Write the total for each array.',
   printInstructions: {
     input: 'Write the total for each array.',
@@ -187,10 +196,13 @@ const hundredLineHop = {
   skill: 'Estimating where a number sits on a 0–100 line.',
   blurb: 'No tick marks this time. Where does 63 go?',
   ccss: ['2.NBT.A.1'],
+  im: [4, 5],
+  refs: ['wwc-2021-math', 'schneider-2018', 'geary-2011'],
+  theory: 'Landmark-based estimation rather than counting.',
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
   evidence: 'The same number line, now without tick marks. Removing them is the point: the child has to reason from landmarks (nought, fifty, one hundred) instead of counting, which is what estimating a magnitude actually is.',
   strategy: { name: 'Use landmarks', text: 'Fifty is the middle. Twenty-five is halfway to the middle. Work from those.' },
-  rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
+  rounds: 12, printItems: 4, seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
     // MagPI's own 0-100 targets
@@ -215,10 +227,13 @@ const decadeDuel = {
   skill: 'Comparing two-digit numbers, including the pairs designed to trick you.',
   blurb: 'Which is bigger: 65 or 49? Careful — the ones digit lies.',
   ccss: ['2.NBT.A.4'],
+  im: [5],
+  refs: ['holloway-ansari-2009', 'wwc-2021-math'],
+  theory: 'Place-value comparison, and the specific traps that defeat digit-by-digit reading.',
   roam: [{ task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Rounds cycle through the four specific ways two-digit comparison goes wrong: tens and ones agreeing, tens and ones disagreeing, a shared tens digit, and the same two digits reversed. Practising the traps deliberately is more useful than practising random pairs.',
   strategy: { name: 'Tens first', text: 'Compare the tens digits. Only look at the ones if the tens are the same.' },
-  rounds: 16, seconds: 45, printItems: 12,
+  rounds: 16, printItems: 24, seconds: 45,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {
     const kind = ['compatible', 'incompatible', 'onesMatched', 'reversed'][i % 4];

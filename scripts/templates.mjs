@@ -58,6 +58,7 @@ function nav(b, active) {
     ${link('/games/', 'Games', 'games')}
     ${link('/printables/', 'Printables', 'printables')}
     ${link('/parents/', 'How to help', 'parents')}
+    ${link('/references/', 'Research', 'references')}
     <div class="nav-r">
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
         ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg>${esc(characters[id].name === 'Just math' ? 'Just math' : characters[id].name)}</button>`).join('')}
@@ -78,6 +79,7 @@ function footer(b) {
   return `<footer class="foot noprint"><div class="wrap fin">
   <span>Izzi Math — free math practice for families.</span>
   <a href="${b}/parents/">How to help</a>
+  <a href="${b}/references/">Research and references</a>
   <a href="${b}/about/">About &amp; credits</a>
   <a href="${b}/printables/">All printables</a>
   <a href="${b}/roam/">Have an assessment score?</a>

@@ -10,9 +10,12 @@ const countingCrew = {
   skill: 'Counting to 20, saying how many, naming what comes next, and finding a position in a line.',
   blurb: 'Count them, name the next number, and find who is 4th in line.',
   ccss: ['K.CC.A.2', 'K.CC.B.4', 'K.CC.B.5'],
+  im: [2, 6],
+  refs: ['im-scope-sequence', 'building-blocks-wwc', 'nelson-mcmaster-numeracy', 'geary-2011'],
+  theory: 'Counting, cardinality and ordinality are separable skills that develop separately.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Counting, cardinality and ordinality are separate skills that develop separately — a child who can recite "one two three" may still not know that the last word said is how many there are. This book keeps all four apart: count a set, name the next number, produce a set of a given size, and find a position in a line.',
-  pages: 10, printItems: 8,
+  pages: 10, printItems: 4,
   printInstruction: 'Count carefully. Write how many.',
   printInstructions: {
     choice: 'How many? Write the number.',
@@ -72,9 +75,12 @@ const numberFriends = {
   skill: 'Number bonds to 10 — the two parts that make a whole, in both directions.',
   blurb: 'Find the missing part. 6 and what make 10?',
   ccss: ['K.OA.A.3', 'K.OA.A.4'],
+  im: [4, 5],
+  refs: ['im-scope-sequence', 'building-blocks-wwc', 'clements-1999'],
+  theory: 'Part-whole structure: a quantity is composed of parts, and the bond makes that visible.',
   roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Part-whole reasoning, in the Singapore-style bond rather than as a sum, so the relationship is visible rather than procedural. Pairs to ten are the highest-leverage facts in early arithmetic: they underwrite every make-ten strategy that follows.',
-  pages: 10, printItems: 8,
+  pages: 10, printItems: 6,
   printInstruction: 'Fill in the missing number in each bond.',
   generate(seed, i, ch, r) {
     const whole = i < 4 ? 10 : r.pick([5, 6, 8, 10]);
@@ -111,9 +117,12 @@ const shapeSorter = {
   skill: 'Naming flat shapes and counting their sides and corners.',
   blurb: 'Name the shape, then count its sides.',
   ccss: ['K.G.A.2', 'K.G.B.4'],
+  im: [3, 7],
+  refs: ['im-scope-sequence'],
+  theory: 'A shape is defined by its properties, not its orientation.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Naming shapes and counting their attributes is where children learn that a shape is defined by its properties, not its orientation — a triangle stood on its point is still a triangle. Kiwi’s scale tessellation makes this the natural home for early geometry.',
-  pages: 8, printItems: 8,
+  pages: 8, printItems: 6,
   printInstruction: 'Name each shape and write how many sides it has.',
   generate(seed, i, ch, r) {
     const names = Object.keys(SHAPES);
@@ -147,10 +156,13 @@ const tenFrameFlash = {
   skill: 'Subitizing — recognising how many without counting one by one.',
   blurb: 'The dots flash up. How many did you see?',
   ccss: ['K.CC.B.4', 'K.CC.B.5'],
+  im: [2, 5],
+  refs: ['clements-1999', 'building-blocks-wwc', 'qiu-2021-ans'],
+  theory: 'Conceptual subitizing: seeing a quantity as composed groups rather than counting units.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Conceptual subitizing depends on brief exposure. If the dots stay visible a child simply counts them one at a time, which trains counting rather than recognising quantity, so the pattern is hidden after a beat and tightens as the rounds go on. Worth being straight about the evidence here: the ten-frame is long-established classroom practice and sits inside a well-supported family of representations, but we found no trial isolating the ten-frame itself. The quantities are exact and always mapped to a numeral, which is the part that matters \u2014 training approximate dot-cloud comparison on its own does not transfer to symbolic maths.',
   strategy: { name: 'See it in groups', text: 'Do not count one at a time. A full row is five, so seven is “five and two”.' },
-  rounds: 12, seconds: 60, printItems: 10,
+  rounds: 12, printItems: 4, seconds: 60,
   printInstruction: 'How many dots in each frame? Write the number.',
   generate(seed, i, ch, r) {
     const n = i < 4 ? r.int(2, 5) : i < 8 ? r.int(3, 7) : r.int(4, 10);
@@ -178,10 +190,13 @@ const whichIsMore = {
   skill: 'Comparing two numbers — deciding which is larger, fast.',
   blurb: 'Two numbers. Tap the bigger one.',
   ccss: ['K.CC.C.6', 'K.CC.C.7'],
+  im: [2, 6],
+  refs: ['holloway-ansari-2009', 'wwc-2021-math', 'qiu-2021-ans'],
+  theory: 'The symbolic numerical distance effect — closer numbers are harder to compare.',
   roam: [{ task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Comparing quantities is the foundation the rest of arithmetic sits on. Pairs are drawn by ratio rather than at random, because the difficulty of a comparison depends on how close the two numbers are — 9 against 1 is nearly automatic, 9 against 8 is not.',
   strategy: { name: 'Think of the line', text: 'Picture both numbers on a number line. The one further right is more.' },
-  rounds: 14, seconds: 45, printItems: 12,
+  rounds: 14, printItems: 12, seconds: 45,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {
     // Ratio bands mirror MagPI's own bins, so the numerical distance effect is
@@ -216,10 +231,13 @@ const greatRace = {
   skill: 'Moving along a numbered line by counting on from where you are.',
   blurb: 'Spin, then name the squares you move through. Not "one, two".',
   ccss: ['K.CC.A.2', 'K.CC.B.4', 'K.CC.C.7'],
+  im: [2, 6],
+  refs: ['siegler-ramani-2009', 'siegler-ramani-2008', 'laski-siegler-2014', 'wwc-2021-math', 'schneider-2018'],
+  theory: 'A linear board maps number onto space, and counting on encodes magnitude rather than moves.',
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }, { task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'A linear number board is the single best-evidenced early-number activity there is: Siegler and Ramani (2009) found large gains in number line estimation from about an hour of play, and the same game on a circular board produced far less — the left-to-right layout is doing the work. The second detail matters as much: the child must name the squares they pass through, counting on from where their token is. Laski and Siegler (2014) found that counting on produced roughly double the gains of counting from one, so tapping "1, 2" is treated as the error it is and corrected.',
   strategy: { name: 'Count on', text: 'Start from the square you are on, not from one. On 3 and spinning 2? Say “four, five”.' },
-  rounds: 12, seconds: 0, timerAvailable: false, printItems: 6,
+  rounds: 12, printItems: 2, seconds: 0, timerAvailable: false,
   printInstruction: 'Write the squares you move through each time.',
   generate(seed, i, ch, r) {
     const N = 10;
