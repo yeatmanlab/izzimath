@@ -387,3 +387,16 @@ label.btn { min-height: 38px; align-items: center }
   .nav-in { row-gap: 8px }
   .nav a.nl { font-size: 13.5px }
 }
+
+/* reference → activity links, as chips so the route out is obvious */
+.reflinks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px }
+a.reflink {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-family: var(--fdisp); text-decoration: none;
+  color: var(--txt); background: var(--glass2);
+  border: 1px solid var(--line2); border-radius: 8px; padding: 5px 9px;
+}
+a.reflink:hover { border-color: var(--a1); color: var(--a1) }
+a.reflink .g { font-size: 10.5px; color: var(--txt3); border-left: 1px solid var(--line2); padding-left: 6px }
+a.reflink.page { border-style: dashed; color: var(--txt2) }
+a.reflink.page:hover { color: var(--a1) }

@@ -619,7 +619,8 @@ write('parents/index.html', page({
 /* --------------------------------------------------------------- references */
 {
   const rev = buildReverseIndex(activities);
-  const actLink = (a) => `<a href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">${esc(a.title)}</a> <span style="color:var(--txt3)">(${a.grade})</span>`;
+  const actLink = (a) => `<a class="reflink" href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">${
+    a.kind === 'book' ? '◈' : '◉'} ${esc(a.title)}<span class="g">${a.grade}</span></a>`;
 
   const strengthOrder = ['strong', 'moderate', 'limited', 'design', 'null_'];
   const sorted = refIds.slice().sort((x, y) => {
@@ -628,9 +629,16 @@ write('parents/index.html', page({
       || (rx.authors > ry.authors ? 1 : -1);
   });
 
+  const byId = (id) => activities.find((a) => a.id === id);
   const card = (id) => {
     const r = refCitation(id);
-    const cites = rev[id] || [];
+    // Two routes from a reference into the site: activities that cite it in
+    // their own `refs`, and activities or pages it shaped without being cited
+    // there. Every reference should have at least one, so a reader can always
+    // go from the evidence to the thing built on it.
+    const cited = rev[id] || [];
+    const shaped = (r.appliesTo || []).map(byId).filter(Boolean).filter((a) => !cited.includes(a));
+    const pages = r.showsUpIn || [];
     const st = STRENGTH[r.strength];
     return `<div class="ref" id="ref-${esc(id)}">
       <div class="refhead">
@@ -643,9 +651,12 @@ write('parents/index.html', page({
       <dl class="refbody">
         <dt>What it found</dt><dd>${esc(r.finding)}</dd>
         <dt>How Izzi Math uses it</dt><dd>${esc(r.use)}</dd>
-        ${cites.length
-          ? `<dt>Activities built on it <span class="refn">${cites.length}</span></dt><dd>${cites.map(actLink).join(' &middot; ')}</dd>`
-          : `<dt>Scope</dt><dd>Informs a site-wide decision rather than one activity.</dd>`}
+        ${cited.length ? `<dt>Practise it <span class="refn">${cited.length}</span></dt>
+          <dd class="reflinks">${cited.map(actLink).join(' ')}</dd>` : ''}
+        ${shaped.length ? `<dt>Also shaped <span class="refn">${shaped.length}</span></dt>
+          <dd class="reflinks">${shaped.map(actLink).join(' ')}</dd>` : ''}
+        ${pages.length ? `<dt>See it on</dt>
+          <dd class="reflinks">${pages.map(([u, label]) => `<a class="reflink page" href="${b}${u}">${esc(label)}</a>`).join(' ')}</dd>` : ''}
       </dl>
     </div>`;
   };

@@ -12,7 +12,9 @@
 //   finding   what it actually found, with numbers where they exist
 //   use       how Izzi Math uses it — and, where relevant, how it limits us
 //   scope     'site' if it shapes a site-wide decision rather than one activity.
-//             Site-scope references have no activity back-links by design.
+//   appliesTo activity ids this shaped, for sources that are not cited by an
+//             activity's own `refs` but still changed how it was built
+//   showsUpIn site pages where the effect of this source is visible
 //
 // The `strength` field is deliberately honest. Several references here are
 // practitioner sources or null results, and they are labelled as such rather
@@ -30,6 +32,7 @@ export const KINDS = {
   rct: 'Randomised trial', meta: 'Meta-analysis', guide: 'Practice guide',
   review: 'Review', report: 'Evidence report', curriculum: 'Curriculum',
   practitioner: 'Practitioner source', correlational: 'Correlational',
+  assessment: 'Assessment instrument',
 };
 
 export const references = {
@@ -80,6 +83,26 @@ export const references = {
     use: 'Why The Great Race rejects "1, 2" and corrects it to "count on from 3: 4, 5". This is enforced in the boardmove problem type rather than left as advice.',
   },
 
+  'roam-apps': {
+    // scope:'site' deliberately. Activities do NOT list ROAM in their own `refs`,
+    // because that would print it in the Sources line on ten activity pages and
+    // undo the decision to keep the assessment subtle. The route to the
+    // activities it shaped runs through `appliesTo` instead.
+    scope: 'site',
+    authors: 'Yeatman Lab, Stanford Brain Development and Education Lab',
+    year: 2026,
+    title: 'ROAM — Rapid Online Assessment of Math',
+    venue: 'roam-apps.web.app; item corpora on storage.googleapis.com/roam-apps',
+    url: 'https://roam-apps.web.app/',
+    kind: 'assessment', strength: 'design',
+    finding: 'Four adaptive tasks: ALPACA (core maths, 4PL IRT over 339 items, preK to calculus), MagPI (symbolic comparison binned by ratio and by place-value trap, plus number line estimation over 0-20, 0-100, 0-1 and 0-2), ARF (single-digit fact retrieval, separately parameterised for sum, minus, mult and div) and CALF (multi-digit procedure, with an explicit skill field naming carry and borrow).',
+    use: 'The source of the DIFFICULTY PROGRESSIONS, not of the topic order. Read off the published item corpora rather than inferred: CALF\u2019s four named carry/borrow skills became the four stages of Carry and Borrow; ARF\u2019s band walk set the order of the times tables; MagPI\u2019s own number line targets and comparison bins are used directly. Two structural facts mattered most \u2014 fraction placement on a number line is literally a MagPI construct, which is why it is the flagship; and ARF and CALF measure different things, which is why the recommender will not drill a procedure on top of missing facts. Izzi Math is practice, not assessment: it produces no score and predicts none.',
+    appliesTo: ['carry-and-borrow', 'times-table-tower', 'number-line-hop', 'hundred-line-hop',
+                'fraction-number-line', 'mixed-number-line', 'which-is-more', 'decade-duel',
+                'fraction-foundry', 'great-race'],
+    showsUpIn: [['/roam/', 'The score-to-practice page']],
+  },
+
   /* ------------------------------------------------------------- fractions */
   'fuchs-ffo-wwc': {
     authors: 'What Works Clearinghouse', year: 2020,
@@ -109,6 +132,8 @@ export const references = {
     use: 'The specification for mixed review sheets: eight problems, arranged so no two consecutive problems need the same method. Caveat we state openly: this was grade 7, so applying it to K–5 is an inference from mechanism.',
   },
   'rohrer-2014': {
+    appliesTo: ['fraction-foundry', 'carry-and-borrow', 'equivalent-fractions'],
+    showsUpIn: [['/printables/', 'Every sheet has a mixed review version']],
     scope: 'site',
     authors: 'Rohrer, Dedrick & Burgess', year: 2014,
     title: 'The benefit of interleaved mathematics practice is not limited to superficially similar kinds of problems',
@@ -118,6 +143,8 @@ export const references = {
     use: 'Supports interleaving across genuinely different problem types on one sheet, not just near-neighbours.',
   },
   'rohrer-taylor-2006': {
+    appliesTo: ['times-table-tower', 'carry-and-borrow'],
+    showsUpIn: [['/printables/', 'All printables — sheet length'], ['/parents/', 'How to help — print it again later']],
     scope: 'site',
     authors: 'Rohrer & Taylor', year: 2006,
     title: 'The effects of overlearning and distributed practice on the retention of mathematics knowledge',
@@ -147,6 +174,8 @@ export const references = {
     use: 'The cleanest experiment in the timed-practice debate, and the reason our position is not "timers are harmful". Short, self-paced, low-stakes speed practice on already-learned content is beneficial.',
   },
   'boaler-confer': {
+    appliesTo: ['make-ten-race', 'decade-duel', 'fact-family-forge'],
+    showsUpIn: [['/parents/', 'How to help — on timers']],
     scope: 'site',
     authors: 'Boaler & Confer', year: 2015,
     title: 'Fluency without fear',
@@ -157,6 +186,8 @@ export const references = {
     use: 'Included because it is the most influential source on this question and shapes what parents expect. Read carefully, it cites no experiment that manipulated timing in children — its sources are adult working-memory studies and correlational anxiety work. We follow its design implications (nothing public, nothing graded, nothing compared) without adopting the claim that timing itself is harmful.',
   },
   'ramirez-2013': {
+    appliesTo: ['make-ten-race', 'ten-frame-flash'],
+    showsUpIn: [['/parents/', 'How to help — do not compare them to anyone']],
     scope: 'site',
     authors: 'Ramirez, Gunderson, Levine & Beilock', year: 2013,
     title: 'Math anxiety, working memory, and math achievement in early elementary school',
@@ -192,6 +223,7 @@ export const references = {
     use: 'The best-evidenced early-maths curriculum there is, and the source of the subitizing and number-sense learning trajectories our K–1 content follows.',
   },
   'bailey-2020-fadeout': {
+    showsUpIn: [['/parents/', 'How to help — short and often'], ['/about/', 'About']],
     scope: 'site',
     authors: 'Bailey, Duncan, Cunha, Foorman & Yeager', year: 2020,
     title: 'Persistence and fade-out of educational intervention effects',
@@ -202,6 +234,7 @@ export const references = {
     use: 'Why we make modest claims, and why the site is built for regular ongoing use rather than as a one-off intervention.',
   },
   'dyson-2013': {
+    appliesTo: ['counting-crew', 'number-friends', 'ten-frame-flash', 'story-time'],
     scope: 'site',
     authors: 'Dyson, Jordan & Glutting', year: 2013,
     title: 'A number sense intervention for low-income kindergartners at risk for mathematics difficulties',
@@ -239,6 +272,7 @@ export const references = {
     use: 'Why there is no dot-cloud comparison game on this site. Where dots appear they are exact, small, structured, and mapped to a numeral.',
   },
   'kim-2018-ans': {
+    appliesTo: ['which-is-more', 'ten-frame-flash'],
     scope: 'site',
     authors: 'Kim et al.', year: 2018,
     title: 'Comprehensive early numeracy home training and transfer to symbolic mathematics',
@@ -251,6 +285,8 @@ export const references = {
 
   /* -------------------------------------------- representations, examples */
   'petersen-mcneil-2013': {
+    appliesTo: ['ten-frame-flash', 'number-friends', 'arrays-and-equal-groups', 'counting-crew'],
+    showsUpIn: [['/about/', 'Which parts are evidence, and which are taste']],
     scope: 'site',
     authors: 'Petersen & McNeil', year: 2013,
     title: 'Effects of perceptually rich manipulatives on preschoolers’ counting performance: established knowledge counts',
@@ -270,6 +306,7 @@ export const references = {
 
   /* ---------------------------------------------------------- curriculum */
   'im-k5': {
+    showsUpIn: [['/grades/', 'Every grade follows this sequence']],
     scope: 'site',
     authors: 'Illustrative Mathematics', year: 2024,
     title: 'IM K–5 Math (v.360)',
@@ -289,6 +326,7 @@ export const references = {
     use: 'The specific strand names in content/activities/strands.js are derived from these.',
   },
   'edreports-im': {
+    showsUpIn: [['/about/', 'About — being honest about the evidence']],
     scope: 'site',
     authors: 'EdReports', year: 2021,
     title: 'Kendall Hunt’s Illustrative Mathematics review',
@@ -299,6 +337,7 @@ export const references = {
     use: 'Evidence that IM is a well-built curriculum. Explicitly NOT evidence that it raises attainment — that is a design review.',
   },
   'curate-im-k5': {
+    showsUpIn: [['/about/', 'About — being honest about the evidence']],
     scope: 'site',
     authors: 'Massachusetts Department of Elementary and Secondary Education (CURATE)', year: 2024,
     title: 'CURATE panel review: Illustrative Mathematics K–5 (2021)',
@@ -311,6 +350,7 @@ export const references = {
 
   /* ----------------------------------------------------- parents at home */
   'nelson-2024-caregivers': {
+    showsUpIn: [['/parents/', 'How to help — the whole page exists because of this']],
     scope: 'site',
     authors: 'Nelson, Carter, Boedeker et al.', year: 2024,
     title: 'Mathematics interventions in informal learning environments: a meta-analysis',
@@ -330,6 +370,7 @@ export const references = {
     use: 'Why the guidance says short and focused, and why counting with one-to-one correspondence is explicit in the K activities rather than assumed.',
   },
   'zearn-rand': {
+    showsUpIn: [['/parents/', 'How to help — a realistic expectation']],
     scope: 'site',
     authors: 'RAND Corporation', year: 2024,
     title: 'Evaluation of Zearn Math',
@@ -342,6 +383,7 @@ export const references = {
 
   /* ------------------------------------------------- task design sources */
   'parrish-number-talks': {
+    appliesTo: ['ten-frame-flash', 'number-friends'],
     scope: 'site',
     authors: 'Parrish', year: 2010, title: 'Number Talks',
     venue: 'Math Solutions (protocol document)',

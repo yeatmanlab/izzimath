@@ -202,6 +202,20 @@ console.log(`\n=== references and curriculum wiring ===`);
     if (!STRENGTH[r.strength]) fail(`ref:${id}`, 'unknown strength ' + r.strength);
     if (!KINDS[r.kind]) fail(`ref:${id}`, 'unknown kind ' + r.kind);
     if (!r.url && !r.doi) fail(`ref:${id}`, 'no url or doi');
+    // appliesTo must name real activities, or the link silently disappears
+    for (const aid of r.appliesTo || []) {
+      if (!activities.some((a) => a.id === aid)) fail(`ref:${id}`, `appliesTo names unknown activity "${aid}"`);
+    }
+    for (const entry of r.showsUpIn || []) {
+      if (!Array.isArray(entry) || entry.length !== 2) fail(`ref:${id}`, 'showsUpIn entries must be [url, label]');
+      else if (!String(entry[0]).startsWith('/')) fail(`ref:${id}`, `showsUpIn url must be site-relative: ${entry[0]}`);
+    }
+    // Every reference needs at least one route into the site, so a reader can
+    // always get from the evidence to the thing built on it.
+    const citedBy = (buildReverseIndex(activities)[id] || []).length;
+    if (!citedBy && !(r.appliesTo || []).length && !(r.showsUpIn || []).length) {
+      fail(`ref:${id}`, 'no route into the site — needs an activity citing it, appliesTo, or showsUpIn');
+    }
   }
   // every activity must cite something real and sit in a real IM unit
   for (const a of activities) {
@@ -218,6 +232,8 @@ console.log(`\n=== references and curriculum wiring ===`);
     if (!isSiteScope(id) && !(rev[id] || []).length)
       fail(`ref:${id}`, 'activity-scope reference cited by no activity (mark scope:"site" if intended)');
   }
+  const routed = refIds.filter((id) => (rev[id] || []).length || (getRef(id).appliesTo || []).length || (getRef(id).showsUpIn || []).length);
+  console.log(`  ok    ${routed.length}/${refIds.length} references have a route into the site`);
   const units = Object.values(IM_UNITS).reduce((n, u) => n + u.length, 0);
   console.log(`  ok    ${refIds.length} references (${refIds.filter((i) => !isSiteScope(i)).length} activity-scope, ${refIds.filter(isSiteScope).length} site-scope)`);
   console.log(`  ok    ${units} IM units mapped; every activity cites >=1 source and >=1 unit`);
