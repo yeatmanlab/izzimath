@@ -37,6 +37,11 @@ number lines, conceptual subitizing, part-whole number bonds, area models, and
 interleaved review. See [docs/EVIDENCE.md](docs/EVIDENCE.md) for the citations, the
 effect sizes, the position on timers, and an honest note on where the evidence is thin.
 
+## Picking this up
+
+Resuming work? Start at **[docs/next/README.md](docs/next/README.md)** — state of
+play, what the checks cover, and the plan in priority order.
+
 ## Development
 
 Plain Node and plain static HTML. **No dependencies, no build tooling, no framework.**

@@ -220,7 +220,8 @@ Implemented, because the evidence is strongest:
 - Plain manipulatives, enforced by the checker
 - Guidance for the adult, and honest ceilings
 
-Deferred, and worth doing next in roughly this order:
+Deferred, and worth doing next in roughly this order — each written up with file
+paths and acceptance criteria in [`next/`](next/README.md):
 
 1. **IM's lesson skeleton** — warm-up, activities, synthesis, cool-down — and the ten
    named warm-up routines (Number Talk, Which One Doesn't Belong, Choral Count,
