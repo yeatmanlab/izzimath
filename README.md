@@ -39,8 +39,15 @@ effect sizes, the position on timers, and an honest note on where the evidence i
 
 ## Picking this up
 
-Resuming work? Start at **[docs/next/README.md](docs/next/README.md)** — state of
-play, what the checks cover, and the plan in priority order.
+- **[docs/next/BACKLOG.md](docs/next/BACKLOG.md)** — what is left to build. The
+  single list; everything else that mentions remaining work points at it.
+- **[docs/next/README.md](docs/next/README.md)** — state of play, what the checks
+  cover, and the invariants worth not breaking.
+- **[CLAUDE.md](CLAUDE.md)** — the same, condensed, and loaded automatically at
+  the start of a Claude Code session in this repo.
+
+`npm run verify` prints the top of the backlog when it finishes, so it resurfaces
+without anyone having to remember it.
 
 ## Development
 

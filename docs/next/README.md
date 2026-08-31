@@ -60,6 +60,9 @@ families.
 
 ## The plan, in priority order
 
+**[BACKLOG.md](BACKLOG.md) is the live checklist.** The documents below carry the
+detail and acceptance criteria for the larger items.
+
 | | Document | Size | Blocked on |
 | --- | --- | --- | --- |
 | 1 | [Lesson structure and warm-up routines](01-lesson-structure.md) | Large | nothing |
