@@ -14,6 +14,11 @@ const countingCrew = {
   evidence: 'Mirrors ALPACA’s own cat1 item formats — "what number comes next", "how many dots", give-N, and ordinal position — so the practice matches the response formats a child already met in ROAM.',
   pages: 10, printItems: 8,
   printInstruction: 'Count carefully. Write how many.',
+  printInstructions: {
+    choice: 'How many? Write the number.',
+    tap: 'Draw the number of counters asked for.',
+    ordinal: 'Circle the one in the position named.',
+  },
   chapterLabel: 'Page {n} of {total}',
   generate(seed, i, ch, r) {
     const mode = i % 4;
@@ -22,7 +27,8 @@ const countingCrew = {
       return {
         type: 'choice', prompt: 'How many dots?', visual: dots(n, { layout: n <= 6 ? 'dice' : 'random' }), visualWidth: 150,
         choices: r.shuffle([n, n - 1, n + 1, n + 2].filter((x) => x > 0).slice(0, 4)).map(String),
-        answer: String(n), printStem: 'How many dots? (draw your own set of ' + n + ')',
+        answer: String(n), printStem: 'How many dots?',
+        printVisual: dots(n, { print: true, layout: n <= 6 ? 'dice' : 'random', size: 96 }),
         hint: 'Touch each dot once as you count.',
         explain: `There are ${n}.`,
       };
@@ -79,7 +85,7 @@ const numberFriends = {
     return {
       type: 'bond', whole, a, b: whole - a, blank: bl, answer: missing,
       prompt: `${shown} and what make <strong>${whole}</strong>?`,
-      visual: tenFrame(shown, { total: whole <= 10 ? 10 : 10 }),
+      visual: tenFrame(shown, { total: 10 }),
       choices: r.shuffle([missing, missing + 1, Math.max(0, missing - 1), whole].filter((v, k, arr) => arr.indexOf(v) === k).slice(0, 4)).map(String),
       hint: `Fill in ${shown} counters, then count the empty spaces up to ${whole}.`,
       explain: `${shown} and ${missing} make ${whole}.`,
@@ -95,9 +101,9 @@ const SHAPES = {
   rectangle: '<rect x="6" y="20" width="68" height="40" rx="3"/>',
   hexagon: '<path d="M40 8 L67 24 L67 56 L40 72 L13 56 L13 24 Z"/>',
 };
-const shapeSvg = (name, w = 92) =>
+const shapeSvg = (name, w = 92, print = false) =>
   `<svg viewBox="0 0 80 80" width="${w}" height="${w}" role="img" aria-label="${name}">
-    <g fill="none" stroke="var(--a1)" stroke-width="3.5" stroke-linejoin="round">${SHAPES[name]}</g></svg>`;
+    <g fill="none" stroke="${print ? '#111' : 'var(--a1)'}" stroke-width="${print ? 2.4 : 3.5}" stroke-linejoin="round">${SHAPES[name]}</g></svg>`;
 
 const shapeSorter = {
   id: 'shape-sorter', title: 'Shape Sorter', kind: 'book', grade: 'K', strand: S[2],
@@ -117,7 +123,8 @@ const shapeSorter = {
       return {
         type: 'choice', prompt: 'What shape is this?', visual: shapeSvg(name), visualWidth: 120,
         choices: r.shuffle(r.sample(names.filter((n) => n !== name), 3).concat([name])),
-        answer: name, printStem: `Name this shape: ${name.replace(/./g, '_')}`,
+        answer: name, printStem: 'Name this shape.',
+        printVisual: shapeSvg(name, 74, true),
         hint: 'Count the straight sides.',
         explain: `A ${name}${sides ? ` has ${sides} sides` : ' has no straight sides'}.`,
       };
@@ -125,7 +132,8 @@ const shapeSorter = {
     return {
       type: 'choice', prompt: `How many sides does this ${name} have?`, visual: shapeSvg(name), visualWidth: 120,
       choices: r.shuffle([sides, sides + 1, Math.max(0, sides - 1), sides + 2].filter((v, k, arr) => arr.indexOf(v) === k).slice(0, 4)).map(String),
-      answer: String(sides), printStem: `A ${name} has ____ sides.`,
+      answer: String(sides), printStem: 'How many sides?',
+      printVisual: shapeSvg(name, 74, true),
       hint: 'Trace round the edge with your finger and count each straight part.',
       explain: sides ? `A ${name} has ${sides} sides.` : 'A circle has no straight sides.',
     };
@@ -153,7 +161,8 @@ const tenFrameFlash = {
       flashMs: i < 4 ? 1600 : i < 8 ? 1200 : 900,
       choices: r.shuffle([n, n - 1, n + 1, n + 2].filter((x) => x > 0 && x <= 12).slice(0, 4)).map(String),
       answer: String(n),
-      printStem: `How many dots?`,
+      printStem: 'How many dots?',
+      printVisual: useFrame ? tenFrame(n, { print: true }) : dots(n, { print: true, layout: n <= 6 ? 'dice' : 'random', size: 96 }),
       explain: `${n}.`,
     };
   },

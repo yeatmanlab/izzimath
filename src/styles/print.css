@@ -83,3 +83,7 @@
   a[href]::after { content: '' }  /* never print raw URLs */
   .pagebreak { page-break-before: always }
 }
+
+/* print-mode visual inside a problem cell */
+.pr .pv { margin: 6px 0 5px; max-width: 210px }
+.pr .pv svg { width: 100%; height: auto; display: block }

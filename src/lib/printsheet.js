@@ -24,7 +24,10 @@ export function printProblem(p, i, { key = false } = {}) {
   switch (p.type) {
     case 'input':
     case 'choice':
-      return `<div class="pr">${lbl}${p.printStem ?? p.stem ?? stripTags(p.prompt)} ${A(answerText(p))}</div>`;
+      // If the problem has a print-mode visual (a bar, an array, a ten-frame),
+      // draw it. Describing a picture in words on a worksheet defeats the point.
+      return `<div class="pr">${lbl}${p.printStem ?? p.stem ?? stripTags(p.prompt)}${p.printVisual ? '' : ' ' + A(answerText(p))}
+        ${p.printVisual ? `<div class="pv">${p.printVisual}</div>${A(answerText(p))}` : ''}</div>`;
 
     case 'compare':
       return `<div class="pr">${lbl}<span style="letter-spacing:.06em">${esc(p.left)} &nbsp;${key ? (p.answer === 'left' ? '&gt;' : '&lt;') : '<span class="ansline" style="min-width:1.4em"></span>'}&nbsp; ${esc(p.right)}</span></div>`;
@@ -62,7 +65,22 @@ export function printProblem(p, i, { key = false } = {}) {
 
 const stripTags = (s) => String(s ?? '').replace(/<svg[\s\S]*?<\/svg>/g, '□').replace(/<[^>]+>/g, '');
 
-/* A full sheet: header, blocks of problems, footer with the seed + QR back. */
+/* Default instruction per problem type. A sheet usually holds more than one
+   kind of problem, and one blanket instruction would misdescribe most of them,
+   so blocks are grouped by type and each gets wording that fits. An activity can
+   override any of these via printInstructions: { <type>: '...' }. */
+const TYPE_INSTRUCTION = {
+  numberline: 'Mark each value on the number line.',
+  compare: 'Write < or > between each pair.',
+  truefalse: 'Circle T for true or F for false.',
+  bond: 'Fill in the missing number in each bond.',
+  tap: 'Draw the right number of counters in each box.',
+  ordinal: 'Find the one in the position named.',
+  choice: 'Answer each one.',
+  input: 'Work these out. Write the answer.',
+};
+
+/* A full sheet: header, blocks grouped by problem type, footer with seed + QR. */
 export function sheet({ activity, seed, ch, base, key = false, siteUrl }) {
   const n = activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 12;
   const density = DENSITY[activity.grade] ?? 'd2';
@@ -71,11 +89,33 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl }) {
     problems.push(activity.generate(deriveSeed(seed, `pr${i}`), i, ch, rng(deriveSeed(seed, `pr${i}`)), seed));
   }
 
-  // Number line problems get their own full-width block; everything else grids.
-  const wide = problems.filter((p) => p.type === 'numberline');
-  const narrow = problems.filter((p) => p.type !== 'numberline');
+  // Group by type, preserving first-appearance order.
+  const groups = [];
+  for (const p of problems) {
+    let g = groups.find((x) => x.type === p.type);
+    if (!g) { g = { type: p.type, items: [] }; groups.push(g); }
+    g.items.push(p);
+  }
 
-  const inst = fill(activity.printInstruction ?? 'Work these out. Show your thinking.', ch);
+  const overrides = activity.printInstructions || {};
+  const instFor = (type, isOnly) => {
+    if (overrides[type]) return fill(overrides[type], ch);
+    // A single-type sheet can use the activity's own headline instruction.
+    if (isOnly && activity.printInstruction) return fill(activity.printInstruction, ch);
+    return TYPE_INSTRUCTION[type] || 'Answer each one.';
+  };
+
+  const blocks = groups.map((g, gi) => {
+    const wide = g.type === 'numberline';
+    const body = wide
+      ? g.items.map((p, i) => printProblem(p, i, { key })).join('')
+      : `<div class="sh-grid ${density}">${g.items.map((p, i) => printProblem(p, i, { key })).join('')}</div>`;
+    return `<div class="sh-block">
+      <p class="sh-inst">${gi + 1}. ${esc(instFor(g.type, groups.length === 1))}</p>
+      ${body}
+    </div>`;
+  }).join('');
+
   const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
 
   return `<div class="sheet sheet-preview${key ? ' key' : ''}">
@@ -87,15 +127,7 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl }) {
     <div class="sh-name">Name <u></u><br>Date <u></u></div>
   </div>
 
-  ${narrow.length ? `<div class="sh-block">
-    <p class="sh-inst">1. ${esc(inst)}</p>
-    <div class="sh-grid ${density}">${narrow.map((p, i) => printProblem(p, i, { key })).join('')}</div>
-  </div>` : ''}
-
-  ${wide.length ? `<div class="sh-block">
-    <p class="sh-inst">${narrow.length ? '2' : '1'}. Mark each value on the number line.</p>
-    ${wide.map((p, i) => printProblem(p, i, { key })).join('')}
-  </div>` : ''}
+  ${blocks}
 
   <div class="sh-foot">
     <div>izzimath · seed ${seed} · ${esc((activity.ccss || []).join(', '))}

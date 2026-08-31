@@ -50,6 +50,11 @@ const equivalentFractions = {
   evidence: 'Equivalence is the hinge between grade-3 fraction placement and the grade-5 arithmetic ROAM tests with unlike denominators (3/4 + 5/6). If equivalence is not secure, common denominators are a memorised ritual.',
   pages: 14, printItems: 14,
   printInstruction: 'Complete each equivalent fraction, or simplify it.',
+  printInstructions: {
+    input: 'Complete or simplify each fraction.',
+    compare: 'Write < or > between each pair.',
+    truefalse: 'Are they equal? Circle T or F.',
+  },
   generate(seed, i, ch, r) {
     const stage = i % 3;
     if (stage === 0) {
@@ -59,6 +64,8 @@ const equivalentFractions = {
         visual: fractionBar(n, d, { width: 300, height: 30 }) + fractionBar(n * k, d * k, { width: 300, height: 30 }),
         visualWidth: 320,
         answer: String(n * k), placeholder: '?', printStem: `${n}/${d} = ____/${d * k}`,
+        printVisual: fractionBar(n, d, { print: true, width: 190, height: 24 })
+                   + fractionBar(n * k, d * k, { print: true, width: 190, height: 24 }),
         hint: `The bottom was multiplied by ${k}, so do the same to the top.`,
         explain: `${d} × ${k} = ${d * k}, so ${n} × ${k} = ${n * k}. ${n}/${d} = ${n * k}/${d * k}.`,
       };
@@ -108,16 +115,20 @@ const anglesAndLines = {
   evidence: 'Angle sums are the first place children meet an unknown that must be deduced rather than computed, which is the step towards the algebraic reasoning ROAM tests from grade 6 on.',
   pages: 12, printItems: 12,
   printInstruction: 'Name each angle, or find the missing one.',
+  printInstructions: {
+    choice: 'Name each angle.',
+    input: 'Find the missing angle.',
+  },
   generate(seed, i, ch, r) {
-    const angleSvg = (deg) => {
+    const angleSvg = (deg, print = false) => {
       const rad = (deg * Math.PI) / 180;
       const x = 20 + 100 * Math.cos(-rad), y = 100 - 100 * Math.sin(rad);
       return `<svg viewBox="0 0 150 120" width="100%" height="120" role="img" aria-label="angle of ${deg} degrees">
-        <g stroke="var(--a1)" stroke-width="3" fill="none" stroke-linecap="round">
+        <g stroke="${print ? '#111' : 'var(--a1)'}" stroke-width="${print ? 2 : 3}" fill="none" stroke-linecap="round">
           <path d="M20 100 H140"/><path d="M20 100 L${(20 + 110 * Math.cos(rad)).toFixed(1)} ${(100 - 110 * Math.sin(rad)).toFixed(1)}"/>
         </g>
         <path d="M50 100 A30 30 0 0 0 ${(20 + 30 * Math.cos(rad)).toFixed(1)} ${(100 - 30 * Math.sin(rad)).toFixed(1)}"
-          fill="none" stroke="var(--txt3)" stroke-width="1.6" stroke-dasharray="3 2"/></svg>`;
+          fill="none" stroke="${print ? '#555' : 'var(--txt3)'}" stroke-width="1.4" stroke-dasharray="3 2"/></svg>`;
     };
     if (i % 3 === 0) {
       const deg = r.pick([25, 40, 55, 90, 90, 115, 140, 160]);
@@ -126,7 +137,8 @@ const anglesAndLines = {
         type: 'choice', prompt: `What kind of angle is this?`,
         visual: angleSvg(deg), visualWidth: 190,
         choices: r.shuffle(['acute', 'right', 'obtuse', 'straight']),
-        answer: name, printStem: `An angle of ${deg}° is ____`,
+        answer: name, printStem: 'What kind of angle is this?',
+        printVisual: angleSvg(deg, true),
         hint: 'A right angle is exactly 90°. Less is acute, more is obtuse.',
         explain: `${deg}° is ${name}${deg === 90 ? '' : deg < 90 ? ' — less than 90°' : ' — more than 90°'}.`,
       };
@@ -188,6 +200,10 @@ const decimalDrop = {
   evidence: 'MagPI’s 0–1 block and ALPACA’s grade-4 decimal items (0.65 + 0.3) both live in this space. Putting decimals and fractions on the same line is what makes them one idea rather than two notations.',
   rounds: 12, seconds: 0, timerAvailable: true, printItems: 10,
   printInstruction: 'Mark each decimal on the line.',
+  printInstructions: {
+    numberline: 'Mark each decimal on the number line.',
+    choice: 'Write the fraction that matches each decimal.',
+  },
   generate(seed, i, ch, r) {
     if (i % 3 === 2) {
       const pairs = [[0.5, '1/2'], [0.25, '1/4'], [0.75, '3/4'], [0.2, '1/5'], [0.4, '2/5'], [0.1, '1/10'], [0.3, '3/10']];

@@ -14,6 +14,10 @@ const addingToTwenty = {
   evidence: 'Follows ARF’s own difficulty walk: A1–A2 sums within ten first, then A4 sums that cross ten, then the matching subtractions. Crossing ten is the step that separates counting from retrieval.',
   pages: 12, printItems: 10,
   printInstruction: 'Work out each one. Write the answer.',
+  printInstructions: {
+    choice: 'Add these. Write the total.',
+    input: 'Work these out. Write the answer.',
+  },
   generate(seed, i, ch, r) {
     const stage = i < 4 ? 'add-small' : i < 8 ? 'add-cross' : 'subtract';
     if (stage === 'add-small') {
@@ -23,6 +27,7 @@ const addingToTwenty = {
         visual: tenFrame(a + b),
         choices: r.shuffle([a + b, a + b + 1, a + b - 1, a + b + 2].filter((v, k, s2) => v > 0 && s2.indexOf(v) === k).slice(0, 4)).map(String),
         answer: String(a + b), printStem: `${a} + ${b} =`,
+        printVisual: tenFrame(a + b, { print: true }),
         hint: 'Fill the frame and count what you have.',
         explain: `${a} + ${b} = ${a + b}.`,
       };
@@ -58,6 +63,10 @@ const tensAndOnes = {
   evidence: 'CALF separates addition without carry (A1) from addition with carry deliberately. This book stays entirely in the no-carry case so place value is secure before regrouping is introduced in grade 2.',
   pages: 12, printItems: 10,
   printInstruction: 'Write how many tens and ones, then find each total.',
+  printInstructions: {
+    input: 'Write the number, or find the total.',
+    choice: 'How many tens? Write the digit.',
+  },
   generate(seed, i, ch, r) {
     if (i % 3 === 0) {
       const tens = r.int(1, 9), ones = r.int(0, 9);
@@ -65,7 +74,8 @@ const tensAndOnes = {
       return {
         type: 'input', prompt: `How many is this?`,
         visual: baseTen(0, tens, ones), visualWidth: 340,
-        answer: String(n), placeholder: '?', printStem: `${tens} tens and ${ones} ones =`,
+        answer: String(n), placeholder: '?', printStem: 'What number is this?',
+        printVisual: baseTen(0, tens, ones, { print: true, scale: .8 }),
         hint: `Each tall block is ten. Count the tens, then the loose ones.`,
         explain: `${tens} tens and ${ones} ones is ${n}.`,
       };
@@ -104,17 +114,24 @@ const halvesAndQuarters = {
   evidence: 'ALPACA asks grade-1 children to "select the rectangle where a fourth of it is yellow" — a visual, area-based fraction item. This book practises exactly that recognition before any fraction symbols appear.',
   pages: 8, printItems: 8,
   printInstruction: 'Shade the part named under each shape.',
+  printInstructions: {
+    choice: 'Write how much of each bar is shaded.',
+    truefalse: 'Are the parts equal? Circle T or F.',
+  },
   generate(seed, i, ch, r) {
     const den = r.pick([2, 4]);
     const shaded = 1;
     const cols = den;
-    const bar = (fillN, d, w = 260) => {
+    const bar = (fillN, d, w = 260, print = false) => {
       const seg = w / d;
       let s = `<svg viewBox="0 0 ${w} 56" width="100%" height="56" role="img" aria-label="${fillN} of ${d} shaded">`;
       for (let k = 0; k < d; k++) {
-        s += `<rect x="${k * seg}" y="2" width="${seg}" height="52" fill="${k < fillN ? 'var(--a2)' : 'none'}" stroke="var(--line2)" stroke-width="1.5"/>`;
+        const on = k < fillN;
+        s += `<rect x="${k * seg}" y="2" width="${seg}" height="52" fill="${print ? 'none' : (on ? 'var(--a2)' : 'none')}" stroke="${print ? '#111' : 'var(--line2)'}" stroke-width="1.5"/>`;
+        if (print && on) for (let h = -52; h < seg; h += 5)
+          s += `<line x1="${(k * seg + h).toFixed(1)}" y1="54" x2="${(k * seg + h + 52).toFixed(1)}" y2="2" stroke="#111" stroke-width=".8"/>`;
       }
-      return s + `<rect x="0" y="2" width="${w}" height="52" fill="none" stroke="var(--txt3)" stroke-width="2"/></svg>`;
+      return s + `<rect x="0" y="2" width="${w}" height="52" fill="none" stroke="${print ? '#111' : 'var(--txt3)'}" stroke-width="2"/></svg>`;
     };
     if (i % 2 === 0) {
       const name = den === 2 ? 'one half' : 'one fourth';
@@ -124,7 +141,8 @@ const halvesAndQuarters = {
         visual: bar(shaded, den), visualWidth: 300,
         choices: r.shuffle([name, wrong, 'one third', 'the whole thing']),
         answer: name,
-        printStem: `Shade one ${den === 2 ? 'half' : 'fourth'} of a bar split into ${den} equal parts.`,
+        printStem: `Shade one ${den === 2 ? 'half' : 'fourth'}.`,
+        printVisual: bar(0, den, 200, true),
         hint: `Count the equal parts. There are ${den}.`,
         explain: `One part out of ${den} equal parts is ${name}.`,
       };
@@ -136,7 +154,8 @@ const halvesAndQuarters = {
       prompt: `This bar is split into ${parts} parts. <strong>They are ${equal ? 'equal' : 'not equal'}.</strong> True or false?`,
       visual: bar(0, parts), visualWidth: 300,
       answer: equal,
-      printStem: `A bar split into ${parts} equal parts — each part is one ${parts === 2 ? 'half' : parts === 3 ? 'third' : 'fourth'}. T / F`,
+      printStem: `Split into ${parts} parts. Are they equal?`,
+      printVisual: bar(0, parts, 200, true),
       hint: 'Equal parts have to be exactly the same size.',
       explain: equal ? 'The parts are the same size, so they are equal.' : 'Parts must be the same size to be equal.',
     };

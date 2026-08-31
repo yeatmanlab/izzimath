@@ -80,6 +80,11 @@ const decimalPlace = {
   evidence: 'ALPACA tests decimal arithmetic from grade 4 (0.65 + 0.3). Comparison items here use the classic trap — a longer decimal that is actually smaller (0.4 vs 0.38) — which is the decimal analogue of MagPI’s decade-incompatible pairs.',
   pages: 14, printItems: 14,
   printInstruction: 'Compare or add each pair. Line up the decimal points.',
+  printInstructions: {
+    compare: 'Write < or > between each pair.',
+    input: 'Add these. Line up the decimal points.',
+    choice: 'Write the digit in the place named.',
+  },
   generate(seed, i, ch, r) {
     const mode = i % 3;
     if (mode === 0) {
@@ -136,15 +141,19 @@ const volumeAndSpace = {
   evidence: 'Volume extends the area model into a third dimension, reusing exactly the multiplicative structure built in grades 3 and 4 rather than introducing a new formula to memorise.',
   pages: 12, printItems: 12,
   printInstruction: 'Find the volume of each prism.',
+  printInstructions: {
+    input: 'Find the volume of each prism.',
+    choice: 'Choose the expression that gives the volume.',
+  },
   generate(seed, i, ch, r) {
     const l = r.int(2, 8), w = r.int(2, 6), h = r.int(2, 5);
-    const boxSvg = () => {
+    const boxSvg = (print = false) => {
       const u = 15, ox = 22, oy = 20, dx = 9, dy = -7;
       const W = ox + l * u + w * dx + 20, H = oy + h * u - w * dy + 20;
-      let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${Math.min(H, 150)}" role="img" aria-label="prism ${l} by ${w} by ${h}"><g stroke="var(--a1)" stroke-width="1.8" fill="none">`;
+      let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${Math.min(H, 150)}" role="img" aria-label="prism ${l} by ${w} by ${h}"><g stroke="${print ? '#111' : 'var(--a1)'}" stroke-width="1.8" fill="none">`;
       s += `<rect x="${ox}" y="${oy}" width="${l * u}" height="${h * u}"/>`;
       s += `<path d="M${ox} ${oy} l${w * dx} ${w * dy} h${l * u} M${ox + l * u} ${oy} l${w * dx} ${w * dy} l0 ${h * u}"/>`;
-      s += `</g><g stroke="var(--line2)" stroke-width=".8" fill="none">`;
+      s += `</g><g stroke="${print ? '#777' : 'var(--line2)'}" stroke-width=".8" fill="none">`;
       for (let k = 1; k < l; k++) s += `<line x1="${ox + k * u}" y1="${oy}" x2="${ox + k * u}" y2="${oy + h * u}"/>`;
       for (let k = 1; k < h; k++) s += `<line x1="${ox}" y1="${oy + k * u}" x2="${ox + l * u}" y2="${oy + k * u}"/>`;
       return s + `</g></svg>`;
@@ -164,7 +173,8 @@ const volumeAndSpace = {
       type: 'input', prompt: `What is the volume of this <strong>${l} × ${w} × ${h}</strong> prism?`,
       visual: boxSvg(), visualWidth: 260,
       answer: String(l * w * h), placeholder: '?',
-      printStem: `${l} × ${w} × ${h} prism — volume =`,
+      printStem: `Volume of this ${l} × ${w} × ${h} prism?`,
+      printVisual: boxSvg(true),
       hint: `One layer holds ${l} × ${w} = ${l * w} cubes, and there are ${h} layers.`,
       explain: `${l} × ${w} × ${h} = ${l * w * h} cubic units.`,
     };
@@ -217,22 +227,22 @@ const coordinateQuest = {
   printInstruction: 'Write the coordinates of each marked point.',
   generate(seed, i, ch, r) {
     const x = r.int(1, 8), y = r.int(1, 8);
-    const grid = (px, py, showPoint = true) => {
+    const grid = (px, py, showPoint = true, print = false) => {
       const u = 22, ox = 26, oy = 14, N = 9;
-      let s = `<svg viewBox="0 0 ${ox + N * u + 10} ${oy + N * u + 26}" width="100%" height="230" role="img" aria-label="grid with point at ${px}, ${py}"><g stroke="var(--line2)" stroke-width=".8">`;
+      let s = `<svg viewBox="0 0 ${ox + N * u + 10} ${oy + N * u + 26}" width="100%" height="${print ? 150 : 230}" role="img" aria-label="grid with point at ${px}, ${py}"><g stroke="${print ? '#999' : 'var(--line2)'}" stroke-width=".8">`;
       for (let k = 0; k <= N; k++) {
         s += `<line x1="${ox}" y1="${oy + k * u}" x2="${ox + N * u}" y2="${oy + k * u}"/>`;
         s += `<line x1="${ox + k * u}" y1="${oy}" x2="${ox + k * u}" y2="${oy + N * u}"/>`;
       }
-      s += `</g><g stroke="var(--txt3)" stroke-width="2">
+      s += `</g><g stroke="${print ? '#111' : 'var(--txt3)'}" stroke-width="2">
         <line x1="${ox}" y1="${oy + N * u}" x2="${ox + N * u}" y2="${oy + N * u}"/>
-        <line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy + N * u}"/></g><g font-size="10" fill="var(--txt3)" font-family="'Space Grotesk',sans-serif">`;
+        <line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy + N * u}"/></g><g font-size="10" fill="${print ? '#333' : 'var(--txt3)'}" font-family="'Space Grotesk',sans-serif">`;
       for (let k = 1; k <= 8; k++) {
         s += `<text x="${ox + k * u}" y="${oy + N * u + 15}" text-anchor="middle">${k}</text>`;
         s += `<text x="${ox - 8}" y="${oy + (N - k) * u + 4}" text-anchor="middle">${k}</text>`;
       }
       s += `</g>`;
-      if (showPoint) s += `<circle cx="${ox + px * u}" cy="${oy + (N - py) * u}" r="6.5" fill="var(--a2)"/>`;
+      if (showPoint) s += `<circle cx="${ox + px * u}" cy="${oy + (N - py) * u}" r="6.5" fill="${print ? '#111' : 'var(--a2)'}"/>`;
       return s + `</svg>`;
     };
     const wrongs = [`(${y}, ${x})`, `(${x}, ${y + 1})`, `(${x + 1}, ${y})`].filter((w) => w !== `(${x}, ${y})`);
@@ -241,7 +251,8 @@ const coordinateQuest = {
       visual: grid(x, y), visualWidth: 300,
       choices: r.shuffle([`(${x}, ${y})`, ...r.sample([...new Set(wrongs)], 3)]),
       answer: `(${x}, ${y})`,
-      printStem: `Point at ${x} across, ${y} up = ( ____ , ____ )`,
+      printStem: 'Write the coordinates.',
+      printVisual: grid(x, y, true, true),
       explain: `Across ${x}, up ${y}, so (${x}, ${y}). The x value always comes first.`,
     };
   },

@@ -14,6 +14,11 @@ const placeValuePalace = {
   evidence: 'ALPACA’s grade-2 band includes a 1–1000 number line and "what comes next" past a hundreds boundary (198, 199, __). Comparison items here use MagPI’s decade-incompatible pattern, where the tens and ones point in opposite directions.',
   pages: 12, printItems: 14,
   printInstruction: 'Write each number, then compare the pairs.',
+  printInstructions: {
+    input: 'Write each number.',
+    compare: 'Write < or > between each pair.',
+    choice: 'Write the digit in the place named.',
+  },
   generate(seed, i, ch, r) {
     const mode = i % 4;
     if (mode === 0) {
@@ -23,7 +28,8 @@ const placeValuePalace = {
         type: 'input', prompt: 'What number is this?',
         visual: baseTen(h > 3 ? 1 : h, t, o), visualWidth: 300,
         answer: String(n), placeholder: '?',
-        printStem: `${h} hundreds, ${t} tens and ${o} ones =`,
+        printStem: 'What number is this?',
+        printVisual: baseTen(h > 3 ? 1 : h, t, o, { print: true, scale: .7 }),
         hint: 'Hundreds first, then tens, then ones.',
         explain: `${h} hundreds, ${t} tens, ${o} ones is ${n}.`,
       };
@@ -133,6 +139,10 @@ const arraysAndEqualGroups = {
   evidence: 'The array is the representation that carries children from repeated addition into multiplication, and later into the area model. Introducing it in grade 2 means grade 3 multiplication has somewhere to stand.',
   pages: 10, printItems: 12,
   printInstruction: 'Write the total for each array.',
+  printInstructions: {
+    input: 'Write the total for each array.',
+    choice: 'Write the addition that matches each array.',
+  },
   generate(seed, i, ch, r) {
     const rows = r.int(2, 5), cols = r.int(2, 6);
     if (i % 2 === 0) {
@@ -140,7 +150,8 @@ const arraysAndEqualGroups = {
         type: 'input', prompt: `How many altogether?`,
         visual: array2d(rows, cols), visualWidth: 220,
         answer: String(rows * cols), placeholder: '?',
-        printStem: `${rows} rows of ${cols} =`,
+        printStem: 'How many altogether?',
+        printVisual: array2d(rows, cols, { print: true, cell: 13 }),
         hint: `Count one row (${cols}), then add it ${rows} times.`,
         explain: `${rows} rows of ${cols} is ${rows * cols}.`,
       };
@@ -161,7 +172,8 @@ const arraysAndEqualGroups = {
       visual: array2d(rows, cols), visualWidth: 220,
       choices: r.shuffle([answer, ...r.sample(distinct, 3)]),
       answer,
-      printStem: `Write ${rows} rows of ${cols} as an addition.`,
+      printStem: 'Write this array as an addition.',
+      printVisual: array2d(rows, cols, { print: true, cell: 13 }),
       hint: `There are ${rows} rows, and each has ${cols}.`,
       explain: `${rows} rows of ${cols}: ${Array(rows).fill(cols).join(' + ')} = ${total}.`,
     };

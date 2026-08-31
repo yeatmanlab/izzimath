@@ -37,6 +37,7 @@ const timesTableTower = {
       type: 'input', prompt: `<strong>${a} × ${b} =</strong>`,
       visual: band <= 2 ? array2d(a, b, { cell: 15 }) : null, visualWidth: 200,
       answer: String(prod), placeholder: '?', printStem: `${a} × ${b} =`,
+      printVisual: band <= 2 ? array2d(a, b, { print: true, cell: 12 }) : null,
       hint: band <= 2 ? `Count the array: ${a} rows of ${b}.` : `${a} × ${b} is ${a} lots of ${b}. Try ${a} × ${b - 1} = ${a * (b - 1)}, then add ${a}.`,
       explain: `${a} × ${b} = ${prod}.`,
     };
@@ -54,6 +55,11 @@ const fractionNumberLine = {
   evidence: 'MagPI’s 0–1 number line block is made of fractions (1/5, 1/6, 1/3, 1/4, 5/8, 3/8, 4/5, 5/6). Fraction placement on a line is therefore not an analogy for a ROAM construct — it is one, which makes this the highest-value activity on the site.',
   pages: 14, printItems: 10,
   printInstruction: 'Mark each fraction on the number line.',
+  printInstructions: {
+    numberline: 'Mark each fraction on the number line.',
+    choice: 'Write the fraction shaded in each bar.',
+    truefalse: 'Are the two fractions equal? Circle T or F.',
+  },
   generate(seed, i, ch, r, bookSeed = 0) {
     const stage = i < 5 ? 'place' : i < 9 ? 'name' : i < 12 ? 'equal' : 'compare';
     const dens = i < 5 ? [2, 3, 4] : [2, 3, 4, 5, 6, 8];
@@ -92,7 +98,8 @@ const fractionNumberLine = {
         visual: fractionBar(n, d), visualWidth: 320,
         choices: r.shuffle([`${n}/${d}`, ...r.sample(wrongs, Math.min(3, wrongs.length))]),
         answer: `${n}/${d}`,
-        printStem: `Write the fraction shaded: ____ (bar of ${d}, ${n} shaded)`,
+        printStem: `What fraction is shaded?`,
+        printVisual: fractionBar(n, d, { print: true, width: 200, height: 30 }),
         hint: `Count the parts in the whole bar, then count the shaded ones.`,
         explain: `${n} shaded out of ${d} equal parts is ${n}/${d}.`,
       };
@@ -111,7 +118,9 @@ const fractionNumberLine = {
         visual: fractionBar(n1, d1, { width: 300, height: 30 }) + fractionBar(sn, d2, { width: 300, height: 30 }),
         visualWidth: 320,
         answer: same,
-        printStem: `${n1}/${d1} = ${sn}/${d2}?  T / F`,
+        printStem: `Is ${n1}/${d1} the same as ${sn}/${d2}?`,
+        printVisual: fractionBar(n1, d1, { print: true, width: 200, height: 26 })
+                   + fractionBar(sn, d2, { print: true, width: 200, height: 26 }),
         hint: 'Line the two bars up. Do the shaded parts reach the same place?',
         explain: same
           ? `Yes — ${n1}/${d1} and ${sn}/${d2} land on the same spot.`
@@ -155,7 +164,8 @@ const areaAndPerimeter = {
       prompt: `This rectangle is <strong>${w}</strong> by <strong>${h}</strong>. What is its <strong>${wantArea ? 'area' : 'perimeter'}</strong>?`,
       visual: array2d(h, w, { cell: 16 }), visualWidth: 200,
       answer: String(wantArea ? area : per), placeholder: '?',
-      printStem: `${w} × ${h} rectangle — ${wantArea ? 'area' : 'perimeter'} =`,
+      printStem: `Find the ${wantArea ? 'area' : 'perimeter'}.`,
+      printVisual: array2d(h, w, { print: true, cell: 13 }),
       hint: wantArea ? 'Area is how many squares fit inside: rows times columns.' : 'Perimeter is the distance all the way round the edge.',
       explain: wantArea
         ? `Area = ${w} × ${h} = ${area} square units.`
@@ -206,6 +216,10 @@ const arrayArchitect = {
   evidence: 'The commutative property is obvious in an array and invisible in a symbol string — turning the rectangle a quarter turn is the proof. That halves the number of facts a child has to store.',
   rounds: 12, seconds: 60, printItems: 12,
   printInstruction: 'Write the total for each array.',
+  printInstructions: {
+    choice: 'Write how many squares.',
+    truefalse: 'Do the two products match? Circle T or F.',
+  },
   generate(seed, i, ch, r) {
     const rows = r.int(2, 8), cols = r.int(2, 8);
     if (i % 3 === 2) {
@@ -228,7 +242,8 @@ const arrayArchitect = {
       visual: array2d(rows, cols, { cell: 15 }), visualWidth: 220,
       choices: r.shuffle([...new Set([rows * cols, rows * cols + rows, rows * cols - cols, rows + cols])].filter((x) => x > 0)).slice(0, 4).map(String),
       answer: String(rows * cols),
-      printStem: `${rows} rows of ${cols} =`,
+      printStem: 'How many squares?',
+      printVisual: array2d(rows, cols, { print: true, cell: 12 }),
       explain: `${rows} × ${cols} = ${rows * cols}.`,
     };
   },
