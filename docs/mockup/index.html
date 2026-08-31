@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Izzi Math — concept mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#05060E; --ink2:#0A0D1C; --ink3:#111530;
+  --cyan:#22E0F0; --violet:#7C5CFF; --magenta:#FF4D9D; --lime:#B6FF3D; --amber:#FFB03A;
+  --txt:#EAF0FF; --txt2:#93A0C8; --txt3:#5A678F;
+  --glass:rgba(255,255,255,.035); --glass2:rgba(255,255,255,.06);
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --spectrum:linear-gradient(100deg,var(--cyan),var(--violet) 55%,var(--magenta));
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6}
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(124,92,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(34,224,240,.06) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 120% 80% at 50% 0%,#000 20%,transparent 75%)}
+.glow{position:fixed;z-index:0;pointer-events:none;filter:blur(90px);opacity:.5}
+.g1{top:-120px;left:8%;width:520px;height:340px;background:radial-gradient(ellipse,rgba(124,92,255,.55),transparent 70%)}
+.g2{top:80px;right:2%;width:440px;height:300px;background:radial-gradient(ellipse,rgba(34,224,240,.32),transparent 70%)}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 32px}
+h1,h2,h3,h4,.dsp{font-family:'Space Grotesk',sans-serif;letter-spacing:-.02em;line-height:1.1}
+.mono{font-variant-numeric:tabular-nums;font-family:'Space Grotesk',sans-serif}
+
+/* screen labels */
+.slab{position:relative;z-index:1;max-width:1180px;margin:96px auto 20px;padding:0 32px;display:flex;align-items:center;gap:14px}
+.slab span{font-family:'Space Grotesk';font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--txt3)}
+.slab i{flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+
+/* nav */
+nav{position:relative;z-index:5;display:flex;align-items:center;gap:36px;padding:22px 0;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:11px;font-family:'Space Grotesk';font-weight:700;font-size:20px;letter-spacing:-.03em}
+.mark{width:32px;height:32px;border-radius:9px;background:var(--spectrum);display:grid;place-items:center;font-size:17px;color:#05060E;font-weight:700;box-shadow:0 0 22px rgba(124,92,255,.5)}
+nav a{color:var(--txt2);text-decoration:none;font-size:14px;font-weight:500}
+nav a.on{color:var(--txt)}
+.navr{margin-left:auto;display:flex;gap:10px;align-items:center}
+.btn{font-family:'Space Grotesk';font-weight:500;font-size:13.5px;padding:9px 17px;border-radius:10px;border:1px solid var(--line2);background:var(--glass);color:var(--txt);cursor:pointer;display:inline-flex;align-items:center;gap:7px;text-decoration:none}
+.btn.pri{background:var(--spectrum);border:0;color:#05060E;font-weight:700;box-shadow:0 6px 26px rgba(124,92,255,.4)}
+
+/* hero */
+.hero{padding:76px 0 8px;display:grid;grid-template-columns:1.08fr .92fr;gap:52px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-family:'Space Grotesk';letter-spacing:.13em;text-transform:uppercase;color:var(--cyan);border:1px solid rgba(34,224,240,.32);background:rgba(34,224,240,.07);padding:6px 14px;border-radius:99px}
+.hero h1{font-size:66px;font-weight:700;margin:24px 0 0}
+.hero h1 em{font-style:normal;background:var(--spectrum);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--txt2);font-size:17.5px;max-width:47ch;margin:20px 0 30px}
+.hcta{display:flex;gap:12px}
+
+/* hero art: layered glass cards */
+.art{position:relative;height:380px}
+.card3d{position:absolute;border-radius:18px;border:1px solid var(--line2);background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));backdrop-filter:blur(8px);padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.c-a{inset:24px 90px 130px 0;transform:rotate(-6deg)}
+.c-b{inset:104px 0 40px 120px;transform:rotate(4.5deg)}
+.tinylab{font-family:'Space Grotesk';font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt3);margin-bottom:12px}
+.nline{position:relative;height:2px;background:var(--line2);margin:30px 8px}
+.nline b{position:absolute;top:-5px;width:2px;height:12px;background:var(--txt3)}
+.nline u{position:absolute;top:-9px;left:37.5%;width:20px;height:20px;border-radius:50%;background:var(--spectrum);box-shadow:0 0 18px var(--violet)}
+.nline s{position:absolute;top:16px;font-size:11px;color:var(--txt3);font-family:'Space Grotesk'}
+.tenframe{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:6px}
+.tenframe i{aspect-ratio:1;border-radius:7px;border:1px solid var(--line2)}
+.tenframe i.f{background:radial-gradient(circle at 35% 30%,var(--cyan),var(--violet));border-color:transparent;box-shadow:0 0 14px rgba(34,224,240,.4)}
+.eq{font-family:'Space Grotesk';font-size:30px;font-weight:700;text-align:center;margin-top:16px}
+.eq u{text-decoration:none;color:var(--lime)}
+
+/* grade picker */
+.gsec{padding:58px 0 0}
+.grow{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:22px}
+.gtile{position:relative;border-radius:16px;border:1px solid var(--line);background:var(--glass);padding:20px 16px 17px;text-align:center;overflow:hidden;cursor:pointer}
+.gtile:after{content:'';position:absolute;inset:0;background:var(--spectrum);opacity:.11}
+.gtile.hot{border-color:transparent;box-shadow:0 0 0 1px var(--violet),0 10px 40px rgba(124,92,255,.36)}
+.gtile.hot:after{opacity:.26}
+.gtile b{position:relative;display:block;font-family:'Space Grotesk';font-size:40px;font-weight:700;line-height:1}
+.gtile span{position:relative;display:block;font-size:11.5px;color:var(--txt2);margin-top:7px;letter-spacing:.05em}
+
+/* feature cards */
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px}
+.fcard{border-radius:16px;border:1px solid var(--line);background:var(--glass);padding:24px}
+.ficon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;margin-bottom:16px}
+.i1{background:rgba(34,224,240,.14);border:1px solid rgba(34,224,240,.34)}
+.i2{background:rgba(124,92,255,.16);border:1px solid rgba(124,92,255,.36)}
+.i3{background:rgba(255,77,157,.14);border:1px solid rgba(255,77,157,.34)}
+.fcard h4{font-size:17px;margin-bottom:8px}
+.fcard p{font-size:14px;color:var(--txt2)}
+
+/* grade hub */
+.hubhead{padding:44px 0 0;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.gbadge{width:74px;height:74px;border-radius:18px;background:var(--spectrum);display:grid;place-items:center;font-family:'Space Grotesk';font-size:36px;font-weight:700;color:#05060E;box-shadow:0 0 34px rgba(124,92,255,.5)}
+.hubhead h2{font-size:38px}
+.hubhead p{color:var(--txt2);font-size:15px}
+.chips{display:flex;gap:9px;flex-wrap:wrap;margin:26px 0 24px}
+.chip{font-size:13px;font-family:'Space Grotesk';font-weight:500;padding:8px 15px;border-radius:99px;border:1px solid var(--line2);background:var(--glass);color:var(--txt2);cursor:pointer}
+.chip.on{background:rgba(34,224,240,.13);border-color:var(--cyan);color:var(--cyan)}
+.blist{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.bcard{border-radius:16px;border:1px solid var(--line);background:var(--glass);overflow:hidden;cursor:pointer}
+.bthumb{height:132px;position:relative;display:grid;place-items:center;border-bottom:1px solid var(--line)}
+.t1{background:linear-gradient(140deg,rgba(34,224,240,.2),rgba(124,92,255,.14))}
+.t2{background:linear-gradient(140deg,rgba(124,92,255,.22),rgba(255,77,157,.14))}
+.t3{background:linear-gradient(140deg,rgba(255,77,157,.18),rgba(255,176,58,.14))}
+.bthumb .big{font-family:'Space Grotesk';font-size:44px;font-weight:700;opacity:.92}
+.bbody{padding:18px}
+.bbody h4{font-size:16.5px;margin-bottom:6px}
+.bbody p{font-size:13px;color:var(--txt2);margin-bottom:14px}
+.bmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{font-size:10.5px;font-family:'Space Grotesk';letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:6px}
+.tg-i{background:rgba(34,224,240,.14);color:var(--cyan)}
+.tg-g{background:rgba(255,77,157,.15);color:var(--magenta)}
+.tg-p{background:rgba(182,255,61,.14);color:var(--lime)}
+.tg-s{background:rgba(255,255,255,.07);color:var(--txt3)}
+
+/* workbook */
+.wb{margin-top:26px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015));overflow:hidden}
+.wbbar{display:flex;align-items:center;gap:16px;padding:15px 22px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.24);flex-wrap:wrap}
+.wbbar h4{font-size:15px}
+.prog{flex:1;min-width:120px;height:6px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden}
+.prog i{display:block;width:45%;height:100%;background:var(--spectrum);border-radius:99px}
+.seed{font-family:'Space Grotesk';font-size:12px;color:var(--txt3);border:1px dashed var(--line2);padding:5px 11px;border-radius:8px}
+.wbbody{padding:40px 44px 44px;text-align:center}
+.qnum{font-family:'Space Grotesk';font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--txt3)}
+.wbbody h3{font-size:27px;margin:12px 0 44px;font-weight:500}
+.bigline{position:relative;max-width:620px;margin:0 auto 50px;height:3px;background:linear-gradient(90deg,transparent,var(--line2) 6%,var(--line2) 94%,transparent)}
+.bigline .tick{position:absolute;top:-7px;width:2px;height:17px;background:var(--txt3)}
+.bigline .lbl{position:absolute;top:22px;transform:translateX(-50%);font-family:'Space Grotesk';font-size:13px;color:var(--txt2)}
+.bigline .knob{position:absolute;top:-13px;left:37.5%;width:30px;height:30px;margin-left:-15px;border-radius:50%;background:var(--spectrum);box-shadow:0 0 26px rgba(124,92,255,.75),0 0 0 5px rgba(124,92,255,.14);cursor:grab}
+.bigline .cal{position:absolute;top:-52px;left:37.5%;transform:translateX(-50%);font-family:'Space Grotesk';font-weight:700;font-size:19px;background:var(--glass2);border:1px solid var(--line2);padding:5px 13px;border-radius:9px;white-space:nowrap}
+.feedback{display:inline-flex;align-items:center;gap:11px;background:rgba(182,255,61,.1);border:1px solid rgba(182,255,61,.36);color:var(--lime);padding:13px 22px;border-radius:12px;font-family:'Space Grotesk';font-weight:500;font-size:15px}
+.wbfoot{display:flex;gap:11px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+
+/* print */
+.pflex{display:grid;grid-template-columns:1fr 300px;gap:26px;margin-top:26px;align-items:start}
+.paper{background:#fff;color:#111;border-radius:6px;padding:34px 36px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.paper .ph{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:13px;margin-bottom:22px}
+.paper .ph b{font-family:'Space Grotesk';font-size:19px;font-weight:700;letter-spacing:-.02em}
+.paper .ph small{display:block;font-size:11px;color:#666;font-weight:400;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+.paper .nm{font-size:11px;color:#555;text-align:right;line-height:2.1}
+.paper .nm u{display:inline-block;width:96px;border-bottom:1px solid #999;text-decoration:none}
+.paper h5{font-family:'Space Grotesk';font-size:14px;margin-bottom:18px}
+.pq{display:grid;grid-template-columns:1fr 1fr;gap:22px 30px}
+.pq>div{font-size:13px;color:#222}
+.pline{position:relative;height:2px;background:#111;margin:26px 4px 30px}
+.pline b{position:absolute;top:-5px;width:2px;height:11px;background:#111}
+.pline s{position:absolute;top:14px;transform:translateX(-50%);font-size:10px;color:#444;text-decoration:none;font-family:'Space Grotesk'}
+.pfoot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ccc;margin-top:26px;padding-top:14px;font-size:10px;color:#777}
+.qr{width:56px;height:56px;display:grid;grid-template-columns:repeat(7,1fr);gap:1.5px}
+.qr i{background:#111;border-radius:1px}
+.qr i.o{background:transparent}
+.pside{border-radius:16px;border:1px solid var(--line);background:var(--glass);padding:22px}
+.pside h4{font-size:15px;margin-bottom:6px}
+.pside p{font-size:13px;color:var(--txt2);margin-bottom:18px}
+.prow{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txt2);padding:11px 0;border-top:1px solid var(--line)}
+.prow em{margin-left:auto;font-style:normal;font-family:'Space Grotesk';color:var(--txt);font-size:12.5px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+footer{position:relative;z-index:1;margin-top:96px;border-top:1px solid var(--line);padding:30px 0;text-align:center;color:var(--txt3);font-size:12.5px}
+@media(max-width:900px){.hero,.pflex{grid-template-columns:1fr}.art{display:none}.grow{grid-template-columns:repeat(3,1fr)}.f3,.blist{grid-template-columns:1fr}.hero h1{font-size:44px}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div><div class="glow g1"></div><div class="glow g2"></div>
+
+<div class="slab"><span>Screen 1 — home</span><i></i></div>
+<div class="wrap">
+  <nav>
+    <div class="logo"><div class="mark">∞</div>Izzi Math</div>
+    <a href="#" class="on">Grades</a><a href="#">Books</a><a href="#">Games</a><a href="#">Printables</a>
+    <div class="navr"><a href="#" class="btn">Print library</a><a href="#" class="btn pri">Start grade 3 →</a></div>
+  </nav>
+
+  <section class="hero">
+    <div>
+      <div class="pill">◆ Every book prints</div>
+      <h1>Math that <em>glows</em><br>on screen and<br>on paper.</h1>
+      <p>Interactive workbooks and games for kindergarten through 5th grade. Play it, then print it — same problems, same page, no account needed.</p>
+      <div class="hcta"><a href="#" class="btn pri">Pick your grade</a><a href="#" class="btn">⌘ Browse printables</a></div>
+    </div>
+    <div class="art">
+      <div class="card3d c-a">
+        <div class="tinylab">Fraction foundry · G4</div>
+        <div class="nline"><b style="left:0"></b><b style="left:25%"></b><b style="left:50%"></b><b style="left:75%"></b><b style="left:100%"></b><u></u><s style="left:0">0</s><s style="left:96%">1</s></div>
+      </div>
+      <div class="card3d c-b">
+        <div class="tinylab">Ten-frame blitz · G1</div>
+        <div class="tenframe"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div>
+        <div class="eq">6 + <u>?</u> = 10</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="gsec">
+    <h2 style="font-size:24px">Choose a grade</h2>
+    <div class="grow">
+      <div class="gtile"><b>K</b><span>Counting</span></div>
+      <div class="gtile"><b>1</b><span>Adding to 20</span></div>
+      <div class="gtile"><b>2</b><span>Place value</span></div>
+      <div class="gtile hot"><b>3</b><span>Multiplying</span></div>
+      <div class="gtile"><b>4</b><span>Fractions</span></div>
+      <div class="gtile"><b>5</b><span>Decimals</span></div>
+    </div>
+    <div class="f3">
+      <div class="fcard"><div class="ficon i1">◈</div><h4>Interactive books</h4><p>Chaptered workbooks with hints, instant feedback, and worked solutions when a kid gets stuck.</p></div>
+      <div class="fcard"><div class="ficon i2">◉</div><h4>Fluency games</h4><p>Fast, replayable loops built on the same skills. Score and streak, never a leaderboard.</p></div>
+      <div class="fcard"><div class="ficon i3">▤</div><h4>Infinite printables</h4><p>Every activity generates a fresh sheet plus an answer key. Click again, get new problems.</p></div>
+    </div>
+  </section>
+</div>
+
+<div class="slab"><span>Screen 2 — grade hub</span><i></i></div>
+<div class="wrap">
+  <section class="hubhead">
+    <div class="gbadge">3</div>
+    <div><h2>Third grade</h2><p>Multiplication, division, fractions, area — 6 books, 4 games, 62 printable sheets.</p></div>
+  </section>
+  <div class="chips"><div class="chip on">All</div><div class="chip">Multiplication and division</div><div class="chip">Fractions</div><div class="chip">Area and perimeter</div><div class="chip">Data</div></div>
+  <div class="blist">
+    <div class="bcard"><div class="bthumb t1"><div class="big">7 × 8</div></div><div class="bbody"><h4>Times table tower</h4><p>Build fluency to 12 × 12, one floor at a time.</p><div class="bmeta"><span class="tag tg-i">Book</span><span class="tag tg-p">Prints</span><span class="tag tg-s">3.OA.C.7</span></div></div></div>
+    <div class="bcard"><div class="bthumb t2"><div class="big">¾</div></div><div class="bbody"><h4>Fraction first light</h4><p>Halves, thirds, fourths on the number line.</p><div class="bmeta"><span class="tag tg-i">Book</span><span class="tag tg-p">Prints</span><span class="tag tg-s">3.NF.A.2</span></div></div></div>
+    <div class="bcard"><div class="bthumb t3"><div class="big">⬚</div></div><div class="bbody"><h4>Fact family forge</h4><p>Beat the clock forging matched fact families.</p><div class="bmeta"><span class="tag tg-g">Game</span><span class="tag tg-p">Prints</span><span class="tag tg-s">3.OA.B.6</span></div></div></div>
+  </div>
+</div>
+
+<div class="slab"><span>Screen 3 — interactive book page</span><i></i></div>
+<div class="wrap">
+  <div class="wb">
+    <div class="wbbar">
+      <h4>Fraction first light</h4><span class="tag tg-s">Chapter 2 · page 4 of 9</span>
+      <div class="prog"><i></i></div>
+      <span class="seed">seed 8817</span>
+      <a href="#" class="btn">▤ Print this chapter</a>
+    </div>
+    <div class="wbbody">
+      <div class="qnum">Question 4</div>
+      <h3>Drag the marker to <strong style="font-weight:700">3⁄8</strong> on the number line.</h3>
+      <div class="bigline">
+        <div class="cal">3⁄8</div><div class="knob"></div>
+        <div class="tick" style="left:0"></div><div class="tick" style="left:25%"></div><div class="tick" style="left:50%"></div><div class="tick" style="left:75%"></div><div class="tick" style="left:100%"></div>
+        <div class="lbl" style="left:0">0</div><div class="lbl" style="left:50%">1⁄2</div><div class="lbl" style="left:100%">1</div>
+      </div>
+      <div class="feedback">✦ Exactly right — 3⁄8 sits just left of one half.</div>
+      <div class="wbfoot"><a href="#" class="btn">← Back</a><a href="#" class="btn">Show me why</a><a href="#" class="btn pri">Next question →</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="slab"><span>Screen 4 — the printable twin</span><i></i></div>
+<div class="wrap">
+  <div class="pflex">
+    <div class="paper">
+      <div class="ph">
+        <div><b>Fraction first light</b><small>Grade 3 · chapter 2 · sheet 4</small></div>
+        <div class="nm">Name <u></u><br>Date <u></u></div>
+      </div>
+      <h5>1. Mark each fraction on the number line.</h5>
+      <div class="pline"><b style="left:0"></b><b style="left:12.5%"></b><b style="left:25%"></b><b style="left:37.5%"></b><b style="left:50%"></b><b style="left:62.5%"></b><b style="left:75%"></b><b style="left:87.5%"></b><b style="left:100%"></b><s style="left:0">0</s><s style="left:50%">1/2</s><s style="left:100%">1</s></div>
+      <h5>2. Write the fraction shown by each mark.</h5>
+      <div class="pq">
+        <div>a)&nbsp; 3 eighths &nbsp;=&nbsp; ______</div><div>d)&nbsp; 6 eighths &nbsp;=&nbsp; ______</div>
+        <div>b)&nbsp; 1 half &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp; ______</div><div>e)&nbsp; 2 fourths &nbsp;=&nbsp; ______</div>
+        <div>c)&nbsp; 5 eighths &nbsp;=&nbsp; ______</div><div>f)&nbsp; 7 eighths &nbsp;=&nbsp; ______</div>
+      </div>
+      <div class="pfoot">
+        <div>izzimath.org &nbsp;·&nbsp; seed 8817 &nbsp;·&nbsp; 3.NF.A.2<br><strong style="color:#333">Scan to check your answers →</strong></div>
+        <div class="qr"><i></i><i></i><i></i><i class="o"></i><i></i><i></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i class="o"></i><i></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i><i class="o"></i><i></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i class="o"></i><i></i><i></i><i></i><i class="o"></i><i></i><i></i><i class="o"></i><i></i></div>
+      </div>
+    </div>
+    <div class="pside">
+      <h4>Same activity, same seed</h4>
+      <p>The sheet and the screen render from one source. The QR code returns to seed 8817.</p>
+      <div class="prow"><span class="dot"></span>Interactive page<em>live</em></div>
+      <div class="prow"><span class="dot"></span>Print sheet<em>PDF</em></div>
+      <div class="prow"><span class="dot"></span>Answer key<em>PDF</em></div>
+      <div class="prow" style="border-bottom:1px solid var(--line)"><span class="dot" style="background:var(--amber);box-shadow:0 0 10px var(--amber)"></span>Class set of 24<em>later</em></div>
+      <a href="#" class="btn pri" style="margin-top:18px;width:100%;justify-content:center">↓ Download sheet</a>
+      <a href="#" class="btn" style="margin-top:9px;width:100%;justify-content:center">⟳ Generate new problems</a>
+    </div>
+  </div>
+</div>
+
+<footer>Izzi Math — concept mockup, not a build. Aesthetic direction: graph paper, lit from behind.</footer>
+</body>
+</html>
