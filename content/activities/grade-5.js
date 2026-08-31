@@ -12,6 +12,7 @@ const fractionFoundry = {
   id: 'fraction-foundry', title: 'Fraction Foundry', kind: 'book', grade: '5', strand: S[1],
   glyph: '⅝',
   skill: 'Adding, subtracting, multiplying and dividing fractions with unlike denominators.',
+  trick: 'Adding needs the same denominator. Multiplying does not. Check which one you are doing before you start.',
   blurb: 'Common denominators, then the four operations.',
   ccss: ['5.NF.A.1', '5.NF.B.4', '5.NF.B.7'],
   im: [2, 3, 6],
@@ -20,6 +21,7 @@ const fractionFoundry = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'The four operations on fractions with unlike denominators. Answers are compared as exact fractions rather than decimals, so 19/12 and 1 7/12 are both accepted and nothing is ever wrong by a rounding error.',
   pages: 16, printItems: 28,
+  printPages: 2,   // two pages
   printInstruction: 'Work these out. Give each answer in its simplest form.',
   generate(seed, i, ch, r) {
     // Every fifth item is a word problem, tagged by schema rather than by
@@ -90,6 +92,7 @@ const decimalPlace = {
   id: 'decimal-place', title: 'Decimal Place', kind: 'book', grade: '5', strand: S[0],
   glyph: '0.1',
   skill: 'Reading, comparing and adding decimals to thousandths.',
+  trick: 'Line up the decimal points, then pad the shorter number with zeros so both have the same number of places.',
   blurb: 'Tenths, hundredths, thousandths — line up the point.',
   ccss: ['5.NBT.A.3', '5.NBT.B.7'],
   im: [5, 6],
@@ -154,6 +157,7 @@ const volumeAndSpace = {
   id: 'volume-and-space', title: 'Volume and Space', kind: 'book', grade: '5', strand: S[3],
   glyph: '◱',
   skill: 'Finding the volume of a rectangular prism by counting or multiplying.',
+  trick: 'Volume is one layer, repeated. Find a layer with length × width, then multiply by the height.',
   blurb: 'Length times width times height — how many cubes fit?',
   ccss: ['5.MD.C.3', '5.MD.C.5'],
   im: [1],
@@ -162,6 +166,7 @@ const volumeAndSpace = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Volume extends the area model into a third dimension, reusing the multiplicative structure built in grades 3 and 4 rather than arriving as a new formula to memorise.',
   pages: 12, printItems: 12,
+  printPages: 2,   // two pages
   printInstruction: 'Find the volume of each prism.',
   printInstructions: {
     input: 'Find the volume of each prism.',
@@ -208,6 +213,7 @@ const mixedNumberLine = {
   id: 'mixed-number-line', title: 'Mixed Number Line', kind: 'game', grade: '5', strand: S[1],
   glyph: '1½',
   skill: 'Placing mixed numbers and improper fractions on a 0–2 line.',
+  trick: 'Land on the whole number first, then move the fraction part of the way towards the next one.',
   blurb: 'Past one and under two. Where does 7/4 go?',
   ccss: ['5.NF.A.1', '4.NF.B.3'],
   im: [2, 3],
@@ -216,7 +222,7 @@ const mixedNumberLine = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_2' }],
   evidence: 'An improper fraction on a nought-to-two line is the clearest test of whether a child treats a fraction as a number: 7/4 has to go somewhere specific, and "seven over four" gives no help in finding it.',
   strategy: { name: 'Whole first', text: 'Decide which two whole numbers it sits between, then split that gap.' },
-  rounds: 12, printItems: 4, seconds: 0, timerAvailable: true,
+  rounds: 12, printItems: 6, seconds: 0, timerAvailable: true,
   printInstruction: 'Mark each value on the 0 to 2 line.',
   generate(seed, i, ch, r) {
     // MagPI's own 0-2 targets
@@ -245,6 +251,7 @@ const coordinateQuest = {
   id: 'coordinate-quest', title: 'Coordinate Quest', kind: 'game', grade: '5', strand: S[4],
   glyph: '⊹',
   skill: 'Reading and plotting points in the first quadrant.',
+  trick: 'Along the corridor, then up the stairs. The first number goes across, the second goes up — always that order.',
   blurb: 'Across first, then up. Where is (3, 5)?',
   ccss: ['5.G.A.1', '5.G.A.2'],
   im: [7],
@@ -253,7 +260,7 @@ const coordinateQuest = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Reading x before y is a convention, and swapping them is a common and durable error. Showing the point already plotted and asking for its name isolates the ordering from the mechanics of plotting.',
   strategy: { name: 'Across, then up', text: 'Always read the across number first, then the up number. (3, 5) means 3 across and 5 up.' },
-  rounds: 12, printItems: 12, seconds: 60,
+  rounds: 12, printItems: 9, seconds: 60,
   printInstruction: 'Write the coordinates of each marked point.',
   generate(seed, i, ch, r) {
     const x = r.int(1, 8), y = r.int(1, 8);
@@ -294,6 +301,7 @@ const standardAlgorithm = {
   id: 'standard-algorithm', title: 'The Standard Algorithm', kind: 'book', grade: '5', strand: S[2],
   glyph: '⟌',
   skill: 'Multiplying multi-digit numbers and dividing by two digits, fluently.',
+  trick: 'One column at a time, and write every carry down where you can see it. Slow is fast here.',
   blurb: 'The written methods, at full size. Two digits by two, and long division.',
   ccss: ['5.NBT.B.5', '5.NBT.B.6'],
   im: [4],
@@ -301,7 +309,7 @@ const standardAlgorithm = {
   theory: 'The standard algorithm is the endpoint of a progression, not the starting point: it compresses partial products into a notation that only makes sense once the parts are understood.',
   roam: [{ task: 'fluencyCalf', subscale: 'mult' }, { task: 'fluencyCalf', subscale: 'div' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Grade 5 is where Illustrative Mathematics expects the standard algorithms to become fluent, having built them from partial products in grade 4. This book assumes that groundwork and drills the compressed form — with a partial-product page every third item so the compression stays connected to what it compresses.',
-  pages: 16, printItems: 20,
+  pages: 16, printItems: 18,
   printInstruction: 'Work these out. Show your partial products or your long division.',
   printInstructions: { input: 'Work these out. Show your working.' },
   generate(seed, i, ch, r) {

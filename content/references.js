@@ -129,7 +129,7 @@ export const references = {
     venue: 'Journal of Educational Psychology 112(1), 40–52', doi: '10.1037/edu0000367',
     kind: 'rct', strength: 'strong',
     finding: 'Preregistered cluster RCT, 787 students, 54 classes. Four months of interleaved versus blocked assignments, then an unannounced test a month later: 61% versus 38%, d = 0.83 [0.68, 0.97]. Same problems, same total practice — only the ordering differed. Worksheets held exactly eight problems.',
-    use: 'The specification for mixed review sheets: eight problems, arranged so no two consecutive problems need the same method. Caveat we state openly: this was grade 7, so applying it to K–5 is an inference from mechanism.',
+    use: 'The specification for mixed review sheets: eight problems, arranged so no two consecutive problems need the same method. Kindergarten and grade 1 sheets hold five instead, because eight problems at the type size those grades use do not fit on one page. Caveat we state openly: this was grade 7, so applying it to K–5 is an inference from mechanism either way.',
   },
   'rohrer-2014': {
     appliesTo: ['fraction-foundry', 'carry-and-borrow', 'equivalent-fractions'],

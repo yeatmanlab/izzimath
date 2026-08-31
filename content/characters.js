@@ -10,6 +10,7 @@ export const characters = {
     tagline: 'Plain problems, plain colours, lightest ink.',
     blurb: 'Some kids want the maths without a story. This is that.',
     palette: { a1: '#22E0F0', a2: '#7C5CFF', a3: '#FF4D9D', ok: '#B6FF3D' },
+    printAccent: null,
     // `actor` is who appears in word problems; `name` is the UI label. They differ
     // for "none" so a word problem reads "Sam has 4 boxes", not "Just math has 4 boxes".
     actor: 'Sam',
@@ -36,6 +37,9 @@ export const characters = {
     tagline: '“Nice. No rush.”',
     blurb: 'Counts crickets, basks on warm rocks, and builds everything out of scales.',
     palette: { a1: '#FFC24D', a2: '#FF7A45', a3: '#C1440E', ok: '#7CE8B0' },
+    // Print accent: the deep end of Kiwi's own palette. The neon a1/a2 tones are
+    // built for a dark screen and vanish on white paper, so paper gets its own tone.
+    printAccent: '#C1440E',
     world: { place: 'the canyon', places: 'canyons', feature: 'basking rock', features: 'basking rocks' },
     collectible: { one: 'cricket', many: 'crickets' },
     container: { one: 'cup', many: 'cups' },
@@ -61,6 +65,7 @@ export const characters = {
     tagline: '“YES! Again!”',
     blurb: 'Chases tennis balls down number lines and counts treats at top speed.',
     palette: { a1: '#FF4D9D', a2: '#A855F7', a3: '#22E0F0', ok: '#B6FF3D' },
+    printAccent: '#A3187C',
     world: { place: 'the park', places: 'parks', feature: 'bench', features: 'benches' },
     collectible: { one: 'treat', many: 'treats' },
     container: { one: 'bag', many: 'bags' },
@@ -86,6 +91,7 @@ export const characters = {
     tagline: '“Ooh — try it this way.”',
     blurb: 'Climbs bamboo towers, hunts for the trick, and counts on a ringed tail.',
     palette: { a1: '#FFD166', a2: '#FF6B35', a3: '#D7263D', ok: '#8FE388' },
+    printAccent: '#C42432',
     world: { place: 'the treetops', places: 'treetops', feature: 'branch', features: 'branches' },
     collectible: { one: 'berry', many: 'berries' },
     container: { one: 'basket', many: 'baskets' },

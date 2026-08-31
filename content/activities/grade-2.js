@@ -12,6 +12,7 @@ const placeValuePalace = {
   id: 'place-value-palace', title: 'Place Value Palace', kind: 'book', grade: '2', strand: S[0],
   glyph: '☰',
   skill: 'Reading, building and comparing numbers to 1000 in hundreds, tens and ones.',
+  trick: 'Compare from the left. The first column where the digits differ decides it, and nothing to the right can change that.',
   blurb: 'Build the number from hundreds, tens and ones — then say which is bigger.',
   ccss: ['2.NBT.A.1', '2.NBT.A.3', '2.NBT.A.4'],
   im: [5, 7],
@@ -20,6 +21,7 @@ const placeValuePalace = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Three-digit place value, with comparison pairs chosen to expose the classic error rather than to be easy. When the tens and the ones point in opposite directions — 71 against 25 — children who compare digit by digit get it wrong, and a random pair rarely catches that.',
   pages: 12, printItems: 12,
+  printPages: 2,   // two pages
   printInstruction: 'Write each number, then compare the pairs.',
   printInstructions: {
     input: 'Write each number.',
@@ -85,6 +87,8 @@ const carryAndBorrow = {
   id: 'carry-and-borrow', title: 'Carry and Borrow', kind: 'book', grade: '2', strand: S[1],
   glyph: '⇄',
   skill: 'Two-digit addition and subtraction, with and without regrouping.',
+  trick: 'Line the ones up under the ones. Start at the right. If a column makes ten or more, write the ones digit and carry the ten next door.',
+  printScratch: true,
   blurb: 'The four cases: add with and without a carry, subtract with and without a borrow.',
   ccss: ['2.NBT.B.5', '2.NBT.B.7'],
   im: [2, 7],
@@ -97,7 +101,7 @@ const carryAndBorrow = {
     { task: 'fluencyCalf', subscale: 'sub-borrow' },
   ],
   evidence: 'Four procedures that fail separately, so they are practised separately and then interleaved: add without carrying, add with carrying, subtract without borrowing, subtract with borrowing. Interleaving matters here — mixing the four is what forces a child to read the problem rather than repeat the last method.',
-  pages: 16, printItems: 18,
+  pages: 16, printItems: 14,
   printInstruction: 'Work these out. Watch for the ones that regroup.',
   generate(seed, i, ch, r) {
     // Every fifth item is a word problem, tagged by schema rather than by
@@ -152,6 +156,7 @@ const arraysAndEqualGroups = {
   id: 'arrays-and-equal-groups', title: 'Arrays and Equal Groups', kind: 'book', grade: '2', strand: S[4],
   glyph: '▦',
   skill: 'Seeing repeated addition as rows and columns — the groundwork for multiplication.',
+  trick: 'Count one row, then count how many rows. Rows that are all the same size can be multiplied instead of added up.',
   blurb: 'Count the rows, count the columns, find the total.',
   ccss: ['2.OA.C.4'],
   im: [8],
@@ -207,6 +212,7 @@ const hundredLineHop = {
   id: 'hundred-line-hop', title: 'Hundred Line Hop', kind: 'game', grade: '2', strand: S[2],
   glyph: '⇥',
   skill: 'Estimating where a number sits on a 0–100 line.',
+  trick: 'Anchor on 50, then 25 and 75. Place your number next to the nearest anchor instead of counting up from zero.',
   blurb: 'No tick marks this time. Where does 63 go?',
   ccss: ['2.NBT.A.1'],
   im: [4, 5],
@@ -215,7 +221,7 @@ const hundredLineHop = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
   evidence: 'The same number line, now without tick marks. Removing them is the point: the child has to reason from landmarks (nought, fifty, one hundred) instead of counting, which is what estimating a magnitude actually is.',
   strategy: { name: 'Use landmarks', text: 'Fifty is the middle. Twenty-five is halfway to the middle. Work from those.' },
-  rounds: 12, printItems: 4, seconds: 0, timerAvailable: false,
+  rounds: 12, printItems: 7, seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
     // MagPI's own 0-100 targets
@@ -238,6 +244,7 @@ const decadeDuel = {
   id: 'decade-duel', title: 'Decade Duel', kind: 'game', grade: '2', strand: S[0],
   glyph: '⚖',
   skill: 'Comparing two-digit numbers, including the pairs designed to trick you.',
+  trick: 'Look at the tens first. The ones only matter if the tens are the same.',
   blurb: 'Which is bigger: 65 or 49? Careful — the ones digit lies.',
   ccss: ['2.NBT.A.4'],
   im: [5],
@@ -287,6 +294,7 @@ const closeToHundred = {
   id: 'close-to-hundred', title: 'Close to a Hundred', kind: 'game', grade: '2', strand: S[1],
   glyph: '⌾',
   skill: 'Choosing where to put digits to land as close to a target as possible.',
+  trick: 'Put your biggest digit in the tens place. A ten is worth ten times a one, so that is where the game is won.',
   blurb: 'Four digits, two numbers. Get as close to 100 as you can.',
   ccss: ['2.NBT.B.5', '2.NBT.B.6'],
   im: [1, 2, 7],
@@ -294,7 +302,7 @@ const closeToHundred = {
   theory: 'A target-number game turns arithmetic into a decision. The child must estimate before committing, which is what makes place value matter rather than just being recited.',
   roam: [{ task: 'fluencyCalf', subscale: 'add-carry' }, { task: 'roamAlpaca', subscale: 'cat2' }],
   evidence: 'The catalogue had no target-number game, which is the format the classroom tradition singles out — the youcubed "How Close to 100?" task is the canonical version. Unlike a drill, the arithmetic here serves a decision: you cannot choose where to put a digit without estimating the total first, so place value becomes load-bearing rather than recited.',
-  rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
+  rounds: 12, seconds: 0, timerAvailable: false, printItems: 13,
   strategy: { name: 'Tens first', text: 'The tens digits decide most of it. Put your big digits in the tens places, then check what the ones do.' },
   printInstruction: 'Arrange each set of digits to get as close to the target as you can.',
   printInstructions: { choice: 'Which arrangement lands closest to the target?' },
@@ -362,6 +370,9 @@ const measureAndChart = {
   id: 'measure-and-chart', title: 'Measure and Chart', kind: 'book', grade: '2', strand: S[3],
   glyph: '▥',
   skill: 'Measuring length in units, and reading a bar chart to compare and total.',
+  trick: 'Read the scale up the side before you read the bars. Check what one step is worth first.',
+  printDensity: 'd2',
+  printScratch: true,
   blurb: 'How long is it? And what does the chart tell you?',
   ccss: ['2.MD.A.1', '2.MD.D.10'],
   im: [3, 6],
@@ -370,6 +381,7 @@ const measureAndChart = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Required grade-2 coverage, and included on that basis rather than as an evidence claim — the WWC guidance on measurement and data is weak. It is framed to lean on what does have support: reading a bar off a scaled axis is a magnitude judgement, and comparing two bars is the same comparison the number work practises.',
   pages: 12, printItems: 12,
+  printPages: 2,   // two pages
   printInstruction: 'Measure, then read the charts.',
   printInstructions: { input: 'Read the chart and write the answer.', choice: 'Which is right?' },
   generate(seed, i, ch, r) {

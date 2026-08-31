@@ -13,6 +13,7 @@ const longMultiplication = {
   id: 'long-multiplication', title: 'Long Multiplication', kind: 'book', grade: '4', strand: S[0],
   glyph: '⨉',
   skill: 'Multiplying a two-digit number by one digit, then by two digits.',
+  trick: 'Split the number, multiply the parts, then add. 24 × 6 is 20 × 6 plus 4 × 6.',
   blurb: 'Break it into parts, multiply, put it back together.',
   ccss: ['4.NBT.B.5'],
   im: [6],
@@ -21,6 +22,7 @@ const longMultiplication = {
   roam: [{ task: 'fluencyCalf', subscale: 'mult' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Concreteness fading: the area model is visible for the early pages, then withdrawn, so partial products are understood before they become a written ritual. Two-digit by one-digit is secure before two-digit by two-digit appears.',
   pages: 14, printItems: 28,
+  printPages: 2,   // two pages
   printInstruction: 'Work these out. Show your partial products.',
   generate(seed, i, ch, r) {
     // Every fifth item is a word problem, tagged by schema rather than by
@@ -61,6 +63,7 @@ const equivalentFractions = {
   id: 'equivalent-fractions', title: 'Equivalent Fractions', kind: 'book', grade: '4', strand: S[1],
   glyph: '≡',
   skill: 'Recognising and generating equal fractions, and simplifying to lowest terms.',
+  trick: 'Multiply or divide the top and the bottom by the same number. Doing it to only one of them changes the fraction.',
   blurb: 'Same amount, different name. 2/4 is 1/2.',
   ccss: ['4.NF.A.1', '4.NF.A.2'],
   im: [2],
@@ -68,7 +71,7 @@ const equivalentFractions = {
   theory: 'Equivalence: different names for the same position on the line.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'roamMagpi', subscale: 'numberline', block: '0_1' }],
   evidence: 'Equivalence is the hinge between placing a fraction on a line and doing arithmetic with unlike denominators. Without it, finding a common denominator is a memorised ritual with no meaning attached, and it collapses under any variation.',
-  pages: 14, printItems: 18,
+  pages: 14, printItems: 13,
   printInstruction: 'Complete each equivalent fraction, or simplify it.',
   printInstructions: {
     input: 'Complete or simplify each fraction.',
@@ -129,6 +132,7 @@ const anglesAndLines = {
   id: 'angles-and-lines', title: 'Angles and Lines', kind: 'book', grade: '4', strand: S[2],
   glyph: '∠',
   skill: 'Naming angles by size, and adding angles that meet at a point or on a line.',
+  trick: 'A square corner is 90. A straight line is 180. All the way round is 360. Every question here is one of those three, split up.',
   blurb: 'Acute, right, obtuse — then work out the missing angle.',
   ccss: ['4.MD.C.5', '4.MD.C.7', '4.G.A.1'],
   im: [7],
@@ -191,6 +195,7 @@ const divisionDescent = {
   id: 'division-descent', title: 'Division Descent', kind: 'game', grade: '4', strand: S[0],
   glyph: '÷',
   skill: 'Dividing a two- or three-digit number by a single digit.',
+  trick: 'Divide the biggest place first. Write down what fits, then carry the leftover into the next digit.',
   blurb: 'Climb down: how many times does it go?',
   ccss: ['4.NBT.B.6'],
   im: [6],
@@ -199,7 +204,7 @@ const divisionDescent = {
   roam: [{ task: 'fluencyCalf', subscale: 'div' }],
   evidence: 'Every division here comes out exactly. That is deliberate: remainders are a separate idea, and introducing them while the procedure is still being learned means failures are ambiguous — did the method go wrong, or is the answer just untidy?',
   strategy: { name: 'Multiply up', text: 'Ask how many of the smaller number fit. Try tens first: how about ten of them?' },
-  rounds: 12, printItems: 28, seconds: 90,
+  rounds: 12, printItems: 30, seconds: 90,
   printInstruction: 'Work these out. Every one divides exactly.',
   generate(seed, i, ch, r) {
     const band = i < 4 ? 'd1' : i < 8 ? 'd2' : 'd3';
@@ -221,6 +226,7 @@ const decimalDrop = {
   id: 'decimal-drop', title: 'Decimal Drop', kind: 'game', grade: '4', strand: S[1],
   glyph: '·',
   skill: 'Placing a decimal between 0 and 1, and matching it to its fraction.',
+  trick: '0.5 is a half, 0.25 is a quarter, 0.1 is a tenth. Find the nearest of those you know, then adjust from it.',
   blurb: 'Where does 0.35 land? And what fraction is that?',
   ccss: ['4.NF.C.6', '4.NF.C.7'],
   im: [4],
@@ -229,7 +235,7 @@ const decimalDrop = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_1' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Decimals and fractions on the same number line, so they read as one idea in two notations rather than two unrelated topics. Matching 0.25 to a quarter is the link that makes both easier.',
   strategy: { name: 'Tenths first', text: 'The first digit after the point is tenths. 0.35 is between three tenths and four tenths.' },
-  rounds: 12, printItems: 4, seconds: 0, timerAvailable: true,
+  rounds: 12, printItems: 7, seconds: 0, timerAvailable: true,
   printInstruction: 'Mark each decimal on the line.',
   printInstructions: {
     numberline: 'Mark each decimal on the number line.',
@@ -267,6 +273,7 @@ const factorForest = {
   id: 'factor-forest', title: 'Factor Forest', kind: 'book', grade: '4', strand: S[3],
   glyph: '⋔',
   skill: 'Finding factor pairs, listing multiples, and telling a prime from a composite.',
+  trick: 'Work up in pairs from 1 and stop when the pairs start repeating — that is when you have them all.',
   blurb: 'Which numbers divide it exactly? And which numbers have no pairs at all?',
   ccss: ['4.OA.B.4'],
   im: [1],
@@ -274,7 +281,7 @@ const factorForest = {
   theory: 'A factor pair is the two sides of a rectangle with that many squares. Primes are the numbers that can only be a single line.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'div' }],
   evidence: 'Factors are usually taught as a list to memorise. Presented as rectangle dimensions they become a search with a visible answer — and it explains primes properly: a prime is a number you cannot make into any rectangle except a single row.',
-  pages: 12, printItems: 14,
+  pages: 12, printItems: 16,
   printInstruction: 'Find the factors and multiples asked for.',
   printInstructions: {
     input: 'Write the missing factor or multiple.',
@@ -346,6 +353,7 @@ const timesAsMany = {
   id: 'times-as-many', title: 'Times As Many', kind: 'book', grade: '4', strand: S[4],
   glyph: '⨯',
   skill: 'Multiplicative comparison — reading "four times as many" as multiplication rather than addition.',
+  trick: '“Times as many” means multiply, not add. Draw one bar for the smaller amount, then repeat that bar.',
   blurb: 'Three times as many is not three more. Here is the difference.',
   ccss: ['4.OA.A.1', '4.OA.A.2'],
   im: [5],
@@ -353,7 +361,7 @@ const timesAsMany = {
   theory: 'Additive comparison asks how many more; multiplicative comparison asks how many times as many. Children routinely read the second as the first.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
   evidence: 'Its own strand in Illustrative Mathematics grade 4, and a well-documented sticking point: "three times as many" gets read as "three more". Every page pairs the two comparisons so the difference is the thing being noticed, which is the variation-theory move — change one feature, hold the rest.',
-  pages: 12, printItems: 12,
+  pages: 12, printItems: 16,
   printInstruction: 'Read carefully — some ask how many more, some how many times as many.',
   printInstructions: { input: 'Read carefully. Some ask how many more, some how many times as many.' },
   generate(seed, i, ch, r) {

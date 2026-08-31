@@ -3,12 +3,22 @@
 
      .plain     pure black on white, hairlines only, no tints, no decoration.
                 The cheapest thing a home inkjet can produce.
-     .designed  the same maths with a proper header, rounded problem cards,
-                numbered badges and a self-check strip. Still stroke-led and
-                still light on ink — no flood fills anywhere — but it looks like
-                something made on purpose.
+     .designed  the same maths, made to be picked up: the character in the
+                header, a trick box in their voice, named sections, rounded
+                problem cards and one accent colour from that character's own
+                pack. The accent is spent on strokes, labels and section bands
+                at about a tenth strength — never flooded behind the maths — so
+                it stays cheap, and it degrades to grey on a mono printer.
 
-   Both keep the site's typography so a printed page and the screen feel related. */
+   Both keep the site's typography so a printed page and the screen feel related.
+
+   Three age bands cut across both styles, because a Kindergarten sheet and a
+   Grade 5 sheet should not look alike:
+
+     .little   K-1   biggest type, character speaks the trick, stars to colour
+     .middle   2-3   named sections, trick box, scratch space, tick circles
+     .big      4-5   compact strategy note, denser grid, a challenge, no stars
+*/
 
 .sheet {
   --ink: #111;
@@ -16,6 +26,12 @@
   --hair: #b9b9b9;
   --soft: #6b6b6b;
   --pad: 0.42in;
+  /* The character's print accent is set inline on .designed sheets. Everything
+     below reads --acc, so the plain sheet and the "Just math" character simply
+     inherit ink and no colour appears anywhere. */
+  --acc: var(--ink);
+  --acc-tint: #f4f4f4;
+  --acc-line: var(--hair);
   background: #fff; color: var(--ink);
   width: 7.5in; min-height: 10in;
   margin: 0 auto; padding: var(--pad);
@@ -25,6 +41,10 @@
   box-sizing: border-box;
 }
 .sheet * { box-sizing: border-box }
+/* Two mixes of the accent: a hairline weight for borders and a very light wash
+   for section bands. color-mix is only ever an enhancement here — a browser
+   without it keeps the grey defaults above and the sheet still reads. */
+.designed { --acc-tint: color-mix(in srgb, var(--acc) 10%, #fff); --acc-line: color-mix(in srgb, var(--acc) 38%, #fff) }
 .sheet-preview { border-radius: 6px; box-shadow: 0 24px 70px rgba(0,0,0,.55); margin: 20px auto }
 
 /* ------------------------------------------------------------------ header */
@@ -42,7 +62,8 @@
 /* A short tapered accent, not a full-width rule — it reads as a mark rather
    than a broken underline. */
 .designed .sh-rule { flex: none; height: 4px; width: 132px; margin: 0 0 15px; display: flex; gap: 3px; align-items: stretch }
-.designed .sh-rule i { background: var(--ink); border-radius: 2px }
+.designed .sh-rule i { background: var(--acc); border-radius: 2px }
+.designed .sh-head b { color: var(--acc) }
 .designed .sh-rule i:nth-child(1) { flex: 6 }
 .designed .sh-rule i:nth-child(2) { flex: 3 }
 .designed .sh-rule i:nth-child(3) { flex: 1.4 }
@@ -56,9 +77,26 @@
 .sh-inst .n { font-family: 'Space Grotesk', sans-serif; font-size: 11px; flex: none }
 .plain .sh-inst .n { font-weight: 700 }
 .designed .sh-inst .n {
-  width: 17px; height: 17px; border-radius: 50%; background: var(--ink); color: #fff;
+  width: 17px; height: 17px; border-radius: 50%; background: var(--acc); color: #fff;
   display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; align-self: center;
 }
+/* "Bigger or smaller?" then the instruction, quieter, after an em dash. */
+.sh-inst b { font-weight: 700 }
+.designed .sh-inst b { color: var(--acc) }
+.sh-inst em { font-style: normal; font-weight: 400; color: var(--soft) }
+.sh-inst em::before { content: ' \2014 ' }
+/* The named section sits in a light band on the two younger bands. It is the
+   single biggest reason a sheet looks made rather than generated, and at a tenth
+   strength over a 20px strip it costs almost nothing to print. */
+.designed.little .sh-inst,
+.designed.middle .sh-inst {
+  background: var(--acc-tint); border-left: 3px solid var(--acc);
+  border-radius: 0 5px 5px 0; padding: 5px 9px; margin-bottom: 10px;
+}
+.little .sh-inst { font-size: 14px }
+.little .sh-inst b, .little .sh-inst em { display: block }
+.little .sh-inst em::before { content: none }
+.big .sh-inst { font-size: 11.5px; margin-bottom: 8px }
 .sh-note { font-size: 9.5px; color: var(--soft); font-style: italic; margin-top: 5px }
 
 /* ------------------------------------------------------------------ grids */
@@ -75,9 +113,12 @@
 .pr .lbl { font-size: .6em; color: var(--soft); margin-right: 5px }
 .designed .pr { padding: 9px 11px; border: 1px solid var(--hair); border-radius: 7px }
 .designed .sh-grid.d1 .pr { padding: 13px 14px }
+/* The item letter. At .52em of a 14.5px grid this was a 7.5px glyph in a circle
+   and read as a smudge rather than an "a)". Big enough to be a label, small
+   enough to stay out of the way. */
 .designed .pr .lbl {
-  display: inline-grid; place-items: center; width: 1.15em; height: 1.15em;
-  border: 1px solid var(--soft); border-radius: 50%; font-size: .52em; color: var(--soft); margin-right: 6px;
+  display: inline-grid; place-items: center; width: 1.35em; height: 1.35em;
+  border: 1px solid var(--soft); border-radius: 50%; font-size: .62em; color: var(--soft); margin-right: 6px;
 }
 
 /* answer boxes, not lines — sized to a child's hand, not to the type */
@@ -128,16 +169,29 @@
 
 /* Figures are constrained by HEIGHT, not width. A viewBox that is tall and
    narrow (a 2x7 array, say) blows up to several inches if you set width:100%,
-   which is what pushed sheets to three pages. */
+   which is what pushed sheets to three pages.
+
+   The cap is on `.pr svg`, not on `.pv svg`. Scoping it to .pv left every figure
+   that happened to be emitted outside a .pv wrapper uncapped, and one of them
+   was — the number bond, at its full 150px. A sheet is only ever one page if
+   NOTHING on it can grow, so the backstop goes on the container that always
+   exists. */
 .pr .pv { margin: 5px 0 4px }
-.pr .pv svg { display: block; width: auto; height: auto; max-width: 100%; max-height: 0.72in }
-.sh-grid.d1 .pr .pv svg { max-height: 1in }
-.sh-grid.d2 .pr .pv svg { max-height: 0.8in }
-/* full-width figures (number lines, the board) are width-driven by design */
+.pr svg { display: block; width: auto; height: auto; max-width: 100%; max-height: 0.72in }
+.sh-grid.d1 .pr svg { max-height: 0.85in }
+.sh-grid.d2 .pr svg { max-height: 0.72in }
+.sh-grid.d3 .pr svg, .sh-grid.d4 .pr svg { max-height: 0.6in }
+/* The worked example is one figure at full width, so it gets a little more. */
+.sh-example .pr svg { max-height: 0.8in }
+/* Full-width figures (number lines, the board) are width-driven by design, but
+   still capped — a board of ten squares at 100% width is 0.4in tall, and one of
+   twenty is not allowed to become an inch and a half. */
 .pr.wide { padding: 5px 9px; font-size: 13.5px }
 .pr.wide > svg { margin: 1px 0 0 }
 .pr.wide .pv { max-width: none }
-.pr.wide .pv svg { width: 100%; max-height: none }
+.pr.wide svg { width: 100%; max-height: 0.62in }
+.pr .pv.bond { max-width: 118px; margin: 4px auto 0 }
+.sh-grid.d1 .pr .pv.bond { max-width: 132px }
 .pr .pv .tenframe { width: 118px }
 .sh-grid.d1 .pr .pv .tenframe { width: 140px }
 
@@ -201,11 +255,113 @@
 .keyline { margin-top: 3px; font-size: .9em }
 .keyline em { color: #555; font-style: italic; font-family: Inter, sans-serif; font-size: .92em; margin-left: 6px }
 
-/* worked example: the first item solved, so the method is visible */
-.sh-example { border: 1px dashed var(--soft); border-radius: 6px; padding: 8px 10px 6px; margin-bottom: 12px; break-inside: avoid }
+/* Worked example: the first item solved, so the method is visible.
+   Kept deliberately tight. On a Kindergarten sheet at 21px type this box was
+   2.2in — a fifth of the page for one solved problem — which is why the sheet
+   only held three of the real ones. The figure inside it is capped harder than
+   anywhere else, and the answer box is not drawn at all, because the answer is
+   already printed. */
+.sh-example { border: 1px dashed var(--soft); border-radius: 6px; padding: 6px 9px 5px; margin-bottom: 10px; break-inside: avoid }
+.sh-example .pr { padding: 0 !important; border: 0 !important; font-size: .92em }
+.sh-example .pr svg { max-height: 0.55in }
+.sh-example .pr .ruled, .sh-example .pr .workbox { display: none }
+.sh-example .ex-label { margin-bottom: 3px }
 .designed .sh-example { border-style: solid; border-color: var(--hair); background: none }
 .sh-example .ex-label { font-family: 'Space Grotesk', sans-serif; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); margin-bottom: 5px }
 .sh-example .ex-why { font-size: 10.5px; color: #444; margin-top: 4px }
 .sh-example .ex-next { font-size: 10px; color: var(--soft); font-style: italic; margin-top: 5px }
 .sh-example .sh-grid { grid-template-columns: 1fr !important; gap: 0 }
 .key .sh-example { display: none }
+
+/* ---------------------------------------------------------------- trick box
+   The strategy, named before the practice. Present on BOTH styles — a method
+   is content, not decoration, and the cheap sheet should not be the useless
+   one. What changes is the weight: an accent-bordered card with a wash on the
+   designed sheet, a plain hairline box on the plain one. */
+.sh-trick {
+  flex: none; display: flex; gap: 10px; align-items: flex-start;
+  border: 1px solid var(--hair); border-radius: 7px;
+  padding: 7px 10px; margin: 0 0 13px;
+}
+.designed .sh-trick { border: 1.5px solid var(--acc-line); background: var(--acc-tint) }
+.plain .sh-trick { border-style: dashed }
+.sh-trick .tb-art { flex: none; display: block }
+.sh-trick .tb-art svg { width: 34px; height: 34px; display: block }
+.sh-trick .tb-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 8.5px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--soft); margin: 0 0 2px;
+}
+.designed .sh-trick .tb-label { color: var(--acc) }
+.sh-trick .tb-body { font-size: 11.5px; line-height: 1.5; margin: 0; color: #222 }
+
+.little .sh-trick { padding: 9px 12px; margin-bottom: 15px }
+.little .sh-trick .tb-art svg { width: 44px; height: 44px }
+.little .sh-trick .tb-body { font-size: 13.5px; line-height: 1.55 }
+/* Grades 4-5 get the same words in a quieter frame: one rule down the left,
+   no card, no wash. It reads as a note to themselves rather than a poster. */
+.big .sh-trick { border: 0; border-left: 3px solid var(--hair); border-radius: 0; padding: 1px 0 1px 10px; margin-bottom: 11px }
+.designed.big .sh-trick { border: 0; border-left: 3px solid var(--acc); background: none }
+.big .sh-trick .tb-body { font-size: 11px }
+
+/* ------------------------------------------------------------ scratch space
+   Nowhere to write is the sheet's fault, not the child's. Sits at the bottom of
+   the body with margin-top:auto, so it takes up the slack a short sheet leaves
+   instead of adding height to a full one. */
+.sh-scratch {
+  flex: none; margin-top: auto; min-height: 0.52in;
+  border: 1px dashed var(--hair); border-radius: 5px;
+  padding: 3px 7px; position: relative;
+}
+.designed .sh-scratch { border-color: var(--acc-line) }
+.sh-scratch span {
+  font-family: 'Space Grotesk', sans-serif; font-size: 8.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--soft);
+}
+.big .sh-scratch { min-height: 0.66in }
+
+/* -------------------------------------------------------- stars, for K and 1
+   Ten outlined stars to colour in. Stroke only, so it costs a child's pencil
+   rather than the printer's ink. */
+.sh-check.stars { font-size: 11px; gap: 10px; flex-wrap: wrap }
+.sh-check.stars .boxes { gap: 4px }
+.sh-check.stars svg { width: 24px; height: 24px; display: block; color: var(--soft) }
+.designed .sh-check.stars svg { color: var(--acc) }
+.sh-check.stars strong { font-size: 12px }
+
+/* ------------------------------------------------------- challenge, 4 and 5
+   What replaces the stars. Re-doing the hardest one from scratch is a
+   self-test, which beats re-reading the page by a wide margin. */
+.sh-challenge {
+  flex: none; margin-top: 12px; padding: 7px 0 0 10px;
+  border-top: 1px solid var(--hair); border-left: 3px solid var(--hair);
+  font-size: 10.5px; color: #333; line-height: 1.5;
+}
+.designed .sh-challenge { border-left-color: var(--acc) }
+.sh-challenge strong { font-family: 'Space Grotesk', sans-serif; color: var(--ink) }
+.designed .sh-challenge strong { color: var(--acc) }
+
+/* --------------------------------------------------------- band type scaling
+   The one thing that matters most across ages, and the easiest to get wrong:
+   how big the numbers are and how much room there is to answer. */
+.little .sh-head b { font-size: 21px }
+.little .sh-id svg { width: 50px; height: 50px }
+.little .sh-grid.d1 { font-size: 21px; gap: 20px 26px }
+.little .sh-grid.d1 .pr .ansline { min-width: 3em; height: 1.9em }
+.big .sh-head b { font-size: 17.5px }
+.big .sh-id svg { width: 34px; height: 34px }
+
+/* The key is for an adult. None of the child-facing furniture belongs on it. */
+.key .sh-trick, .key .sh-scratch, .key .sh-challenge { display: none }
+
+/* ------------------------------------------------------------- multi-page
+   A sheet may be more than one page, but never a page and a bit. Page 1 carries
+   the trick box, the last page carries the self-check and the wrap-up, and every
+   page carries the header and the QR so a separated page still says what it is. */
+.sh-name.pageno { line-height: 1.4; font-family: 'Space Grotesk', sans-serif; letter-spacing: .04em }
+.sh-inst.cont em { color: var(--soft) }
+.sh-inst.cont em::before { content: ' ' }
+.sh-more {
+  flex: none; margin-top: 12px; padding-top: 9px; border-top: 1px solid var(--hair);
+  font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--soft);
+}
+.designed .sh-more { color: var(--acc) }

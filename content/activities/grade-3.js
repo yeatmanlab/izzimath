@@ -13,6 +13,7 @@ const timesTableTower = {
   id: 'times-table-tower', title: 'Times Table Tower', kind: 'book', grade: '3', strand: S[0],
   glyph: '×',
   skill: 'Multiplication facts to 10 × 10, and the division facts that go with them.',
+  trick: 'Every hard fact is an easy fact in a costume. ×4 is double, then double again. ×6 is ×3, then double. ×9 is ×10 take away one group.',
   blurb: 'Build the tower one times table at a time.',
   ccss: ['3.OA.C.7', '3.OA.A.1'],
   im: [1, 4],
@@ -20,7 +21,7 @@ const timesTableTower = {
   theory: 'Multiplicative structure, ordered by real difficulty rather than by table.',
   roam: [{ task: 'fluencyArf', subscale: 'mult' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Facts are ordered by how hard they actually are, not by table. The identities and the twos, fives and tens come first; the awkward middle of the grid (six sevens, seven eights) comes last. Going 2s, 3s, 4s in order front-loads the wrong difficulty. Each block ends with the matching division fact.',
-  pages: 14, printItems: 12,
+  pages: 14, printItems: 10,
   printInstruction: 'Work these out. Write the answer.',
   generate(seed, i, ch, r) {
     // Every fifth item is a word problem, tagged by schema rather than by
@@ -65,6 +66,8 @@ const fractionNumberLine = {
   id: 'fraction-number-line', title: 'Fraction Number Line', kind: 'book', grade: '3', strand: S[1],
   glyph: '¾',
   skill: 'Placing a fraction on a number line, and seeing which fractions are equal.',
+  trick: 'The bottom number says how many equal jumps fit between 0 and 1. Make jumps that size, then take the top number of them.',
+  printScratch: true,
   blurb: 'Halves, thirds, fourths and eighths — find them on the line.',
   ccss: ['3.NF.A.2', '3.NF.A.3'],
   im: [5],
@@ -72,7 +75,7 @@ const fractionNumberLine = {
   theory: 'Fraction as a number with a position, not as one whole number over another.',
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_1' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'A fraction placed on a number line is a fraction understood as a number, rather than as one whole number stacked on another. That shift is the single best predictor of later fraction competence, and the number line is the representation that produces it — which is why this is the flagship of the site.',
-  pages: 14, printItems: 4,
+  pages: 14, printItems: 5,
   printInstruction: 'Mark each fraction on the number line.',
   printInstructions: {
     numberline: 'Mark each fraction on the number line.',
@@ -168,6 +171,8 @@ const areaAndPerimeter = {
   id: 'area-and-perimeter', title: 'Area and Perimeter', kind: 'book', grade: '3', strand: S[2],
   glyph: '▭',
   skill: 'Finding the area and the perimeter of a rectangle, and telling them apart.',
+  trick: 'Perimeter is the walk around the edge, so add. Area is the tiles inside, so multiply.',
+  printScratch: true,
   blurb: 'Squares inside, or fence around the edge?',
   ccss: ['3.MD.C.7', '3.MD.D.8'],
   im: [2, 7],
@@ -175,7 +180,7 @@ const areaAndPerimeter = {
   theory: 'Area is the array model measured; perimeter is a different quantity on the same figure.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Area on a grid is the same array model used for multiplication, which is why it belongs immediately after the times tables. Perimeter is interleaved deliberately: mixing the two is what forces a child to read the question instead of multiplying whatever they are given.',
-  pages: 12, printItems: 9,
+  pages: 12, printItems: 7,
   printInstruction: 'Find the area or perimeter as asked.',
   generate(seed, i, ch, r) {
     const w = r.int(2, 8), h = r.int(2, 6);
@@ -201,6 +206,7 @@ const factFamilyForge = {
   id: 'fact-family-forge', title: 'Fact Family Forge', kind: 'game', grade: '3', strand: S[0],
   glyph: '⟷',
   skill: 'Linking multiplication and division as the same fact seen two ways.',
+  trick: 'One family, four facts. If 6 × 7 = 42 then 42 ÷ 7 = 6 — the same three numbers read the other way round.',
   blurb: 'Three numbers make four facts. Find the missing one.',
   ccss: ['3.OA.B.6', '3.OA.C.7'],
   im: [4],
@@ -209,7 +215,7 @@ const factFamilyForge = {
   roam: [{ task: 'fluencyArf', subscale: 'mult' }, { task: 'fluencyArf', subscale: 'div' }],
   evidence: 'Multiplication and division are one fact seen from two directions, and practising them together roughly halves what has to be memorised. Division facts usually lag precisely because they are rarely rehearsed as the inverse.',
   strategy: { name: 'Use the family', text: 'Three numbers make four facts. If 6 × 7 = 42, then 42 ÷ 7 = 6.' },
-  rounds: 14, printItems: 18, seconds: 60,
+  rounds: 14, printItems: 24, seconds: 60,
   printInstruction: 'Fill in the missing number in each fact.',
   generate(seed, i, ch, r) {
     const a = r.int(2, 9), b = r.int(2, 9);
@@ -236,6 +242,7 @@ const arrayArchitect = {
   id: 'array-architect', title: 'Array Architect', kind: 'game', grade: '3', strand: S[0],
   glyph: '▩',
   skill: 'Recognising a product from its shape, and knowing that order does not change it.',
+  trick: 'The shape can be turned. 3 rows of 8 and 8 rows of 3 hold exactly the same number of squares.',
   blurb: 'How many squares? Then: does 4×6 match 6×4?',
   ccss: ['3.OA.A.1', '3.OA.B.5'],
   im: [1, 2],
@@ -244,7 +251,7 @@ const arrayArchitect = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
   evidence: 'The commutative property is obvious in an array and invisible in a string of symbols — turning the rectangle a quarter turn is the whole proof. Seeing it halves the number of facts a child has to store.',
   strategy: { name: 'Rows times columns', text: 'Count one row, then count how many rows. Turning the array does not change the total.' },
-  rounds: 12, printItems: 9, seconds: 60,
+  rounds: 12, printItems: 10, seconds: 60,
   printInstruction: 'Write the total for each array.',
   printInstructions: {
     choice: 'Write how many squares.',
@@ -285,6 +292,8 @@ const roundAndReckon = {
   id: 'round-and-reckon', title: 'Round and Reckon', kind: 'book', grade: '3', strand: S[3],
   glyph: '≈',
   skill: 'Rounding to the nearest ten and hundred, and using it to check whether an answer is sensible.',
+  trick: 'Look only at the digit one place to the right. Five or more rounds up; less than five stays put.',
+  printScratch: true,
   blurb: 'Round it first, then work it out. Does your answer look right?',
   ccss: ['3.NBT.A.1', '3.NBT.A.2'],
   im: [3],
@@ -292,7 +301,7 @@ const roundAndReckon = {
   theory: 'Rounding is estimation with a rule, and estimation is what lets a child notice their own wrong answer.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyCalf', subscale: 'add-carry' }],
   evidence: 'Rounding is usually taught as a rule to follow and then never used. Here every rounding page is followed by a page that uses it to sanity-check a real calculation, which is the only reason estimation is worth knowing. It also leans on the number line: rounding is asking which ten or hundred a number is nearer to, which is a magnitude judgement, not a digit rule.',
-  pages: 12, printItems: 12,
+  pages: 12, printItems: 18,
   printInstruction: 'Round each number, then check the calculations.',
   printInstructions: {
     input: 'Round each number as asked.',
@@ -352,6 +361,8 @@ const timeAndData = {
   id: 'time-and-data', title: 'Time and Data', kind: 'book', grade: '3', strand: S[4],
   glyph: '⏱',
   skill: 'Elapsed time to the minute, and reading a scaled bar graph.',
+  trick: 'Count on in whole hours first, then add the minutes. Never try to subtract times in a column like ordinary numbers.',
+  printScratch: true,
   blurb: 'How long did it take? And what does the graph say when each square is worth five?',
   ccss: ['3.MD.A.1', '3.MD.B.3'],
   im: [6, 1],
@@ -360,6 +371,7 @@ const timeAndData = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
   evidence: 'Required grade-3 coverage. Both halves are deliberately framed as number line work, which is the part with real support: elapsed time is a jump along a line in units of sixty, and a scaled bar graph is a line with a multiplier. That also makes the scale the thing being taught, which is where children actually go wrong.',
   pages: 12, printItems: 14,
+  printPages: 2,   // two pages
   printInstruction: 'Work out the times, then read the graphs.',
   printInstructions: { input: 'Write the answer.', choice: 'Which is right?' },
   generate(seed, i, ch, r) {

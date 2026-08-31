@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Izzi Math — print page fill</title>
+<link rel="stylesheet" href="/assets/src/styles/print.css">
+<!--
+  Print page fill. The third thing the Node checkers cannot test, because it
+  needs a real layout engine: how tall a printed sheet actually is.
+
+  This exists because the sheets silently spilled onto second and third pages
+  for a long time while the site said "every sheet is one full page". Heights
+  were being eyeballed in the on-screen preview, which has a CSS zoom on it, so
+  nothing looked wrong. Nothing catches that except measuring it.
+
+  What it checks, for every activity x every character x plain/designed x
+  practice/review x sheet/key:
+
+    1. no page is taller than one sheet of US Letter at the 0.45in margin
+       print.css sets, which is 10.1in of usable height
+    2. no page is wider than the 7.6in usable width, which would clip
+    3. the LAST page of a child's sheet is at least 80% full, so no sheet is
+       ever a page and a bit with two problems orphaned onto fresh paper
+
+  Ends with CHECKS_RUN=<n>. If that is missing or zero the harness did not run,
+  and an empty report is not a pass.
+-->
+<style>
+  body { background: #0b0b0f; color: #e8e8ea; font: 13px/1.5 ui-monospace, monospace; margin: 0; padding: 20px }
+  h1 { font: 600 17px/1.2 ui-sans-serif, system-ui; margin: 0 0 4px }
+  p.sub { color: #8a8a93; margin: 0 0 16px }
+  #out { white-space: pre; font-size: 12px }
+  .ok { color: #7CE8B0 } .bad { color: #FF7A8A } .warn { color: #FFC24D }
+  /* The measuring rig. Print geometry forced on screen: the width and padding
+     the @media print block uses, NOT the preview's 7.5in-with-padding box. */
+  #rig { position: absolute; left: -99999px; top: 0 }
+  #rig .sheet { width: 7.6in; min-height: 9.9in; padding: 0; margin: 0; box-shadow: none; border-radius: 0 }
+</style>
+<h1>Print page fill</h1>
+<p class="sub">Every sheet, every character, both styles, both modes, sheet and key — measured at print geometry.</p>
+<div id="rig"></div>
+<div id="out">running…</div>
+<script type="module">
+  // Absolute /assets/ paths, the same way func.html reaches the modules — the
+  // build copies content/ and src/ under dist/assets/, not next to _tools/.
+  import { activities } from '/assets/content/activities/index.js';
+  import { characters, getCharacter } from '/assets/content/characters.js';
+  import { sheet } from '/assets/src/lib/printsheet.js';
+
+  const LIMIT_H = 10.1;   // usable height of US Letter at a 0.45in margin
+  const LIMIT_W = 7.62;   // usable width, plus a hair for rounding
+  const MIN_LAST = 8.0;   // a last page below this is a page and a bit
+  const DPI = 96;
+
+  const rig = document.getElementById('rig');
+  const out = document.getElementById('out');
+  const fail = [], warn = [];
+  let checks = 0;
+
+  for (const a of activities) {
+    for (const chId of Object.keys(characters)) {
+      const ch = getCharacter(chId);
+      for (const style of ['designed', 'plain']) {
+        for (const mode of ['practice', 'review']) {
+          for (const key of [false, true]) {
+            rig.innerHTML = sheet({ activity: a, seed: 8817, ch, base: '',
+              siteUrl: 'https://izzimath.com', style, mode, key });
+            const pages = [...rig.children];
+            const hs = pages.map((e) => e.getBoundingClientRect().height / DPI);
+            const ws = pages.map((e) => e.scrollWidth / DPI);
+            const where = `${a.id} · g${a.grade} · ${chId} · ${style} · ${mode} · ${key ? 'key' : 'sheet'}`;
+            checks++;
+            const tall = Math.max(...hs);
+            if (tall > LIMIT_H) fail.push(`OVER  ${tall.toFixed(2)}in of ${LIMIT_H}in  ${where}  pages=[${hs.map((h) => h.toFixed(2))}]`);
+            const wide = Math.max(...ws);
+            if (wide > LIMIT_W) fail.push(`WIDE  ${wide.toFixed(2)}in of ${LIMIT_W}in  ${where}`);
+            // Only a child's sheet has to be full; a key can be short.
+            if (!key && hs[hs.length - 1] < MIN_LAST)
+              fail.push(`THIN  last page ${hs[hs.length - 1].toFixed(2)}in of ${LIMIT_H}in  ${where}`);
+            if (!key && pages.length > (a.printPages ?? 1))
+              warn.push(`SPLIT ${pages.length} pages, activity declares ${a.printPages ?? 1}  ${where}`);
+          }
+        }
+      }
+    }
+    rig.innerHTML = '';
+  }
+
+  const twoPage = activities.filter((a) => (a.printPages ?? 1) > 1);
+  const lines = [
+    `activities ${activities.length} · characters ${Object.keys(characters).length} · cases ${checks}`,
+    `deliberately two pages: ${twoPage.length} — ${twoPage.map((a) => a.id).join(', ') || 'none'}`,
+    '',
+    fail.length ? `<span class="bad">${fail.length} FAILURE${fail.length > 1 ? 'S' : ''}</span>` : '<span class="ok">no failures</span>',
+    ...fail.map((f) => '  ' + f),
+    warn.length ? `<span class="warn">${warn.length} warning${warn.length > 1 ? 's' : ''}</span>` : '',
+    ...warn.map((w) => '  ' + w),
+    '',
+    `CHECKS_RUN=${checks}`,
+  ];
+  out.innerHTML = lines.filter((l) => l !== '').join('\n');
+</script>

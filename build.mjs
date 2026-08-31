@@ -294,11 +294,25 @@ for (const a of activities) {
       <div data-sheet></div>
       <div class="roam noprint" style="margin-top:22px">
         <h2 style="font-size:15px">Printing notes</h2>
-        <p>Every sheet is one full page, line art only, with no solid fills anywhere.
-        ${ITEMS_NOTE(a)} The answer key is a separate page.</p>
-        <p style="font-size:13px"><strong>Two styles.</strong> The default has a proper header,
-        rounded problem boxes and a self-check strip. <strong>Plain black and white</strong> strips all
-        of that back to hairlines and nothing else — same problems, the least ink a printer can use.</p>
+        <p>${ITEMS_NOTE(a)} The answer key is a separate page.</p>
+        <p style="font-size:13px"><strong>Two styles, and the difference is ink.</strong>
+        The default is the designed sheet: ${esc(a.title)} with its character in the header, the
+        trick box that names the method before you start, named sections, rounded problem boxes and
+        one accent colour taken from that character's own palette. The colour is spent on outlines,
+        labels and a light section band — never flooded behind the maths — so it is still cheap, and
+        it still reads on a black-and-white printer. <strong>Plain black and white</strong> strips
+        the decoration back to hairlines: same problems, same trick box, the least ink a printer can
+        use.</p>
+        <p style="font-size:13px"><strong>The sheet changes with age.</strong> Kindergarten and
+        grade 1 get the biggest type, the fewest problems, the character speaking the trick, and
+        stars to colour in — and always one page, because a young child should be able to finish it.
+        Grades 2 and 3 get named sections and a self-check strip. Grades 4 and 5 get a compact
+        strategy note, a denser grid and a challenge instead of the stars, because by then a row of
+        stars reads as a sheet meant for somebody younger.</p>
+        <p style="font-size:13px"><strong>Length is chosen, not left to chance.</strong> Six of the
+        forty-one sheets are two pages; the rest are one. Every page was measured in a real browser,
+        and the rule is that no sheet may be a page and a bit — if the last page would not be at
+        least four fifths full, the problem count comes down instead.</p>
         <p style="font-size:13px"><strong>Text size.</strong> <em>Large print</em> drops to fewer,
         bigger problems per row. <em>Extra spacing</em> adds line height, letter spacing and wider
         gutters, and removes italics — the layout usually recommended for dyslexic readers. Both are
@@ -318,7 +332,9 @@ for (const a of activities) {
 }
 function ITEMS_NOTE(a) {
   const n = a.printItems ?? 12;
-  return `It has ${n} problems, which is the density we use for ${gradeName(a.grade).toLowerCase()}.`;
+  const pages = a.printPages ?? 1;
+  return `It has ${n} problems on ${pages === 1 ? 'one page' : pages + ' pages'}, which is the density we use for
+    ${gradeName(a.grade).toLowerCase()}.`;
 }
 
 /* -------------------------------------------------------------- printables */
@@ -452,7 +468,7 @@ write('about/index.html', page({
       straight implementation of a game from Siegler and Ramani&rsquo;s work, including the detail that
       the child names the squares they pass through, counting on from where they are &mdash; that
       detail roughly doubled the effect in a later study, so tapping &ldquo;one, two&rdquo; is treated
-      as an error and corrected. And <strong>review sheets</strong> hold eight mixed problems because a
+      as an error and corrected. And <strong>review sheets</strong> hold eight mixed problems &mdash; five in Kindergarten and grade 1, where eight will not fit on one page at that type size &mdash; because a
       randomised trial of 787 students found the same problems shuffled that way scored 61% against 38%
       a month later.</p>
 
@@ -532,7 +548,7 @@ write('parents/index.html', page({
       <h2 style="margin-top:26px">5. Print the same problems again later</h2>
       <p class="sub">Every activity prints. Doing the <em>same</em> page on paper a few days later is
       worth more than doing twice as much today. There is also a <strong>mixed review sheet</strong>
-      on every print page &mdash; eight problems shuffled so no two in a row use the same method. It
+      on every print page &mdash; eight problems (five for the youngest two grades) shuffled so no two in a row use the same method. It
       will feel harder and it is meant to. In a trial of 787 children, shuffled sheets scored 61%
       against 38% for the same problems grouped by type, on a test a month later.</p>
 

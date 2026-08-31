@@ -12,18 +12,109 @@ import { fill } from '../../content/characters.js';
    more room to write. Grounded in the printables research: density, not volume,
    is what makes a sheet usable. */
 export const DENSITY = { K: 'd1', 1: 'd1', 2: 'd2', 3: 'd2', 4: 'd3', 5: 'd3' };
+
+/* Age bands, for the designed sheet only. A Kindergarten sheet and a Grade 5
+   sheet should not look the same: a five-year-old needs big type, few problems
+   and something to colour in, and a ten-year-old finds exactly that babyish and
+   stops taking the page seriously. Same maths, same characters, same typeface —
+   three different amounts of decoration.
+
+     little  K-1   biggest type, fewest items, character speaks, stars to colour
+     middle  2-3   named sections, a trick box, scratch space, self-check
+     big     4-5   compact strategy note, denser grid, a challenge instead of stars
+*/
+export const AGE_BAND = { K: 'little', 1: 'little', 2: 'middle', 3: 'middle', 4: 'big', 5: 'big' };
+
+/* How many problems a mixed-review sheet holds.
+
+   Eight is not an arbitrary number — it is Rohrer's literal worksheet template,
+   the one that produced 61% against 38% a month later. So eight stays wherever
+   eight fits, and the only deviation is Kindergarten and grade 1, where eight
+   problems at 21px type with a figure on each one is a page and a half. Five is
+   what fits there. The trial was grade 7 in any case, so the K-1 number was
+   already an inference from mechanism rather than a replication. */
+const REVIEW_ITEMS = { little: 5, middle: 8, big: 8 };
+
+/* A section heading a child would actually read. "Answer each one" is what an
+   adult calls it; these are what it is. Used on the little and middle bands —
+   the big band gets the plain instruction, because by grade 4 the jolly title
+   reads as being talked down to. */
+const TYPE_TITLE = {
+  input: 'Work it out',
+  choice: 'Pick the answer',
+  compare: 'Bigger or smaller?',
+  truefalse: 'True or false?',
+  bond: 'Find the missing number',
+  tap: 'Draw it',
+  ordinal: 'Which one?',
+  numberline: 'Mark the line',
+  boardmove: 'Spin and move',
+};
 // Enough problems to fill one full page at the density that grade uses. Two
 // columns of large problems for K-1, up to four narrow columns by grade 4.
-export const ITEMS_PER_SHEET = { K: 10, 1: 12, 2: 18, 3: 21, 4: 28, 5: 28 };
+// Trimmed when the trick box and the scratch space arrived: those take about an
+// inch between them, and a sheet that spills onto a second page is worse than a
+// sheet with two fewer sums. Calibrated in a real browser by tools/pagefill.html
+// — every sheet has to land inside one page and above 70% of it.
+export const ITEMS_PER_SHEET = { K: 8, 1: 10, 2: 15, 3: 18, 4: 22, 5: 22 };
 // Problems that need the full width, so they count for more vertical space.
 const WIDE_TYPES = new Set(['numberline', 'boardmove']);
 
 const ansLine = (w = '2.6em') => `<span class="ansline" style="min-width:${w}"></span>`;
 
+/* The trick box. Naming the strategy before the practice is the same rule the
+   games follow on screen, and it is the one thing a printable can carry that a
+   bare column of sums cannot. The label changes with age; the content does not. */
+function trickBox(activity, ch, band) {
+  const t = activity.trick || activity.strategy;
+  if (!t) return '';
+  const named = ch.id !== 'none';
+  const label = band === 'big' ? 'Strategy'
+    : band === 'little' ? (named ? `${ch.name} says` : 'Try this first')
+    : (named ? `${ch.name}\u2019s trick` : 'The trick');
+  // On the little band the character says it, so the art belongs in the box.
+  const art = band === 'little' && named ? `<span class="tb-art">${lineArt(ch.id)}</span>` : '';
+  return `<div class="sh-trick">${art}<div><p class="tb-label">${esc(label)}</p>
+    <p class="tb-body">${esc(fill(t, ch))}</p></div></div>`;
+}
+
+/* Somewhere to work. A child doing two-digit addition in their head because the
+   sheet gave them nowhere to write is the sheet's fault. It grows to absorb
+   whatever vertical space the problems left over, so the page still fills. */
+const scratchSpace = (label = 'Scratch space \u2014 work it out here') =>
+  `<div class="sh-scratch"><span>${esc(label)}</span></div>`;
+
+/* What the bottom of the sheet offers, by age. K-1 colour a star in; grades 2-3
+   tick circles; grades 4-5 get neither, because a ten-year-old reads a row of
+   stars as a sheet meant for somebody younger. */
+function rewardStrip(band, count, ch) {
+  const n = Math.min(count, band === 'little' ? 10 : 12);
+  if (band === 'little') {
+    const star = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6.1 6.7.9-4.9 4.6 1.2 6.6L12 17.7 6.1 20.8l1.2-6.6L2.4 9.6l6.7-.9z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+    return `<div class="sh-check stars">
+      <strong>${ch.id === 'none' ? 'Nice work!' : esc(ch.name) + ' says nice work!'}</strong>
+      <span>Colour a star for every one you get right.</span>
+      <span class="boxes">${Array.from({ length: n }, () => star).join('')}</span></div>`;
+  }
+  if (band === 'big') return '';
+  return `<div class="sh-check">
+    <strong>How did it go?</strong>
+    <span>Tick one for every question you got right.</span>
+    <span class="boxes">${Array.from({ length: n }, () => '<i></i>').join('')}</span></div>`;
+}
+
 /* One problem, print form. `key` renders the answer instead of a blank. */
 export function printProblem(p, i, { key = false } = {}) {
   const lbl = `<span class="lbl">${String.fromCharCode(97 + (i % 26))})</span>`;
   const A = (v) => (key ? `<span class="ansval">${esc(v)}</span>` : ansLine());
+  /* Some stems carry their own blanks — "partial products are ____ and ____".
+     Appending another answer box after those gave the child two places to write
+     one answer, and on a grade 5 sheet it appeared on six problems at once. So
+     the stem's own underscores become the answer boxes, and nothing is appended.
+     The key keeps the underscores as written and prints the answer beside them,
+     because one stem can hold two blanks for a single stated answer. */
+  const stemBlanks = (t) => String(t ?? '').replace(/_{3,}/g, () => ansLine('2.2em'));
+  const ownBlank = (t) => /_{3,}/.test(String(t ?? ''));
 
   // A word problem's key gives the working and a full sentence, not just a
   // number: "8" tells an adult nothing about whether the story was understood.
@@ -35,11 +126,16 @@ export function printProblem(p, i, { key = false } = {}) {
 
   switch (p.type) {
     case 'input':
-    case 'choice':
+    case 'choice': {
       // If the problem has a print-mode visual (a bar, an array, a ten-frame),
       // draw it. Describing a picture in words on a worksheet defeats the point.
-      return `<div class="pr">${lbl}${p.printStem ?? p.stem ?? stripTags(p.prompt)}${p.printVisual ? '' : ' ' + A(answerText(p))}
-        ${p.printVisual ? `<div class="pv">${p.printVisual}</div>${A(answerText(p))}` : ''}</div>`;
+      const raw = p.printStem ?? p.stem ?? stripTags(p.prompt);
+      const own = ownBlank(raw);
+      const stem = key || !own ? raw : stemBlanks(raw);
+      const tail = own && !key ? '' : ' ' + A(answerText(p));
+      return `<div class="pr">${lbl}${stem}${p.printVisual ? '' : tail}
+        ${p.printVisual ? `<div class="pv">${p.printVisual}</div>${own && !key ? '' : A(answerText(p))}` : ''}</div>`;
+    }
 
     case 'compare':
       return `<div class="pr">${lbl}<span style="letter-spacing:.06em">${esc(p.left)} &nbsp;${key ? (p.answer === 'left' ? '&gt;' : '&lt;') : '<span class="ansline" style="min-width:1.4em"></span>'}&nbsp; ${esc(p.right)}</span></div>`;
@@ -48,7 +144,10 @@ export function printProblem(p, i, { key = false } = {}) {
       return `<div class="pr">${lbl}${p.printStem ?? stripTags(p.prompt)} &nbsp; ${key ? `<span class="ansval">${answerText(p)}</span>` : 'T / F'}</div>`;
 
     case 'bond':
-      return `<div class="pr" style="text-align:center">${lbl}<div style="max-width:150px;margin:4px auto 0">${numberBond(
+      // Wrapped in .pv like every other figure. It used to sit in a bare div,
+      // which is why it was the one figure the height cap never reached — it
+      // rendered at its natural 150px and made a six-item sheet two pages long.
+      return `<div class="pr" style="text-align:center">${lbl}<div class="pv bond">${numberBond(
         p.blank === 'whole' && key ? p.whole : p.whole,
         p.blank === 'a' && !key ? '' : p.a,
         p.blank === 'b' && !key ? '' : p.b,
@@ -131,6 +230,33 @@ function collect(activity, seed, ch, n) {
   return out;
 }
 
+/* Split the type groups across a fixed number of pages, keeping a group whole
+   where it fits and carrying it over where it does not. A sheet is allowed to be
+   two pages — what it is not allowed to be is a page and a bit, with two
+   problems orphaned onto a second sheet of paper. */
+function paginate(groups, pages) {
+  if (pages <= 1) return [groups];
+  const total = groups.reduce((t, g) => t + g.items.length, 0);
+  const per = Math.ceil(total / pages);
+  const out = [];
+  let cur = [], n = 0;
+  for (const g of groups) {
+    const items = g.items.slice();
+    let first = true;
+    while (items.length) {
+      if (n >= per && out.length < pages - 1) { out.push(cur); cur = []; n = 0; }
+      const take = items.splice(0, Math.max(1, per - n));
+      // `cont` suppresses the section heading on the carried-over part, so a
+      // group split across a page break does not look like a new exercise.
+      cur.push({ type: g.type, items: take, cont: !first });
+      n += take.length;
+      first = false;
+    }
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
 /* Default instruction per problem type. A sheet usually holds more than one
    kind of problem, and one blanket instruction would misdescribe most of them,
    so blocks are grouped by type and each gets wording that fits. An activity can
@@ -152,8 +278,17 @@ const TYPE_INSTRUCTION = {
      style 'plain' is black-on-white and cheapest | 'designed' is the nicer one */
 export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed', variant = null }) {
   const review = mode === 'review';
-  const n = review ? 8 : (activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16);
-  const density = DENSITY[activity.grade] ?? 'd2';
+  const authored = activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16;
+  const reviewBand = AGE_BAND[activity.grade] ?? 'middle';
+  const n = review
+    ? Math.max(3, Math.min(REVIEW_ITEMS[reviewBand] ?? 8, authored))
+    : authored;
+  // Density follows the grade, unless the activity overrides it. Naming a shape
+  // or reading a ten-frame is a short problem with a small square figure, and
+  // at the two wide columns Kindergarten normally gets, three of them filled a
+  // whole page. An activity that knows its items are short can say so.
+  const density = activity.printDensity ?? DENSITY[activity.grade] ?? 'd2';
+  const band = AGE_BAND[activity.grade] ?? 'middle';
   const problems = collect(activity, seed, ch, n);
 
   const groups = [];
@@ -163,7 +298,7 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     g.items.push(p);
   }
 
-  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style, variant });
+  if (review) return reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style, variant, band });
 
   const overrides = activity.printInstructions || {};
   const instFor = (type, isOnly) => {
@@ -177,9 +312,11 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
   // see what the method was and then run it themselves. The worked-example
   // effect is one of the better-replicated findings in instructional design,
   // and variation theory supplies the "change exactly one thing" rule.
-  const blocks = groups.map((g, gi) => {
+  let section = 0;
+  const renderBlock = (g, isFirstOnSheet) => {
     const wide = WIDE_TYPES.has(g.type);
-    const showExample = gi === 0 && !key && g.items.length >= 3 && !WIDE_TYPES.has(g.type);
+    if (!g.cont) section++;
+    const showExample = isFirstOnSheet && !g.cont && !key && g.items.length >= 3 && !wide;
     const items = g.items;
     const worked = showExample
       ? `<div class="sh-example">
@@ -194,13 +331,34 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     const body = wide
       ? rest.map((p, i) => printProblem(p, i + offset, { key })).join('')
       : `<div class="sh-grid ${density}">${rest.map((p, i) => printProblem(p, i + offset, { key })).join('')}</div>`;
-    return `<div class="sh-block">
-      <p class="sh-inst"><span class="n">${gi + 1}</span><span>${esc(instFor(g.type, groups.length === 1))}</span></p>
-      ${worked}${body}
-    </div>`;
-  }).join('');
+    // Younger children get a heading that says what the section IS, with the
+    // instruction beside it. By grade 4 that reads as being talked down to, so
+    // the big band keeps the instruction on its own.
+    const title = band === 'big' ? null : TYPE_TITLE[g.type];
+    const inst = esc(instFor(g.type, groups.length === 1));
+    const head = g.cont
+      ? `<p class="sh-inst cont"><span class="n">${section}</span><span>${esc(title || inst)} <em>continued</em></span></p>`
+      : `<p class="sh-inst"><span class="n">${section}</span><span>${title
+          ? `<b>${esc(title)}</b><em>${inst}</em>`
+          : inst}</span></p>`;
+    return `<div class="sh-block">${head}${worked}${body}</div>`;
+  };
 
-  return shell({ activity, seed, ch, key, siteUrl, style, variant, blocks, count: problems.length, problems });
+  /* How many pages this sheet is. Authored per activity, not inferred, because
+     length is a teaching decision: a Kindergarten sheet should be one page a
+     child can finish, and a grade 5 fluency sheet is allowed to be two. The
+     numbers were set by measuring real layout in tools/pagefill.html — the rule
+     is that the LAST page has to be at least 80% full, so no sheet ever costs a
+     parent a piece of paper for two leftover sums. */
+  const pages = Math.max(1, activity.printPages ?? 1);
+  const perPage = paginate(groups, pages);
+
+  return perPage.map((pg, pi) => shell({
+    activity, seed, ch, key, siteUrl, style, variant, band,
+    blocks: pg.map((g, gi) => renderBlock(g, gi === 0 && pi === 0)).join(''),
+    count: problems.length, problems,
+    page: pi + 1, pageCount: perPage.length,
+  })).join('');
 }
 
 /* Self-check. There is no teacher in the room, so every sheet carries a way for
@@ -243,38 +401,55 @@ function selfCheck(problems, seed) {
 }
 
 /* The page shell both sheet types use. */
-function shell({ activity, seed, ch, key, siteUrl, style, variant, blocks, count, titleSuffix = '', footNote = '', problems = [] }) {
+function shell({ activity, seed, ch, key, siteUrl, style, variant, band = 'middle', blocks, count, titleSuffix = '', footNote = '', problems = [], page = 1, pageCount = 1 }) {
+  // On a two-page sheet, page 1 carries the trick box and page 2 carries the
+  // wrap-up. Both carry the header and the QR, so a page that gets separated
+  // from its partner still says what it is and still links back.
+  const first = page === 1, last = page === pageCount;
   const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
   const designed = style !== 'plain';
   const gradeLabel = activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade;
   // Line art only appears on the designed sheet; the plain one spends no ink on it.
   const art = designed && ch.id !== 'none' ? lineArt(ch.id) : '';
-  return `<div class="sheet sheet-preview ${designed ? 'designed' : 'plain'}${key ? ' key' : ''}${variant ? ' ' + variant : ''}" data-grade="${esc(activity.grade)}">
+  // One accent colour, from the character's own pack, and only on the designed
+  // sheet. It is spent on strokes and labels, never flooded behind the maths —
+  // so it still prints cheaply, and prints legibly on a black-and-white printer.
+  const acc = designed && ch.printAccent ? ` style="--acc:${ch.printAccent}"` : '';
+  // Scratch space, where written working actually happens. Blanket-on was the
+  // wrong default: it costs half an inch on every sheet, and a Kindergarten
+  // counting page has nothing to work out — the answer boxes are the working.
+  // On by default for grades 4-5, opt-in above that via printScratch.
+  const wantScratch = activity.printScratch ?? (band === 'big');
+  const scratch = key || !last || !wantScratch ? '' : scratchSpace();
+  return `<div class="sheet sheet-preview ${designed ? 'designed' : 'plain'} ${band}${key ? ' key' : ''}${variant ? ' ' + variant : ''}" data-grade="${esc(activity.grade)}" data-page="${page}"${acc}>
   <div class="sh-head">
     <div class="sh-id">${art}
       <div><b>${esc(activity.title)}${titleSuffix}</b>
         <small>${esc(gradeLabel)} &middot; ${esc(activity.strand)}${designed && ch.id !== 'none' ? ' &middot; with ' + esc(ch.name) : ''}</small></div>
     </div>
-    <div class="sh-name">Name <u></u><br>Date <u></u></div>
+    ${pageCount > 1 && !first
+      ? `<div class="sh-name pageno">Page ${page} of ${pageCount}</div>`
+      : `<div class="sh-name">Name <u></u><br>Date <u></u></div>`}
   </div>
   ${designed ? `<div class="sh-rule"><i></i><i></i><i></i><i></i></div>` : ''}
+  ${key || !first ? '' : trickBox(activity, ch, band)}
 
-  <div class="sh-body">${blocks}</div>
+  <div class="sh-body">${blocks}${scratch}</div>
 
   ${key
-    ? `<div class="sh-adult"><strong>For the grown-up.</strong> If they get stuck, work through the
+    ? !last ? '' : `<div class="sh-adult"><strong>For the grown-up.</strong> If they get stuck, work through the
         first one together, then hand it back. Reading the working aloud is worth more than marking
         it &mdash; feedback that explains is worth several times feedback that only says right or
         wrong, and the gap is wider in maths than in any other subject.</div>`
-    : `${selfCheck(problems, seed)}
-      <div class="sh-check">
-        <strong>How did it go?</strong>
-        <span>Colour one for every question you got right.</span>
-        <span class="boxes">${Array.from({ length: Math.min(count, 12) }, () => '<i></i>').join('')}</span>
-      </div>`}
+    : !last ? `<p class="sh-more">Keep going on page ${page + 1}.</p>`
+    : `${selfCheck(problems, seed)}${rewardStrip(band, count, ch)}${band === 'big'
+        ? `<p class="sh-challenge"><strong>Challenge.</strong> Pick the one you found hardest, cover
+            your answer, and do it again from scratch. Getting the same answer twice is how you know
+            you have it &mdash; and testing yourself is worth more than reading it over again.</p>`
+        : ''}`}
 
   <div class="sh-foot">
-    <div>izzimath &middot; ${gradeLabel} &middot; seed ${seed} &middot; ${esc((activity.ccss || []).join(', '))}
+    <div>izzimath &middot; ${gradeLabel} &middot; seed ${seed}${pageCount > 1 ? ` &middot; page ${page} of ${pageCount}` : ''} &middot; ${esc((activity.ccss || []).join(', '))}
       ${key ? '' : `<br><strong>${footNote || 'Scan to do this one on screen &mdash; same problems.'}</strong>`}</div>
     ${key ? '' : qr(backUrl)}
   </div>
@@ -300,9 +475,9 @@ function interleave(groups) {
   return out;
 }
 
-function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style, variant }) {
+function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style, variant, band = 'middle' }) {
   const order = interleave(groups);
-  const density = DENSITY[activity.grade] ?? 'd2';
+  const density = activity.printDensity ?? DENSITY[activity.grade] ?? 'd2';
   const wide = order.filter((p) => WIDE_TYPES.has(p.type));
   const narrow = order.filter((p) => !WIDE_TYPES.has(p.type));
   const mixed = groups.length > 1;
@@ -314,9 +489,9 @@ function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style
     ${wide.map((p, i) => printProblem(p, narrow.length + i, { key })).join('')}
   </div>`;
   return shell({
-    activity, seed, ch, key, siteUrl, style, variant, blocks, count: order.length, problems: order,
+    activity, seed, ch, key, siteUrl, style, variant, band, blocks, count: order.length, problems: order,
     titleSuffix: ' — mixed review',
-    footNote: 'Eight mixed problems. Keep the answer key back until afterwards.',
+    footNote: `${order.length} mixed problems. Keep the answer key back until afterwards.`,
   });
 }
 
