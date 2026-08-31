@@ -1,8 +1,12 @@
 import { array2d, numberLine, tickRange, fractionBar, esc } from '../../src/lib/widgets.js';
+import { STRANDS } from './strands.js';
+import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
 import { frac, fracText, simplify, valF, gcd } from '../../src/lib/frac.js';
 
-const S = ['Multi-digit operations', 'Equivalent fractions and decimals', 'Angles and lines', 'Factors and multiples'];
+// Strand names come from the single source in strands.js — they used to be
+// duplicated here, which silently desynced when the list grew to five.
+const S = STRANDS['4'];
 
 /* ---------------------------------------------------------- BOOK: long multiplication */
 const longMultiplication = {
@@ -257,4 +261,135 @@ const decimalDrop = {
   },
 };
 
-export default [longMultiplication, equivalentFractions, anglesAndLines, divisionDescent, decimalDrop];
+
+/* ---------------------------------------------------- BOOK: factor forest (G4 S4) */
+const factorForest = {
+  id: 'factor-forest', title: 'Factor Forest', kind: 'book', grade: '4', strand: S[3],
+  glyph: '⋔',
+  skill: 'Finding factor pairs, listing multiples, and telling a prime from a composite.',
+  blurb: 'Which numbers divide it exactly? And which numbers have no pairs at all?',
+  ccss: ['4.OA.B.4'],
+  im: [1],
+  refs: ['im-scope-sequence', 'youcubed-close-to-100', 'fyfe-2014-fading'],
+  theory: 'A factor pair is the two sides of a rectangle with that many squares. Primes are the numbers that can only be a single line.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'div' }],
+  evidence: 'Factors are usually taught as a list to memorise. Presented as rectangle dimensions they become a search with a visible answer — and it explains primes properly: a prime is a number you cannot make into any rectangle except a single row.',
+  pages: 12, printItems: 14,
+  printInstruction: 'Find the factors and multiples asked for.',
+  printInstructions: {
+    input: 'Write the missing factor or multiple.',
+    choice: 'Choose the right answer.',
+    truefalse: 'Prime or not? Circle T for prime.',
+  },
+  generate(seed, i, ch, r) {
+    const mode = i % 4;
+    if (mode === 0) {
+      const a = r.int(2, 9), b = r.int(2, 12);
+      const n = a * b;
+      return {
+        type: 'input',
+        prompt: `<strong>${a}</strong> × ? = <strong>${n}</strong>. What is the missing factor?`,
+        visual: array2d(a, b, { fit: 150 }), visualWidth: 200,
+        answer: String(b), placeholder: '?',
+        printStem: `${a} × ____ = ${n}`,
+        printVisual: array2d(a, b, { print: true, fit: 96 }),
+        hint: `How many rows of ${a} make ${n}?`,
+        explain: `${a} × ${b} = ${n}, so the missing factor is ${b}.`,
+      };
+    }
+    if (mode === 1) {
+      const n = r.pick([12, 16, 18, 20, 24, 28, 30, 36, 40, 48]);
+      const factors = [];
+      for (let k = 1; k * k <= n; k++) if (n % k === 0) factors.push(k);
+      const target = r.pick(factors.filter((f) => f > 1)) ?? 2;
+      const wrongs = [...new Set([target + 1, target - 1, target + 3, n / target + 1])]
+        .filter((x) => x > 1 && x < n && n % x !== 0);
+      return {
+        type: 'choice',
+        prompt: `Which of these is a factor of <strong>${n}</strong>?`,
+        choices: r.shuffle([String(target), ...r.sample(wrongs, Math.min(3, wrongs.length)).map(String)]),
+        answer: String(target),
+        printStem: `Circle the factor of ${n}.`,
+        hint: `A factor divides ${n} exactly, with nothing left over.`,
+        explain: `${n} ÷ ${target} = ${n / target}, exactly. The others leave a remainder.`,
+      };
+    }
+    if (mode === 2) {
+      const base = r.int(3, 12), k = r.int(3, 7);
+      return {
+        type: 'input',
+        prompt: `Count in <strong>${base}</strong>s. What is the <strong>${k}${['th','st','nd','rd'][k % 10 > 3 ? 0 : k % 10] || 'th'}</strong> multiple of ${base}?`,
+        answer: String(base * k), placeholder: '?',
+        printStem: `${k}th multiple of ${base} =`,
+        hint: `${base}, ${base * 2}, ${base * 3}, …`,
+        explain: `${base} × ${k} = ${base * k}.`,
+      };
+    }
+    const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37];
+    const isPrime = r.chance(0.5);
+    const n = isPrime ? r.pick(primes) : r.pick([9, 12, 15, 16, 18, 21, 25, 27, 33, 35, 39]);
+    return {
+      type: 'truefalse',
+      prompt: `Is <strong>${n}</strong> a prime number?`,
+      answer: isPrime,
+      printStem: `${n} is prime?`,
+      hint: 'A prime has exactly two factors: one, and itself.',
+      explain: isPrime
+        ? `Yes. Nothing divides ${n} except 1 and ${n}.`
+        : (() => { for (let k = 2; k * k <= n; k++) if (n % k === 0) return `No — ${n} = ${k} × ${n / k}.`; return `No.`; })(),
+    };
+  },
+};
+
+/* --------------------------------------------------- BOOK: times as many (G4 S5) */
+const timesAsMany = {
+  id: 'times-as-many', title: 'Times As Many', kind: 'book', grade: '4', strand: S[4],
+  glyph: '⨯',
+  skill: 'Multiplicative comparison — reading "four times as many" as multiplication rather than addition.',
+  blurb: 'Three times as many is not three more. Here is the difference.',
+  ccss: ['4.OA.A.1', '4.OA.A.2'],
+  im: [5],
+  refs: ['wwc-2021-math', 'im-scope-sequence'],
+  theory: 'Additive comparison asks how many more; multiplicative comparison asks how many times as many. Children routinely read the second as the first.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
+  evidence: 'Its own strand in Illustrative Mathematics grade 4, and a well-documented sticking point: "three times as many" gets read as "three more". Every page pairs the two comparisons so the difference is the thing being noticed, which is the variation-theory move — change one feature, hold the rest.',
+  pages: 12, printItems: 12,
+  printInstruction: 'Read carefully — some ask how many more, some how many times as many.',
+  printInstructions: { input: 'Read carefully. Some ask how many more, some how many times as many.' },
+  generate(seed, i, ch, r) {
+    const C = fill('{collectible.many}', ch), A = fill('{Actor}', ch);
+    const mode = i % 3;
+    const small = r.int(3, 12), times = r.int(2, 6);
+    if (mode === 0) {
+      return {
+        type: 'input',
+        prompt: `${A} has ${small} ${C}. A friend has <strong>${times} times as many</strong>. How many does the friend have?`,
+        answer: String(small * times), placeholder: '?',
+        printStem: `${small} ${C}; friend has ${times} times as many =`,
+        hint: `"Times as many" means multiply, not add.`,
+        explain: `${small} × ${times} = ${small * times}. (${times} MORE would only be ${small + times}.)`,
+      };
+    }
+    if (mode === 1) {
+      return {
+        type: 'input',
+        prompt: `${A} has ${small} ${C}. A friend has <strong>${times} more</strong>. How many does the friend have?`,
+        answer: String(small + times), placeholder: '?',
+        printStem: `${small} ${C}; friend has ${times} more =`,
+        hint: `"More" means add. Careful — this is not the same as "times as many".`,
+        explain: `${small} + ${times} = ${small + times}. (${times} TIMES as many would be ${small * times}.)`,
+      };
+    }
+    const big = small * times;
+    return {
+      type: 'input',
+      prompt: `${A} has ${big} ${C} and a friend has ${small}. <strong>How many times as many</strong> does ${A} have?`,
+      answer: String(times), placeholder: '?',
+      printStem: `${big} is how many times as many as ${small}?`,
+      hint: `Ask: ${small} times what makes ${big}?`,
+      explain: `${small} × ${times} = ${big}, so ${times} times as many.`,
+    };
+  },
+};
+
+export default [longMultiplication, equivalentFractions, anglesAndLines, factorForest, timesAsMany, divisionDescent, decimalDrop];

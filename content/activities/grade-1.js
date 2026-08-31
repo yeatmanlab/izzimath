@@ -1,8 +1,11 @@
 import { tenFrame, numberBond, numberLine, tickRange, baseTen, dots, esc } from '../../src/lib/widgets.js';
+import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
 
-const S = ['Addition and subtraction to 20', 'Place value to 100', 'Measure and tell time', 'Shapes and halves'];
+// Strand names come from the single source in strands.js — they used to be
+// duplicated here, which silently desynced when the list grew to five.
+const S = STRANDS['1'];
 
 /* ------------------------------------------------------------ BOOK: adding to twenty */
 const addingToTwenty = {
@@ -67,7 +70,7 @@ const addingToTwenty = {
 
 /* --------------------------------------------------------------- BOOK: tens and ones */
 const tensAndOnes = {
-  id: 'tens-and-ones', title: 'Tens and Ones', kind: 'book', grade: '1', strand: S[1],
+  id: 'tens-and-ones', title: 'Tens and Ones', kind: 'book', grade: '1', strand: S[2],
   glyph: '⑽',
   skill: 'Place value to 100 — reading a number as tens and ones, and adding without regrouping.',
   blurb: 'How many tens? How many ones? Then add them up.',
@@ -121,7 +124,7 @@ const tensAndOnes = {
 
 /* ------------------------------------------------------------ BOOK: halves and quarters */
 const halvesAndQuarters = {
-  id: 'halves-and-quarters', title: 'Halves and Quarters', kind: 'book', grade: '1', strand: S[3],
+  id: 'halves-and-quarters', title: 'Halves and Quarters', kind: 'book', grade: '1', strand: S[4],
   glyph: '◑',
   skill: 'Splitting shapes into equal parts, and naming a half and a quarter.',
   blurb: 'Split the shape fairly. Is that a half or a quarter?',
@@ -183,7 +186,7 @@ const halvesAndQuarters = {
 
 /* ------------------------------------------------------------- GAME: number line hop */
 const numberLineHop = {
-  id: 'number-line-hop', title: 'Number Line Hop', kind: 'game', grade: '1', strand: S[1],
+  id: 'number-line-hop', title: 'Number Line Hop', kind: 'game', grade: '1', strand: S[2],
   glyph: '↦',
   skill: 'Estimating where a number sits on a 0–20 line.',
   blurb: 'Slide the marker to the right spot on the line.',
@@ -243,4 +246,106 @@ const makeTenRace = {
   },
 };
 
-export default [addingToTwenty, tensAndOnes, halvesAndQuarters, numberLineHop, makeTenRace];
+
+/* --------------------------------------------------- BOOK: all kinds of stories */
+const allKindsOfStories = {
+  id: 'all-kinds-of-stories', title: 'All Kinds of Stories', kind: 'book', grade: '1', strand: S[1],
+  glyph: '❞',
+  skill: 'Recognising the structure of a word problem — join, separate, part-whole or compare — and solving it whichever part is missing.',
+  blurb: 'Every kind of story problem, and how to tell them apart.',
+  ccss: ['1.OA.A.1', '1.OA.A.2'],
+  im: [2],
+  refs: ['wwc-2021-math', 'im-scope-sequence', 'van-der-kleij-2015'],
+  theory: 'Four structures cover almost every one-step story problem. A child who knows the structures can solve a problem whose wording they have never seen; a child who hunts for keywords cannot.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'fluencyArf', subscale: 'sum' }, { task: 'fluencyArf', subscale: 'minus' }],
+  evidence: 'The single highest-value gap the research identified. WWC Recommendation 5 — teach the structure of word problems — is rated STRONG on 18 studies, and arithmetic fluency transfers to word problems only weakly (g=0.25), so this cannot be left to fall out of fact practice. Follows Illustrative Mathematics grade 1 unit 2, which devotes one section to each structure, and moves the unknown so the same structure is met in its easy and its hard form.',
+  pages: 16, printItems: 10,
+  printInstruction: 'Read each story. Write the number that answers it.',
+  printInstructions: { input: 'Read each story. Write the number that answers it.' },
+  generate(seed, i, ch, r) {
+    // One section per structure, as IM does, then a mixed final section — which is
+    // also where the interleaving evidence says the gains actually come from.
+    const plan = [
+      ['join', 'result'], ['join', 'change'], ['join', 'start'],
+      ['separate', 'result'], ['separate', 'change'],
+      ['partWhole', null], ['partWhole', null],
+      ['compare', null], ['compare', null],
+      // mixed: no two adjacent problems share a structure
+      ['join', 'change'], ['compare', null], ['separate', 'change'],
+      ['partWhole', null], ['join', 'start'], ['compare', null], ['separate', 'result'],
+    ][i % 16];
+    const p = wordProblem(plan[0], ch, r, { max: 20, min: 2, unknown: plan[1] });
+    // From the mixed section on, name the structure in the hint rather than the
+    // question — the grade-3 interleaving study needed an explicit strategy
+    // comparison prompt for the benefit to show up.
+    if (i >= 9) p.hint = `Read it again. Is something joining, leaving, being put together, or being compared? ${p.hint}`;
+    return p;
+  },
+};
+
+
+/* --------------------------------------------------- BOOK: clocks and rulers (G1 S4) */
+const clocksAndRulers = {
+  id: 'clocks-and-rulers', title: 'Clocks and Rulers', kind: 'book', grade: '1', strand: S[3],
+  glyph: '◷',
+  skill: 'Telling the time to the hour and half hour, and measuring length in whole units.',
+  blurb: 'What time does the clock say? How many units long is it?',
+  ccss: ['1.MD.A.2', '1.MD.B.3'],
+  im: [6, 7],
+  refs: ['im-scope-sequence'],
+  theory: 'Measuring is repeating a unit and counting the repeats — the same composed-unit idea as place value, in a different dress.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
+  evidence: 'Included as required curriculum coverage rather than as an evidence claim: the WWC early-childhood guide rates measurement and data recommendations only "minimal", so this strand is here because grade 1 needs it, not because a trial says it moves attainment. Measuring is framed as iterating a unit, which does connect to the place-value work.',
+  pages: 10, printItems: 10,
+  printInstruction: 'Read each clock and measure each bar.',
+  printInstructions: { choice: 'What time is it?', input: 'How many units long?' },
+  generate(seed, i, ch, r) {
+    if (i % 2 === 0) {
+      const h = r.int(1, 12), half = r.chance(0.5);
+      const clock = (print = false) => {
+        const st = print ? '#111' : 'var(--a1)';
+        const ang = (h % 12) * 30 + (half ? 15 : 0);
+        const mAng = half ? 180 : 0;
+        const pt = (a, len) => [50 + len * Math.sin(a * Math.PI / 180), 50 - len * Math.cos(a * Math.PI / 180)];
+        const [hx, hy] = pt(ang, 24), [mx, my] = pt(mAng, 34);
+        let t = `<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="clock">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="${st}" stroke-width="3"/>`;
+        for (let k = 0; k < 12; k++) {
+          const [x1, y1] = pt(k * 30, 38), [x2, y2] = pt(k * 30, 43);
+          t += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${print ? '#555' : 'var(--txt3)'}" stroke-width="2"/>`;
+        }
+        t += `<line x1="50" y1="50" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${st}" stroke-width="4" stroke-linecap="round"/>`;
+        t += `<line x1="50" y1="50" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="${st}" stroke-width="2.5" stroke-linecap="round"/>`;
+        return t + `<circle cx="50" cy="50" r="3" fill="${st}"/></svg>`;
+      };
+      const right = half ? `half past ${h}` : `${h} o'clock`;
+      const others = [half ? `${h} o'clock` : `half past ${h}`, `${h === 12 ? 1 : h + 1} o'clock`, `half past ${h === 1 ? 12 : h - 1}`];
+      return {
+        type: 'choice', prompt: 'What time is it?', visual: clock(), visualWidth: 130,
+        choices: r.shuffle([right, ...others.filter((o) => o !== right).slice(0, 3)]),
+        answer: right,
+        printStem: 'What time is it?', printVisual: clock(true),
+        hint: 'The short hand tells you the hour. If the long hand points straight down, it is half past.',
+        explain: `The short hand is ${half ? 'between ' + h + ' and ' + (h === 12 ? 1 : h + 1) : 'on ' + h}, so it is ${right}.`,
+      };
+    }
+    const len = r.int(3, 9);
+    const bar = (print = false) => {
+      const u = 22, st = print ? '#111' : 'var(--a1)';
+      let t = `<svg viewBox="0 0 ${len * u + 8} 34" width="100%" height="34" role="img" aria-label="bar ${len} units long">`;
+      t += `<rect x="3" y="6" width="${len * u}" height="20" fill="none" stroke="${st}" stroke-width="2.4"/>`;
+      for (let k = 1; k < len; k++) t += `<line x1="${3 + k * u}" y1="6" x2="${3 + k * u}" y2="26" stroke="${print ? '#777' : 'var(--line2)'}" stroke-width="1.2"/>`;
+      return t + `</svg>`;
+    };
+    return {
+      type: 'input', prompt: 'How many units long is this bar?',
+      visual: bar(), visualWidth: 240,
+      answer: String(len), placeholder: '?',
+      printStem: 'How many units long?', printVisual: bar(true),
+      hint: 'Count the equal parts from one end to the other.',
+      explain: `${len} units.`,
+    };
+  },
+};
+
+export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace];

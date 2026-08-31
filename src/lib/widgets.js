@@ -173,4 +173,28 @@ export function numberBond(whole, a, b, { print = false, blank = null, size = 21
 </svg>`;
 }
 
+/* ---------------- bar chart (measurement and data strands) ---------------- */
+export function barChart(bars, { print = false, max = null, step = 1, width = 300, height = 150 } = {}) {
+  const top = max ?? Math.max(...bars.map((b) => b.v)) + step;
+  const padL = 30, padB = 22, bw = (width - padL - 8) / bars.length;
+  const st = print ? '#111' : 'var(--line2)';
+  const tc = print ? '#333' : 'var(--txt2)';
+  const y = (v) => height - padB - (v / top) * (height - padB - 8);
+  let out = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="bar chart">`;
+  // gridlines at each step, so a value can be read off rather than guessed
+  for (let v = 0; v <= top; v += step) {
+    out += `<line x1="${padL}" y1="${y(v).toFixed(1)}" x2="${width - 4}" y2="${y(v).toFixed(1)}" stroke="${print ? '#bbb' : 'rgba(255,255,255,.10)'}" stroke-width="1"/>`;
+    out += `<text x="${padL - 5}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="${tc}" font-family="'Space Grotesk',sans-serif">${v}</text>`;
+  }
+  bars.forEach((b, k) => {
+    const x = padL + k * bw + bw * 0.18, w = bw * 0.64;
+    const fill = print ? 'none' : 'var(--a2)';
+    out += `<rect x="${x.toFixed(1)}" y="${y(b.v).toFixed(1)}" width="${w.toFixed(1)}" height="${(height - padB - y(b.v)).toFixed(1)}" fill="${fill}" stroke="${print ? '#111' : 'none'}" stroke-width="1.6"/>`;
+    out += `<text x="${(x + w / 2).toFixed(1)}" y="${height - padB + 12}" text-anchor="middle" font-size="9" fill="${tc}" font-family="'Space Grotesk',sans-serif">${esc(b.label)}</text>`;
+  });
+  out += `<line x1="${padL}" y1="${height - padB}" x2="${width - 4}" y2="${height - padB}" stroke="${st}" stroke-width="2"/>`;
+  out += `<line x1="${padL}" y1="8" x2="${padL}" y2="${height - padB}" stroke="${st}" stroke-width="2"/>`;
+  return out + `</svg>`;
+}
+
 export { esc };

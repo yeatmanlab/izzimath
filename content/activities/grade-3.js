@@ -1,9 +1,12 @@
-import { array2d, numberLine, tickRange, fractionBar, esc } from '../../src/lib/widgets.js';
+import { array2d, numberLine, tickRange, fractionBar, barChart, esc } from '../../src/lib/widgets.js';
+import { STRANDS } from './strands.js';
 import { frac, fracText, simplify, valF, gcd } from '../../src/lib/frac.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
 
-const S = ['Multiplication and division', 'Fractions on the number line', 'Area and perimeter', 'Data and graphs'];
+// Strand names come from the single source in strands.js — they used to be
+// duplicated here, which silently desynced when the list grew to five.
+const S = STRANDS['3'];
 
 /* ------------------------------------------------------------ BOOK: times table tower */
 const timesTableTower = {
@@ -276,4 +279,137 @@ const arrayArchitect = {
   },
 };
 
-export default [timesTableTower, fractionNumberLine, areaAndPerimeter, factFamilyForge, arrayArchitect];
+
+/* ------------------------------------------------- BOOK: round and reckon (G3 S4) */
+const roundAndReckon = {
+  id: 'round-and-reckon', title: 'Round and Reckon', kind: 'book', grade: '3', strand: S[3],
+  glyph: '≈',
+  skill: 'Rounding to the nearest ten and hundred, and using it to check whether an answer is sensible.',
+  blurb: 'Round it first, then work it out. Does your answer look right?',
+  ccss: ['3.NBT.A.1', '3.NBT.A.2'],
+  im: [3],
+  refs: ['im-scope-sequence', 'wwc-2021-math', 'schneider-2018'],
+  theory: 'Rounding is estimation with a rule, and estimation is what lets a child notice their own wrong answer.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyCalf', subscale: 'add-carry' }],
+  evidence: 'Rounding is usually taught as a rule to follow and then never used. Here every rounding page is followed by a page that uses it to sanity-check a real calculation, which is the only reason estimation is worth knowing. It also leans on the number line: rounding is asking which ten or hundred a number is nearer to, which is a magnitude judgement, not a digit rule.',
+  pages: 12, printItems: 12,
+  printInstruction: 'Round each number, then check the calculations.',
+  printInstructions: {
+    input: 'Round each number as asked.',
+    choice: 'Which estimate is closest?',
+    truefalse: 'Could this answer be right? Circle T or F.',
+  },
+  generate(seed, i, ch, r) {
+    const mode = i % 3;
+    if (mode === 0) {
+      const to = r.pick([10, 100]);
+      const n = to === 10 ? r.int(11, 989) : r.int(101, 989);
+      const rounded = Math.round(n / to) * to;
+      return {
+        type: 'input',
+        prompt: `Round <strong>${n}</strong> to the nearest <strong>${to}</strong>.`,
+        answer: String(rounded), placeholder: '?',
+        printStem: `${n} to the nearest ${to} =`,
+        hint: `Which ${to === 10 ? 'ten' : 'hundred'} is ${n} nearer to? Picture it on a number line.`,
+        explain: `${n} is nearer to ${rounded} than to ${rounded === Math.floor(n / to) * to ? Math.floor(n / to) * to + to : Math.floor(n / to) * to}.`,
+      };
+    }
+    if (mode === 1) {
+      const a = r.int(120, 480), b = r.int(120, 480);
+      const est = Math.round(a / 100) * 100 + Math.round(b / 100) * 100;
+      const wrongs = [...new Set([est + 100, est - 100, est + 200])].filter((x) => x > 0 && x !== est);
+      return {
+        type: 'choice',
+        prompt: `About how much is <strong>${a} + ${b}</strong>?`,
+        choices: r.shuffle([String(est), ...r.sample(wrongs, 3).map(String)]),
+        answer: String(est),
+        printStem: `${a} + ${b} is about ____`,
+        hint: `Round each number to the nearest hundred first.`,
+        explain: `${a} rounds to ${Math.round(a / 100) * 100} and ${b} rounds to ${Math.round(b / 100) * 100}, so about ${est}. (The exact answer is ${a + b}.)`,
+      };
+    }
+    // use the estimate to judge a stated answer — the point of estimating at all
+    const a = r.int(210, 690), b = r.int(110, 290);
+    const trueSum = a + b;
+    const plausible = r.chance(0.5);
+    const claimed = plausible ? trueSum : trueSum + r.pick([-300, 300, 450, -450]);
+    return {
+      type: 'truefalse',
+      prompt: `Someone says <strong>${a} + ${b} = ${claimed}</strong>. Could that be right?`,
+      answer: plausible,
+      printStem: `${a} + ${b} = ${claimed}?`,
+      hint: `Round both numbers and add them in your head first.`,
+      explain: plausible
+        ? `Yes — ${a} + ${b} really is ${trueSum}.`
+        : `No. ${a} + ${b} is about ${Math.round(a / 100) * 100 + Math.round(b / 100) * 100}, so ${claimed} is far too ${claimed > trueSum ? 'big' : 'small'}. It is ${trueSum}.`,
+    };
+  },
+};
+
+
+/* ------------------------------------------------- BOOK: time and data (G3 S5) */
+const timeAndData = {
+  id: 'time-and-data', title: 'Time and Data', kind: 'book', grade: '3', strand: S[4],
+  glyph: '⏱',
+  skill: 'Elapsed time to the minute, and reading a scaled bar graph.',
+  blurb: 'How long did it take? And what does the graph say when each square is worth five?',
+  ccss: ['3.MD.A.1', '3.MD.B.3'],
+  im: [6, 1],
+  refs: ['im-scope-sequence', 'schneider-2018'],
+  theory: 'Elapsed time is a distance on a number line whose units are sixties. A scaled graph is a number line with a multiplier.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
+  evidence: 'Required grade-3 coverage. Both halves are deliberately framed as number line work, which is the part with real support: elapsed time is a jump along a line in units of sixty, and a scaled bar graph is a line with a multiplier. That also makes the scale the thing being taught, which is where children actually go wrong.',
+  pages: 12, printItems: 14,
+  printInstruction: 'Work out the times, then read the graphs.',
+  printInstructions: { input: 'Write the answer.', choice: 'Which is right?' },
+  generate(seed, i, ch, r) {
+    const mode = i % 3;
+    if (mode === 0) {
+      const startH = r.int(1, 11), startM = r.pick([0, 5, 10, 15, 20, 30, 40, 45, 50]);
+      const mins = r.pick([15, 20, 25, 30, 40, 45, 50, 55, 70, 90]);
+      const tot = startH * 60 + startM + mins;
+      const eh = Math.floor(tot / 60) % 12 || 12, em = tot % 60;
+      const fmt = (h, m) => `${h}:${String(m).padStart(2, '0')}`;
+      return {
+        type: 'input',
+        prompt: `It starts at <strong>${fmt(startH, startM)}</strong> and lasts <strong>${mins} minutes</strong>. What time does it finish?`,
+        answer: fmt(eh, em), placeholder: 'h:mm',
+        printStem: `Starts ${fmt(startH, startM)}, lasts ${mins} min. Finishes at ____`,
+        hint: `Jump to the next o'clock first, then carry on.`,
+        explain: `${fmt(startH, startM)} plus ${mins} minutes is ${fmt(eh, em)}.`,
+      };
+    }
+    const NAMES = ['Red', 'Blue', 'Green', 'Gold'];
+    const scale = r.pick([2, 5, 10]);
+    const counts = NAMES.map(() => r.int(1, 8) * scale);
+    const bars = NAMES.map((n, k) => ({ label: n, v: counts[k] }));
+    if (mode === 1) {
+      const k = r.int(0, 3);
+      return {
+        type: 'input',
+        prompt: `Each gridline is <strong>${scale}</strong>. How many for <strong>${NAMES[k]}</strong>?`,
+        visual: barChart(bars, { step: scale }), visualWidth: 330,
+        answer: String(counts[k]), placeholder: '?',
+        printStem: `Each line is ${scale}. How many for ${NAMES[k]}?`,
+        printVisual: barChart(bars, { print: true, step: scale, width: 220, height: 120 }),
+        hint: `Count the gridlines up to the top of the bar, then multiply by ${scale}.`,
+        explain: `${counts[k] / scale} gridlines × ${scale} = ${counts[k]}.`,
+      };
+    }
+    const total = counts.reduce((n, v) => n + v, 0);
+    const wrongs = [...new Set([total + scale, total - scale, Math.round(total / scale)])].filter((x) => x > 0 && x !== total);
+    return {
+      type: 'choice',
+      prompt: `Each gridline is <strong>${scale}</strong>. What is the total?`,
+      visual: barChart(bars, { step: scale }), visualWidth: 330,
+      choices: r.shuffle([String(total), ...r.sample(wrongs, Math.min(3, wrongs.length)).map(String)]),
+      answer: String(total),
+      printStem: `Each line is ${scale}. Total = ____`,
+      printVisual: barChart(bars, { print: true, step: scale, width: 220, height: 120 }),
+      hint: `Read each bar using the scale before you add.`,
+      explain: `${counts.join(' + ')} = ${total}.`,
+    };
+  },
+};
+
+export default [timesTableTower, fractionNumberLine, areaAndPerimeter, roundAndReckon, timeAndData, factFamilyForge, arrayArchitect];

@@ -1,8 +1,11 @@
-import { baseTen, numberLine, tickRange, array2d, tenFrame, esc } from '../../src/lib/widgets.js';
+import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc } from '../../src/lib/widgets.js';
+import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
 
-const S = ['Place value to 1000', 'Add and subtract within 100', 'Measure and data', 'Arrays and equal groups'];
+// Strand names come from the single source in strands.js — they used to be
+// duplicated here, which silently desynced when the list grew to five.
+const S = STRANDS['2'];
 
 /* ------------------------------------------------------------ BOOK: place value palace */
 const placeValuePalace = {
@@ -146,7 +149,7 @@ const carryAndBorrow = {
 
 /* ------------------------------------------------------- BOOK: arrays and equal groups */
 const arraysAndEqualGroups = {
-  id: 'arrays-and-equal-groups', title: 'Arrays and Equal Groups', kind: 'book', grade: '2', strand: S[3],
+  id: 'arrays-and-equal-groups', title: 'Arrays and Equal Groups', kind: 'book', grade: '2', strand: S[4],
   glyph: '▦',
   skill: 'Seeing repeated addition as rows and columns — the groundwork for multiplication.',
   blurb: 'Count the rows, count the columns, find the total.',
@@ -201,7 +204,7 @@ const arraysAndEqualGroups = {
 
 /* ------------------------------------------------------------ GAME: hundred line hop */
 const hundredLineHop = {
-  id: 'hundred-line-hop', title: 'Hundred Line Hop', kind: 'game', grade: '2', strand: S[0],
+  id: 'hundred-line-hop', title: 'Hundred Line Hop', kind: 'game', grade: '2', strand: S[2],
   glyph: '⇥',
   skill: 'Estimating where a number sits on a 0–100 line.',
   blurb: 'No tick marks this time. Where does 63 go?',
@@ -278,4 +281,158 @@ const decadeDuel = {
   },
 };
 
-export default [placeValuePalace, carryAndBorrow, arraysAndEqualGroups, hundredLineHop, decadeDuel];
+
+/* ------------------------------------------------------- GAME: close to a hundred */
+const closeToHundred = {
+  id: 'close-to-hundred', title: 'Close to a Hundred', kind: 'game', grade: '2', strand: S[1],
+  glyph: '⌾',
+  skill: 'Choosing where to put digits to land as close to a target as possible.',
+  blurb: 'Four digits, two numbers. Get as close to 100 as you can.',
+  ccss: ['2.NBT.B.5', '2.NBT.B.6'],
+  im: [1, 2, 7],
+  refs: ['youcubed-close-to-100', 'im-scope-sequence', 'barton-variation'],
+  theory: 'A target-number game turns arithmetic into a decision. The child must estimate before committing, which is what makes place value matter rather than just being recited.',
+  roam: [{ task: 'fluencyCalf', subscale: 'add-carry' }, { task: 'roamAlpaca', subscale: 'cat2' }],
+  evidence: 'The catalogue had no target-number game, which is the format the classroom tradition singles out — the youcubed "How Close to 100?" task is the canonical version. Unlike a drill, the arithmetic here serves a decision: you cannot choose where to put a digit without estimating the total first, so place value becomes load-bearing rather than recited.',
+  rounds: 12, seconds: 0, timerAvailable: false, printItems: 8,
+  strategy: { name: 'Tens first', text: 'The tens digits decide most of it. Put your big digits in the tens places, then check what the ones do.' },
+  printInstruction: 'Arrange each set of digits to get as close to the target as you can.',
+  printInstructions: { choice: 'Which arrangement lands closest to the target?' },
+  generate(seed, i, ch, r) {
+    // Target is fixed at 100, as the name says. Digits are drawn so that 100 is
+    // actually approachable: two tens digits summing to 9 or 10, then two free
+    // ones digits. Drawing four digits at random makes most rounds unwinnable.
+    const target = 100;
+    const t1 = r.int(1, 8);
+    const t2 = Math.min(9, Math.max(1, (r.chance(0.5) ? 9 : 10) - t1));
+    let o1 = r.int(1, 9), o2 = r.int(1, 9), guard = 0;
+    // At least three distinct digits, or the four-digit set collapses to two
+    // arrangements and the puzzle becomes a coin flip.
+    while (new Set([t1, t2, o1, o2]).size < 3 && guard++ < 20) {
+      o1 = r.int(1, 9); o2 = r.int(1, 9);
+    }
+    const digits = r.shuffle([t1, t2, o1, o2]);
+
+    // Every distinct way of splitting the four digits into two two-digit numbers.
+    const options = [];
+    const seen = new Set();
+    for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) {
+      if (a === b) continue;
+      const rest = [0, 1, 2, 3].filter((k) => k !== a && k !== b);
+      for (const [c, d] of [[rest[0], rest[1]], [rest[1], rest[0]]]) {
+        const x = digits[a] * 10 + digits[b], y = digits[c] * 10 + digits[d];
+        const key = Math.min(x, y) + ':' + Math.max(x, y);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        options.push({ x, y, sum: x + y, gap: Math.abs(x + y - target) });
+      }
+    }
+    options.sort((a, b) => a.gap - b.gap);
+    const best = options[0];
+    const label = (o) => `${o.x} + ${o.y}`;
+
+    // Three distractors spread across the range, all strictly worse than best.
+    const pool = options.filter((o) => o.gap > best.gap);
+    const picks = [];
+    for (const frac of [0.2, 0.55, 0.95]) {
+      const cand = pool[Math.min(pool.length - 1, Math.floor(pool.length * frac))];
+      if (cand && !picks.some((p2) => label(p2) === label(cand))) picks.push(cand);
+    }
+    // If repeated digits collapsed the option space, top up from whatever is left.
+    for (const o of pool) {
+      if (picks.length >= 3) break;
+      if (!picks.some((p2) => label(p2) === label(o))) picks.push(o);
+    }
+
+    return {
+      type: 'choice',
+      prompt: `Target <strong>${target}</strong>. Using <strong>${digits.join(', ')}</strong> — which lands closest?`,
+      choices: r.shuffle([label(best), ...picks.map(label)]),
+      answer: label(best),
+      printStem: `Target ${target}. Digits ${digits.join(', ')}. Closest pair: ____ + ____`,
+      hint: 'Make the two tens digits add to about 9 or 10, then see what the ones do.',
+      explain: `${label(best)} = ${best.sum}${best.gap === 0 ? ', exactly 100' : `, which is ${best.gap} away`}.`,
+    };
+  },
+};
+
+
+/* ------------------------------------------------ BOOK: measure and chart (G2 S4) */
+const measureAndChart = {
+  id: 'measure-and-chart', title: 'Measure and Chart', kind: 'book', grade: '2', strand: S[3],
+  glyph: '▥',
+  skill: 'Measuring length in units, and reading a bar chart to compare and total.',
+  blurb: 'How long is it? And what does the chart tell you?',
+  ccss: ['2.MD.A.1', '2.MD.D.10'],
+  im: [3, 6],
+  refs: ['im-scope-sequence', 'wwc-2021-math'],
+  theory: 'A bar chart is a set of number lines standing up. Reading one is a magnitude comparison with a scale attached.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'roamMagpi', subscale: 'symbolic' }],
+  evidence: 'Required grade-2 coverage, and included on that basis rather than as an evidence claim — the WWC guidance on measurement and data is weak. It is framed to lean on what does have support: reading a bar off a scaled axis is a magnitude judgement, and comparing two bars is the same comparison the number work practises.',
+  pages: 12, printItems: 12,
+  printInstruction: 'Measure, then read the charts.',
+  printInstructions: { input: 'Read the chart and write the answer.', choice: 'Which is right?' },
+  generate(seed, i, ch, r) {
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu'];
+    const step = i % 4 === 3 ? 2 : 1;          // a scaled axis on every fourth page
+    const vals = DAYS.map(() => r.int(1, 9) * step);
+    const bars = DAYS.map((d, k) => ({ label: d, v: vals[k] }));
+    const mode = i % 4;
+    if (mode === 0) {
+      const k = r.int(0, 3);
+      return {
+        type: 'input',
+        prompt: `How many on <strong>${DAYS[k]}</strong>?`,
+        visual: barChart(bars, { step }), visualWidth: 320,
+        answer: String(vals[k]), placeholder: '?',
+        printStem: `How many on ${DAYS[k]}?`,
+        printVisual: barChart(bars, { print: true, step, width: 220, height: 120 }),
+        hint: step > 1 ? `Careful — the scale goes up in ${step}s.` : 'Read across from the top of the bar.',
+        explain: `${DAYS[k]} is ${vals[k]}.`,
+      };
+    }
+    if (mode === 1) {
+      const hi = vals.indexOf(Math.max(...vals));
+      return {
+        type: 'choice',
+        prompt: 'Which day had the most?',
+        visual: barChart(bars, { step }), visualWidth: 320,
+        choices: r.shuffle(DAYS.slice()),
+        answer: DAYS[hi],
+        printStem: 'Which day had the most?',
+        printVisual: barChart(bars, { print: true, step, width: 220, height: 120 }),
+        hint: 'The tallest bar.',
+        explain: `${DAYS[hi]}, with ${vals[hi]}.`,
+      };
+    }
+    if (mode === 2) {
+      const a = r.int(0, 3);
+      let b = r.int(0, 3);
+      if (b === a) b = (a + 1) % 4;
+      const diff = Math.abs(vals[a] - vals[b]);
+      return {
+        type: 'input',
+        prompt: `How many more on <strong>${DAYS[vals[a] >= vals[b] ? a : b]}</strong> than <strong>${DAYS[vals[a] >= vals[b] ? b : a]}</strong>?`,
+        visual: barChart(bars, { step }), visualWidth: 320,
+        answer: String(diff), placeholder: '?',
+        printStem: `Difference between ${DAYS[a]} and ${DAYS[b]}?`,
+        printVisual: barChart(bars, { print: true, step, width: 220, height: 120 }),
+        hint: 'Read both bars, then subtract.',
+        explain: `${Math.max(vals[a], vals[b])} − ${Math.min(vals[a], vals[b])} = ${diff}.`,
+      };
+    }
+    const total = vals.reduce((n, v) => n + v, 0);
+    return {
+      type: 'input',
+      prompt: 'How many altogether across all four days?',
+      visual: barChart(bars, { step }), visualWidth: 320,
+      answer: String(total), placeholder: '?',
+      printStem: 'Total across all four days?',
+      printVisual: barChart(bars, { print: true, step, width: 220, height: 120 }),
+      hint: step > 1 ? `The scale goes up in ${step}s — read each bar carefully first.` : 'Add all four bars.',
+      explain: `${vals.join(' + ')} = ${total}.`,
+    };
+  },
+};
+
+export default [placeValuePalace, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel];

@@ -1,8 +1,11 @@
 import { tenFrame, dots, numberBond, numberLine, tickRange, array2d, esc } from '../../src/lib/widgets.js';
+import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
 
-const S = ['Counting and cardinality', 'Number bonds to 10', 'Flat and solid shapes', 'Compare and measure'];
+// Strand names come from the single source in strands.js — they used to be
+// duplicated here, which silently desynced when the list grew to five.
+const S = STRANDS['K'];
 
 /* ---------------------------------------------------------------- BOOK: counting crew */
 const countingCrew = {
@@ -122,7 +125,7 @@ const shapeSvg = (name, w = 92, print = false) =>
     <g fill="none" stroke="${print ? '#111' : 'var(--a1)'}" stroke-width="${print ? 2.4 : 3.5}" stroke-linejoin="round">${SHAPES[name]}</g></svg>`;
 
 const shapeSorter = {
-  id: 'shape-sorter', title: 'Shape Sorter', kind: 'book', grade: 'K', strand: S[2],
+  id: 'shape-sorter', title: 'Shape Sorter', kind: 'book', grade: 'K', strand: S[3],
   glyph: '◇',
   skill: 'Naming flat shapes and counting their sides and corners.',
   blurb: 'Name the shape, then count its sides.',
@@ -195,7 +198,7 @@ const tenFrameFlash = {
 
 /* ---------------------------------------------------------------- GAME: which is more */
 const whichIsMore = {
-  id: 'which-is-more', title: 'Which Is More', kind: 'game', grade: 'K', strand: S[3],
+  id: 'which-is-more', title: 'Which Is More', kind: 'game', grade: 'K', strand: S[4],
   glyph: '>',
   skill: 'Comparing two numbers — deciding which is larger, fast.',
   blurb: 'Two numbers. Tap the bigger one.',
@@ -265,4 +268,32 @@ const greatRace = {
   },
 };
 
-export default [countingCrew, numberFriends, shapeSorter, greatRace, tenFrameFlash, whichIsMore];
+
+/* ------------------------------------------------------------- BOOK: story time */
+const storyTime = {
+  id: 'story-time', title: 'Story Time', kind: 'book', grade: 'K', strand: S[2],
+  glyph: '❝',
+  skill: 'Solving add-to, take-from and put-together story problems with numbers to 10.',
+  blurb: 'Little stories about counting. What happens, and how many end up?',
+  ccss: ['K.OA.A.1', 'K.OA.A.2'],
+  im: [4, 5],
+  refs: ['wwc-2021-math', 'im-scope-sequence', 'building-blocks-wwc'],
+  theory: 'A story problem has a structure — something joins, something leaves, or two parts make a whole — and the structure is what is being learned.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat1' }, { task: 'fluencyArf', subscale: 'sum' }],
+  evidence: 'Word problems are their own skill, not a by-product of arithmetic: the WWC practice guide rates teaching them STRONG on 18 studies, and fact fluency transfers to word problems only weakly. Starting at kindergarten with tiny numbers keeps the arithmetic out of the way so the structure is the only thing to work out.',
+  pages: 10, printItems: 6,
+  printInstruction: 'Read each story. Write how many.',
+  printInstructions: { input: 'Read each story. Write how many.' },
+  generate(seed, i, ch, r) {
+    // One structure per page, cycled, with the unknown moving position — the same
+    // structure is much harder when the start is unknown than when the result is.
+    const plan = [
+      ['join', 'result'], ['separate', 'result'], ['partWhole', null],
+      ['join', 'change'], ['separate', 'change'], ['partWhole', null],
+      ['join', 'start'], ['join', 'result'], ['separate', 'result'], ['partWhole', null],
+    ][i % 10];
+    return wordProblem(plan[0], ch, r, { max: 10, min: 1, unknown: plan[1] });
+  },
+};
+
+export default [countingCrew, numberFriends, storyTime, shapeSorter, greatRace, tenFrameFlash, whichIsMore];

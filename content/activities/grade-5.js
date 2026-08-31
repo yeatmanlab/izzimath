@@ -1,8 +1,11 @@
 import { numberLine, tickRange, fractionBar, array2d, esc } from '../../src/lib/widgets.js';
+import { STRANDS } from './strands.js';
 import { wordProblem } from '../wordproblems.js';
 import { frac, fracText, simplify, addF, subF, mulF, divF, valF, cmpF, lcm } from '../../src/lib/frac.js';
 
-const S = ['Decimals to thousandths', 'Fraction operations', 'Volume', 'The coordinate plane'];
+// Strand names come from the single source in strands.js — they used to be
+// duplicated here, which silently desynced when the list grew to five.
+const S = STRANDS['5'];
 
 /* ------------------------------------------------------------- BOOK: fraction foundry */
 const fractionFoundry = {
@@ -148,7 +151,7 @@ const decimalPlace = {
 
 /* ------------------------------------------------------------------- BOOK: volume */
 const volumeAndSpace = {
-  id: 'volume-and-space', title: 'Volume and Space', kind: 'book', grade: '5', strand: S[2],
+  id: 'volume-and-space', title: 'Volume and Space', kind: 'book', grade: '5', strand: S[3],
   glyph: '◱',
   skill: 'Finding the volume of a rectangular prism by counting or multiplying.',
   blurb: 'Length times width times height — how many cubes fit?',
@@ -239,7 +242,7 @@ const mixedNumberLine = {
 
 /* ------------------------------------------------------------ GAME: coordinate quest */
 const coordinateQuest = {
-  id: 'coordinate-quest', title: 'Coordinate Quest', kind: 'game', grade: '5', strand: S[3],
+  id: 'coordinate-quest', title: 'Coordinate Quest', kind: 'game', grade: '5', strand: S[4],
   glyph: '⊹',
   skill: 'Reading and plotting points in the first quadrant.',
   blurb: 'Across first, then up. Where is (3, 5)?',
@@ -285,4 +288,62 @@ const coordinateQuest = {
   },
 };
 
-export default [fractionFoundry, decimalPlace, volumeAndSpace, mixedNumberLine, coordinateQuest];
+
+/* ------------------------------------------- BOOK: the standard algorithm (G5 S3) */
+const standardAlgorithm = {
+  id: 'standard-algorithm', title: 'The Standard Algorithm', kind: 'book', grade: '5', strand: S[2],
+  glyph: '⟌',
+  skill: 'Multiplying multi-digit numbers and dividing by two digits, fluently.',
+  blurb: 'The written methods, at full size. Two digits by two, and long division.',
+  ccss: ['5.NBT.B.5', '5.NBT.B.6'],
+  im: [4],
+  refs: ['im-scope-sequence', 'fyfe-2014-fading', 'codding-2011', 'fuchs-2012-timed'],
+  theory: 'The standard algorithm is the endpoint of a progression, not the starting point: it compresses partial products into a notation that only makes sense once the parts are understood.',
+  roam: [{ task: 'fluencyCalf', subscale: 'mult' }, { task: 'fluencyCalf', subscale: 'div' }, { task: 'roamAlpaca', subscale: 'cat3' }],
+  evidence: 'Grade 5 is where Illustrative Mathematics expects the standard algorithms to become fluent, having built them from partial products in grade 4. This book assumes that groundwork and drills the compressed form — with a partial-product page every third item so the compression stays connected to what it compresses.',
+  pages: 16, printItems: 20,
+  printInstruction: 'Work these out. Show your partial products or your long division.',
+  printInstructions: { input: 'Work these out. Show your working.' },
+  generate(seed, i, ch, r) {
+    const mode = i % 3;
+    if (mode === 0) {
+      const a = r.int(12, 99), b = r.int(12, 99);
+      return {
+        type: 'input', prompt: `<strong>${a} × ${b} =</strong>`,
+        answer: String(a * b), placeholder: '?', printStem: `${a} × ${b} =`,
+        hint: `Split ${b} into ${Math.floor(b / 10) * 10} and ${b % 10}.`,
+        explain: `${a} × ${Math.floor(b / 10) * 10} = ${a * Math.floor(b / 10) * 10}, and ${a} × ${b % 10} = ${a * (b % 10)}. Together ${a * b}.`,
+      };
+    }
+    if (mode === 1) {
+      // exact division by a two-digit divisor
+      const d = r.int(12, 40), q = r.int(12, 60);
+      const n = d * q;
+      return {
+        type: 'input', prompt: `<strong>${n} ÷ ${d} =</strong>`,
+        answer: String(q), placeholder: '?', printStem: `${n} ÷ ${d} =`,
+        hint: `How many ${d}s in ${n}? Start with tens: ${d} × 10 = ${d * 10}.`,
+        explain: `${d} × ${q} = ${n}, so ${n} ÷ ${d} = ${q}.`,
+      };
+    }
+    // keep the compressed form tied to the partial products it compresses
+    const a = r.int(12, 49), b = r.int(12, 49);
+    const t = Math.floor(b / 10) * 10, o = b % 10;
+    return {
+      type: 'choice',
+      prompt: `For <strong>${a} × ${b}</strong>, which pair of partial products do you add?`,
+      choices: r.shuffle([
+        `${a * t} and ${a * o}`,
+        `${a * t} and ${a}`,
+        `${a + t} and ${a + o}`,
+        `${a * Math.floor(b / 10)} and ${a * o}`,
+      ]),
+      answer: `${a * t} and ${a * o}`,
+      printStem: `${a} × ${b}: partial products are ____ and ____`,
+      hint: `Split ${b} into ${t} and ${o}, then multiply ${a} by each.`,
+      explain: `${a} × ${t} = ${a * t} and ${a} × ${o} = ${a * o}. They add to ${a * b}.`,
+    };
+  },
+};
+
+export default [fractionFoundry, decimalPlace, standardAlgorithm, volumeAndSpace, mixedNumberLine, coordinateQuest];
