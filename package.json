@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node build.mjs",
     "serve": "node build.mjs && python3 -m http.server 8899 --directory dist",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "verify": "node scripts/check.mjs && node build.mjs && node scripts/links.mjs && node scripts/a11y.mjs"
   }
 }

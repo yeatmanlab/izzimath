@@ -98,7 +98,7 @@ fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 
 <section class="wrap sec" style="padding-bottom:10px">
   <div class="roam">
-    <h3>Where the content comes from</h3>
+    <h2 style="font-size:15px">Where the content comes from</h2>
     <p>The order topics appear in follows the free
     <a href="https://illustrativemathematics.org/math-curriculum/" style="color:var(--a1)">Illustrative Mathematics</a>
     K&ndash;5 sequence, cross-checked against other well-evidenced curricula. The activity choices lean
@@ -115,7 +115,7 @@ write('grades/index.html', page({
   base: b, active: 'grades', title: 'All grades', desc: 'Math books and games for kindergarten through grade 5.',
   crumbs: [{ label: 'Home', href: '/' }, { label: 'Grades' }],
   body: `<section class="wrap sec" style="padding-top:24px">
-    <h2>All grades</h2><p class="sub">Kindergarten through fifth.</p>
+    <h1 style="font-size:30px">All grades</h1><p class="sub">Kindergarten through fifth.</p>
     <div class="grades">${GRADES.map((g) => {
       const n = byGrade(g).length;
       return `<a class="gtile" href="${b}/grades/${g}/"><b>${g}</b><span>${n} ${n === 1 ? 'activity' : 'activities'}</span></a>`;
@@ -165,7 +165,7 @@ for (const kind of ['book', 'game']) {
     desc: kind === 'book' ? 'Every interactive math workbook, K-5.' : 'Every math game, K-5.',
     crumbs: [{ label: 'Home', href: '/' }, { label: kind === 'book' ? 'Books' : 'Games' }],
     body: `<section class="wrap sec" style="padding-top:24px">
-      <h2>${kind === 'book' ? 'All books' : 'All games'}</h2>
+      <h1 style="font-size:30px">${kind === 'book' ? 'All books' : 'All games'}</h1>
       <p class="sub">${list.length} ${kind}s across K–5. Every one prints.</p>
       ${GRADES.map((g) => {
         const l = list.filter((a) => a.grade === g);
@@ -214,7 +214,7 @@ for (const a of activities) {
 
       <div class="sec">
         <div class="roam">
-          <h3>What this practises</h3>
+          <h2 style="font-size:15px">What this practises</h2>
           <p>${esc(a.skill)}</p>
           ${a.evidence ? `<p style="font-size:13px">${esc(a.evidence)}</p>` : ''}
           ${(a.roam || []).length ? `<p style="font-size:12.5px;color:var(--txt3);margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px">
@@ -249,7 +249,7 @@ for (const a of activities) {
       </div>
       <div data-sheet></div>
       <div class="roam noprint" style="margin-top:22px">
-        <h3>Printing notes</h3>
+        <h2 style="font-size:15px">Printing notes</h2>
         <p>This sheet is line art only — no solid fills anywhere — so it stays cheap on a home
         inkjet. ${ITEMS_NOTE(a)} The answer key is a separate page.</p>
         <p style="font-size:13px">The <strong>mixed review sheet</strong> is a different thing: eight
@@ -273,7 +273,7 @@ write('printables/index.html', page({
   base: b, active: 'printables', title: 'All printables', desc: 'Every Izzi Math sheet, free to print. Fresh problems on every click.',
   crumbs: [{ label: 'Home', href: '/' }, { label: 'Printables' }],
   body: `<section class="wrap sec" style="padding-top:24px">
-    <h2>All printables</h2>
+    <h1 style="font-size:30px">All printables</h1>
     <p class="sub">${activities.length} sheets, each with an answer key. Click "new problems" for a
     fresh set — the generator never runs out.</p>
     ${GRADES.map((g) => {
@@ -300,7 +300,7 @@ write('roam/index.html', page({
       <p>If your child has taken ROAM, this page points you at matching practice.</p></div></div>
 
     <div class="sec"><div class="roam">
-      <h3>What ROAM is</h3>
+      <h2 style="font-size:15px">What ROAM is</h2>
       <p>The <a href="${ROAM_URL}" style="color:var(--a1)">Rapid Online Assessment of Math</a> is a
       free, fast math assessment from the Brain Development &amp; Education Lab at Stanford. It has
       four parts, and each one measures something different.</p>
@@ -353,25 +353,80 @@ write('roam/index.html', page({
 
 /* -------------------------------------------------------------------- about */
 write('about/index.html', page({
-  base: b, active: '', title: 'About and credits', desc: 'What Izzi Math is, how it was built, and which curricula and research it draws on.',
+  base: b, active: '', title: 'About and credits', desc: 'What Izzi Math is, how it works, and which curricula and research it draws on.',
   crumbs: [{ label: 'Home', href: '/' }, { label: 'About' }],
   body: `<section class="wrap"><div class="ahead"><div><h1>About Izzi Math</h1>
-    <p>Free math practice for families, K–5.</p></div></div>
-    <div class="sec" style="max-width:74ch">
+    <p>Free maths practice for families, kindergarten through fifth grade.</p></div></div>
+
+    <div class="sec" style="max-width:76ch">
       <h2>What this is</h2>
-      <p class="sub">Interactive math books and games for kindergarten through fifth grade, where
-      every activity also exists as a printable sheet with an answer key. It is built for parents
-      at home. There are no accounts, no ads, and nothing to buy.</p>
-      <h2 style="margin-top:28px">How it works</h2>
-      <p class="sub">Problems come from seeded generators, and the seed lives in the page's web
-      address. That means a sheet is reproducible — the same link always gives the same problems,
-      so you can print a page today and do it on screen tomorrow — and it also means the practice
-      never runs out, because a new seed gives a fresh set.</p>
-      <h2 style="margin-top:28px">Credits</h2>
-      <p class="sub">See <a href="${b}/roam/" style="color:var(--a1)">the ROAM page</a> for the
-      assessment link, and the repository for the full source and the research notes behind the
-      content choices.</p>
-      <p class="sub"><a class="btn sm" href="https://github.com/yeatmanlab/izzimath">Source on GitHub</a></p>
+      <p class="sub">Interactive maths books and games for K&ndash;5, where every activity also
+      exists as a printable sheet with an answer key. It is built for parents at home rather than
+      for schools. There are no accounts, no ads, and nothing to buy.</p>
+
+      <h2 style="margin-top:30px">How it works</h2>
+      <p class="sub">Problems come from seeded generators, and the seed lives in the page&rsquo;s web
+      address. That means two useful things. A sheet is <strong>reproducible</strong> &mdash; the same
+      link always gives the same problems, so you can print a page today and do it on screen tomorrow.
+      And the practice <strong>never runs out</strong>, because a new seed gives a fresh set of
+      problems from the same generator.</p>
+      <p class="sub">There is no login because there is nothing to store. The address bar is the save
+      file.</p>
+
+      <h2 style="margin-top:30px">Books, games, and sheets</h2>
+      <table class="tbl"><tbody>
+        <tr><td><strong>Books</strong></td><td>Guided practice with hints and worked explanations.
+          Never timed &mdash; thinking time is the point.</td></tr>
+        <tr><td><strong>Games</strong></td><td>Short replayable rounds for building speed. Timers are
+          off by default and always one click to disable. Nothing is scored against anyone else.</td></tr>
+        <tr><td><strong>Practice sheets</strong></td><td>Problems grouped by type, with clear
+          instructions. Use these while a skill is new.</td></tr>
+        <tr><td><strong>Review sheets</strong></td><td>Eight problems, shuffled so no two next to each
+          other need the same method. Use these a week or two later.</td></tr>
+      </tbody></table>
+
+      <h2 style="margin-top:30px">Where the content comes from</h2>
+      <p class="sub">The order topics appear in follows the
+      <a href="https://illustrativemathematics.org/math-curriculum/" style="color:var(--a1)">Illustrative
+      Mathematics</a> K&ndash;5 sequence, which is free, openly licensed and coherent across the whole
+      grade band.</p>
+      <p class="sub">Which activities got built is a separate question, and that followed the research
+      rather than the curriculum. The strongest evidence in primary maths is attached to particular
+      <em>practices</em> rather than to any brand of curriculum &mdash; so the site leans on the ones
+      that have held up: linear number lines, fraction number lines, brief-exposure subitizing,
+      part-whole number bonds, area models, and mixed review.</p>
+      <p class="sub">Two examples of that showing up in the build. <strong>The Great Race</strong> is a
+      straight implementation of a game from Siegler and Ramani&rsquo;s work, including the detail that
+      the child names the squares they pass through, counting on from where they are &mdash; that
+      detail roughly doubled the effect in a later study, so tapping &ldquo;one, two&rdquo; is treated
+      as an error and corrected. And <strong>review sheets</strong> hold eight mixed problems because a
+      randomised trial of 787 students found the same problems shuffled that way scored 61% against 38%
+      a month later.</p>
+
+      <h2 style="margin-top:30px">Being honest about the evidence</h2>
+      <p class="sub">Illustrative Mathematics is rated highly for design quality &mdash; EdReports
+      places it at &ldquo;meets expectations&rdquo; in all three gateways at every grade K&ndash;5.
+      That is not the same as proof that it raises attainment, and there are no high-quality studies of
+      IM K&ndash;5 learning outcomes. The impressive effect sizes usually quoted for IM come from
+      grades 6&ndash;8, not from primary. We use it as a well-vetted plan, not as a guarantee.</p>
+      <p class="sub">The full set of citations, effect sizes, and the places where the evidence is thin
+      is written up in the repository.</p>
+
+      <h2 style="margin-top:30px">Assessment</h2>
+      <p class="sub">Izzi Math is practice, not assessment. It never produces a score and never
+      predicts one. If your child has taken the Rapid Online Assessment of Maths, the
+      <a href="${b}/roam/" style="color:var(--a1)">score page</a> can point you at matching practice
+      &mdash; but you do not need a score, or any assessment, to use anything here.</p>
+
+      <h2 style="margin-top:30px">Credits</h2>
+      <p class="sub">Built by the
+      <a href="https://edneuro.stanford.edu/" style="color:var(--a1)">Brain Development &amp; Education
+      Lab</a> at Stanford. Curriculum sequence from Illustrative Mathematics. Activity designs drawn
+      from the maths education research literature, credited in full in the repository.</p>
+      <p class="sub" style="margin-top:18px">
+        <a class="btn sm" href="https://github.com/yeatmanlab/izzimath">Source on GitHub</a>
+        <a class="btn sm" href="${b}/printables/">All printables</a>
+      </p>
     </div></section>`,
 }));
 
