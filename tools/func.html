@@ -1,0 +1,72 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>problem type test</title>
+<link rel="stylesheet" href="/assets/src/styles/site.css">
+<style>body{background:#0A0D1C;color:#EAF0FF;font:11px/1.6 monospace;padding:10px}pre{white-space:pre-wrap}</style>
+</head><body>
+<div id="host" style="position:absolute;left:-99999px;top:0;width:820px"></div>
+<pre id="out">…</pre>
+<script type="module">
+// Exercises every problem type end to end: does it render, is it interactive,
+// does its own stated answer verify, does it have a worked explanation, and does
+// it render on paper both as a sheet and as a key.
+const [S,A,C,R,RD,T,F,P]=await Promise.all([
+  import('/assets/src/lib/sprites.js'),
+  import('/assets/content/activities/index.js'),
+  import('/assets/content/characters.js'),
+  import('/assets/src/lib/rng.js'),
+  import('/assets/src/engine/render.js'),
+  import('/assets/content/types.js'),
+  import('/assets/src/lib/frac.js'),
+  import('/assets/src/lib/printsheet.js'),
+]);
+document.body.insertAdjacentHTML('afterbegin', S.SPRITES);
+document.documentElement.dataset.ch='kiwi';
+const host=document.getElementById('host'); const L=[]; let checks=0;
+
+const samples={};
+for(const a of A.activities){
+  const n=a.pages??a.rounds??10;
+  for(let i=0;i<n;i++){
+    const sd=R.deriveSeed(8817,'p'+i);
+    let p; try{ p=a.generate(sd,i,C.getCharacter('kiwi'),R.rng(sd),8817); }catch(e){ continue; }
+    if(!samples[p.type]) samples[p.type]={p,from:a.id};
+  }
+}
+const correctResponse=(p)=>({
+  choice:String(p.answer), input:String(p.answer), compare:p.answer, truefalse:p.answer,
+  numberline:p.target, tap:p.answer??p.n, ordinal:p.answer??p.n, bond:p.answer, boardmove:p.answer,
+}[p.type]);
+
+for(const t of T.TYPES){
+  const s=samples[t];
+  if(!s){ L.push('✗ '+t.padEnd(11)+'NO SAMPLE in any activity'); continue; }
+  const {p,from}=s; checks++;
+  const slot=document.createElement('div'); host.innerHTML=''; host.appendChild(slot);
+  RD.renderProblem(slot,p,()=>{});
+  const rendered=slot.children.length>0;
+  const controls=slot.querySelectorAll('button,input,[role="slider"]').length;
+  const own=correctResponse(p);
+  let ownOk;
+  if(t==='input'&&p.accept==='fraction'){
+    const g=F.parseAnswer(String(own)),w=F.parseAnswer(String(p.answer));
+    ownOk=!!(g&&w&&F.cmpF(g,w)===0);
+  } else ownOk=T.isCorrect(p,own);
+  const ok=rendered&&controls>0&&ownOk===true&&!!p.explain;
+  L.push((ok?'· ':'✗ ')+t.padEnd(11)+'from '+from.padEnd(22)
+    +'rendered:'+(rendered?'y':'N')+' controls:'+String(controls).padStart(2)
+    +' ownAnswerOK:'+(ownOk===true?'y':String(ownOk))+' explain:'+(p.explain?'y':'N'));
+}
+L.push('');
+for(const t of T.TYPES){
+  const s=samples[t]; if(!s) continue; checks++;
+  let sheetOk=false,keyOk=false;
+  try{
+    const h=P.printProblem(s.p,0,{key:false}), k=P.printProblem(s.p,0,{key:true});
+    sheetOk=h.length>20&&!/undefined|NaN/.test(h);
+    keyOk=k.length>20&&!/undefined|NaN/.test(k);
+  }catch(e){ L.push('  print '+t+' THREW '+e.message); }
+  L.push((sheetOk&&keyOk?'· ':'✗ ')+('print:'+t).padEnd(22)+'sheet:'+(sheetOk?'y':'N')+' key:'+(keyOk?'y':'N'));
+}
+L.push(''); L.push('CHECKS_RUN='+checks);
+document.getElementById('out').textContent=L.join('\n');
+window.__DONE__=true;
+</script></body></html>

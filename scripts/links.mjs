@@ -11,7 +11,8 @@ const htmlFiles = [];
 (function walk(d) {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name);
-    if (e.isDirectory()) walk(p);
+    // _tools/ holds the dev harnesses, which are not site pages
+    if (e.isDirectory()) { if (e.name !== '_tools') walk(p); }
     else if (e.name.endsWith('.html')) htmlFiles.push(p);
   }
 })(OUT);

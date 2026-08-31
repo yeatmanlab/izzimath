@@ -1,0 +1,76 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>responsive audit</title>
+<style>body{background:#0A0D1C;color:#EAF0FF;font:11px/1.5 monospace;margin:0;padding:10px}pre{white-space:pre-wrap}</style></head><body>
+<pre id="out">running…</pre>
+<script>
+const PAGES = [
+  ['/', 'home'], ['/grades/', 'grades index'], ['/grades/K/', 'grade K'], ['/grades/5/', 'grade 5'],
+  ['/books/', 'books index'], ['/games/', 'games index'], ['/printables/', 'printables'],
+  ['/skills/', 'by skill'], ['/parents/', 'how to help'], ['/references/', 'references'],
+  ['/roam/', 'roam'], ['/about/', 'about'], ['/404.html', '404'],
+  ['/books/counting-crew/', 'book: counting-crew'], ['/books/fraction-number-line/', 'book: fraction NL'],
+  ['/books/all-kinds-of-stories/', 'book: stories'], ['/books/standard-algorithm/', 'book: std algorithm'],
+  ['/games/great-race/', 'game: great race'], ['/games/close-to-hundred/', 'game: close to 100'],
+  ['/games/decade-duel/', 'game: decade duel'],
+  ['/print/times-table-tower/', 'print: times table'], ['/print/counting-crew/', 'print: counting crew'],
+  ['/print/fraction-number-line/', 'print: fraction NL'],
+];
+const WIDTHS = [[360,'phone-sm'],[390,'phone'],[768,'tablet'],[1024,'laptop'],[1440,'desktop']];
+const L=[]; let checks=0;
+const frame=document.createElement('iframe');
+frame.style.cssText='position:fixed;left:-99999px;top:0;border:0';
+document.body.appendChild(frame);
+function measure(){
+  const d=frame.contentDocument,w=frame.contentWindow;
+  if(!d||!d.body)return null;
+  const docOverflow=Math.max(0,d.documentElement.scrollWidth-w.innerWidth);
+  const wide=[],tiny=[],smallText=[];
+  const inScroller = (el) => {
+    for(let p=el.parentElement;p;p=p.parentElement){
+      const ox=w.getComputedStyle(p).overflowX;
+      if(ox==='auto'||ox==='scroll') return true;
+    }
+    return false;
+  };
+  for(const el of d.querySelectorAll('body *')){
+    const r=el.getBoundingClientRect();
+    // A wide child of a deliberately scrollable box is not an overflow bug —
+    // that is what the scroller is for. Only unscrolled overflow counts.
+    if(r.width>w.innerWidth+1.5&&r.height>0
+       &&w.getComputedStyle(el).position!=='fixed'
+       &&!inScroller(el))
+      wide.push(el.tagName.toLowerCase()+'@'+Math.round(r.width));
+  }
+  for(const el of d.querySelectorAll('a,button,select,input')){
+    const r=el.getBoundingClientRect();
+    // inline links inside a sentence are exempt from the target-size rule
+    const inline=el.closest('p,li,dd,td,.sub,.lede,.refbody');
+    if(r.width>0&&r.height>0&&r.height<24&&!inline) tiny.push(el.tagName.toLowerCase()+'@'+Math.round(r.height));
+  }
+  for(const el of d.querySelectorAll('p,li,td,span,small')){
+    const fs=parseFloat(w.getComputedStyle(el).fontSize);
+    if(fs&&fs<11&&el.textContent.trim().length>3&&!el.closest('.sheet')) smallText.push(fs+'px '+el.tagName.toLowerCase());
+  }
+  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3)};
+}
+(async()=>{
+  for(const [w,wn] of WIDTHS){
+    frame.style.width=w+'px'; frame.style.height='900px';
+    L.push(''); L.push('════ '+wn+' ('+w+'px) ════');
+    for(const [url,name] of PAGES){
+      await new Promise(res=>{frame.onload=res;frame.src=url;});
+      await new Promise(r=>setTimeout(r,260));
+      const m=measure(); checks++;
+      if(!m){L.push('  ?? '+name);continue;}
+      const p=[];
+      if(m.docOverflow>1)p.push('OVERFLOW '+m.docOverflow+'px');
+      if(m.wide.length)p.push('wide: '+m.wide.join(' '));
+      if(m.tiny.length)p.push('small tap: '+m.tiny.join(' '));
+      if(m.smallText.length)p.push('small text: '+m.smallText.join(' '));
+      L.push((p.length?'  ✗ ':'  · ')+name.padEnd(26)+(p.join(' | ')||'ok'));
+    }
+  }
+  L.push(''); L.push('CHECKS_RUN='+checks);   // a guard: zero means the harness never ran
+  document.getElementById('out').textContent=L.join('\n');
+  window.__DONE__=true;
+})();
+</script></body></html>

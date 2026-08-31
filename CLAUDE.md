@@ -17,6 +17,13 @@ links too but hits the network, so it is not in the build.
 Deployment is automatic: pushing to `main` runs the checks, builds with
 `BASE=/izzimath`, and publishes only if everything passes.
 
+Two things the Node checkers cannot test, because they need a real layout engine,
+live in [`tools/`](tools/README.md) and are copied to `dist/_tools/` by the build:
+a **responsive audit** (23 pages × 5 widths, checking overflow, tap-target size
+and text size) and a **problem-type test** (all nine types render, verify their
+own answers, and print). Both end with `CHECKS_RUN=<n>` — **if that is missing or
+zero the harness did not run, and an empty report is not a pass.**
+
 ## There is a backlog, and it is worth reading
 
 **[`docs/next/BACKLOG.md`](docs/next/BACKLOG.md)** — the single list of what is

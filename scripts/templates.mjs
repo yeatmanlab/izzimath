@@ -62,7 +62,7 @@ function nav(b, active) {
     ${link('/references/', 'Research', 'references')}
     <div class="nav-r">
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
-        ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg>${esc(characters[id].name === 'Just math' ? 'Just math' : characters[id].name)}</button>`).join('')}
+        ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" aria-label="${esc(characters[id].name)}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg><span class="chname">${esc(characters[id].name)}</span></button>`).join('')}
       </div>
     </div>
   </div>
@@ -108,7 +108,7 @@ export function activityCard(b, a) {
 
 export function roamBadges(a) {
   if (!a.roam?.length) return '';
-  return a.roam.map((l) => `<span class="tag roam">${esc(roamLabel(l))}</span>`).join(' ');
+  return a.roam.map((l) => `<span class="tag meas">${esc(roamLabel(l))}</span>`).join(' ');
 }
 
 /* A short note for the adult, composed from what the activity already declares.

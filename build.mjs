@@ -21,7 +21,13 @@ const rmrf = (p) => fs.rmSync(p, { recursive: true, force: true });
 function write(rel, html) {
   const p = path.join(OUT, rel);
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  fs.writeFileSync(p, html);
+  // Wrap tables so they scroll inside their own box on a phone rather than
+  // pushing the whole document sideways. Done here rather than at every call
+  // site so no table can be added later without it.
+  const wrapped = html.replace(
+    /<table class="tbl">([\s\S]*?)<\/table>/g,
+    (m) => `<div class="tblwrap">${m}</div>`);
+  fs.writeFileSync(p, wrapped);
   pages.push(rel);
 }
 function copyDir(src, dst) {
@@ -44,6 +50,12 @@ fs.mkdirSync(OUT, { recursive: true });
 copyDir('src', path.join(OUT, 'assets/src'));
 copyDir('content', path.join(OUT, 'assets/content'));
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+
+// Dev-only harnesses (responsive audit, functional type test). They live in
+// tools/ and are copied in after the build because build.mjs wipes dist/ — which
+// once deleted the audit page mid-session and made the report come back "clean"
+// because it had measured nothing at all.
+if (fs.existsSync('tools')) copyDir('tools', path.join(OUT, '_tools'));
 
 /* --------------------------------------------------------------------- home */
 {
@@ -346,7 +358,7 @@ write('roam/index.html', page({
       <div class="cards">${Object.values(tasks).map((t) => `<div class="card"><div class="cbody">
         <h3>${esc(t.short)} — ${esc(t.name)}</h3>
         <p>${esc(t.measures)}</p>
-        <div class="meta">${Object.values(t.subscales).map((s) => `<span class="tag roam">${esc(s.name)}</span>`).join('')}</div>
+        <div class="meta">${Object.values(t.subscales).map((s) => `<span class="tag meas">${esc(s.name)}</span>`).join('')}</div>
       </div></div>`).join('')}</div>
     </div>
 

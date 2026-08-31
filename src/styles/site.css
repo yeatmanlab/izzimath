@@ -109,10 +109,13 @@ main { position: relative; z-index: 1; flex: 1 }
 .cbody h3 { font-size: 16px; margin-bottom: 5px }
 .cbody p { font-size: 13px; color: var(--txt2); flex: 1; margin-bottom: 12px }
 .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center }
-.tag { font-size: 10.5px; font-family: var(--fdisp); letter-spacing: .09em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: var(--glass2); color: var(--txt3); border: 1px solid var(--line); white-space: nowrap }
+.tag { font-size: 11px; font-family: var(--fdisp); letter-spacing: .09em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; background: var(--glass2); color: var(--txt3); border: 1px solid var(--line); white-space: nowrap }
 .tag.acc { color: var(--a1) }
 .tag.ok { color: var(--ok) }
-.tag.roam { color: var(--txt2); border-style: dashed }
+/* NOT .tag.roam — that collided with the .roam callout box below, which sets
+   padding: 20px 22px and won on source order, making every measured-skill tag
+   58px tall instead of 28px. */
+.tag.meas { color: var(--txt2); border-style: dashed }
 
 .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 18px }
 .chip { font-size: 13px; font-family: var(--fdisp); font-weight: 500; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line2); background: var(--glass); color: var(--txt2); cursor: pointer; text-decoration: none }
@@ -295,3 +298,92 @@ svg.bigface { width: 82px; height: 82px; margin: 0 auto 4px; display: block; bor
 /* the landmark named after a number line estimate */
 .benchmark { font-family: var(--fdisp); font-size: 14px; color: var(--txt2); margin-top: 6px }
 .benchmark strong { color: var(--a1) }
+
+/* ==========================================================================
+   Cross-device pass. Findings came from a scripted audit at 360/390/768/1024/
+   1440px, not from eyeballing — see the commit for what it caught.
+   ========================================================================== */
+
+/* Tap targets. WCAG 2.5.8 wants 24x24 minimum; nav links measured 22px,
+   breadcrumbs 16px and footer links 21px. Links that sit INSIDE a sentence are
+   exempt from that rule and are left alone, since padding them would break the
+   line box. */
+.nav a.nl { padding: 6px 2px; display: inline-block }
+.nav-in .logo { padding: 4px 0 }
+footer.foot .fin a { padding: 5px 0; display: inline-block }
+nav[aria-label="Breadcrumb"] a { padding: 5px 0; display: inline-block }
+
+/* Form controls. WCAG 2.5.8 wants 24x24 minimum. Measured before the fix: the
+   ROAM select 19px and its checkbox 13px, and the print page's text-size select
+   22px. Every select and checkbox on the site is now sized, not just those two. */
+select, .btn select { min-height: 32px; padding: 4px 8px; font-size: 13px }
+#rec select, [data-recommender] select { min-height: 36px }
+input[type="checkbox"] { width: 24px; height: 24px; min-width: 24px; accent-color: var(--a2) }
+/* the label wrapping the print page's select is itself the tap target */
+label.btn { min-height: 38px; align-items: center }
+
+/* Tables. At 360px the printables and ROAM tables pushed the page 31-39px wide.
+   They now scroll inside their own box rather than stretching the document. */
+.tblwrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch }
+.tblwrap table.tbl { min-width: min(34rem, 100%) }
+@media (max-width: 560px) {
+  .tblwrap { margin-inline: -16px; padding-inline: 16px }
+  table.tbl th, table.tbl td { padding: 8px 8px; font-size: 13px }
+}
+
+/* Print previews are a fixed 7.5in wide, which is correct for print and 376px
+   too wide for a phone. Scaled down on screen only — `zoom` rather than
+   `transform` because zoom reserves the right layout height. The print media
+   query is untouched, so what comes out of the printer is unchanged. */
+@media screen and (max-width: 860px) { .sheet-preview { zoom: .86 } }
+@media screen and (max-width: 760px) { .sheet-preview { zoom: .72 } }
+@media screen and (max-width: 620px) { .sheet-preview { zoom: .58 } }
+@media screen and (max-width: 470px) { .sheet-preview { zoom: .46 } }
+@media screen and (max-width: 400px) { .sheet-preview { zoom: .42 } }
+
+/* Phone layout tightening */
+@media (max-width: 560px) {
+  .hero { padding-top: 34px }
+  .lede { font-size: 16px }
+  .sec { padding-top: 34px }
+  .grades { grid-template-columns: repeat(2, 1fr); gap: 10px }
+  .gtile b { font-size: 32px }
+  .cards { grid-template-columns: 1fr; gap: 12px }
+  .ahead { gap: 12px }
+  .gbadge { width: 52px; height: 52px; border-radius: 14px; font-size: 24px }
+  .sbar { gap: 9px; padding: 11px 14px }
+  .sbar h2 { font-size: 14px; width: 100% }
+  .qtext { font-size: 19px; margin-bottom: 22px }
+  .choice { min-width: 68px; padding: 13px 16px }
+  .choices { gap: 9px }
+  input.ans { width: 108px; font-size: 26px }
+  .sfoot { gap: 8px }
+  .btn { padding: 9px 13px; font-size: 13px }
+  .bstrip { gap: 2px }
+  .bsq { border-width: 1.5px; border-radius: 6px }
+  .strat { padding: 14px 16px }
+  .ref { padding: 16px 15px }
+  .refhead h3 { font-size: 15px }
+  footer.foot .fin { gap: 12px 20px }
+}
+
+/* Very narrow: let the nav wrap cleanly rather than squeezing */
+@media (max-width: 430px) {
+  .nav-in { gap: 10px 14px }
+  .nav-r { margin-left: 0; width: 100% }
+  .chpick { width: 100%; justify-content: flex-start }
+  .chbtn { font-size: 12px; padding: 5px 10px 5px 4px }
+  .chbtn svg { width: 22px; height: 22px }
+}
+
+/* On a phone the header was taking ~340px of an 812px screen before any content.
+   The character chips become icon-only under 560px — four fit on one row, the
+   name moves to the accessible label, and a row of header disappears. */
+@media (max-width: 560px) {
+  .chbtn { padding: 4px; gap: 0 }
+  .chbtn .chname { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+  .chbtn svg { width: 30px; height: 30px }
+  .chbtn[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--a2) }
+  .nav-in { row-gap: 8px }
+  .nav a.nl { font-size: 13.5px }
+}
