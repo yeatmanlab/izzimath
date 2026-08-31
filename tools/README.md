@@ -4,7 +4,8 @@ Two pages that test things the Node checkers cannot, because they need a real
 layout engine. They live here rather than in `dist/` because `build.mjs` wipes
 `dist/` — which once deleted the audit page mid-session and made the report come
 back clean having measured nothing at all. `build.mjs` copies this directory to
-`dist/_tools/` after every build.
+`dist/_tools/` after a local build, and **skips it when `CI` is set**, so these
+never reach the published site.
 
 Both print `CHECKS_RUN=<n>` at the end. **If that marker is missing or zero, the
 harness did not run and the result means nothing** — do not read an empty report

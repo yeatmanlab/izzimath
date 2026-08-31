@@ -55,7 +55,10 @@ fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 // tools/ and are copied in after the build because build.mjs wipes dist/ — which
 // once deleted the audit page mid-session and made the report come back "clean"
 // because it had measured nothing at all.
-if (fs.existsSync('tools')) copyDir('tools', path.join(OUT, '_tools'));
+//
+// Not in CI: GitHub Actions sets CI=true, and these are internal test pages that
+// have no business on the public site.
+if (!process.env.CI && fs.existsSync('tools')) copyDir('tools', path.join(OUT, '_tools'));
 
 /* --------------------------------------------------------------------- home */
 {
