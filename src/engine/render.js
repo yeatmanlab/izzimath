@@ -131,12 +131,36 @@ function renderNumberLine(host, p, cb) {
     if (svg.dataset.locked) return;
     svg.dataset.locked = '1';
     const ok = check(p, val);
-    // show the true position
-    const tx = toX(p.target);
-    svg.insertAdjacentHTML('beforeend',
-      `<g><line x1="${tx.toFixed(2)}" y1="${y - 20}" x2="${tx.toFixed(2)}" y2="${y + 20}" stroke="${ok ? 'var(--ok)' : 'var(--pink, #FF6B8A)'}" stroke-width="2.5" stroke-dasharray="4 3"/>
-       <text x="${tx.toFixed(2)}" y="${y + 52}" text-anchor="middle" font-size="13" fill="${ok ? 'var(--ok)' : '#FF6B8A'}" font-family="'Space Grotesk',sans-serif">${esc(p.targetLabel ?? p.target)}</text></g>`);
+    const tx = toX(p.target), vx = toX(val);
+
+    // Feedback on an estimate should name a REFERENCE POINT, not deliver a
+    // verdict. Estimation improves abruptly — often after a single trial — and
+    // apparently because the feedback supplies a landmark to reason from. So we
+    // show the true position, draw the gap, and name the nearest benchmark.
+    const marks = (p.labels ?? []).map(([v, lab]) => ({ v, lab }));
+    let near = null;
+    for (const m of marks) if (!near || Math.abs(m.v - p.target) < Math.abs(near.v - p.target)) near = m;
+    const side = near == null || Math.abs(p.target - near.v) < (hi - lo) * 0.01 ? 'at'
+      : (p.target > near.v ? 'just after' : 'just before');
+
+    let g = `<g><line x1="${tx.toFixed(2)}" y1="${y - 20}" x2="${tx.toFixed(2)}" y2="${y + 20}" stroke="${ok ? 'var(--ok)' : 'var(--pink, #FF6B8A)'}" stroke-width="2.5" stroke-dasharray="4 3"/>
+      <text x="${tx.toFixed(2)}" y="${y + 52}" text-anchor="middle" font-size="13" fill="${ok ? 'var(--ok)' : '#FF6B8A'}" font-family="'Space Grotesk',sans-serif">${esc(p.targetLabel ?? p.target)}</text>`;
+    // draw the gap between where they put it and where it goes
+    if (!ok && Math.abs(vx - tx) > 3) {
+      const my = y - 34;
+      g += `<line x1="${vx.toFixed(2)}" y1="${my}" x2="${tx.toFixed(2)}" y2="${my}" stroke="#FF6B8A" stroke-width="1.6"/>
+        <line x1="${vx.toFixed(2)}" y1="${my - 4}" x2="${vx.toFixed(2)}" y2="${my + 4}" stroke="#FF6B8A" stroke-width="1.6"/>
+        <line x1="${tx.toFixed(2)}" y1="${my - 4}" x2="${tx.toFixed(2)}" y2="${my + 4}" stroke="#FF6B8A" stroke-width="1.6"/>
+        <text x="${((vx + tx) / 2).toFixed(2)}" y="${my - 7}" text-anchor="middle" font-size="11" fill="#FF6B8A" font-family="'Space Grotesk',sans-serif">this far off</text>`;
+    }
+    svg.insertAdjacentHTML('beforeend', g + `</g>`);
     knob.setAttribute('fill', ok ? 'var(--ok)' : '#FF6B8A');
+
+    // name the landmark under the line
+    if (near) {
+      const note = el(`<p class="benchmark">${esc(p.targetLabel ?? p.target)} sits <strong>${side} ${esc(near.lab)}</strong>.</p>`);
+      wrap.appendChild(note);
+    }
     cb(val, ok);
   };
   btn.querySelector('button').addEventListener('click', submit);

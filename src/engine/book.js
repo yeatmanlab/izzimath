@@ -20,13 +20,31 @@ export function mountBook(activity, root) {
   let answered = new Array(total).fill(null);
   let widget = null;
 
-  const problemFor = (i) => activity.generate(deriveSeed(seed, `p${i}`), i, ch, rng(deriveSeed(seed, `p${i}`)), seed);
+  // The last page of every book is a mixed review: a problem drawn from an
+  // earlier page rather than the next new thing. Interleaved practice beat
+  // blocked practice 61% to 38% on a delayed test in a randomised trial of 787
+  // students — same problems, only the order differed — so the review page is
+  // where the durable gain actually comes from.
+  const isReview = (i) => total >= 6 && i === total - 1;
+  const problemFor = (i) => {
+    if (isReview(i)) {
+      // sample an earlier index, biased away from the immediately preceding page
+      const pick = deriveSeed(seed, `rev${i}`) % Math.max(1, total - 2);
+      const src = pick;
+      const sd = deriveSeed(seed, `p${src}`);
+      const p = activity.generate(sd, src, ch, rng(sd), seed);
+      return { ...p, review: true };
+    }
+    return activity.generate(deriveSeed(seed, `p${i}`), i, ch, rng(deriveSeed(seed, `p${i}`)), seed);
+  };
 
   function paintBar() {
     const done = answered.filter((x) => x !== null).length;
     bar.innerHTML = `
       <h2>${activity.title}</h2>
-      <span class="tag">${fill((activity.chapterLabel || 'Page {n} of {total}').replace('{n}', page + 1).replace('{total}', total), ch)}</span>
+      <span class="tag${isReview(page) ? ' acc' : ''}">${isReview(page)
+        ? 'Mixed review'
+        : fill((activity.chapterLabel || 'Page {n} of {total}').replace('{n}', page + 1).replace('{total}', total), ch)}</span>
       <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><i style="width:${(done / total) * 100}%"></i></div>
       <span class="seed">seed ${seed}</span>
       <a class="btn sm" href="${base()}/print/${activity.id}/?seed=${seed}">Print this book</a>`;
@@ -35,7 +53,9 @@ export function mountBook(activity, root) {
   function paint() {
     paintBar();
     const p = problemFor(page);
-    host.innerHTML = `<div class="qnum">Question ${page + 1}</div><div data-slot></div>`;
+    host.innerHTML = `<div class="qnum">${isReview(page)
+      ? 'Mixed review — something from earlier'
+      : 'Question ' + (page + 1)}</div><div data-slot></div>`;
     const slot = host.querySelector('[data-slot]');
     widget = renderProblem(slot, p, (response, ok) => {
       answered[page] = { response, ok };

@@ -191,7 +191,13 @@ const tenFrameFlash = {
       answer: String(n),
       printStem: 'How many dots?',
       printVisual: useFrame ? tenFrame(n, { print: true }) : dots(n, { print: true, layout: n <= 6 ? 'dice' : 'random', size: 96 }),
-      explain: `${n}.`,
+      // Elaborated, not just the number: the point of conceptual subitizing is
+      // seeing the quantity AS groups, so the feedback names the grouping rather
+      // than confirming the count. Bare confirmation is the g=0.05 case.
+      explain: n === 5 ? 'Five — a full row.'
+        : n === 10 ? 'Ten — both rows full.'
+        : n < 5 ? `${n} — fewer than a full row of five.`
+        : `${n} — a full row of five, and ${n - 5} more.`,
     };
   },
 };

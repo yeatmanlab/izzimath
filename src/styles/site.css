@@ -291,3 +291,7 @@ svg.bigface { width: 82px; height: 82px; margin: 0 auto 4px; display: block; bor
   .celebrate, .streaknote { display: none }
   .fb svg.react.pop, .fb.good { animation: none }
 }
+
+/* the landmark named after a number line estimate */
+.benchmark { font-family: var(--fdisp); font-size: 14px; color: var(--txt2); margin-top: 6px }
+.benchmark strong { color: var(--a1) }

@@ -106,6 +106,13 @@ for (const a of activities) {
           if (!parsed) fail(a.id, `i=${i} fraction answer unparseable: ${p.answer}`);
         }
       }
+      // The spec treats this as a ship-blocker, and it is the single largest
+      // effect in the feedback literature: elaborated feedback g=0.49 against
+      // g=0.05 for bare right/wrong. An activity without a worked explanation
+      // on every problem is incomplete.
+      if (!p.explain) fail(a.id, `i=${i} no explain — every problem needs a worked explanation`);
+      if (p.explain && String(p.explain).trim().length < 4) fail(a.id, `i=${i} explain too short: ${p.explain}`);
+
       // word problems must name a known schema and read as a sentence
       if (p.schema) {
         if (!SCHEMAS[p.schema]) fail(a.id, `i=${i} unknown word-problem schema "${p.schema}"`);

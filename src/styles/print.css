@@ -160,3 +160,17 @@
   a[href]::after { content: '' }
   .sh-block { page-break-inside: avoid }
 }
+
+/* self-check: the child can find their own error without an adult marking it */
+.sh-selfcheck { flex: none; font-size: 10.5px; color: #333; margin-top: 12px; padding-top: 9px; border-top: 1px solid var(--hair) }
+.sh-selfcheck strong { font-family: 'Space Grotesk', sans-serif }
+.sh-selfcheck .bank { display: inline-block; border: 1px solid var(--hair); border-radius: 4px; padding: 0 5px; margin: 0 2px 3px 0; font-family: 'Space Grotesk', sans-serif }
+.designed .sh-selfcheck .bank { border-color: #999 }
+
+/* one line of guidance for the adult, on the key only */
+.sh-adult { flex: none; font-size: 10px; color: #444; margin-top: 12px; padding: 8px 10px; border: 1px solid var(--hair); border-radius: 5px; line-height: 1.5 }
+.sh-adult strong { font-family: 'Space Grotesk', sans-serif; color: #111 }
+
+/* word-problem key: number plus the working */
+.keyline { margin-top: 3px; font-size: .9em }
+.keyline em { color: #555; font-style: italic; font-family: Inter, sans-serif; font-size: .92em; margin-left: 6px }

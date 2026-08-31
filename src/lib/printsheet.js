@@ -25,6 +25,14 @@ export function printProblem(p, i, { key = false } = {}) {
   const lbl = `<span class="lbl">${String.fromCharCode(97 + (i % 26))})</span>`;
   const A = (v) => (key ? `<span class="ansval">${esc(v)}</span>` : ansLine());
 
+  // A word problem's key gives the working and a full sentence, not just a
+  // number: "8" tells an adult nothing about whether the story was understood.
+  if (key && p.schema) {
+    return `<div class="pr">${lbl}${p.printStem ?? stripTags(p.prompt)}
+      <div class="keyline"><span class="ansval">${esc(answerText(p))}</span>
+        ${p.explain ? `<em>${esc(p.explain)}</em>` : ''}</div></div>`;
+  }
+
   switch (p.type) {
     case 'input':
     case 'choice':
@@ -175,11 +183,50 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     </div>`;
   }).join('');
 
-  return shell({ activity, seed, ch, key, siteUrl, style, blocks, count: problems.length });
+  return shell({ activity, seed, ch, key, siteUrl, style, blocks, count: problems.length, problems });
+}
+
+/* Self-check. There is no teacher in the room, so every sheet carries a way for
+   the child to find out whether they are right without an adult marking it:
+   a checksum when every answer is a plain number, otherwise a scrambled answer
+   bank. One line of text, and it satisfies the immediate-feedback requirement. */
+function selfCheck(problems, seed) {
+  // The checksum only works if the child WRITES a number for every item. For a
+  // comparison they write "<", for a number line they mark a position, for
+  // true/false they write a letter — summing those is meaningless, and a
+  // checksum that never adds up is worse than none at all.
+  const WRITES_A_NUMBER = new Set(['input', 'choice', 'bond']);
+  const WRITES_TEXT = new Set(['input', 'choice']);
+
+  if (!problems.length) return '';
+  const answers = problems.map((p) => String(answerText(p) ?? '').trim());
+  if (answers.some((a) => !a)) return '';
+
+  const allNumeric = problems.every((p, k) =>
+    WRITES_A_NUMBER.has(p.type) && Number.isFinite(Number(answers[k].replace(/[, ]/g, ''))));
+
+  if (allNumeric) {
+    const total = answers.reduce((t, a) => t + Number(a.replace(/[, ]/g, '')), 0);
+    return `<p class="sh-selfcheck"><strong>Check yourself:</strong> all your answers should add up to
+      <strong>${total}</strong>. If they do not, one of them is wrong &mdash; go back and find it.</p>`;
+  }
+
+  // Otherwise an answer bank, but only where the child writes the answer out and
+  // the values are distinctive enough for a bank to mean something.
+  const bankable = problems.every((p) => WRITES_TEXT.has(p.type));
+  const uniq = [...new Set(answers)];
+  if (bankable && uniq.length >= Math.max(3, answers.length * 0.6)) {
+    const r = rng(deriveSeed(seed, 'bank'));
+    return `<p class="sh-selfcheck"><strong>Check yourself:</strong> every answer is in this list, in
+      the wrong order &mdash; ${r.shuffle(uniq).map((b) => `<span class="bank">${esc(b)}</span>`).join(' ')}</p>`;
+  }
+
+  // Nothing honest to offer: the QR code and the key are the fallback.
+  return '';
 }
 
 /* The page shell both sheet types use. */
-function shell({ activity, seed, ch, key, siteUrl, style, blocks, count, titleSuffix = '', footNote = '' }) {
+function shell({ activity, seed, ch, key, siteUrl, style, blocks, count, titleSuffix = '', footNote = '', problems = [] }) {
   const backUrl = `${siteUrl}/${activity.kind === 'book' ? 'books' : 'games'}/${activity.id}/?seed=${seed}`;
   const designed = style !== 'plain';
   const gradeLabel = activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade;
@@ -197,11 +244,17 @@ function shell({ activity, seed, ch, key, siteUrl, style, blocks, count, titleSu
 
   <div class="sh-body">${blocks}</div>
 
-  ${key ? '' : `<div class="sh-check">
-    <strong>How did it go?</strong>
-    <span>Colour one for every question you got right.</span>
-    <span class="boxes">${Array.from({ length: Math.min(count, 12) }, () => '<i></i>').join('')}</span>
-  </div>`}
+  ${key
+    ? `<div class="sh-adult"><strong>For the grown-up.</strong> If they get stuck, work through the
+        first one together, then hand it back. Reading the working aloud is worth more than marking
+        it &mdash; feedback that explains is worth several times feedback that only says right or
+        wrong, and the gap is wider in maths than in any other subject.</div>`
+    : `${selfCheck(problems, seed)}
+      <div class="sh-check">
+        <strong>How did it go?</strong>
+        <span>Colour one for every question you got right.</span>
+        <span class="boxes">${Array.from({ length: Math.min(count, 12) }, () => '<i></i>').join('')}</span>
+      </div>`}
 
   <div class="sh-foot">
     <div>izzimath &middot; ${gradeLabel} &middot; seed ${seed} &middot; ${esc((activity.ccss || []).join(', '))}
@@ -244,7 +297,7 @@ function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style
     ${wide.map((p, i) => printProblem(p, narrow.length + i, { key })).join('')}
   </div>`;
   return shell({
-    activity, seed, ch, key, siteUrl, style, blocks, count: order.length,
+    activity, seed, ch, key, siteUrl, style, blocks, count: order.length, problems: order,
     titleSuffix: ' — mixed review',
     footNote: 'Eight mixed problems. Keep the answer key back until afterwards.',
   });
