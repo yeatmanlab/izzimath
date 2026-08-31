@@ -3,7 +3,7 @@
 Notes for resuming work on Izzi Math. Written at the end of the v1 session so the
 next person (or the next session) does not have to reconstruct the reasoning.
 
-**Live:** https://yeatmanlab.github.io/izzimath/
+**Live:** https://izzimath.com/
 **Repo:** https://github.com/yeatmanlab/izzimath
 
 ---

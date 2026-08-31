@@ -13,7 +13,7 @@ import { characters, characterList, getCharacter } from './content/characters.js
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
 const BASE = (process.env.BASE ?? '').replace(/\/$/, '');
-const SITE = process.env.SITE ?? 'https://yeatmanlab.github.io/izzimath';
+const SITE = process.env.SITE ?? 'https://izzimath.com';
 const OUT = 'dist';
 
 /* ------------------------------------------------------------------ helpers */
@@ -50,6 +50,14 @@ fs.mkdirSync(OUT, { recursive: true });
 copyDir('src', path.join(OUT, 'assets/src'));
 copyDir('content', path.join(OUT, 'assets/content'));
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+
+// CNAME tells GitHub Pages which custom domain this artifact is for. Written from
+// the SITE host so there is one source of truth: change SITE and the CNAME
+// follows. Only emitted when the site is NOT served from a subpath, since a
+// project-subpath build (yeatmanlab.github.io/izzimath) has no custom domain.
+if (!BASE) {
+  fs.writeFileSync(path.join(OUT, 'CNAME'), new URL(SITE).host + '\n');
+}
 
 // Dev-only harnesses (responsive audit, functional type test). They live in
 // tools/ and are copied in after the build because build.mjs wipes dist/ — which

@@ -27,16 +27,16 @@ jobs:
       - name: Validate content
         run: node scripts/check.mjs
 
+      # Custom domain at the apex, so the site is served from the root and BASE is
+      # empty. build.mjs writes the CNAME file from SITE, so this is the single
+      # place the domain is configured.
       - name: Build
         run: node build.mjs
         env:
-          BASE: /izzimath
-          SITE: https://yeatmanlab.github.io/izzimath
+          SITE: https://izzimath.com
 
       - name: Check links
         run: node scripts/links.mjs
-        env:
-          BASE: /izzimath
 
       - name: Check accessibility
         run: node scripts/a11y.mjs

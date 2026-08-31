@@ -1,7 +1,7 @@
 # Izzi Math — working notes
 
 Free interactive maths workbooks and games for K–5, where every activity also
-prints. Built for parents at home. Live at https://yeatmanlab.github.io/izzimath/
+prints. Built for parents at home. Live at https://izzimath.com/
 
 ## Before you change anything
 

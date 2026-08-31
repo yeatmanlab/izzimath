@@ -4,7 +4,7 @@ Free interactive maths workbooks and games for kindergarten through 5th grade, w
 **every activity also exists as a printable sheet with an answer key**. Built for
 parents at home. No accounts, no ads, nothing to install.
 
-**Live: https://yeatmanlab.github.io/izzimath/**
+**Live: https://izzimath.com/**
 
 ## The two ideas it rests on
 
