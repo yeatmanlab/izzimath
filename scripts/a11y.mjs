@@ -53,14 +53,26 @@ for (const f of files) {
     if (!/aria-label=/.test(m[0])) fail(f, 'role="img" svg without aria-label');
   }
 
-  // form controls need labels
+  // form controls need labels.
+  //
+  // A wrapping <label> names its control, and the label's text is allowed to sit
+  // inside a child element: <label><span>How much</span><select>…</select></label>
+  // is valid and properly named. The old test demanded bare text immediately
+  // before the control, so every print page's length select warned falsely — and
+  // 41 warnings that are all wrong are worse than none, because they hide the one
+  // that is right. Text belonging to the control itself (a <select>'s own
+  // <option>s) does not count as a label.
+  const labels = [...h.matchAll(/<label\b[^>]*>([\s\S]*?)<\/label>/g)].map((L) => ({
+    from: L.index, to: L.index + L[0].length,
+    text: L[1].replace(/<(select|textarea)\b[\s\S]*?<\/\1>/g, '')
+               .replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/g, ' ').trim(),
+  }));
   for (const m of h.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
     const t = m[0];
     if (/type="hidden"/.test(t)) continue;
     const id = (t.match(/\bid="([^"]+)"/) || [])[1];
     const labelled = /aria-label=/.test(t) || /aria-labelledby=/.test(t) || (id && new RegExp(`<label[^>]*for="${id}"`).test(h));
-    // a <label>text<select></label> wrapper also counts
-    const wrapped = new RegExp(`<label[^>]*>[^<]*${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(h);
+    const wrapped = labels.some((L) => L.from < m.index && m.index < L.to && L.text.length > 0);
     if (!labelled && !wrapped) warn(f, `${m[1]} without an accessible name`);
   }
 

@@ -330,6 +330,58 @@ L.push('');
       d.querySelector('.meclose')?.click(); await sleep(120);
     }
 
+    /* Badges. The design rule is that a badge states a fact about a real
+       accomplishment, so the checks here are about the moment of earning: it
+       fires once, it celebrates, it accounts for everything earned, and the
+       shelf agrees with the store. */
+    {
+      await w.__izziProfile.store.signOut();
+      w.localStorage.removeItem('izzi.profiles.v1');
+      d.querySelector('.meclose')?.click(); await sleep(120);
+      w.__izziProfile.repaint(); await sleep(200);
+      d.querySelector('[data-me]').click(); await sleep(250);
+      d.querySelector('[data-new]').click(); await sleep(320);
+      d.querySelector('[data-av="7"]').click(); await sleep(200);
+      d.querySelectorAll('[data-name]')[0].click(); await sleep(200);
+      d.querySelector('[data-food="apple"]').click(); await sleep(420);
+      d.querySelector('.meclose')?.click(); await sleep(150);
+
+      const me = await w.__izziProfile.store.getActive();
+      t('no badges on a new profile', (await w.__izziProfile.store.listBadges(me.id)).length === 0);
+
+      // a real accomplishment earns badges and celebrates
+      await w.__izziProfile.noteProgress('decade-duel', { played: true, right: 16, streak: 16, tier: 3 });
+      await sleep(600);
+      const held = await w.__izziProfile.store.listBadges(me.id);
+      t('accomplishment earns badges', held.length >= 3, held.length + ' earned');
+      t('records which character was there', held.every((b) => !!b.earnedWith));
+      const pop = d.querySelector('.bdpop');
+      t('the character celebrates', !!pop && !!pop.querySelector('.celebrate'));
+      const cards = pop ? pop.querySelectorAll('.bdpop-name').length : 0;
+      const moreTxt = pop?.querySelector('.bdpop-more')?.textContent || '';
+      const moreN = parseInt((moreTxt.match(/and (\d+) more/) || [])[1] || '0', 10);
+      t('every earned badge is accounted for', cards + moreN === held.length,
+        cards + ' shown + ' + moreN + ' more = ' + held.length);
+      t('badge says what was done, not well done',
+        !/great|well done|awesome|good job/i.test(pop?.textContent || ''));
+
+      // earning is once only — no repeat celebration for the same badge
+      pop?.remove();
+      await w.__izziProfile.noteProgress('decade-duel', { played: true, right: 16, streak: 16, tier: 3 });
+      await sleep(500);
+      t('does not re-award', (await w.__izziProfile.store.listBadges(me.id)).length === held.length);
+      t('does not re-celebrate', !d.querySelector('.bdpop'));
+
+      // the shelf and the store agree, and the count reaches the header
+      d.querySelector('[data-me]').click(); await sleep(350);
+      const lit = d.querySelectorAll('.bdcell.got').length;
+      t('shelf agrees with the store', lit === held.length, lit + ' lit vs ' + held.length + ' held');
+      t('shelf shows the gaps too', d.querySelectorAll('.bd-locked').length > 0);
+      t('count reaches the header', /\d+★/.test(d.querySelector('[data-me-name]')?.textContent || ''),
+        d.querySelector('[data-me-name]')?.textContent);
+      d.querySelector('.meclose')?.click(); await sleep(120);
+    }
+
     /* Unwritable storage must be REPORTED, not faked. In Safari private
        browsing, with site data off, or on a full quota, setItem throws — and the
        first build walked a child through all three screens, said "Hello,

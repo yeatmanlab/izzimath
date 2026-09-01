@@ -300,6 +300,9 @@ export function mountGame(activity, root) {
   function finish(reason) {
     over = true;
     clearInterval(tHandle); tHandle = null;
+    /* `right` feeds both a best and a running total — the milestone badges count
+       the total. A game round is single-shot, so it has no correction to record;
+       that signal only exists in a book, where an answer can be changed. */
     window.__izziProfile?.noteProgress(activity.id, {
       played: true, right: score, streak: best, tier: lad ? deepest : 0,
     });

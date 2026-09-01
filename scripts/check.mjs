@@ -19,6 +19,8 @@ import { plans, planActivityIds, FOUR_PART } from '../content/plans.js';
 import { ladderConfig, initState, record, tierFor, atTop, indexFor, TIERS, STEPS, LADDER_V } from '../src/lib/ladder.js';
 import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS } from '../content/avatars.js';
 import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatarart.js';
+import { BADGES, BADGE_COUNT, CATEGORIES, badgeById, evaluate as evaluateBadges } from '../content/badges.js';
+import { badgeSvg, shelfHtml } from '../src/lib/badgeart.js';
 import { createStore, nullDriver, localDriver, mergeProgress, MERGE, blankProgress } from '../src/lib/profile.js';
 
 let errors = 0, warns = 0, checked = 0;
@@ -210,6 +212,75 @@ console.log('\n=== profile avatars ===');
       fail('avatars', 'food choices change between visits — a child would think it is broken');
   }
   console.log(`  ${AVATAR_COUNT} avatars · ${CREATURES.length} creatures × ${COLOURWAYS.length} colourways · ${FOODS.length} foods · ${NAME_POOL.length} names`);
+}
+
+/* ------------------------------------------------------------------ badges
+   The design rule is docs/BADGES.md: a badge states a fact about what the child
+   did. The checks below are that rule made executable — most of all that nothing
+   is earned for showing up, because a labour badge is both the hollow kind and,
+   on the evidence, the kind that undermines motivation in children. */
+console.log('\n=== badges ===');
+{
+  const ids = new Set();
+  for (const b of BADGES) {
+    const w = `badge:${b.id}`;
+    if (ids.has(b.id)) fail(w, 'duplicate id');
+    ids.add(b.id);
+    if (!b.name) fail(w, 'no name');
+    if (!b.says) fail(w, 'no line saying what was done');
+    if (!CATEGORIES[b.cat]) fail(w, `category "${b.cat}" does not exist`);
+    if (![1, 2, 3].includes(b.rank)) fail(w, `rank ${b.rank} is not 1, 2 or 3`);
+    if (typeof b.test !== 'function') fail(w, 'no test');
+    /* A badge states a fact, so its line reads as one. Praise words mean the
+       framing has slipped from informational to controlling. */
+    if (/\b(great|well done|awesome|amazing|good job|congrat)/i.test(b.says))
+      fail(w, `"${b.says}" praises rather than states what happened`);
+    // and it must render, lit and locked
+    if ((badgeSvg(b.id) || '').length < 200) fail(w, 'does not render');
+    if ((badgeSvg(b.id, { locked: true }) || '').length < 100) fail(w, 'does not render locked');
+    if (!/aria-label="/.test(badgeSvg(b.id))) fail(w, 'no accessible label');
+  }
+
+  /* THE important one. A brand-new profile has earned nothing — no badge for
+     opening a page, playing a round, or existing. */
+  const none = evaluateBadges({}, activities, { characters: new Set() });
+  if (none.length) fail('badges', `${none.length} badges earned on an empty profile: ${none.join(', ')}`);
+
+  // one round played, nothing achieved, still nothing earned
+  const justPlayed = { 'decade-duel': { activityId: 'decade-duel', plays: 1, bestTier: 0,
+    bestStreak: 1, bestRight: 1, rightTotal: 1, printed: 0, fixes: 0, finished: false, pagesDone: 0 } };
+  const trivial = evaluateBadges(justPlayed, activities, { characters: new Set(['kiwi']) });
+  if (trivial.length) fail('badges', `playing one round with nothing achieved earned: ${trivial.join(', ')}`);
+
+  // a real accomplishment does earn one, and the right one
+  const summited = { 'decade-duel': { ...justPlayed['decade-duel'], bestTier: 3 } };
+  const got = evaluateBadges(summited, activities, { characters: new Set(['kiwi']) });
+  for (const want of ['first-climb', 'hard-ones', 'summit'])
+    if (!got.includes(want)) fail('badges', `reaching the top rung did not earn ${want}`);
+
+  // monotonic: more progress never earns FEWER badges
+  const more = { ...summited, 'halves-and-quarters': { activityId: 'halves-and-quarters',
+    plays: 0, bestTier: 0, bestStreak: 0, bestRight: 0, rightTotal: 8, printed: 1, fixes: 2,
+    finished: true, pagesDone: 8 } };
+  const after = evaluateBadges(more, activities, { characters: new Set(['kiwi']) });
+  if (after.length < got.length) fail('badges', `doing more earned fewer badges (${got.length} -> ${after.length})`);
+  if (!got.every((id) => after.includes(id))) fail('badges', 'a badge was lost by doing more');
+
+  // every badge must be reachable — a shelf with an impossible slot never fills
+  const maxed = {};
+  for (const a of activities) maxed[a.id] = { activityId: a.id, plays: 99, printed: 99,
+    pagesDone: 99, bestRight: 99, bestStreak: 99, bestTier: 3, rightTotal: 9999, fixes: 99, finished: true };
+  const all = evaluateBadges(maxed, activities, { characters: new Set(['kiwi', 'georgie', 'flame']) });
+  const unreachable = BADGES.filter((b) => !all.includes(b.id)).map((b) => b.id);
+  if (unreachable.length) fail('badges', `unreachable even with everything done: ${unreachable.join(', ')}`);
+
+  // the shelf shows every badge, earned or not
+  const shelf = shelfHtml(['summit']);
+  const cells = (shelf.match(/class="bdcell/g) || []).length;
+  if (cells !== BADGE_COUNT) fail('badges', `shelf shows ${cells} of ${BADGE_COUNT} badges`);
+  if (!/bdcell got/.test(shelf)) fail('badges', 'shelf does not mark an earned badge');
+
+  console.log(`  ${BADGE_COUNT} badges in ${Object.keys(CATEGORIES).length} categories · nothing earned for showing up · all reachable`);
 }
 
 /* ---------------------------------------------------------------- profiles */

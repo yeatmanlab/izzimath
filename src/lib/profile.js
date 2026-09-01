@@ -53,6 +53,11 @@ export const MERGE = {
   bestRight: 'max',
   bestStreak: 'max',
   bestTier: 'max',
+  /* Running totals, not bests. `rightTotal` is what the milestone badges count;
+     `fixes` counts going back and correcting a wrong answer, which is the one
+     behaviour in the whole set most worth reinforcing — see docs/BADGES.md. */
+  rightTotal: 'sum',
+  fixes: 'sum',
   finished: 'or',
   lastAt: 'latest',
 };
@@ -60,6 +65,13 @@ export const MERGE = {
 const ACTIVE_KEY = 'meta/active';
 const P = (id) => `profiles/${id}`;
 const PROG = (id, activityId) => `profiles/${id}/progress/${activityId}`;
+const BADGE = (id, badgeId) => `profiles/${id}/badges/${badgeId}`;
+
+/* A badge document keeps only what cannot be recomputed: when it was earned and
+   which character was there. Whether it is earned at all is derived from the
+   progress records every time — see content/badges.js. Merge rule for a badge is
+   "earliest wins", because the first time is the time that happened. */
+export const BADGE_MERGE = 'earliest';
 
 /* ------------------------------------------------------------------ drivers */
 
@@ -143,6 +155,7 @@ export const blankProgress = (activityId) => ({
   v: PROFILE_V, activityId,
   plays: 0, printed: 0, pagesDone: 0,
   bestRight: 0, bestStreak: 0, bestTier: 0,
+  rightTotal: 0, fixes: 0,
   finished: false, lastAt: null,
 });
 
@@ -220,6 +233,29 @@ export function createStore(driver = localDriver()) {
       return out;
     },
 
+    /* ------------------------------------------------------------ badges */
+
+    async listBadges(id) {
+      if (!id) return [];
+      const list = await driver.list(`profiles/${id}/badges`);
+      return list.filter((b) => b?.badgeId).sort((a, b) => (a.earnedAt || '').localeCompare(b.earnedAt || ''));
+    },
+
+    /* Records any badge in `ids` that is not already held, and returns only the
+       NEW ones so the caller knows what to celebrate. Never re-awards, so the
+       celebration fires exactly once per badge. */
+    async awardBadges(id, ids, withCharacter = 'none') {
+      if (!id || !ids?.length) return [];
+      const held = new Set((await store.listBadges(id)).map((b) => b.badgeId));
+      const fresh = ids.filter((b) => !held.has(b));
+      for (const badgeId of fresh) {
+        await driver.set(BADGE(id, badgeId), {
+          v: PROFILE_V, badgeId, earnedAt: nowIso(), earnedWith: withCharacter,
+        });
+      }
+      return fresh;
+    },
+
     /* The only way progress changes. `event` is what happened, never a new value
        to overwrite with — so the merge rules in MERGE stay the single place that
        decides how anything combines. */
@@ -231,7 +267,11 @@ export function createStore(driver = localDriver()) {
       if (event.printed) next.printed = (next.printed || 0) + 1;
       if (event.finished) next.finished = true;
       if (Number.isFinite(event.pagesDone)) next.pagesDone = Math.max(next.pagesDone || 0, event.pagesDone);
-      if (Number.isFinite(event.right)) next.bestRight = Math.max(next.bestRight || 0, event.right);
+      if (Number.isFinite(event.right)) {
+        next.bestRight = Math.max(next.bestRight || 0, event.right);
+        next.rightTotal = (next.rightTotal || 0) + event.right;
+      }
+      if (Number.isFinite(event.fixes)) next.fixes = (next.fixes || 0) + event.fixes;
       if (Number.isFinite(event.streak)) next.bestStreak = Math.max(next.bestStreak || 0, event.streak);
       if (Number.isFinite(event.tier)) next.bestTier = Math.max(next.bestTier || 0, event.tier);
       await driver.set(PROG(id, activityId), next);

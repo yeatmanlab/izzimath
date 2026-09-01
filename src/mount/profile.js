@@ -21,8 +21,13 @@
 
 import { AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, FOODS, foodById, foodChoicesFor } from '../../content/avatars.js';
 import { avatarSvg } from '../lib/avatarart.js';
+import { avatar } from '../lib/sprites.js';
+import { getCharacter } from '../../content/characters.js';
 import { createStore, localDriver } from '../lib/profile.js';
 import { TIERS } from '../lib/ladder.js';
+import { evaluate as evaluateBadges, badgeById, BADGE_COUNT } from '../../content/badges.js';
+import { badgeSvg, shelfHtml } from '../lib/badgeart.js';
+import { celebrate } from '../engine/celebrate.js';
 import { activities } from '../../content/activities/index.js';
 import { base } from '../lib/url.js';
 import { currentCharacter, setCharacter } from '../lib/theme.js';
@@ -43,7 +48,11 @@ async function paintButton() {
   const me = await store.getActive();
   if (me) {
     face.innerHTML = avatarSvg(me.avatar, { size: 26, decorative: true });
-    name.textContent = me.name;
+    const n = (await store.listBadges(me.id)).length;
+    // The count sits next to the name, which is the "shown next to the score"
+    // the shelf is reached from. A zero is not shown: an empty counter is a
+    // reproach, and nothing has been earned yet by definition.
+    name.textContent = n ? `${me.name} · ${n}★` : me.name;
     document.querySelector('[data-me]')?.setAttribute('data-on', '1');
   } else {
     face.textContent = '☺';
@@ -239,6 +248,7 @@ function flowConfirm(me, wrong = false) {
 
 async function flowMine(me, justMade = false) {
   const prog = await store.allProgress(me.id);
+  const badges = await store.listBadges(me.id);
   const rows = Object.values(prog)
     .filter((p) => byId.has(p.activityId))
     .sort((a, b) => (b.lastAt || '').localeCompare(a.lastAt || ''))
@@ -274,6 +284,11 @@ async function flowMine(me, justMade = false) {
       ? `<table class="metable"><thead><tr><th>What</th><th>Best</th><th>Times</th><th></th></tr></thead>
           <tbody>${rows}</tbody></table>`
       : `<p class="mesub">Nothing here yet. Finish a book or play a game and it will show up.</p>`}
+    <div class="bdshelf">
+      <p class="bdshelf-h">${me.name}'s badges
+        <span>${badges.length} of ${BADGE_COUNT}</span></p>
+      ${shelfHtml(badges.map((b) => b.badgeId))}
+    </div>
     <div class="mebtns">
       <button class="btn" data-close>Keep going</button>
       <button class="btn" data-switch>Switch character</button>
@@ -302,7 +317,60 @@ const grownUps = () => `<p class="mefoot">For grown-ups: this is not an account.
 export async function noteProgress(activityId, event) {
   const id = await store.getActiveId();
   if (!id) return null;
-  return store.record(id, activityId, event);
+  const rec = await store.record(id, activityId, event);
+  await checkBadges(id);
+  return rec;
+}
+
+/* Badges are derived, so this recomputes the whole set from the records and only
+   stores the ones newly true. That means the shelf can never disagree with the
+   scores, and adding a badge later back-fills for children who already earned
+   it. */
+async function checkBadges(id) {
+  const prog = await store.allProgress(id);
+  const held = await store.listBadges(id);
+  const characters = new Set(held.map((b) => b.earnedWith).filter((c) => c && c !== 'none'));
+  characters.add(currentCharacter());
+  const earned = evaluateBadges(prog, activities, { characters, earnedCount: held.length });
+  const fresh = await store.awardBadges(id, earned, currentCharacter());
+  repaint();
+  if (fresh.length) announceBadges(fresh);
+  return fresh;
+}
+
+/* One short flourish, then it is gone. The rule is in celebrate.js: a reward
+   layer that outshines the maths is the failure mode. So this is a card, the
+   character's own particle burst, and no sound. */
+function announceBadges(ids) {
+  const ch = getCharacter(currentCharacter());
+  const card = document.createElement('div');
+  card.className = 'bdpop noprint';
+  card.setAttribute('role', 'status');
+  /* A strong first game can trip six of these at once — the streak ladder alone
+     is 5, 10 and 15. Showing two and silently dropping four made four badges
+     appear from nowhere later. Three cards, then a line that accounts for the
+     rest, so nothing arrives unexplained. */
+  const SHOWN = 3;
+  const extra = Math.max(0, ids.length - SHOWN);
+  card.innerHTML = ids.slice(0, SHOWN).map((id) => {
+    const b = badgeById(id);
+    return `<div class="bdpop-in">
+      ${ch.id === 'none' ? '' : avatar(ch.id, 'bdface', 'happy')}
+      <div class="bdpop-medal">${badgeSvg(id, { size: 62, decorative: true })}</div>
+      <div class="bdpop-txt">
+        <p class="bdpop-kicker">New badge${ch.id === 'none' ? '' : ` for ${ch.name}`}</p>
+        <p class="bdpop-name">${b.name}</p>
+        <p class="bdpop-says">${b.says}</p>
+      </div>
+    </div>`;
+  }).join('') + (extra
+    ? `<p class="bdpop-more">and ${extra} more &mdash; they are all on ${ch.id === 'none' ? 'your' : ch.name + '\u2019s'} shelf</p>`
+    : '');
+  document.body.appendChild(card);
+  celebrate(card.querySelector('.bdpop-medal'), ch);
+  const go = () => card.remove();
+  card.addEventListener('click', go);
+  setTimeout(go, 4200);
 }
 
 /* Offered once, after something is finished, and never again in this session if

@@ -23,6 +23,11 @@ export function mountBook(activity, root) {
   // the child with every control disabled except Back — they had finished and
   // the page just sat there, which reads as being stuck rather than done.
   let finished = false;
+  /* Pages the child got wrong and then came back and got right. This is the one
+     signal the badge set most wants — correcting yourself is the behaviour worth
+     reinforcing, and no score captures it. See docs/BADGES.md. */
+  const wrongOnce = new Set();
+  let fixes = 0;
 
   // The last page of every book is a mixed review: a problem drawn from an
   // earlier page rather than the next new thing. Interleaved practice beat
@@ -63,6 +68,8 @@ export function mountBook(activity, root) {
       : 'Question ' + (page + 1)}</div><div data-slot></div>`;
     const slot = host.querySelector('[data-slot]');
     widget = renderProblem(slot, p, (response, ok) => {
+      if (!ok) wrongOnce.add(page);
+      else if (wrongOnce.has(page)) { wrongOnce.delete(page); fixes++; }
       answered[page] = { response, ok };
       const voice = ok ? ch.voice.correct : ch.voice.wrong;
       const msg = voice[page % voice.length];
@@ -142,7 +149,11 @@ export function mountBook(activity, root) {
     const worked = answered.filter((x) => x !== null).length;
     // Recorded only if a profile is keeping score; a no-op otherwise, which is
     // what makes not keeping score genuinely cost nothing.
-    window.__izziProfile?.noteProgress(activity.id, { finished: true, pagesDone: worked });
+    window.__izziProfile?.noteProgress(activity.id, {
+      finished: true, pagesDone: worked,
+      right: answered.filter((x) => x?.ok).length,
+      fixes,
+    });
     window.__izziProfile?.offerToKeepScore();
     bar.innerHTML = `
       <h2>${activity.title}</h2>
