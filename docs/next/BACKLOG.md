@@ -65,6 +65,13 @@ See [`04-adaptive-and-spacing.md`](04-adaptive-and-spacing.md).
 
 - [ ] **Within-session adaptivity** [105] — targets 80–85% success and needs **no
       stored state**, so this is the honest interim and is not blocked. *Medium.*
+      **Designed, not built** — the concrete design is in
+      [`04-adaptive-and-spacing.md`](04-adaptive-and-spacing.md#the-concrete-design).
+      The short version: every generator's `i` argument already IS its difficulty
+      parameter, so this is choosing which index to serve next rather than a new
+      difficulty system, and no generator needs touching. Interactive only —
+      printables stay seed-reproducible. State shape is designed for the account
+      migration now so it is not retrofitted later.
 - [ ] **The Number Race staircase as one shared service** [21] — three difficulty
       dimensions, rolling success estimate. Every speed game becomes a
       configuration of it. *Large. Blocked on accounts for cross-session memory.*
