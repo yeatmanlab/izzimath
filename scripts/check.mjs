@@ -201,6 +201,16 @@ console.log('\n=== profile avatars ===');
   // foods, and the pick-up check
   if (FOODS.length !== 500) fail('avatars', `${FOODS.length} foods, the design calls for 500`);
   if (new Set(FOODS.map((f) => f.id)).size !== FOODS.length) fail('avatars', 'duplicate food id');
+  /* Two snacks reading the same is worse than two sharing an id, because the
+     verify screen could then offer the right answer and a wrong one that look
+     identical — an unanswerable question. */
+  {
+    const byName = new Map();
+    for (const f of FOODS) byName.set(f.name, [...(byName.get(f.name) ?? []), f.id]);
+    for (const [name, ids] of byName) {
+      if (ids.length > 1) fail('avatars', `two snacks both read "${name}" (${ids.join(', ')})`);
+    }
+  }
   for (const f of FOODS) if (!f.name || !f.glyph) fail('avatars', `food ${f.id} missing name or glyph`);
 
   /* A profile stores the food ID. Dropping one locks whoever chose it out of
@@ -230,7 +240,7 @@ console.log('\n=== profile avatars ===');
      a six-year-old to tell "Snowy mochi" from "Tiny mochi" a week later. */
   {
     const prefixOf = (f) => (f.silly ? f.id.slice(0, f.id.length - f.base.length - 1) : '');
-    let short = 0, missing = 0, mixed = 0, clashing = 0, samePrefix = 0, unstable = 0;
+    let short = 0, missing = 0, mixed = 0, clashing = 0, samePrefix = 0, ambiguous = 0, unstable = 0;
     for (let i = 0; i < FOODS.length; i++) {
       const prof = { avatar: (i * 7) % AVATAR_COUNT, name: 'Pip', food: FOODS[i].id };
       const ch = foodChoicesFor(prof);
@@ -239,6 +249,7 @@ console.log('\n=== profile avatars ===');
       if (new Set(ch.map((f) => !!f.silly)).size !== 1) mixed++;
       if (new Set(ch.map((f) => f.base ?? f.id)).size !== ch.length) clashing++;
       if (FOODS[i].silly && new Set(ch.map(prefixOf)).size !== ch.length) samePrefix++;
+      if (new Set(ch.map((f) => f.name)).size !== ch.length) ambiguous++;
       if (JSON.stringify(foodChoicesFor(prof)) !== JSON.stringify(ch)) unstable++;
     }
     /* Counting the SHORT trays is what caught the prefix rule excluding every
@@ -246,6 +257,7 @@ console.log('\n=== profile avatars ===');
        answers alone on the screen with nothing to choose between. */
     if (short) fail('avatars', `${short} snacks offer the wrong number of choices`);
     if (samePrefix) fail('avatars', `${samePrefix} snacks get two choices with the same silly word`);
+    if (ambiguous) fail('avatars', `${ambiguous} snacks get two choices that read the same`);
     if (missing) fail('avatars', `${missing} snacks are not among their own choices`);
     if (mixed) fail('avatars', `${mixed} snacks get a tray mixing silly and plain — the answer stands out`);
     if (clashing) fail('avatars', `${clashing} snacks get two choices built on the same food`);
