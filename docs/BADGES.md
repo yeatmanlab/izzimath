@@ -38,9 +38,16 @@ produce genuine pride. Every source agrees points do not fix boring.
 4. **Depth and breadth over volume.** Most badges key off the adaptive ladder,
    streaks, finishing things, and covering different strands. Only two count raw
    totals, and they are milestones rather than the point.
-5. **The character holds the shelf.** A badge is Kiwi's, or Georgie's, or
-   Flame's. That distance is deliberate: "Kiwi reached the summit" invites less
-   identity and comparison than "you are a three-badge child".
+5. **The character is named at the moment of earning.** The card says "New badge
+   for Flame", with Flame's face on it, and every badge records which character
+   was there. That distance is deliberate: "Flame reached the summit" invites
+   less identity and comparison than "you are a three-badge child".
+
+   The shelf itself belongs to the *profile*, not to one character — it reads
+   "Cobble's badges", under the name the child chose. Three separate shelves
+   would mean switching theme hid a child's own badges, which is a worse trade
+   than the extra distance would buy. The stored `earnedWith` is what makes the
+   Three Friends badge possible.
 6. **Correcting yourself earns a badge.** `second-look` is the one the evidence
    most supports: going back and fixing a wrong answer is the behaviour worth
    reinforcing, and no other badge in the set rewards it.
