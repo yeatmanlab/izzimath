@@ -343,6 +343,9 @@ L.push('');
     }
 
     d.querySelector('[data-shuffle]').click(); await sleep(220);
+    t('focus stays on the draw button after a shuffle',
+      d.activeElement === d.querySelector('[data-shuffle]'),
+      d.activeElement?.textContent?.trim().slice(0, 24));
     const tray2 = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
     t('a fresh draw gives different snacks', tray2.length === 24
       && tray2.join() !== tray1.join(), tray2.filter((f) => !tray1.includes(f)).length + ' new');

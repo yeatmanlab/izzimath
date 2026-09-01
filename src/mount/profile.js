@@ -233,7 +233,7 @@ const foodBtn = (f) =>
    Five hundred snacks cannot all be buttons, so it offers a tray of two dozen
    with a fresh draw on request. Picking from what is in front of you is a better
    ask of a six-year-old than searching a list. */
-function flowFood() {
+function flowFood({ reshuffled = false } = {}) {
   const tray = foodTray();
   open(`
     <h2 class="meh">Now pick a secret snack</h2>
@@ -247,7 +247,11 @@ function flowFood() {
       <button class="btn" data-back>← A different name</button>
     </div>
     ${grownUps()}`);
-  panel.querySelector('[data-shuffle]').addEventListener('click', flowFood);
+  /* Keep focus on the draw button across a reshuffle. The default lands on the
+     first snack, which left a keyboard user tabbing past two dozen buttons to
+     draw again — and drawing again is the one thing you do repeatedly here. */
+  if (reshuffled) panel.querySelector('[data-shuffle]').focus();
+  panel.querySelector('[data-shuffle]').addEventListener('click', () => flowFood({ reshuffled: true }));
   panel.querySelectorAll('[data-food]').forEach((b) =>
     b.addEventListener('click', async () => {
       draft.food = b.dataset.food;
