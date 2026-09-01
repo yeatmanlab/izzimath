@@ -23,7 +23,7 @@ export const characters = {
       correct: ['Correct.', 'That’s right.', 'Yes — correct.'],
       close: ['Not quite. Try again.', 'Close. Have another go.'],
       wrong: ['Not quite.', 'That’s not it — try again.'],
-      done: ['Sheet complete.'],
+      done: ['All finished.'],
     },
     motif: 'grid',
   },

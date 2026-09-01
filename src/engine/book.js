@@ -19,6 +19,10 @@ export function mountBook(activity, root) {
   const total = activity.pages ?? 8;
   let answered = new Array(total).fill(null);
   let widget = null;
+  // A book needs an ending. Without one, the last page answered correctly left
+  // the child with every control disabled except Back — they had finished and
+  // the page just sat there, which reads as being stuck rather than done.
+  let finished = false;
 
   // The last page of every book is a mixed review: a problem drawn from an
   // earlier page rather than the next new thing. Interleaved practice beat
@@ -51,6 +55,7 @@ export function mountBook(activity, root) {
   }
 
   function paint() {
+    if (finished) return paintFinish();
     paintBar();
     const p = problemFor(page);
     host.innerHTML = `<div class="qnum">${isReview(page)
@@ -105,7 +110,9 @@ export function mountBook(activity, root) {
       ${p.hint && !done ? '<button class="btn" data-hint>Give me a hint</button>' : ''}
       ${done && !answered[page].ok ? '<button class="btn" data-retry>Try again</button>' : ''}
       ${done && !answered[page].ok ? '<button class="btn" data-skip>Show me and move on</button>' : ''}
-      <button class="btn pri" ${page >= total - 1 ? 'disabled' : ''} data-next>Next →</button>`;
+      ${page >= total - 1
+        ? '<button class="btn pri" data-finish>I\u2019m finished \u2192</button>'
+        : '<button class="btn pri" data-next>Next \u2192</button>'}`;
     host.querySelector('.sfoot')?.remove();
     host.appendChild(foot);
 
@@ -119,13 +126,53 @@ export function mountBook(activity, root) {
       h.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${p.hint}</span></p>`;
       host.querySelector('[data-slot]').appendChild(h);
     });
+    foot.querySelector('[data-finish]')?.addEventListener('click', () => { finished = true; paint(); });
     foot.querySelector('[data-skip]')?.addEventListener('click', () => {
-      if (page < total - 1) { page++; paint(); }
+      // On the last page there is nowhere to move on TO, so moving on means
+      // finishing rather than doing nothing at all.
+      if (page < total - 1) { page++; paint(); } else { finished = true; paint(); }
+    });
+  }
+
+  /* The end of a book. Deliberately NOT a score: a book is for learning, and the
+     games are where getting quicker is the point. So this counts pages worked
+     through, not marks out of ten, and every button on it is a way forward —
+     the same problems again, a fresh set, the printable, or the grade shelf. */
+  function paintFinish() {
+    const worked = answered.filter((x) => x !== null).length;
+    bar.innerHTML = `
+      <h2>${activity.title}</h2>
+      <span class="tag acc">Finished</span>
+      <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${total}"><i style="width:100%"></i></div>
+      <span class="seed">seed ${seed}</span>
+      <a class="btn sm" href="${base()}/print/${activity.id}/?seed=${seed}">Print this book</a>`;
+    host.innerHTML = `
+      <div class="qnum">All done</div>
+      ${ch.id === 'none' ? '' : avatar(ch.id, 'bigface', 'happy')}
+      <p class="qtext">${ch.voice.done[0]}</p>
+      <div class="scorebar" style="margin-bottom:22px">
+        <span>Pages<b>${total}</b></span>
+        <span>Answered<b>${worked}</b></span>
+      </div>
+      <div class="sfoot">
+        <button class="btn pri" data-fresh>Do it again with new problems</button>
+        <button class="btn" data-same>Start this one over</button>
+        <a class="btn" href="${base()}/print/${activity.id}/?seed=${seed}">Print it</a>
+        <a class="btn" href="${base()}/grades/${activity.grade}/">More ${activity.grade === 'K' ? 'Kindergarten' : 'Grade ' + activity.grade}</a>
+      </div>
+      <p style="color:var(--txt3);font-size:12.5px;margin-top:16px">
+        Now that you have met it, a game is a good way to get quicker at it.</p>`;
+    host.querySelector('[data-fresh]').addEventListener('click', () => {
+      seed = newSeed(); writeSeed(seed);
+      page = 0; answered = new Array(total).fill(null); finished = false; paint();
+    });
+    host.querySelector('[data-same]').addEventListener('click', () => {
+      page = 0; answered = new Array(total).fill(null); finished = false; paint();
     });
   }
 
   root.querySelector('[data-newseed]')?.addEventListener('click', () => {
-    seed = newSeed(); page = 0; answered = new Array(total).fill(null); paint();
+    seed = newSeed(); page = 0; answered = new Array(total).fill(null); finished = false; paint();
   });
   document.addEventListener('characterchange', (e) => { ch = getCharacter(e.detail.id); paint(); });
 
