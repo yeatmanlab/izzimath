@@ -5,21 +5,26 @@
    a profile, and shows that child's face afterwards.
 
    Three flows:
-     new      pick a face -> pick a name -> pick a secret snack
+     new      pick a face -> pick a name -> pick a secret snack from a tray of 24
      pick-up  choose your face from the ones on this device -> confirm the snack
      mine     what you have done, and the way out
 
    The panel is a dialog rather than a page so it can be opened in the middle of
    a book without losing the child's place.
 
-   On the snack: child-facing copy calls it a secret, because that is more fun
+   On the snack: it is the one thing a child has to carry between visits, and
+   there is no recovery, so the screen that sets it says so in as many words. The
+   list is five hundred long and mostly silly, because "Dragon pancakes" is easier
+   to remember than "Apple" — see content/avatars.js for the rest of the reasoning.
+
+   Child-facing copy calls it a secret, because that is more fun
    and instantly understood. The honest version — a one-in-twenty-five choice
    whose job is to stop a sibling landing on the wrong scores, not to guard
    anything — is stated in the grown-ups line at the bottom of the panel, where
    a parent will actually read it.
 */
 
-import { AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, FOODS, foodById, foodChoicesFor } from '../../content/avatars.js';
+import { AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, foodById, foodChoicesFor, foodTray } from '../../content/avatars.js';
 import { avatarSvg } from '../lib/avatarart.js';
 import { avatar } from '../lib/sprites.js';
 import { getCharacter } from '../../content/characters.js';
@@ -214,16 +219,35 @@ function flowName() {
   panel.querySelector('[data-back]').addEventListener('click', flowAvatar);
 }
 
+/* Both snack screens draw the same button. Factored out because they had drifted
+   apart once already and the name has to sit in its own element — see .mefood b
+   in site.css for why. */
+const foodBtn = (f) =>
+  `<button class="mefood" data-food="${f.id}"><span aria-hidden="true">${f.glyph}</span><b>${f.name}</b></button>`;
+
+/* The snack screen. The warning is blunt on purpose: this is the only thing a
+   child has to carry between visits, and "remember it" did not say what happens
+   if they do not. There is no reset and no way to look it up — that is the price
+   of having no accounts — so the screen has to say so before they choose.
+
+   Five hundred snacks cannot all be buttons, so it offers a tray of two dozen
+   with a fresh draw on request. Picking from what is in front of you is a better
+   ask of a six-year-old than searching a list. */
 function flowFood() {
+  const tray = foodTray();
   open(`
     <h2 class="meh">Now pick a secret snack</h2>
-    <p class="mesub">${draft.name}'s favourite food. Remember it — you will pick it again next time
-      to show that this character is yours.</p>
+    <p class="mesub"><strong>You have to remember this one.</strong> Picking ${draft.name}'s snack is
+      the only way back to these scores next time &mdash; nobody can look it up for you, so choose
+      one you will not forget. The silly ones are the easiest to remember.</p>
     <div class="mepick">${avatarSvg(draft.avatar, { size: 60, decorative: true })}</div>
-    <div class="mefoods">${FOODS.map((f) =>
-      `<button class="mefood" data-food="${f.id}"><span aria-hidden="true">${f.glyph}</span>${f.name}</button>`).join('')}</div>
-    <div class="mebtns"><button class="btn" data-back>← A different name</button></div>
+    <div class="mefoods">${tray.map(foodBtn).join('')}</div>
+    <div class="mebtns">
+      <button class="btn" data-shuffle>Show me different snacks</button>
+      <button class="btn" data-back>← A different name</button>
+    </div>
     ${grownUps()}`);
+  panel.querySelector('[data-shuffle]').addEventListener('click', flowFood);
   panel.querySelectorAll('[data-food]').forEach((b) =>
     b.addEventListener('click', async () => {
       draft.food = b.dataset.food;
@@ -266,8 +290,7 @@ function flowConfirm(me, wrong = false) {
     <h2 class="meh">What is ${me.name}'s secret snack?</h2>
     ${wrong ? `<p class="mesub bad">Not that one. Have another go.</p>` : `<p class="mesub">Pick the one you chose when you made them.</p>`}
     <div class="mepick">${avatarSvg(me.avatar, { size: 66, decorative: true })}</div>
-    <div class="mefoods">${choices.map((f) =>
-      `<button class="mefood" data-food="${f.id}"><span aria-hidden="true">${f.glyph}</span>${f.name}</button>`).join('')}</div>
+    <div class="mefoods">${choices.map(foodBtn).join('')}</div>
     <div class="mebtns"><button class="btn" data-back>← Not me</button></div>
     ${grownUps()}`);
   panel.querySelectorAll('[data-food]').forEach((b) =>
@@ -315,8 +338,9 @@ async function flowMine(me, justMade = false) {
   open(`
     <h2 class="meh">${justMade ? `Hello, ${me.name}!` : me.name}</h2>
     <div class="mepick">${avatarSvg(me.avatar, { size: 76, decorative: true })}</div>
-    ${justMade ? `<p class="mesub">Your scores are kept from now on. Your secret snack is
-      <strong>${foodById(me.food)?.name}</strong> &mdash; you will pick it again next time.</p>` : ''}
+    ${justMade ? `<p class="mesub">Your scores are kept from now on. <strong>Remember
+      ${me.name}'s secret snack: ${foodById(me.food)?.name}.</strong> Next time you will pick it
+      out of six snacks, and that is what gets you back to this page.</p>` : ''}
     ${rows
       ? `<table class="metable"><thead><tr><th>What</th><th>Best</th><th>Times</th><th></th></tr></thead>
           <tbody>${rows}</tbody></table>`
@@ -340,8 +364,9 @@ async function flowMine(me, justMade = false) {
    parent reads it rather than where a child does. */
 const grownUps = () => `<p class="mefoot">For grown-ups: this is not an account. Everything is
   kept in this browser on this device, nothing is sent anywhere, and no name, email or age is
-  ever collected. The snack is a one-in-twenty-five check so that two children sharing a device
-  land on their own scores &mdash; it is not a password, and nothing behind it is private.</p>`;
+  ever collected. The snack is chosen from five hundred and checked against six, so it is a nudge
+  to keep two children sharing a device on their own scores &mdash; it is not a password, nothing
+  behind it is private, and there is no way to recover a forgotten one.</p>`;
 
 /* --------------------------------------------------------------- the hooks */
 

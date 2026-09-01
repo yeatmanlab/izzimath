@@ -550,13 +550,21 @@ a.reflink.page:hover { color: var(--a1) }
 .mecell svg { display: block }
 
 .mechips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center }
-.mefoods { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px }
+/* Snack names run from "Corn" to "Upside-down bento box" now that there are five
+   hundred of them. At 104px columns the long ones pushed straight out of the
+   button and over the one beside it: a grid item defaults to min-width auto, so
+   the button could not shrink into its column, and the name was a bare text node
+   with nothing to wrap inside. Wider columns, a shrinkable button, and the name
+   in its own element fix all three. */
+.mefoods { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 8px }
 .mefood {
   display: flex; align-items: center; gap: 8px; cursor: pointer; text-align: left;
   background: var(--glass); border: 1px solid var(--line); border-radius: 12px;
   padding: 9px 11px; color: var(--txt2); font: 500 13px/1.2 var(--fdisp);
+  min-width: 0;
 }
-.mefood span { font-size: 20px; line-height: 1 }
+.mefood span { font-size: 20px; line-height: 1; flex: 0 0 auto }
+.mefood b { min-width: 0; font-weight: 500; overflow-wrap: break-word }
 .mefood:hover, .mefood:focus-visible { border-color: var(--a1); color: var(--txt) }
 
 .mecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px }

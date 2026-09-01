@@ -293,12 +293,56 @@ L.push('');
     cells[42].click(); await sleep(180);
     t('offers 10 names', d.querySelectorAll('[data-name]').length === 10);
     d.querySelectorAll('[data-name]')[0].click(); await sleep(180);
-    t('offers 25 foods', d.querySelectorAll('[data-food]').length === 25);
-    t('grown-ups note is honest', /not a password/.test(d.querySelector('.mefoot')?.textContent || ''));
+    /* Five hundred snacks cannot all be buttons, so the screen offers a tray of
+       two dozen with a fresh draw on request. */
+    const tray1 = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
+    t('offers a tray, not all 500', tray1.length === 24, tray1.length + ' shown');
+    t('a fresh draw is offered', !!d.querySelector('[data-shuffle]'));
+    /* The warning has to state the CONSEQUENCE, not just say "remember it". This
+       is the only thing a child carries between visits and there is no recovery. */
+    const warn = d.querySelector('.mesub')?.textContent || '';
+    t('the snack screen says it must be remembered', /have to remember/i.test(warn));
+    t('and says what happens otherwise', /only way back/i.test(warn) && /look it up/i.test(warn), warn.slice(0, 60));
+    t('grown-ups note is honest', /not a password/.test(d.querySelector('.mefoot')?.textContent || '')
+      && /no way to recover/.test(d.querySelector('.mefoot')?.textContent || ''));
 
-    d.querySelector('[data-food="mango"]').click(); await sleep(350);
+    /* Long silly names used to push straight out of their button and over the
+       one beside it: a grid item defaults to min-width auto, so the button could
+       not shrink into its column. Names now range from "Corn" to "Upside-down
+       bento box", so this is measured rather than eyeballed — and at a narrow
+       width too, where the columns are tightest. */
+    const escapes = () => [...d.querySelectorAll('.mefood')].filter((b) => {
+      const r = b.getBoundingClientRect();
+      return [...b.children].some((c) => {
+        const q = c.getBoundingClientRect();
+        return q.right > r.right + 0.5 || q.left < r.left - 0.5;
+      });
+    }).map((b) => b.textContent.trim());
+    t('no snack name escapes its button', escapes().length === 0, escapes().slice(0, 3).join(' / '));
+    {
+      const narrow = d.createElement('style');
+      narrow.textContent = '.mepanel{width:340px}';
+      d.head.appendChild(narrow);
+      await sleep(80);
+      t('and not on a narrow panel either', escapes().length === 0, escapes().slice(0, 3).join(' / '));
+      narrow.remove();
+    }
+
+    d.querySelector('[data-shuffle]').click(); await sleep(220);
+    const tray2 = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
+    t('a fresh draw gives different snacks', tray2.length === 24
+      && tray2.join() !== tray1.join(), tray2.filter((f) => !tray1.includes(f)).length + ' new');
+    t('a tray never shows two of one food',
+      new Set(tray2.map((f) => (f.includes('-') ? f.split('-').slice(1).join('-') : f))).size === tray2.length);
+
+    // whatever the tray happens to offer — no hardcoded snack survives a shuffle
+    const mine = tray2[7];
+    d.querySelector('[data-food="' + mine + '"]').click(); await sleep(350);
     t('profile created', d.querySelector('[data-me-name]')?.textContent !== 'Scores',
       'button now says "' + d.querySelector('[data-me-name]')?.textContent + '"');
+    t('the snack is repeated back to be remembered',
+      new RegExp('Remember').test(d.querySelector('.mesub')?.textContent || ''),
+      (d.querySelector('.mesub')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 70));
 
     // the pick-up check must actually reject a wrong answer
     await w.__izziProfile.store.signOut();
@@ -308,10 +352,15 @@ L.push('');
     d.querySelector('[data-pick]').click(); await sleep(180);
     d.querySelector('[data-id]').click(); await sleep(180);
     const foods = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
-    t('check offers 6 foods incl. the right one', foods.length === 6 && foods.includes('mango'), foods.join(','));
-    d.querySelector('[data-food="' + foods.find((f) => f !== 'mango') + '"]').click(); await sleep(180);
+    t('check offers 6 foods incl. the right one', foods.length === 6 && foods.includes(mine), foods.join(','));
+    /* The answer must not be the odd one out. The pool is 390 silly to 110 plain,
+       so decoys drawn at random would leave a plain answer alone among silly ones
+       and the child could pass without remembering anything. */
+    t('every choice is the same kind of snack',
+      new Set(foods.map((f) => f.includes('-'))).size === 1, foods.join(','));
+    d.querySelector('[data-food="' + foods.find((f) => f !== mine) + '"]').click(); await sleep(180);
     t('wrong snack is rejected', d.querySelector('[data-me-name]')?.textContent === 'Scores' && !!d.querySelector('.mesub.bad'));
-    d.querySelector('[data-food="mango"]').click(); await sleep(300);
+    d.querySelector('[data-food="' + mine + '"]').click(); await sleep(300);
     t('right snack signs in', d.querySelector('[data-me-name]')?.textContent !== 'Scores');
 
     /* A game played at the LOWEST tier must still show a score. `bestTier` of 0
@@ -343,7 +392,7 @@ L.push('');
       d.querySelector('[data-new]').click(); await sleep(320);
       d.querySelector('[data-av="7"]').click(); await sleep(200);
       d.querySelectorAll('[data-name]')[0].click(); await sleep(200);
-      d.querySelector('[data-food="apple"]').click(); await sleep(420);
+      d.querySelector('[data-food]').click(); await sleep(420);   // whatever the tray offers
       d.querySelector('.meclose')?.click(); await sleep(150);
 
       const me = await w.__izziProfile.store.getActive();
@@ -458,7 +507,7 @@ L.push('');
       d.querySelector('[data-av="12"]').click(); await sleep(220);
       d.querySelectorAll('[data-name]')[0].click(); await sleep(220);
       brick();
-      d.querySelector('[data-food="cookie"]').click(); await sleep(450);
+      d.querySelector('[data-food]').click(); await sleep(450);   // whatever the tray offers
       const mid = d.querySelector('.meh')?.textContent || '';
       t('mid-flow failure is not faked', !/^Hello,/.test(mid), '"' + mid.slice(0, 40) + '"');
       unbrick(); d.querySelector('.meclose')?.click(); await sleep(120);

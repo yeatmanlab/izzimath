@@ -17,7 +17,7 @@ import { SCHEMAS } from '../content/wordproblems.js';
 import { ssddSets } from '../content/ssdd.js';
 import { plans, planActivityIds, FOUR_PART } from '../content/plans.js';
 import { ladderConfig, initState, record, tierFor, atTop, indexFor, TIERS, STEPS, LADDER_V } from '../src/lib/ladder.js';
-import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS } from '../content/avatars.js';
+import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS, foodTray, TRAY_SIZE } from '../content/avatars.js';
 import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatarart.js';
 import { BADGES, BADGE_COUNT, CATEGORIES, badgeById, evaluate as evaluateBadges } from '../content/badges.js';
 import { badgeSvg, shelfHtml } from '../src/lib/badgeart.js';
@@ -199,19 +199,70 @@ console.log('\n=== profile avatars ===');
   }
 
   // foods, and the pick-up check
-  if (FOODS.length !== 25) fail('avatars', `${FOODS.length} foods, the design calls for 25`);
+  if (FOODS.length !== 500) fail('avatars', `${FOODS.length} foods, the design calls for 500`);
   if (new Set(FOODS.map((f) => f.id)).size !== FOODS.length) fail('avatars', 'duplicate food id');
   for (const f of FOODS) if (!f.name || !f.glyph) fail('avatars', `food ${f.id} missing name or glyph`);
-  {
-    const prof = { avatar: 42, name: 'Pip', food: 'mango' };
-    const ch = foodChoicesFor(prof);
-    if (ch.length !== CHECK_DECOYS + 1) fail('avatars', `food check offers ${ch.length}, want ${CHECK_DECOYS + 1}`);
-    if (!ch.some((f) => f.id === 'mango')) fail('avatars', 'the right food is not among the choices');
-    if (new Set(ch.map((f) => f.id)).size !== ch.length) fail('avatars', 'food check repeats a choice');
-    if (JSON.stringify(foodChoicesFor(prof)) !== JSON.stringify(ch))
-      fail('avatars', 'food choices change between visits — a child would think it is broken');
+
+  /* A profile stores the food ID. Dropping one locks whoever chose it out of
+     their own scores, in a product whose whole premise is that there is no way to
+     recover anything. These twenty-five were the entire list before the snacks
+     grew to five hundred, so they are the ids most likely to be out there. */
+  const ORIGINAL = ['pizza', 'icecream', 'banana', 'apple', 'carrot', 'noodles', 'taco', 'cheese',
+    'grapes', 'watermelon', 'strawberry', 'cookie', 'pancakes', 'popcorn', 'sushi', 'broccoli',
+    'orange', 'bread', 'honey', 'mango', 'corn', 'peach', 'pretzel', 'blueberry', 'avocado'];
+  for (const id of ORIGINAL) {
+    if (!FOODS.some((f) => f.id === id)) fail('avatars', `food id "${id}" is gone — that locks out any child who chose it`);
   }
-  console.log(`  ${AVATAR_COUNT} avatars · ${CREATURES.length} creatures × ${COLOURWAYS.length} colourways · ${FOODS.length} foods · ${NAME_POOL.length} names`);
+
+  // the silly half has to resolve to a real food, and be marked as silly
+  const plain = FOODS.filter((f) => !f.silly), silly = FOODS.filter((f) => f.silly);
+  if (!plain.length || !silly.length) fail('avatars', 'the snack list needs both plain and silly foods');
+  for (const f of silly) {
+    if (!f.base) fail('avatars', `silly food ${f.id} does not say which food it is built on`);
+    else if (!plain.some((b) => b.id === f.base)) fail('avatars', `silly food ${f.id} names a base that does not exist`);
+    if (!f.id.endsWith(f.base ?? '')) fail('avatars', `silly food ${f.id} does not match its base ${f.base}`);
+  }
+
+  /* Every snack as the answer, not one sample. The two properties that keep the
+     check worth one in six are easy to break by accident: a decoy of the other
+     kind makes the answer the odd one out (the pool is 390 silly to 110 plain, so
+     random decoys would do exactly that), and two decoys sharing a base food ask
+     a six-year-old to tell "Snowy mochi" from "Tiny mochi" a week later. */
+  {
+    let short = 0, missing = 0, mixed = 0, clashing = 0, unstable = 0;
+    for (let i = 0; i < FOODS.length; i++) {
+      const prof = { avatar: (i * 7) % AVATAR_COUNT, name: 'Pip', food: FOODS[i].id };
+      const ch = foodChoicesFor(prof);
+      if (ch.length !== CHECK_DECOYS + 1) short++;
+      if (!ch.some((f) => f.id === prof.food)) missing++;
+      if (new Set(ch.map((f) => !!f.silly)).size !== 1) mixed++;
+      if (new Set(ch.map((f) => f.base ?? f.id)).size !== ch.length) clashing++;
+      if (JSON.stringify(foodChoicesFor(prof)) !== JSON.stringify(ch)) unstable++;
+    }
+    if (short) fail('avatars', `${short} snacks offer the wrong number of choices`);
+    if (missing) fail('avatars', `${missing} snacks are not among their own choices`);
+    if (mixed) fail('avatars', `${mixed} snacks get a tray mixing silly and plain — the answer stands out`);
+    if (clashing) fail('avatars', `${clashing} snacks get two choices built on the same food`);
+    if (unstable) fail('avatars', `${unstable} snacks change their choices between visits — a child would think it is broken`);
+  }
+
+  /* The creation tray. Five hundred buttons is not a screen, so it shows two
+     dozen; half plain and half silly, because a straight sample of 500 would be
+     almost all silly, and never two of the same food. */
+  {
+    let wrongSize = 0, lopsided = 0, clashing = 0;
+    for (let i = 0; i < 200; i++) {
+      const tray = foodTray();
+      if (tray.length !== TRAY_SIZE) wrongSize++;
+      const p = tray.filter((f) => !f.silly).length;
+      if (p !== Math.floor(TRAY_SIZE / 2)) lopsided++;
+      if (new Set(tray.map((f) => f.base ?? f.id)).size !== tray.length) clashing++;
+    }
+    if (wrongSize) fail('avatars', `${wrongSize}/200 trays are not ${TRAY_SIZE} snacks`);
+    if (lopsided) fail('avatars', `${lopsided}/200 trays are not half plain and half silly`);
+    if (clashing) fail('avatars', `${clashing}/200 trays offer two snacks built on the same food`);
+  }
+  console.log(`  ${AVATAR_COUNT} avatars · ${CREATURES.length} creatures × ${COLOURWAYS.length} colourways · ${FOODS.length} snacks (${plain.length} plain, ${silly.length} silly) · ${NAME_POOL.length} names`);
 }
 
 /* ------------------------------------------------------------------ badges
