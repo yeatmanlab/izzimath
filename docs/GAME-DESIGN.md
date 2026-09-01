@@ -98,7 +98,30 @@ to read.
 
 **Applies to:** the `renderProblem` callback, and the longer pause on a miss.
 
-## 7. Missing the target is a number to beat, not a failure.
+## 7. When difficulty moves, the goal has to move with it.
+
+Not built yet, but decided, because it changes what principle 3 means.
+
+The target (`Right 8 of 10`) works because the ladder is fixed. Make the ladder
+adaptive and the controller's whole job becomes holding success at 80–85% — so
+every run lands near the target by construction, and the goal stops carrying
+information exactly when the adaptivity starts working.
+
+So an adaptive game's goal is **depth reached**, not count: *get to the hard
+ones*, with the ladder position filling the bar.
+
+Depth is reported as a **named tier**, never as an ability estimate — no number.
+A game is not a test, the items are not calibrated so an IRT estimate would have
+spurious precision, a number is illegible to a child, and it is exactly the
+quantity that invites the between-children comparison this site forbids. If a
+real ability estimate is ever wanted, that is ROAM's job, and that link already
+runs the right way round.
+
+Full reasoning, and which of the fourteen games have enough item-space depth to
+warrant it, in
+[`next/04-adaptive-and-spacing.md`](next/04-adaptive-and-spacing.md#scoring-an-adaptive-game--the-tension-the-section-above-missed).
+
+## 8. Missing the target is a number to beat, not a failure.
 
 The finish screen reports against the stated target. Hit it and the character
 says so; miss it and it says *"You got 7. The target was 10 — have another go?"*

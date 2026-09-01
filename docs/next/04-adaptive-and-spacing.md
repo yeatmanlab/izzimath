@@ -177,6 +177,75 @@ Two properties make it portable:
 When accounts arrive, the same records are what the spaced-review scheduler reads
 from. Design them once.
 
+### Scoring an adaptive game — the tension the section above missed
+
+If difficulty moves, what does the score mean? Worth writing out, because the
+first answer is wrong and the second one is not obvious.
+
+**The problem is worse than "not comparable".** A count is obviously confounded
+with difficulty — 7 right at level 12 is a better run than 7 right at level 3.
+But the sharper problem is that the controller's *entire job* is to hold success
+at 80–85%. If it works, every run ends near the target by construction. So
+
+> a count-based goal stops being informative exactly when adaptivity starts
+> working.
+
+`Right 8 of 10` is a good goal on a fixed ladder and a near-constant on an
+adaptive one. The two features partly cancel.
+
+**So yes: an adaptive game should be scored on depth reached, not count.** The
+thing that actually varies under adaptivity is how far up the ladder the child
+got, so that is what the goal and the progress bar should track. `Get to the hard
+ones` with the ladder position filling the bar, rather than `Right 8 of 10`.
+
+**But not as an ability estimate**, and this is the part to hold the line on.
+Four reasons, in descending order of how much they matter:
+
+1. **A game is not a test.** The site states in three places that it never
+   produces a score, a predicted score or a projected percentile
+   (`content/roam.js`, `src/engine/game.js`, `SPEC.md` §3.8). An ability estimate
+   is a measurement. The moment a game emits one, a parent will read it as their
+   child's number, and every disclaimer alongside it will lose.
+2. **The items are not calibrated.** A 4PL EAP estimate is only meaningful over
+   items with known difficulty parameters. What we have is hand-authored ladders
+   — "pages 3–5 are benchmark distance" — ordered by judgement, not fitted to
+   response data. Running IRT over uncalibrated items produces a number with a
+   spurious air of precision, which is the specific dishonesty `SPEC.md` §5.4
+   exists to prevent.
+3. **It is illegible to the child.** The whole finding behind the current HUD is
+   that `Right 3 of 10` states the objective by existing and `Score 3` does not.
+   `Ability 0.83` is worse than either.
+4. **It invites the one comparison the site forbids.** *"Nothing is ever compared
+   between children. No leaderboards, no percentiles, no public scores"*
+   (`SPEC.md` §4.1). An ability estimate is precisely the quantity that gets
+   compared.
+
+**Reached depth, expressed as a tier, is the honest version of the same idea.**
+Three or four named bands per game — *warming up · getting there · the hard ones ·
+the very hard ones* — and the finish screen says which one you were working in.
+It carries the information an ability estimate would carry, at the resolution the
+data actually supports, in words a child can read, and without emitting a number
+anyone can compare.
+
+**If a real ability estimate is ever wanted, that is ROAM's job**, and the link
+already runs the right way round: a ROAM score points at practice here. It should
+not start running backwards, with practice here emitting pseudo-scores.
+
+### Which games this applies to
+
+Only where the item space has genuine graded depth. On the shallow ones a ladder
+has nothing to climb, and adding one would be theatre.
+
+| Depth | Games | Why |
+| --- | --- | --- |
+| **Real depth — adapt, and score on depth** | `which-is-more`, `decade-duel`, `number-line-hop`, `hundred-line-hop`, `decimal-drop`, `mixed-number-line` | Magnitude tasks with a continuous difficulty dimension: numerical distance and decade compatibility. This is MagPI's own design, and the distance effect gives a principled ladder rather than an invented one. |
+| **Real depth — adapt, and score on depth** | `ten-frame-flash`, `fact-family-forge`, `array-architect`, `division-descent` | Two dimensions each: which facts, and how long the display holds. Fact difficulty is well ordered and already authored that way. |
+| **Shallow — leave count-based, do not adapt** | `great-race`, `make-ten-race`, `close-to-hundred`, `coordinate-quest` | The item space is small or flat. `make-ten-race` has ten pairs in total; there is no ladder in ten items. `close-to-hundred` and `coordinate-quest` vary by scenario, not by difficulty. |
+
+So `adaptive` is an opt-in field on ten of the fourteen games, and the four
+without it keep the current HUD unchanged. A game that is not adaptive should not
+pretend to be.
+
 ### What this does not do
 
 It does not schedule across sessions, it does not fade worked examples on
