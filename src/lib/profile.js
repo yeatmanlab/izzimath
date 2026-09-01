@@ -70,13 +70,32 @@ export function localDriver(key = 'izzi.profiles.v1') {
   const read = () => {
     try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
   };
+  /* Returns false when the write did not take. Swallowing the error was wrong:
+     in Safari private browsing, with site data blocked, or when the quota is
+     full, setItem throws — and the child then completed all three steps, saw
+     "Hello, Noodle!", and lost the profile the moment anything re-read storage. */
   const write = (all) => {
-    try { localStorage.setItem(key, JSON.stringify(all)); } catch { /* private mode, quota */ }
+    try { localStorage.setItem(key, JSON.stringify(all)); return true; } catch { return false; }
   };
   return {
     kind: 'local',
+    /* Probe by writing and reading back, rather than trusting that localStorage
+       merely EXISTS — in private mode it exists and throws on write. */
+    async writable() {
+      const probe = key + '.probe';
+      try {
+        localStorage.setItem(probe, '1');
+        const ok = localStorage.getItem(probe) === '1';
+        localStorage.removeItem(probe);
+        return ok;
+      } catch { return false; }
+    },
     async get(path) { return read()[path] ?? null; },
-    async set(path, doc) { const all = read(); all[path] = doc; write(all); return doc; },
+    async set(path, doc) {
+      const all = read(); all[path] = doc;
+      if (!write(all)) throw new Error('storage-unavailable');
+      return doc;
+    },
     async remove(path) {
       const all = read();
       for (const k of Object.keys(all)) if (k === path || k.startsWith(path + '/')) delete all[k];
@@ -96,6 +115,7 @@ export function localDriver(key = 'izzi.profiles.v1') {
 export function nullDriver() {
   return {
     kind: 'null',
+    async writable() { return false; },
     async get() { return null; },
     async set(_p, doc) { return doc; },
     async remove() {},
@@ -130,6 +150,12 @@ export function createStore(driver = localDriver()) {
   const store = {
     driver,
 
+    /* Whether keeping score can work at all here. Asked BEFORE offering the
+       flow, so a child is never walked through three screens for nothing. */
+    async canPersist() {
+      return driver.writable ? driver.writable() : true;
+    },
+
     async listProfiles() {
       const list = await driver.list('profiles');
       return list.filter(Boolean).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
@@ -153,6 +179,10 @@ export function createStore(driver = localDriver()) {
         lastSeenAt: nowIso(),
       };
       await driver.set(P(profile.id), profile);
+      // Read it back. A write that reports success but does not persist is the
+      // failure mode that loses a child's character without telling anyone.
+      const saved = await driver.get(P(profile.id));
+      if (!saved || saved.id !== profile.id) throw new Error('storage-unavailable');
       return profile;
     },
 

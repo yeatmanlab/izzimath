@@ -108,7 +108,23 @@ function onKey(e) {
 
 /* ------------------------------------------------------------- new profile */
 
+/* Shown instead of the flow when this browser will not let the site remember
+   anything — Safari private browsing, blocked site data, a full quota. Everything
+   still works; the scores are the only casualty, and saying so up front beats
+   walking a child through three screens for nothing. */
+function flowNoStorage() {
+  open(`
+    <h2 class="meh">Scores cannot be saved in this browser</h2>
+    <p class="mesub">Everything still works &mdash; every book, game and sheet. This browser just
+      will not let the site remember anything, so scores cannot be kept.</p>
+    <p class="mesub">Usually that is private browsing, or site data being switched off. Opening
+      Izzi Math in a normal window will fix it.</p>
+    <div class="mebtns"><button class="btn pri" data-close>Carry on without scores</button></div>
+    ${grownUps()}`);
+}
+
 async function flowStart() {
+  if (!(await store.canPersist())) return flowNoStorage();
   const list = await store.listProfiles();
   open(`
     <h2 class="meh">Want to keep your scores?</h2>
@@ -165,10 +181,16 @@ function flowFood() {
   panel.querySelectorAll('[data-food]').forEach((b) =>
     b.addEventListener('click', async () => {
       draft.food = b.dataset.food;
-      const me = await store.createProfile({ ...draft, theme: currentCharacter() });
-      await store.setActive(me.id);
-      repaint();
-      flowMine(me, true);
+      try {
+        const me = await store.createProfile({ ...draft, theme: currentCharacter() });
+        await store.setActive(me.id);
+        repaint();
+        flowMine(me, true);
+      } catch (err) {
+        // Storage can fill up between the probe and the write. Never report
+        // "Hello, Noodle!" for a character that did not save.
+        flowNoStorage();
+      }
     }));
   panel.querySelector('[data-back]').addEventListener('click', flowName);
 }

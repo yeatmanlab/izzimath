@@ -187,6 +187,40 @@ L.push('');
       d.querySelector('.meclose')?.click(); await sleep(120);
     }
 
+    /* Unwritable storage must be REPORTED, not faked. In Safari private
+       browsing, with site data off, or on a full quota, setItem throws — and the
+       first build walked a child through all three screens, said "Hello,
+       Noodle!", and lost the profile the moment anything re-read storage. */
+    {
+      const realSet = w.localStorage.setItem.bind(w.localStorage);
+      const brick = () => Object.defineProperty(w.localStorage, 'setItem',
+        { configurable: true, value: () => { throw new w.DOMException('QuotaExceededError'); } });
+      const unbrick = () => Object.defineProperty(w.localStorage, 'setItem',
+        { configurable: true, value: realSet });
+
+      await w.__izziProfile.store.signOut();
+      d.querySelector('.meclose')?.click(); await sleep(120);
+      brick(); w.__izziProfile.repaint(); await sleep(200);
+      d.querySelector('[data-me]').click(); await sleep(300);
+      const upfront = d.querySelector('.meh')?.textContent || '';
+      t('blocked storage is reported up front', /cannot be saved/i.test(upfront), '"' + upfront.slice(0, 40) + '"');
+      t('does not offer the flow it cannot finish', !d.querySelector('[data-new]'));
+
+      // and if it breaks mid-flow, after the probe passed
+      unbrick(); w.__izziProfile.repaint(); await sleep(150);
+      d.querySelector('.meclose')?.click(); await sleep(120);
+      d.querySelector('[data-me]').click(); await sleep(250);
+      d.querySelector('[data-new]').click(); await sleep(300);
+      d.querySelector('[data-av="12"]').click(); await sleep(220);
+      d.querySelectorAll('[data-name]')[0].click(); await sleep(220);
+      brick();
+      d.querySelector('[data-food="cookie"]').click(); await sleep(450);
+      const mid = d.querySelector('.meh')?.textContent || '';
+      t('mid-flow failure is not faked', !/^Hello,/.test(mid), '"' + mid.slice(0, 40) + '"');
+      unbrick(); d.querySelector('.meclose')?.click(); await sleep(120);
+      w.__izziProfile.repaint(); await sleep(150);
+    }
+
     /* Nothing may be written while signed out. Counting docs before and after,
        rather than asserting something that is true either way — the first
        version of this check had `|| true` on the end and could not fail. */
