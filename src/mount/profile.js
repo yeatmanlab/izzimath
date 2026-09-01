@@ -403,7 +403,11 @@ function announceBadges(ids) {
   celebrate(card.querySelector('.bdpop-medal'), ch);
   const go = () => card.remove();
   card.addEventListener('click', go);
-  setTimeout(go, 4200);
+  /* Long enough to READ what arrived, which is the whole point of a badge that
+     states a fact rather than saying well done. 4200ms was set when the card
+     showed two; three cards plus the "and N more" line is about sixty words. A
+     click still dismisses it early, and it never blocks the game. */
+  setTimeout(go, 2800 + 1100 * Math.min(ids.length, SHOWN));
 }
 
 /* Offered once, after something is finished, and never again in this session if
