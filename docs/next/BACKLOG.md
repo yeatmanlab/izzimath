@@ -4,7 +4,7 @@
 remaining work points here — keep this file current and the rest follows.
 
 Derived from the research pass ([`../SPEC.md`](../SPEC.md), 108 recommendations).
-Current state: **62 implemented · 17 partial · 22 not built · 7 not applicable.**
+Current state: **63 implemented · 17 partial · 21 not built · 7 not applicable.**
 The accounting lives in [`../EVIDENCE.md`](../EVIDENCE.md).
 
 Numbers in brackets are the recommendation numbers in `SPEC.md`, so each item can
@@ -103,8 +103,14 @@ See [`03-print-craft.md`](03-print-craft.md).
       *Medium.*
 - [ ] **An estimation activity, with quantities drawn as SVG** [25] —
       Estimation-180 style, three buckets. *Medium.*
-- [ ] **Reconsider score/streak/timer as the default game furniture** [50] —
-      the research suggests a reference point beats a score. *Small.*
+- [x] **Reconsider score/streak/timer as the default game furniture** [50] —
+      done, 2026-09-01. `Score / Streak / Best`, three counters reading zero and
+      none of them saying what to aim for, became `Right 3 of 10` against a
+      target with a bar filling toward it: a reference point rather than a bare
+      score. Streak now appears only once earned, so there is no streak-loss
+      punishment to read. The other half of this recommendation — number-line
+      feedback naming the nearest benchmark rather than a verdict — was already
+      shipped. Reasoning and sources in [`../GAME-DESIGN.md`](../GAME-DESIGN.md).
 
 ## 6. Smaller and structural
 
