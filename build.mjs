@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
-import { sheet, ssddSheet } from './src/lib/printsheet.js';
+import { sheet, ssddSheet, maxPagesFor } from './src/lib/printsheet.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
@@ -319,6 +319,16 @@ for (const a of activities) {
         <button class="btn" data-togglekey aria-pressed="false">Show answer key</button>
         <button class="btn" data-mode aria-pressed="false">Mixed review sheet</button>
         <button class="btn" data-style aria-pressed="false">Plain black &amp; white</button>
+        ${maxPagesFor(a) > 1 ? `<span class="stepper" role="group" aria-label="How many pages of problems">
+          <button class="btn sm" data-pages-down aria-label="Fewer pages">−</button>
+          <b data-pages-label>${a.printPages ?? 1} page${(a.printPages ?? 1) === 1 ? '' : 's'}</b>
+          <button class="btn sm" data-pages-up aria-label="More pages">+</button>
+        </span>` : ''}
+        <span class="stepper" role="group" aria-label="How many sheets in the pack">
+          <button class="btn sm" data-pack-down aria-label="Fewer sheets">−</button>
+          <b data-pack-label>1 sheet</b>
+          <button class="btn sm" data-pack-up aria-label="More sheets">+</button>
+        </span>
         <label class="btn" style="gap:6px">Text size
           <select data-variant style="width:auto;height:auto;padding:2px 4px;font-size:12.5px">
             <option value="">Normal</option>
@@ -327,9 +337,21 @@ for (const a of activities) {
           </select></label>
         <a class="btn" href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">Do it on screen</a>
       </div>
+      <p class="noprint" style="color:var(--txt3);font-size:12.5px;margin:10px 0 0"
+        data-total>${a.printItems} problems on ${a.printPages ?? 1} sheet${(a.printPages ?? 1) === 1 ? '' : 's'} of paper</p>
       <div data-sheet></div>
       <div class="roam noprint" style="margin-top:22px">
         <h2 style="font-size:15px">Printing notes</h2>
+        <p style="font-size:13px"><strong>How much to print.</strong>
+        ${maxPagesFor(a) > 1
+          ? `<em>Pages</em> makes one longer sheet &mdash; up to ${maxPagesFor(a)} for this activity, which is
+             as far as its problems go before they would start repeating. `
+          : `This activity is one page. ${a.grade === 'K' || a.grade === '1'
+              ? 'Kindergarten and grade 1 sheets stay one page, because a young child should be able to finish the sheet. '
+              : 'Its problems run out past one page, so a longer sheet would repeat them. '}`}
+        <em>Sheets</em> makes a pack &mdash; the same activity several times over with different problems,
+        which is usually what you want for a week of practice rather than one long page.
+        Both choices are kept in the address bar, so the link you save brings them back.</p>
         <p>${ITEMS_NOTE(a)} The answer key is a separate page.</p>
         <p style="font-size:13px"><strong>Two styles, and the difference is ink.</strong>
         The default is the designed sheet: ${esc(a.title)} with its character in the header, the

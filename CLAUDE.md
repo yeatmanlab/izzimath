@@ -81,7 +81,15 @@ flash mechanic already exist.
 - **A printable's length is a decision, not an accident.** A sheet may be two
   pages; it may never be a page and a bit. `printItems` and `printPages` were set
   by measuring real layout, not estimated. Kindergarten and grade 1 are always
-  one page, because a young child should be able to finish the sheet.
+  one page, because a young child should be able to finish the sheet — a parent
+  who wants a week of grade 1 practice gets the **practice pack** (several
+  finishable sheets on different seeds), not one long one.
+- **A generator's item space is finite, and the reader may not be offered more
+  than it holds.** `printMaxPages` is measured: distinct problems divided by the
+  measured items per page. Offering four pages of an activity with twenty
+  problems prints the same sums twice, which reads as a bug. The page-fill
+  harness tests **every page count a reader can reach**, not just the authored
+  one.
 - **Do not claim an effect size for Izzi Math.** The realistic ceiling for a
   light-touch home product is about +0.1 SD. The About and How-to-help pages say
   so; keep it that way.
@@ -126,6 +134,6 @@ enforced by the checker: `id`, `title`, `kind`, `grade`, `strand` (must exist in
 Every activity also carries a `trick`: the method, in the fewest words that still
 say how. It prints at the top of the sheet before any problem, which is the one
 thing a printable can carry that a column of sums cannot. Optional print fields
-are `printItems`, `printPages`, `printDensity` and `printScratch`. Do not
-hand-tune the first two — run the page-fill harness and let the measurement
-choose, or a sheet ends up a page and a bit.
+are `printItems`, `printPages`, `printMaxPages`, `printDensity` and
+`printScratch`. Do not hand-tune the first three — run the page-fill harness and
+let the measurement choose, or a sheet ends up a page and a bit.

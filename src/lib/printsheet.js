@@ -25,6 +25,42 @@ export const DENSITY = { K: 'd1', 1: 'd1', 2: 'd2', 3: 'd2', 4: 'd3', 5: 'd3' };
 */
 export const AGE_BAND = { K: 'little', 1: 'little', 2: 'middle', 3: 'middle', 4: 'big', 5: 'big' };
 
+/* How many pages of problems a reader may ask for.
+
+   Not a free choice: a generator has a finite item space, and asking for four
+   pages of an activity with twenty distinct problems means printing the same sums
+   twice. `printMaxPages` is measured — item space divided by the measured items
+   per page, with a page of slack — and defaults to 4 where it is not stated.
+
+   K and grade 1 are held at one page, which is the standing invariant: a young
+   child should be able to finish the sheet. A parent who wants a week of grade 1
+   practice wants the practice pack, which is several finishable sheets rather
+   than one long one. */
+export const MAX_PAGES_DEFAULT = 4;
+export const maxPagesFor = (activity) =>
+  Math.max(1, Math.min(MAX_PAGES_DEFAULT, activity.printMaxPages ?? MAX_PAGES_DEFAULT));
+
+/* Items to draw for a requested page count, scaled from the authored length.
+
+   One fewer per page once it is paginated, and that is measured rather than
+   cautious: page 1 of a multi-page sheet carries the trick box AND the worked
+   example while a single page also carries the self-check and reward strip, and
+   it still came out 0.24in taller at the same item count. Rather than model why,
+   the count comes down by one per page, which the page-fill harness confirms.
+
+   One activity resists this entirely. array-architect draws arrays whose height
+   varies a lot, and collect()'s de-duplication picks a DIFFERENT, taller mix
+   when asked for more items — so its page 1 overflowed at 8, 9 and 10 items
+   alike while 10 fitted on a single page. It is capped at one page rather than
+   pretending a formula covers it. If more activities grow height-variable
+   figures, the honest fix is a measured per-page count per activity, not a
+   cleverer formula. */
+export const itemsForPages = (activity, pages) => {
+  const perPage = Math.max(1, Math.round((activity.printItems ?? 12) / (activity.printPages ?? 1)));
+  const n = Math.max(1, Math.min(maxPagesFor(activity), pages));
+  return n === 1 ? perPage : Math.max(n, perPage * n - n);
+};
+
 /* How many problems a mixed-review sheet holds.
 
    Eight is not an arbitrary number — it is Rohrer's literal worksheet template,
@@ -280,9 +316,14 @@ const TYPE_INSTRUCTION = {
    filling the space between them.
      mode  'practice' groups by problem type | 'review' interleaves eight items
      style 'plain' is black-on-white and cheapest | 'designed' is the nicer one */
-export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed', variant = null }) {
+export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed', variant = null, pages = null }) {
   const review = mode === 'review';
-  const authored = activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16;
+  /* `pages` is the reader's choice, clamped to what this activity can honestly
+     fill. Items scale with it so the "never a page and a bit" rule survives. */
+  const wantPages = pages ? Math.max(1, Math.min(maxPagesFor(activity), pages)) : null;
+  const authored = wantPages
+    ? itemsForPages(activity, wantPages)
+    : (activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16);
   const reviewBand = AGE_BAND[activity.grade] ?? 'middle';
   const n = review
     ? Math.max(3, Math.min(REVIEW_ITEMS[reviewBand] ?? 8, authored))
@@ -354,8 +395,8 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
      numbers were set by measuring real layout in tools/pagefill.html — the rule
      is that the LAST page has to be at least 80% full, so no sheet ever costs a
      parent a piece of paper for two leftover sums. */
-  const pages = Math.max(1, activity.printPages ?? 1);
-  const perPage = paginate(groups, pages);
+  const pageCount = wantPages ?? Math.max(1, activity.printPages ?? 1);
+  const perPage = paginate(groups, pageCount);
 
   return perPage.map((pg, pi) => shell({
     activity, seed, ch, key, siteUrl, style, variant, band,

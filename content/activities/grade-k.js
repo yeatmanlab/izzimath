@@ -21,6 +21,7 @@ const countingCrew = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Counting, cardinality and ordinality are separate skills that develop separately — a child who can recite "one two three" may still not know that the last word said is how many there are. This book keeps all four apart: count a set, name the next number, produce a set of a given size, and find a position in a line.',
   pages: 10, printItems: 4,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Count carefully. Write how many.',
   printInstructions: {
     choice: 'How many? Write the number.',
@@ -96,6 +97,7 @@ const numberFriends = {
   roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Part-whole reasoning, in the Singapore-style bond rather than as a sum, so the relationship is visible rather than procedural. Pairs to ten are the highest-leverage facts in early arithmetic: they underwrite every make-ten strategy that follows.',
   pages: 10, printItems: 5,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Fill in the missing number in each bond.',
   generate(seed, i, ch, r) {
     const whole = i < 4 ? 10 : r.pick([5, 6, 8, 10]);
@@ -140,6 +142,7 @@ const shapeSorter = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Naming shapes and counting their attributes is where children learn that a shape is defined by its properties, not its orientation — a triangle stood on its point is still a triangle. Kiwi’s scale tessellation makes this the natural home for early geometry.',
   pages: 8, printItems: 7,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Name each shape and write how many sides it has.',
   generate(seed, i, ch, r) {
     const names = Object.keys(SHAPES);
@@ -183,7 +186,8 @@ const tenFrameFlash = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'Conceptual subitizing depends on brief exposure. If the dots stay visible a child simply counts them one at a time, which trains counting rather than recognising quantity, so the pattern is hidden after a beat and tightens as the rounds go on. Worth being straight about the evidence here: the ten-frame is long-established classroom practice and sits inside a well-supported family of representations, but we found no trial isolating the ten-frame itself. The quantities are exact and always mapped to a numeral, which is the part that matters \u2014 training approximate dot-cloud comparison on its own does not transfer to symbolic maths.',
   strategy: { name: 'See it in groups', text: 'Do not count one at a time. A full row is five, so seven is “five and two”.' },
-  rounds: 12, printItems: 7, seconds: 60,
+  rounds: 12, printItems: 7,
+  printMaxPages: 1,   // K/1 stay one page seconds: 60,
   printInstruction: 'How many dots in each frame? Write the number.',
   generate(seed, i, ch, r) {
     const n = i < 4 ? r.int(2, 5) : i < 8 ? r.int(3, 7) : r.int(4, 10);
@@ -226,7 +230,8 @@ const whichIsMore = {
   roam: [{ task: 'roamMagpi', subscale: 'symbolic' }],
   evidence: 'Comparing quantities is the foundation the rest of arithmetic sits on. Pairs are drawn by ratio rather than at random, because the difficulty of a comparison depends on how close the two numbers are — 9 against 1 is nearly automatic, 9 against 8 is not.',
   strategy: { name: 'Think of the line', text: 'Picture both numbers on a number line. The one further right is more.' },
-  rounds: 14, printItems: 11, seconds: 45,
+  rounds: 14, printItems: 11,
+  printMaxPages: 1,   // K/1 stay one page seconds: 45,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {
     // Ratio bands mirror MagPI's own bins, so the numerical distance effect is
@@ -269,7 +274,8 @@ const greatRace = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }, { task: 'roamAlpaca', subscale: 'cat1' }],
   evidence: 'A linear number board is the single best-evidenced early-number activity there is: Siegler and Ramani (2009) found large gains in number line estimation from about an hour of play, and the same game on a circular board produced far less — the left-to-right layout is doing the work. The second detail matters as much: the child must name the squares they pass through, counting on from where their token is. Laski and Siegler (2014) found that counting on produced roughly double the gains of counting from one, so tapping "1, 2" is treated as the error it is and corrected.',
   strategy: { name: 'Count on', text: 'Start from the square you are on, not from one. On 3 and spinning 2? Say “four, five”.' },
-  rounds: 12, printItems: 5, seconds: 0, timerAvailable: false,
+  rounds: 12, printItems: 5,
+  printMaxPages: 1,   // K/1 stay one page seconds: 0, timerAvailable: false,
   printInstruction: 'Write the squares you move through each time.',
   generate(seed, i, ch, r) {
     const N = 10;
@@ -302,6 +308,7 @@ const storyTime = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat1' }, { task: 'fluencyArf', subscale: 'sum' }],
   evidence: 'Word problems are their own skill, not a by-product of arithmetic: the WWC practice guide rates teaching them STRONG on 18 studies, and fact fluency transfers to word problems only weakly. Starting at kindergarten with tiny numbers keeps the arithmetic out of the way so the structure is the only thing to work out.',
   pages: 10, printItems: 5,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Read each story. Write how many.',
   printInstructions: { input: 'Read each story. Write how many.' },
   generate(seed, i, ch, r) {

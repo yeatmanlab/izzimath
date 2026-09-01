@@ -21,6 +21,7 @@ const addingToTwenty = {
   roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'fluencyArf', subscale: 'minus' }, { task: 'roamAlpaca', subscale: 'cat2' }],
   evidence: 'Sums within ten come first, then the sums that cross ten, then the matching subtractions. Crossing ten is the genuine step change: it is where counting on stops being efficient and a strategy (make ten, then add the rest) has to take over.',
   pages: 12, printItems: 4,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Work out each one. Write the answer.',
   printInstructions: {
     choice: 'Add these. Write the total.',
@@ -83,6 +84,7 @@ const tensAndOnes = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'fluencyCalf', subscale: 'add-nocarry' }],
   evidence: 'Place value before regrouping. This book stays deliberately inside the no-carry case, because a child who is still working out what the tens digit means cannot also be learning to carry — the two together overload working memory.',
   pages: 12, printItems: 5,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Write how many tens and ones, then find each total.',
   printInstructions: {
     input: 'Write the number, or find the total.',
@@ -137,7 +139,8 @@ const halvesAndQuarters = {
   theory: 'Equal partitioning precedes fraction notation.',
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
   evidence: 'Fractions begin as fair shares of a shape, with no symbols at all. The emphasis is on equal parts, since "split into four" and "split into four equal parts" are different claims and children routinely conflate them.',
-  pages: 8, printItems: 8,
+  pages: 8, printItems: 5,   // measured: the wider set of stems wraps, so 6 spills
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Shade the part named under each shape.',
   printInstructions: {
     choice: 'Write how much of each bar is shaded.',
@@ -145,13 +148,18 @@ const halvesAndQuarters = {
   },
   generate(seed, i, ch, r) {
     const den = r.pick([2, 4]);
-    const shaded = 1;
-    const cols = den;
-    const bar = (fillN, d, w = 260, print = false) => {
+    /* Which parts are shaded, not just how many. A child who only ever sees the
+       left-hand parts shaded can answer by looking at the picture's shape; making
+       the shaded parts non-contiguous forces them to attend to the fraction. It
+       also widens a very small item space — this sheet used to repeat itself. */
+    const howMany = den === 2 ? 1 : r.pick([1, 1, 2, 3]);
+    const shadedSet = r.sample([...Array(den).keys()], howMany);
+    const shaded = howMany;
+    const bar = (fillN, d, w = 260, print = false, set = null) => {
       const seg = w / d;
       let s = `<svg viewBox="0 0 ${w} 56" width="100%" height="56" role="img" aria-label="${fillN} of ${d} shaded">`;
       for (let k = 0; k < d; k++) {
-        const on = k < fillN;
+        const on = set ? set.includes(k) : k < fillN;
         s += `<rect x="${k * seg}" y="2" width="${seg}" height="52" fill="${print ? 'none' : (on ? 'var(--a2)' : 'none')}" stroke="${print ? '#111' : 'var(--line2)'}" stroke-width="1.5"/>`;
         if (print && on) for (let h = -52; h < seg; h += 5)
           s += `<line x1="${(k * seg + h).toFixed(1)}" y1="54" x2="${(k * seg + h + 52).toFixed(1)}" y2="2" stroke="#111" stroke-width=".8"/>`;
@@ -159,17 +167,20 @@ const halvesAndQuarters = {
       return s + `<rect x="0" y="2" width="${w}" height="52" fill="none" stroke="${print ? '#111' : 'var(--txt3)'}" stroke-width="2"/></svg>`;
     };
     if (i % 2 === 0) {
-      const name = den === 2 ? 'one half' : 'one fourth';
-      const wrong = den === 2 ? 'one fourth' : 'one half';
+      // 2 of 4 IS one half, and saying so is the point of the activity.
+      const NAMES = { '1/2': 'one half', '1/4': 'one fourth', '2/4': 'one half', '3/4': 'three fourths' };
+      const name = NAMES[`${shaded}/${den}`];
+      const others = ['one half', 'one fourth', 'three fourths', 'one third', 'the whole thing']
+        .filter((x) => x !== name);
       return {
         type: 'choice', prompt: 'How much of the bar is shaded?',
-        visual: bar(shaded, den), visualWidth: 300,
-        choices: r.shuffle([name, wrong, 'one third', 'the whole thing']),
+        visual: bar(shaded, den, 260, false, shadedSet), visualWidth: 300,
+        choices: r.shuffle([name, ...r.sample(others, 3)]),
         answer: name,
-        printStem: `Shade one ${den === 2 ? 'half' : 'fourth'}.`,
+        printStem: `Shade ${name}.`,
         printVisual: bar(0, den, 200, true),
         hint: `Count the equal parts. There are ${den}.`,
-        explain: `One part out of ${den} equal parts is ${name}.`,
+        explain: `${shaded} part${shaded === 1 ? '' : 's'} out of ${den} equal parts is ${name}.`,
       };
     }
     const parts = r.pick([2, 3, 4]);
@@ -203,7 +214,8 @@ const numberLineHop = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }],
   evidence: 'Linear number line practice is among the best-evidenced early number interventions there is — Siegler and Ramani’s work on linear board games showed gains in numerical magnitude that transferred to broader arithmetic. Ticks are provided at this stage so the child can count as well as estimate.',
   strategy: { name: 'Use the middle', text: 'Look at the middle label first. Is your number smaller than it, or bigger? That tells you which half to drop it in.' },
-  rounds: 12, printItems: 6, seconds: 0, timerAvailable: false,
+  rounds: 12, printItems: 6,
+  printMaxPages: 1,   // K/1 stay one page seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
     /* MagPI 0-20 uses odd and landmark targets; mirror that spread.
@@ -245,20 +257,36 @@ const makeTenRace = {
   roam: [{ task: 'fluencyArf', subscale: 'sum' }],
   evidence: 'Automaticity on the pairs to ten frees working memory for everything built on top of them. This is short and repetitive on purpose: retrieval practice, not explanation, is what moves a fact from worked out to known.',
   strategy: { name: 'Fill the frame', text: 'Count the empty spaces in the ten-frame — that is the number you need.' },
-  rounds: 14, printItems: 10, seconds: 45,
+  rounds: 14, printItems: 10,
+  printMaxPages: 1,   // K/1 stay one page seconds: 45,
   printInstruction: 'Write the number that makes ten.',
   generate(seed, i, ch, r) {
     const a = r.int(1, 9);
     const need = 10 - a;
+    /* There are only nine pairs that make ten, so nine problems — and the sheet
+       asks for ten of them, which meant every printed sheet repeated one. Asking
+       the same fact three ways fixes that honestly rather than by padding: the
+       unknown moves (which is a real difficulty variation, the same one the CGI
+       word problems use), and one form drops the numeral and asks the ten-frame
+       directly. 9 pairs x 3 forms = 27. */
+    const form = i % 3;
+    const prompt = form === 0 ? `<strong>${a}</strong> and what make <strong>10</strong>?`
+      : form === 1 ? `What and <strong>${a}</strong> make <strong>10</strong>?`
+      : 'How many empty squares?';
+    const printStem = form === 0 ? `${a} + ____ = 10`
+      : form === 1 ? `____ + ${a} = 10`
+      : `10 &minus; ${a} = ____`;   // the same fact, worded so paper needs no figure
     return {
       type: 'choice',
-      prompt: `<strong>${a}</strong> and what make <strong>10</strong>?`,
+      prompt,
       visual: tenFrame(a),
       choices: r.shuffle([need, need + 1, Math.max(1, need - 1), 10 - Math.max(1, need - 2)]
         .filter((v, k, s2) => v >= 0 && v <= 10 && s2.indexOf(v) === k).slice(0, 4)).map(String),
       answer: String(need),
-      printStem: `${a} + ____ = 10`,
-      explain: `${a} + ${need} = 10.`,
+      printStem,
+      explain: form === 2
+        ? `${a} squares are filled, so ${need} are empty. ${a} + ${need} = 10.`
+        : `${a} + ${need} = 10.`,
     };
   },
 };
@@ -279,6 +307,7 @@ const allKindsOfStories = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'fluencyArf', subscale: 'sum' }, { task: 'fluencyArf', subscale: 'minus' }],
   evidence: 'The single highest-value gap the research identified. WWC Recommendation 5 — teach the structure of word problems — is rated STRONG on 18 studies, and arithmetic fluency transfers to word problems only weakly (g=0.25), so this cannot be left to fall out of fact practice. Follows Illustrative Mathematics grade 1 unit 2, which devotes one section to each structure, and moves the unknown so the same structure is met in its easy and its hard form.',
   pages: 16, printItems: 5,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Read each story. Write the number that answers it.',
   printInstructions: { input: 'Read each story. Write the number that answers it.' },
   generate(seed, i, ch, r) {
@@ -317,6 +346,7 @@ const clocksAndRulers = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
   evidence: 'Included as required curriculum coverage rather than as an evidence claim: the WWC early-childhood guide rates measurement and data recommendations only "minimal", so this strand is here because grade 1 needs it, not because a trial says it moves attainment. Measuring is framed as iterating a unit, which does connect to the place-value work.',
   pages: 10, printItems: 4,
+  printMaxPages: 1,   // K/1 stay one page
   printInstruction: 'Read each clock and measure each bar.',
   printInstructions: { choice: 'What time is it?', input: 'How many units long?' },
   generate(seed, i, ch, r) {

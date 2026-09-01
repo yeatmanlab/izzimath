@@ -239,7 +239,8 @@ const decimalDrop = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_1' }, { task: 'roamAlpaca', subscale: 'cat3' }],
   evidence: 'Decimals and fractions on the same number line, so they read as one idea in two notations rather than two unrelated topics. Matching 0.25 to a quarter is the link that makes both easier.',
   strategy: { name: 'Tenths first', text: 'The first digit after the point is tenths. 0.35 is between three tenths and four tenths.' },
-  rounds: 12, printItems: 7, seconds: 0, timerAvailable: true,
+  rounds: 12, printItems: 7,
+  printMaxPages: 3,   // only 26 distinct problems exist seconds: 0, timerAvailable: true,
   printInstruction: 'Mark each decimal on the line.',
   printInstructions: {
     numberline: 'Mark each decimal on the number line.',

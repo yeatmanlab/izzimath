@@ -255,7 +255,9 @@ const arrayArchitect = {
   roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
   evidence: 'The commutative property is obvious in an array and invisible in a string of symbols — turning the rectangle a quarter turn is the whole proof. Seeing it halves the number of facts a child has to store.',
   strategy: { name: 'Rows times columns', text: 'Count one row, then count how many rows. Turning the array does not change the total.' },
-  rounds: 12, printItems: 10, seconds: 60,
+  rounds: 12, printItems: 10,
+  printMaxPages: 1,   // its arrays vary in height, so a paginated page 1 cannot be
+                      // guaranteed to fit — see the note in printsheet.js seconds: 60,
   printInstruction: 'Write the total for each array.',
   printInstructions: {
     choice: 'Write how many squares.',

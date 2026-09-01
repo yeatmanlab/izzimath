@@ -224,7 +224,8 @@ const mixedNumberLine = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_2' }],
   evidence: 'An improper fraction on a nought-to-two line is the clearest test of whether a child treats a fraction as a number: 7/4 has to go somewhere specific, and "seven over four" gives no help in finding it.',
   strategy: { name: 'Whole first', text: 'Decide which two whole numbers it sits between, then split that gap.' },
-  rounds: 12, printItems: 6, seconds: 0, timerAvailable: true,
+  rounds: 12, printItems: 6,
+  printMaxPages: 1,   // only 14 distinct problems exist seconds: 0, timerAvailable: true,
   printInstruction: 'Mark each value on the 0 to 2 line.',
   generate(seed, i, ch, r) {
     // MagPI's own 0-2 targets

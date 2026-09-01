@@ -569,3 +569,13 @@ a.reflink.page:hover { color: var(--a1) }
 @keyframes nlsway { 0%,100% { transform: translateX(0) } 50% { transform: translateX(9px) } }
 .knob.nudge { animation: nlsway 1.15s ease-in-out 3 }
 @media (prefers-reduced-motion: reduce) { .knob.nudge { animation: none } }
+
+/* ---------- length steppers on the print page ----------
+   Two separate questions: how long is one sheet, and how many sheets. The page
+   stepper only appears where the activity has enough problems to fill more than
+   one page without repeating itself. */
+.stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 4px; background: var(--glass) }
+.stepper b { font: 600 12.5px/1 var(--fdisp); color: var(--txt); min-width: 68px; text-align: center }
+.stepper .btn.sm { min-width: 30px; padding: 5px 9px; border-radius: 999px }
+.stepper .btn.sm[disabled] { opacity: .35; cursor: default }

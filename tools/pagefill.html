@@ -43,7 +43,7 @@
   // build copies content/ and src/ under dist/assets/, not next to _tools/.
   import { activities } from '/assets/content/activities/index.js';
   import { characters, getCharacter } from '/assets/content/characters.js';
-  import { sheet, ssddSheet } from '/assets/src/lib/printsheet.js';
+  import { sheet, ssddSheet, maxPagesFor, itemsForPages } from '/assets/src/lib/printsheet.js';
   import { ssddSets } from '/assets/content/ssdd.js';
 
   const LIMIT_H = 10.1;   // usable height of US Letter at a 0.45in margin
@@ -80,6 +80,29 @@
               warn.push(`SPLIT ${pages.length} pages, activity declares ${a.printPages ?? 1}  ${where}`);
           }
         }
+      }
+    }
+    rig.innerHTML = '';
+  }
+
+  /* The reader can now ask for a longer sheet, so every page count they can
+     reach has to fill properly too — not just the authored one. The last page of
+     a four-page sheet is the risky one: it carries the self-check, the reward
+     strip and the scratch box that the earlier pages do not. */
+  for (const a of activities) {
+    const top = maxPagesFor(a);
+    if (top < 2) continue;
+    for (let pages = 2; pages <= top; pages++) {
+      for (const style of ['designed', 'plain']) {
+        rig.innerHTML = sheet({ activity: a, seed: 8817, ch: getCharacter('kiwi'), base: '',
+          siteUrl: 'https://izzimath.com', style, pages });
+        const els = [...rig.children];
+        const hs = els.map((e) => e.getBoundingClientRect().height / DPI);
+        const where = `${a.id} · asked ${pages}pp · ${style}`;
+        checks++;
+        if (els.length !== pages) fail.push(`COUNT ${where} rendered ${els.length} pages, asked ${pages}`);
+        if (Math.max(...hs) > LIMIT_H) fail.push(`OVER  ${Math.max(...hs).toFixed(2)}in  ${where}`);
+        if (hs[hs.length - 1] < MIN_LAST) fail.push(`THIN  last page ${hs[hs.length - 1].toFixed(2)}in  ${where}`);
       }
     }
     rig.innerHTML = '';

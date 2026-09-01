@@ -223,7 +223,8 @@ const hundredLineHop = {
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_100' }],
   evidence: 'The same number line, now without tick marks. Removing them is the point: the child has to reason from landmarks (nought, fifty, one hundred) instead of counting, which is what estimating a magnitude actually is.',
   strategy: { name: 'Use landmarks', text: 'Fifty is the middle. Twenty-five is halfway to the middle. Work from those.' },
-  rounds: 12, printItems: 7, seconds: 0, timerAvailable: false,
+  rounds: 12, printItems: 7,
+  printMaxPages: 1,   // only 12 distinct problems exist seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
     /* MagPI's own 0-100 targets, banded by distance to the nearest landmark the
