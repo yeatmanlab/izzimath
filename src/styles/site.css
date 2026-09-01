@@ -570,12 +570,66 @@ a.reflink.page:hover { color: var(--a1) }
 .knob.nudge { animation: nlsway 1.15s ease-in-out 3 }
 @media (prefers-reduced-motion: reduce) { .knob.nudge { animation: none } }
 
-/* ---------- length steppers on the print page ----------
-   Two separate questions: how long is one sheet, and how many sheets. The page
-   stepper only appears where the activity has enough problems to fill more than
-   one page without repeating itself. */
-.stepper { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line);
-  border-radius: 999px; padding: 3px 4px; background: var(--glass) }
-.stepper b { font: 600 12.5px/1 var(--fdisp); color: var(--txt); min-width: 68px; text-align: center }
-.stepper .btn.sm { min-width: 30px; padding: 5px 9px; border-radius: 999px }
-.stepper .btn.sm[disabled] { opacity: .35; cursor: default }
+/* ---------------- the print page's controls ----------------
+   This row used to hold eleven controls, including two identical -/+ steppers
+   distinguished only by the words "page" and "sheet" — a difference that needed
+   a paragraph of prose to explain, which is the sign the control was wrong. It
+   is now four things: the action, how much of it, a fresh draw, and the way out.
+   Everything that modifies the sheet rather than the amount sits behind a
+   disclosure where its state is visible rather than implied by a verb. */
+.prow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0 0 }
+
+/* One control, one question. A native select so the grouping, the keyboard and
+   the screen reader all come for free — and so options this activity cannot
+   honour are absent rather than present-but-disabled. */
+.amount { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 14px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--glass);
+  font: 500 12.5px/1 var(--fdisp); color: var(--txt2) }
+.amount select { background: transparent; color: var(--txt); border: 0; font: 600 13px var(--fdisp);
+  padding: 4px 2px; cursor: pointer; max-width: 15em }
+.amount select:focus-visible { outline: 2px solid var(--a1); outline-offset: 3px; border-radius: 6px }
+.psum { color: var(--txt3); font-size: 12.5px; margin: 10px 0 0 }
+
+.opts { margin: 14px 0 0; border: 1px solid var(--line); border-radius: 14px; background: var(--glass) }
+.opts > summary { cursor: pointer; padding: 11px 16px; font: 600 12.5px/1 var(--fdisp); color: var(--txt2);
+  list-style: none; display: flex; align-items: center; gap: 8px }
+.opts > summary::-webkit-details-marker { display: none }
+.opts > summary::before { content: '▸'; color: var(--txt3); font-size: 11px }
+.opts[open] > summary::before { content: '▾' }
+.opts > summary:hover { color: var(--txt) }
+.optgrid { display: flex; flex-wrap: wrap; gap: 18px 26px; padding: 4px 16px 16px }
+.optgrid fieldset { border: 0; display: flex; flex-direction: column; gap: 6px }
+.optgrid legend { font: 600 10px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--txt3); padding: 0 0 2px }
+
+/* A segmented control out of radio inputs: the selected one is visibly selected,
+   which a button labelled with its own action never was. */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden }
+.seg label { position: relative; display: inline-flex }
+.seg input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer }
+.seg span { display: block; padding: 7px 13px; font: 500 12.5px/1 var(--fdisp); color: var(--txt3);
+  cursor: pointer; white-space: nowrap }
+.seg input:checked + span { background: var(--sp); color: var(--onsp); font-weight: 700 }
+.seg input:focus-visible + span { outline: 2px solid var(--a1); outline-offset: -2px }
+.seg label + label span { border-left: 1px solid var(--line) }
+
+.optcheck { display: inline-flex; align-items: center; gap: 9px; align-self: flex-end;
+  font: 500 12.5px/1 var(--fdisp); color: var(--txt2); cursor: pointer }
+/* 24px, matching the site-wide rule for checkboxes — this had overridden it to
+   20px, which is under the floor the responsive audit enforces. The label is the
+   hit area too, so the comfortable target is the whole row. */
+.optcheck { padding: 6px 0 }
+.optcheck input { width: 24px; height: 24px; min-width: 24px; accent-color: var(--a2); cursor: pointer }
+
+@media (max-width: 560px) {
+  .optgrid { gap: 14px 18px }
+  /* Comfortably tappable rather than merely legal. The 24px floor the audit
+     enforces is a minimum, not a target, and these are the controls a parent
+     uses one-handed while holding a sheet of paper. */
+  .seg span { padding: 12px 13px; font-size: 12.5px }
+  .prow { gap: 8px }
+  .prow .btn { padding: 12px 15px }
+  .amount { padding: 6px 12px 6px 14px }
+  .amount select { padding: 8px 2px; font-size: 14px }
+  .optcheck { align-self: flex-start }
+}

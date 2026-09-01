@@ -45,60 +45,46 @@ function paint() {
     if (showKey) parts.push(sheet({ ...common, seed: sd, key: true }));
   }
   host.innerHTML = parts.join('<div class="pagebreak"></div>');
-  paintLengthUI();
+  paintAmountUI();
 }
 
-function paintLengthUI() {
-  const lab = document.querySelector('[data-pages-label]');
-  if (lab) lab.textContent = pages === 1 ? '1 page' : `${pages} pages`;
-  const packLab = document.querySelector('[data-pack-label]');
-  if (packLab) packLab.textContent = pack === 1 ? '1 sheet' : `${pack} sheets`;
-  document.querySelector('[data-pages-up]')?.toggleAttribute('disabled', pages >= maxPages);
-  document.querySelector('[data-pages-down]')?.toggleAttribute('disabled', pages <= 1);
-  document.querySelector('[data-pack-up]')?.toggleAttribute('disabled', pack >= 5);
-  document.querySelector('[data-pack-down]')?.toggleAttribute('disabled', pack <= 1);
+/* One readout for one control. It states the result in the units a parent cares
+   about — problems, and sheets of paper — which is also the honest answer to
+   "how much ink is this". */
+function paintAmountUI() {
+  const sel = document.querySelector('[data-amount]');
+  if (sel) sel.value = pack > 1 ? `k${pack}` : `p${pages}`;
   const tot = document.querySelector('[data-total]');
-  if (tot) {
-    const sheets = pages * pack * (showKey ? 2 : 1);
-    tot.textContent = `${itemsForPages(a, pages) * pack} problems on ${sheets} sheet${sheets === 1 ? '' : 's'} of paper`;
-  }
+  if (!tot) return;
+  const sheets = pages * pack * (showKey ? 2 : 1);
+  tot.textContent = `${itemsForPages(a, pages) * pack} problems on ${sheets} sheet${sheets === 1 ? '' : 's'} of paper`
+    + (showKey ? ', answer key included' : '');
 }
+
 
 // A print counts as something done, so it earns a mark alongside completions.
 window.addEventListener('beforeprint', () => {
   window.__izziProfile?.noteProgress(a?.id, { printed: true });
 });
 document.querySelector('[data-newseed]')?.addEventListener('click', () => { seed = newSeed(); paint(); });
-document.querySelector('[data-togglekey]')?.addEventListener('click', (e) => {
-  showKey = !showKey;
-  e.currentTarget.setAttribute('aria-pressed', String(showKey));
-  e.currentTarget.textContent = showKey ? 'Hide answer key' : 'Show answer key';
-  paint();
+document.querySelector('[data-togglekey]')?.addEventListener('change', (e) => {
+  showKey = e.target.checked; paint();
 });
-document.querySelector('[data-mode]')?.addEventListener('click', (e) => {
-  mode = mode === 'practice' ? 'review' : 'practice';
-  e.currentTarget.setAttribute('aria-pressed', String(mode === 'review'));
-  e.currentTarget.textContent = mode === 'review' ? 'Practice sheet' : 'Mixed review sheet';
-  paint();
-});
-document.querySelector('[data-style]')?.addEventListener('click', (e) => {
-  style = style === 'designed' ? 'plain' : 'designed';
-  e.currentTarget.setAttribute('aria-pressed', String(style === 'plain'));
-  e.currentTarget.textContent = style === 'plain' ? 'Designed sheet' : 'Plain black & white';
-  paint();
-});
-document.querySelector('[data-variant]')?.addEventListener('change', (e) => {
-  variant = e.target.value; paint();
-});
-const step = (what, by) => {
-  if (what === 'pages') pages = Math.max(1, Math.min(maxPages, pages + by));
-  else pack = Math.max(1, Math.min(5, pack + by));
+document.querySelectorAll('[data-mode-radio]').forEach((el) =>
+  el.addEventListener('change', () => { if (el.checked) { mode = el.value; paint(); } }));
+document.querySelectorAll('[data-style-radio]').forEach((el) =>
+  el.addEventListener('change', () => { if (el.checked) { style = el.value; paint(); } }));
+document.querySelectorAll('[data-variant-radio]').forEach((el) =>
+  el.addEventListener('change', () => { if (el.checked) { variant = el.value; paint(); } }));
+/* "p3" is a three-page sheet, "k5" is five separate sheets. Encoding both in one
+   control is what removes the page-versus-sheet guessing game: the reader picks
+   an outcome, not two numbers whose interaction they have to model. */
+document.querySelector('[data-amount]')?.addEventListener('change', (e) => {
+  const v = e.target.value || 'p1';
+  if (v.startsWith('k')) { pack = Math.max(1, Math.min(5, parseInt(v.slice(1), 10) || 1)); pages = 1; }
+  else { pages = Math.max(1, Math.min(maxPages, parseInt(v.slice(1), 10) || 1)); pack = 1; }
   remember(); paint();
-};
-document.querySelector('[data-pages-up]')?.addEventListener('click', () => step('pages', 1));
-document.querySelector('[data-pages-down]')?.addEventListener('click', () => step('pages', -1));
-document.querySelector('[data-pack-up]')?.addEventListener('click', () => step('pack', 1));
-document.querySelector('[data-pack-down]')?.addEventListener('click', () => step('pack', -1));
+});
 document.addEventListener('characterchange', paint);
 writeSeed(seed);
 paint();

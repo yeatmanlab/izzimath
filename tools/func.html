@@ -76,6 +76,73 @@ for(const t of T.TYPES){
    Every assertion below is a defect this found or would find. Two were real:
    closing the dialog dropped focus at the top of the document, and Tab walked
    straight out of a dialog marked aria-modal. */
+/* -------------------------------------------------------- print page controls
+   The action row had grown to eleven controls, two of which were identical -/+
+   steppers distinguished only by the words "page" and "sheet" — a difference
+   that needed a paragraph of prose to explain. These guard the shape it was
+   rebuilt into: a small primary row, one amount control, and everything that
+   modifies the sheet behind a disclosure with its state visible. */
+L.push('');
+{
+  const frame2 = document.createElement('iframe');
+  frame2.style.cssText = 'position:absolute;left:-99999px;top:0;width:1100px;height:900px';
+  frame2.src = '/print/carry-and-borrow/';
+  document.body.appendChild(frame2);
+  await new Promise((r) => { frame2.onload = r; setTimeout(r, 8000); });
+  const sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
+  await sleep2(500);
+  const d2 = frame2.contentDocument, w2 = frame2.contentWindow;
+  const pc = (name, pass, note = '') => { checks++; L.push((pass ? '· ' : '✗ ') + ('printui:' + name).padEnd(30) + (note || (pass ? 'ok' : 'FAILED'))); };
+  try {
+    const row = d2.querySelector('.prow');
+    const primary = [...row.querySelectorAll('button, a, select')];
+    pc('primary row is small', primary.length <= 5, primary.length + ' controls (was 11)');
+    pc('one amount control', d2.querySelectorAll('[data-amount]').length === 1);
+    pc('no bare +/- steppers', !d2.querySelector('[data-pages-up], [data-pack-up]'));
+    pc('options start collapsed', !d2.querySelector('.opts').open);
+    pc('amount groups its options', d2.querySelectorAll('[data-amount] optgroup').length >= 1);
+
+    // state must be VISIBLE, which a verb-labelled button never was
+    d2.querySelector('.opts').open = true; await sleep2(150);
+    const on = d2.querySelector('.seg input:checked + span');
+    const off = d2.querySelector('.seg input:not(:checked) + span');
+    pc('selected segment looks selected',
+      w2.getComputedStyle(on).backgroundImage !== w2.getComputedStyle(off).backgroundImage);
+    pc('every option group is labelled',
+      [...d2.querySelectorAll('.optgrid fieldset')].every((f) => !!f.querySelector('legend')?.textContent.trim()));
+
+    // touch targets, since these are used one-handed
+    const small = [...d2.querySelectorAll('.prow button, .prow a, .prow select, .seg span, .optcheck input')]
+      .filter((e) => e.getBoundingClientRect().height < 24);
+    pc('all controls clear 24px', small.length === 0, small.length ? small.length + ' too small' : 'ok');
+
+    // the amount control must actually change the output, and say so
+    const sel = d2.querySelector('[data-amount]');
+    sel.value = 'p3'; sel.dispatchEvent(new w2.Event('change', { bubbles: true }));
+    await sleep2(400);
+    pc('3 pages renders 3 pages', d2.querySelectorAll('[data-sheet] .sheet').length === 3);
+    pc('summary states the outcome', /3 sheets of paper/.test(d2.querySelector('[data-total]')?.textContent || ''),
+      '"' + (d2.querySelector('[data-total]')?.textContent || '') + '"');
+    sel.value = 'k5'; sel.dispatchEvent(new w2.Event('change', { bubbles: true }));
+    await sleep2(500);
+    pc('pack of 5 renders 5 sheets', d2.querySelectorAll('[data-sheet] .sheet').length === 5);
+
+    // and a grade-1 activity must not offer a longer sheet at all
+    const f3 = document.createElement('iframe');
+    f3.style.cssText = frame2.style.cssText;
+    f3.src = '/print/make-ten-race/';
+    document.body.appendChild(f3);
+    await new Promise((r) => { f3.onload = r; setTimeout(r, 8000); });
+    await sleep2(400);
+    const opts3 = [...f3.contentDocument.querySelectorAll('[data-amount] option')].map((o) => o.value);
+    pc('grade 1 offers no longer sheet', !opts3.some((v) => /^p[2-9]/.test(v)), opts3.join(','));
+    f3.remove();
+  } catch (e) {
+    pc('harness', false, 'THREW ' + e.message);
+  }
+  frame2.remove();
+}
+
 /* ------------------------------------------------------------- number line
    A third grader could not tell what Number Line Hop wanted, so these guard the
    cues that were missing. All of them are things the old version failed. */

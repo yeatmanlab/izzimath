@@ -313,45 +313,71 @@ for (const a of activities) {
         <div class="gbadge" aria-hidden="true">${a.grade}</div>
         <div><h1>${esc(a.title)}</h1><p>Printable sheet · ${gradeName(a.grade)} · ${esc(a.strand)}</p></div>
       </div>
-      <div class="sfoot noprint" style="justify-content:flex-start;margin:18px 0 0">
+      <!-- Four things, not eleven. The action, how much of it, a fresh draw, and
+           the way out. Everything that modifies the SHEET rather than the amount
+           lives behind the disclosure below, where its state is visible instead
+           of being implied by a button label. -->
+      <div class="prow noprint">
         <button class="btn pri" onclick="window.print()">↓ Print or save as PDF</button>
+        <label class="amount">
+          <span>How much</span>
+          <select data-amount aria-describedby="amt-sum">
+            <option value="p1">One sheet</option>
+            ${maxPagesFor(a) > 1 ? `<optgroup label="A longer sheet">
+              ${Array.from({ length: maxPagesFor(a) - 1 }, (_, k) =>
+                `<option value="p${k + 2}">${k + 2} pages</option>`).join('')}
+            </optgroup>` : ''}
+            <optgroup label="A pack, fresh problems on each">
+              <option value="k3">3 sheets</option>
+              <option value="k5">5 sheets</option>
+            </optgroup>
+          </select>
+        </label>
         <button class="btn" data-newseed>⟳ New problems</button>
-        <button class="btn" data-togglekey aria-pressed="false">Show answer key</button>
-        <button class="btn" data-mode aria-pressed="false">Mixed review sheet</button>
-        <button class="btn" data-style aria-pressed="false">Plain black &amp; white</button>
-        ${maxPagesFor(a) > 1 ? `<span class="stepper" role="group" aria-label="How many pages of problems">
-          <button class="btn sm" data-pages-down aria-label="Fewer pages">−</button>
-          <b data-pages-label>${a.printPages ?? 1} page${(a.printPages ?? 1) === 1 ? '' : 's'}</b>
-          <button class="btn sm" data-pages-up aria-label="More pages">+</button>
-        </span>` : ''}
-        <span class="stepper" role="group" aria-label="How many sheets in the pack">
-          <button class="btn sm" data-pack-down aria-label="Fewer sheets">−</button>
-          <b data-pack-label>1 sheet</b>
-          <button class="btn sm" data-pack-up aria-label="More sheets">+</button>
-        </span>
-        <label class="btn" style="gap:6px">Text size
-          <select data-variant style="width:auto;height:auto;padding:2px 4px;font-size:12.5px">
-            <option value="">Normal</option>
-            <option value="large">Large print</option>
-            <option value="dyslexia">Extra spacing</option>
-          </select></label>
         <a class="btn" href="${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">Do it on screen</a>
       </div>
-      <p class="noprint" style="color:var(--txt3);font-size:12.5px;margin:10px 0 0"
-        data-total>${a.printItems} problems on ${a.printPages ?? 1} sheet${(a.printPages ?? 1) === 1 ? '' : 's'} of paper</p>
+      <p class="psum noprint" id="amt-sum" data-total>${a.printItems} problems on ${a.printPages ?? 1} sheet${(a.printPages ?? 1) === 1 ? '' : 's'} of paper</p>
+
+      <details class="opts noprint">
+        <summary>Sheet options</summary>
+        <div class="optgrid">
+          <fieldset>
+            <legend>Sheet</legend>
+            <div class="seg">
+              <label><input type="radio" name="pmode" value="practice" checked data-mode-radio><span>Practice</span></label>
+              <label><input type="radio" name="pmode" value="review" data-mode-radio><span>Mixed review</span></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Ink</legend>
+            <div class="seg">
+              <label><input type="radio" name="pstyle" value="designed" checked data-style-radio><span>Designed</span></label>
+              <label><input type="radio" name="pstyle" value="plain" data-style-radio><span>Plain black &amp; white</span></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Text size</legend>
+            <div class="seg">
+              <label><input type="radio" name="pvar" value="" checked data-variant-radio><span>Normal</span></label>
+              <label><input type="radio" name="pvar" value="large" data-variant-radio><span>Large</span></label>
+              <label><input type="radio" name="pvar" value="dyslexia" data-variant-radio><span>Extra spacing</span></label>
+            </div>
+          </fieldset>
+          <label class="optcheck"><input type="checkbox" data-togglekey><span>Print the answer key too</span></label>
+        </div>
+      </details>
       <div data-sheet></div>
       <div class="roam noprint" style="margin-top:22px">
         <h2 style="font-size:15px">Printing notes</h2>
         <p style="font-size:13px"><strong>How much to print.</strong>
         ${maxPagesFor(a) > 1
-          ? `<em>Pages</em> makes one longer sheet &mdash; up to ${maxPagesFor(a)} for this activity, which is
-             as far as its problems go before they would start repeating. `
-          : `This activity is one page. ${a.grade === 'K' || a.grade === '1'
+          ? `A longer sheet goes up to ${maxPagesFor(a)} pages for this activity &mdash; as far as its
+             problems go before they would start repeating. `
+          : `This one is a single sheet. ${a.grade === 'K' || a.grade === '1'
               ? 'Kindergarten and grade 1 sheets stay one page, because a young child should be able to finish the sheet. '
               : 'Its problems run out past one page, so a longer sheet would repeat them. '}`}
-        <em>Sheets</em> makes a pack &mdash; the same activity several times over with different problems,
-        which is usually what you want for a week of practice rather than one long page.
-        Both choices are kept in the address bar, so the link you save brings them back.</p>
+        A pack draws fresh problems for every sheet, which is usually what you want for a week of
+        practice. Your choice is kept in the address bar, so a saved link brings it back.</p>
         <p>${ITEMS_NOTE(a)} The answer key is a separate page.</p>
         <p style="font-size:13px"><strong>Two styles, and the difference is ink.</strong>
         The default is the designed sheet: ${esc(a.title)} with its character in the header, the
