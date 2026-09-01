@@ -723,6 +723,69 @@ for (const s of subs) {
   else console.log(`  ok    ${(s.task + ':' + s.id).padEnd(28)} ${String(hits.length).padStart(2)} activit${hits.length === 1 ? 'y' : 'ies'}`);
 }
 
+/* Badge glyph legibility, per character.
+   A badge glyph is drawn in --bi-<accent> on a disc filled with that accent, and
+   both sides change with the character. Twice now a fixed foreground has been
+   written onto a per-character background and gone out looking fine on the one
+   character it was authored against (--onsp, then this). So measure it: composite
+   the disc over the page and check the glyph against the worst point.
+   3:1 is the WCAG floor for a graphical object, which is what the glyph is: the
+   badge's name is always present as real text beside it. So 3:1 fails and 3.5:1
+   warns — a margin, not a second standard. Warning at the 4.5 text threshold
+   would have flagged five pairs that are fine and left standing noise, which is
+   the failure mode a11y.mjs just had. */
+console.log('\n=== badge legibility ===');
+{
+  const css = fs.readFileSync(new URL('../src/styles/site.css', import.meta.url), 'utf8');
+  const hex = (t, n) => ((t.match(new RegExp(`--${n}:\\s*(#[0-9A-Fa-f]{6})`)) || [])[1] || '').toLowerCase();
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const lum = (c) => {
+    const v = c.map((x) => x / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+  };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const over = (f, b, a) => f.map((c, i) => c * a + b[i] * (1 - a));
+
+  // every :root block, folded in source order — the accents and the badge inks
+  // are declared in different ones, and a single-block read silently missed the
+  // second, reporting the inks as absent when they were right there.
+  const root = [...css.matchAll(/:root\s*\{([^{}]*)\}/g)].map((m) => m[1]).join('\n');
+  // later blocks win on source order at equal specificity, so fold them in order
+  const blocks = [...css.matchAll(/html\[data-ch="(\w+)"\]\s*\{([^}]*)\}/g)];
+  const names = [...new Set(blocks.map((b) => b[1]))];
+  const VARS = ['a1', 'a2', 'a3', 'ok', 'bi-a1', 'bi-a2', 'bi-a3', 'bi-ok'];
+  const bg = rgb(hex(root, 'ink'));
+  if (!hex(root, 'ink')) fail('badge legibility: cannot find --ink to measure against');
+
+  // the disc gradient, read out of badgeart.js rather than assumed
+  const art = fs.readFileSync(new URL('../src/lib/badgeart.js', import.meta.url), 'utf8');
+  const stops = [...art.matchAll(/stop-opacity="\.(\d+)"/g)].map((m) => Number(`0.${m[1]}`));
+  if (stops.length < 2) fail('badge legibility: cannot read the disc gradient stops');
+  const worstA = Math.min(...stops), bestA = Math.max(...stops);
+
+  let n = 0, worst = { r: Infinity };
+  for (const ch of names) {
+    const scope = { };
+    for (const v of VARS) scope[v] = hex(root, v);
+    for (const [, name, body] of blocks) {
+      if (name !== ch) continue;
+      for (const v of VARS) { const got = hex(body, v); if (got) scope[v] = got; }
+    }
+    for (const cat of Object.values(CATEGORIES)) {
+      const hue = scope[cat.hue], ink = scope[`bi-${cat.hue}`];
+      if (!hue) { fail(`badge legibility: ${ch} has no --${cat.hue}`); continue; }
+      if (!ink) { fail(`badge legibility: no --bi-${cat.hue} for ${ch}`); continue; }
+      const r = Math.min(ratio(rgb(ink), over(rgb(hue), bg, worstA)),
+                         ratio(rgb(ink), over(rgb(hue), bg, bestA)));
+      n++;
+      if (r < worst.r) worst = { r, where: `${ch} · ${cat.name} · --${cat.hue}` };
+      if (r < 3) fail(`badge glyph unreadable: ${ch} ${cat.name} (--${cat.hue}) at ${r.toFixed(2)}:1`);
+      else if (r < 3.5) warn(`badge glyph close to the floor: ${ch} ${cat.name} (--${cat.hue}) at ${r.toFixed(2)}:1`);
+    }
+  }
+  console.log(`  ${n} character x category pairs · worst ${worst.r.toFixed(2)}:1 (${worst.where})`);
+}
+
 console.log(`\n=== distribution ===`);
 for (const g of GRADES) {
   const l = activities.filter((a) => a.grade === g);

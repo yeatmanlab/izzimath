@@ -41,6 +41,16 @@ html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#6B2318; --ok:#8FE388
      former, so it cannot carry a light label. Light on a2 -> a3 is 4.87:1. */
   --onsp: #FFF6F4; --sp: linear-gradient(100deg, var(--a2), var(--a3)) }
 
+/* Badge glyph ink. The glyph sits ON the accent, so whether near-black or
+   near-white reads depends on the accent — and the accents change with the
+   character. Picked by measuring the worst point of the disc gradient against
+   --ink; scripts/check.mjs re-measures and fails below 3:1, because this is the
+   second time a fixed foreground was written onto a per-character background
+   (see --onsp). Every pair clears 4:1. */
+:root { --bi-a1: #0A0D1C; --bi-a2: #FFF8F2; --bi-a3: #0A0D1C; --bi-ok: #0A0D1C }
+html[data-ch="kiwi"]  { --bi-a2: #0A0D1C; --bi-a3: #FFF8F2 }
+html[data-ch="flame"] { --bi-a3: #FFF8F2 }
+
 * { box-sizing: border-box; margin: 0; padding: 0 }
 html { scroll-behavior: smooth }
 body {

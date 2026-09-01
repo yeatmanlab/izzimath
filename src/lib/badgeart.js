@@ -5,7 +5,11 @@
      rank      1 is a plain disc, 2 gains a scalloped rim, 3 gains a starburst.
                So a hard badge LOOKS harder-won without a word of explanation.
      colour    from the live character palette, so the shelf is Kiwi's shelf or
-               Georgie's, and the same badge looks different with each.
+               Georgie's, and the same badge looks different with each. The glyph
+               ink is a companion variable per accent (--bi-a1 …), because which
+               of near-black or near-white reads depends on the accent, and the
+               accents change with the character: near-black on Flame's dark red
+               a3 measured 1.7:1, an invisible symbol. Same trap as --onsp.
      locked    a flat silhouette with the glyph dimmed. Showing the gaps is what
                makes a set worth completing, and it is the honest thing to show:
                the child can see exactly what is still out there.
@@ -53,15 +57,18 @@ export function badgeSvg(badgeId, { size = 64, locked = false, decorative = fals
     ${decorative ? 'aria-hidden="true"' : `role="img" aria-label="${label}"`}>
     <defs>
       <linearGradient id="bg-${b.id}" x1="0" y1="0" x2="0" y2="1">
+        <!-- A sheen, not a fade. At .55 the bottom of the disc muddied toward
+             the page and no ink read well on it; .88 keeps the disc its own
+             colour, which is what lets one ink or the other clearly win. -->
         <stop offset="0" stop-color="${hue}" stop-opacity=".95"/>
-        <stop offset="1" stop-color="${hue}" stop-opacity=".55"/>
+        <stop offset="1" stop-color="${hue}" stop-opacity=".88"/>
       </linearGradient>
     </defs>
     <g fill="${hue}" opacity=".55">${RIM[b.rank] ?? ''}</g>
     <circle cx="50" cy="50" r="33" fill="url(#bg-${b.id})" stroke="${hue}" stroke-width="2.5"/>
     <!-- a single highlight arc, which is what makes a flat disc read as a medal -->
     <path d="M28 38 a26 26 0 0 1 40 -8" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="3.5" stroke-linecap="round"/>
-    <text x="50" y="63" text-anchor="middle" font-size="32" fill="#0A0D1C"
+    <text x="50" y="63" text-anchor="middle" font-size="32" fill="var(--bi-${cat.hue})"
       font-family="'Space Grotesk',sans-serif" font-weight="700">${cat.glyph}</text>
   </svg>`;
 }
