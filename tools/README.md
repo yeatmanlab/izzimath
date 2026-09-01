@@ -27,9 +27,25 @@ Then open, or drive headless:
   5 widths (360, 390, 768, 1024, 1440). Flags unscrolled horizontal overflow,
   tap targets under 24px (inline links in prose are exempt, per WCAG 2.5.8),
   and body text under 11px.
-- `http://localhost:8890/_tools/func.html` — problem type test. Every one of the
-  nine types: renders, is interactive, its own stated answer verifies, it has a
-  worked explanation, and it renders as both a print sheet and a key.
+- `http://localhost:8890/_tools/func.html` — problem type test **and the profile
+  panel**. Every one of the nine types: renders, is interactive, its own stated
+  answer verifies, it has a worked explanation, and it renders as both a print
+  sheet and a key.
+
+  The profile half drives a **real page in an iframe** rather than importing the
+  module, because what matters is the thing a child touches: the header button,
+  the dialog it opens, and the keyboard. The panel is client-rendered, so
+  `scripts/a11y.mjs` never sees it — this is the only automated cover it has. It
+  checks `role`/`aria-modal`/label, that focus enters the dialog and returns to
+  the trigger on close, that Tab and Shift-Tab wrap at the ends, that all 150
+  faces are present and labelled, that tap targets clear 24px, that a wrong
+  secret snack is rejected, and that nothing is written while signed out.
+
+  Two of those assertions were written badly the first time and passed while the
+  behaviour was broken. If you add one here, **break the thing on purpose and
+  confirm it fails** before trusting it — a synthetic `Tab` event does not move
+  focus, so asserting on where focus ended up proves nothing; assert on
+  `defaultPrevented` instead.
 - `http://localhost:8890/_tools/pagefill.html` — print page fill. 1,312 cases:
   every activity × every character × plain/designed × practice/review ×
   sheet/key. Fails a sheet that is taller than one page of US Letter, wider than

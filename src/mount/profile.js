@@ -31,6 +31,7 @@ const byId = new Map(activities.map((a) => [a.id, a]));
 
 let panel = null;
 let draft = {};          // the half-made profile during the new flow
+let returnFocusTo = null; // where focus was before the dialog opened
 
 /* ------------------------------------------------------------------ chrome */
 
@@ -51,7 +52,20 @@ async function paintButton() {
 }
 
 function open(html) {
-  close();
+  /* Where focus goes when the dialog closes. Captured only on the FIRST open of
+     a run, because the flows re-render by calling open() again and grabbing
+     focus each time would end up restoring it to a button that no longer exists.
+
+     Falling back to the header button rather than trusting activeElement: a
+     click does not always leave focus on the thing clicked, and when it does not
+     the honest answer to "where was the user" is the control that opens this. */
+  if (!panel) {
+    const active = document.activeElement;
+    returnFocusTo = active && active !== document.body && active.isConnected
+      ? active
+      : document.querySelector('[data-me]');
+  }
+  close({ restore: false });
   panel = document.createElement('div');
   panel.className = 'mewrap noprint';
   panel.innerHTML = `<div class="mebg" data-close></div>
@@ -65,12 +79,31 @@ function open(html) {
   panel.querySelector('button:not([data-close])')?.focus();
 }
 
-function close() {
+function close({ restore = true } = {}) {
   document.removeEventListener('keydown', onKey);
   panel?.remove();
   panel = null;
+  // Returning focus to whatever opened the dialog. Without this a keyboard user
+  // is dropped at the top of the document and has to tab back to where they
+  // were, which on a book page means tabbing past the whole nav.
+  if (restore && returnFocusTo?.isConnected) {
+    try { returnFocusTo.focus(); } catch { /* element may be gone */ }
+  }
+  if (restore) returnFocusTo = null;
 }
-const onKey = (e) => { if (e.key === 'Escape') close(); };
+
+/* aria-modal tells a screen reader the dialog is modal; it does not stop Tab
+   walking out of it into the page behind. Trapping it here so the two agree. */
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+function onKey(e) {
+  if (e.key === 'Escape') { close(); return; }
+  if (e.key !== 'Tab' || !panel) return;
+  const items = [...panel.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent !== null);
+  if (!items.length) return;
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
 
 /* ------------------------------------------------------------- new profile */
 

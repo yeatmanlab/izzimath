@@ -66,6 +66,126 @@ for(const t of T.TYPES){
   }catch(e){ L.push('  print '+t+' THREW '+e.message); }
   L.push((sheetOk&&keyOk?'· ':'✗ ')+('print:'+t).padEnd(22)+'sheet:'+(sheetOk?'y':'N')+' key:'+(keyOk?'y':'N'));
 }
+
+/* ------------------------------------------------------------------ profiles
+   The profile panel is rendered on the client, so the static accessibility
+   checker never sees it. Driven here through a REAL page in an iframe rather
+   than by importing the module, because what matters is the thing a child
+   touches: the button in the header, the dialog it opens, and the keyboard.
+
+   Every assertion below is a defect this found or would find. Two were real:
+   closing the dialog dropped focus at the top of the document, and Tab walked
+   straight out of a dialog marked aria-modal. */
+L.push('');
+{
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:absolute;left:-99999px;top:0;width:1100px;height:900px';
+  frame.src = '/games/decade-duel/';
+  document.body.appendChild(frame);
+  await new Promise((r) => { frame.onload = r; setTimeout(r, 8000); });
+  const w = frame.contentWindow, d = frame.contentDocument;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const t = (name, pass, note = '') => { checks++; L.push((pass ? '· ' : '✗ ') + ('profile:' + name).padEnd(30) + (note || (pass ? 'ok' : 'FAILED'))); };
+
+  try {
+    w.localStorage.removeItem('izzi.profiles.v1');
+    w.sessionStorage.clear();
+    // Repaint explicitly rather than sleeping and hoping: the module's own paint
+    // races with this clear, and a check that depends on which wins is a check
+    // that fails at random.
+    w.__izziProfile.repaint();
+    await sleep(200);
+
+    const btn = d.querySelector('[data-me]');
+    t('button in header', !!btn);
+    t('button says Scores when off', d.querySelector('[data-me-name]')?.textContent === 'Scores');
+    t('button is a real button', btn?.tagName === 'BUTTON' && !!btn.getAttribute('aria-label'));
+    t('button tap target >= 24px', (btn?.getBoundingClientRect().height ?? 0) >= 24,
+      Math.round(btn?.getBoundingClientRect().height ?? 0) + 'px');
+
+    btn.click(); await sleep(200);
+    const dlg = d.querySelector('.mepanel');
+    t('opens a dialog', !!dlg);
+    t('role=dialog + aria-modal', dlg?.getAttribute('role') === 'dialog' && dlg?.getAttribute('aria-modal') === 'true');
+    t('dialog has a label', !!dlg?.getAttribute('aria-label'));
+    t('panel is not printed', !!d.querySelector('.mewrap.noprint'));
+    t('focus moved into dialog', !!dlg?.contains(d.activeElement), d.activeElement?.textContent?.trim().slice(0, 24));
+
+    /* Tab must not walk out of a dialog that claims to be modal.
+
+       Asserting on defaultPrevented, NOT on where focus ended up: a browser does
+       not move focus in response to a synthetic Tab event, so "focus is still
+       inside" is true whether the trap works or not. The first version of this
+       check asserted exactly that and could not fail — caught by breaking the
+       trap on purpose and watching it pass. */
+    const items = [...dlg.querySelectorAll('button, [href]')].filter((e) => e.offsetParent !== null);
+    items[items.length - 1].focus();
+    const fwd = new w.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    d.dispatchEvent(fwd);
+    items[0].focus();
+    const back = new w.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    d.dispatchEvent(back);
+    await sleep(60);
+    t('Tab wraps at the last item', fwd.defaultPrevented);
+    t('Shift-Tab wraps at the first', back.defaultPrevented);
+    t('focus stayed inside the dialog', !!d.querySelector('.mepanel')?.contains(d.activeElement));
+
+    // Escape closes, and focus goes back where it came from
+    d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await sleep(150);
+    t('Escape closes', !d.querySelector('.mepanel'));
+    t('focus returns to the button', d.activeElement === d.querySelector('[data-me]'),
+      d.activeElement?.getAttribute?.('data-me') !== null ? 'the Scores button' : (d.activeElement?.tagName || 'nothing'));
+
+    // the create flow, and every face labelled
+    d.querySelector('[data-me]').click(); await sleep(150);
+    d.querySelector('[data-new]').click(); await sleep(250);
+    const cells = [...d.querySelectorAll('[data-av]')];
+    t('offers all 150 faces', cells.length === 150, cells.length + ' faces');
+    t('every face is labelled', cells.every((c) => !!c.getAttribute('aria-label')));
+    t('every face svg is decorative', cells.every((c) => c.querySelector('svg')?.getAttribute('aria-hidden') === 'true'));
+    t('faces are >= 24px', cells[0].getBoundingClientRect().height >= 24,
+      Math.round(cells[0].getBoundingClientRect().height) + 'px');
+
+    cells[42].click(); await sleep(180);
+    t('offers 10 names', d.querySelectorAll('[data-name]').length === 10);
+    d.querySelectorAll('[data-name]')[0].click(); await sleep(180);
+    t('offers 25 foods', d.querySelectorAll('[data-food]').length === 25);
+    t('grown-ups note is honest', /not a password/.test(d.querySelector('.mefoot')?.textContent || ''));
+
+    d.querySelector('[data-food="mango"]').click(); await sleep(350);
+    t('profile created', d.querySelector('[data-me-name]')?.textContent !== 'Scores',
+      'button now says "' + d.querySelector('[data-me-name]')?.textContent + '"');
+
+    // the pick-up check must actually reject a wrong answer
+    await w.__izziProfile.store.signOut();
+    w.__izziProfile.repaint(); await sleep(200);
+    d.querySelector('.meclose')?.click(); await sleep(120);
+    d.querySelector('[data-me]').click(); await sleep(180);
+    d.querySelector('[data-pick]').click(); await sleep(180);
+    d.querySelector('[data-id]').click(); await sleep(180);
+    const foods = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
+    t('check offers 6 foods incl. the right one', foods.length === 6 && foods.includes('mango'), foods.join(','));
+    d.querySelector('[data-food="' + foods.find((f) => f !== 'mango') + '"]').click(); await sleep(180);
+    t('wrong snack is rejected', d.querySelector('[data-me-name]')?.textContent === 'Scores' && !!d.querySelector('.mesub.bad'));
+    d.querySelector('[data-food="mango"]').click(); await sleep(300);
+    t('right snack signs in', d.querySelector('[data-me-name]')?.textContent !== 'Scores');
+
+    /* Nothing may be written while signed out. Counting docs before and after,
+       rather than asserting something that is true either way — the first
+       version of this check had `|| true` on the end and could not fail. */
+    await w.__izziProfile.store.signOut();
+    const keysBefore = Object.keys(JSON.parse(w.localStorage.getItem('izzi.profiles.v1') || '{}')).length;
+    await w.__izziProfile.noteProgress('array-architect', { played: true });
+    await sleep(80);
+    const keysAfter = Object.keys(JSON.parse(w.localStorage.getItem('izzi.profiles.v1') || '{}')).length;
+    t('no writes while signed out', keysAfter === keysBefore, keysBefore + ' docs before, ' + keysAfter + ' after');
+  } catch (e) {
+    t('harness itself', false, 'THREW ' + e.message);
+  }
+  frame.remove();
+}
+
 L.push(''); L.push('CHECKS_RUN='+checks);
 document.getElementById('out').textContent=L.join('\n');
 window.__DONE__=true;

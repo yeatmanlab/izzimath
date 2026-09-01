@@ -19,9 +19,11 @@ Deployment is automatic: pushing to `main` runs the checks, builds with
 
 Three things the Node checkers cannot test, because they need a real layout
 engine, live in [`tools/`](tools/README.md) and are copied to `dist/_tools/` by
-the build: a **responsive audit** (23 pages × 5 widths, checking overflow,
+the build: a **responsive audit** (28 pages × 5 widths, checking overflow,
 tap-target size and text size), a **problem-type test** (all nine types render,
-verify their own answers, and print), and a **print page-fill test** (1,312
+verify their own answers, and print — plus the profile panel's dialog and
+keyboard behaviour, driven through a real page in an iframe, since it is
+client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (1,408
 cases — every activity × character × style × mode × sheet/key — failing anything
 taller or wider than one page of Letter, or whose last page is under 80% full).
 All three end with `CHECKS_RUN=<n>` — **if that is missing or zero the harness did
