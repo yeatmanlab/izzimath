@@ -22,6 +22,7 @@
 import { AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, FOODS, foodById, foodChoicesFor } from '../../content/avatars.js';
 import { avatarSvg } from '../lib/avatarart.js';
 import { createStore, localDriver } from '../lib/profile.js';
+import { TIERS } from '../lib/ladder.js';
 import { activities } from '../../content/activities/index.js';
 import { base } from '../lib/url.js';
 import { currentCharacter, setCharacter } from '../lib/theme.js';
@@ -225,9 +226,15 @@ async function flowMine(me, justMade = false) {
         p.finished ? '<span class="memark ok" title="Finished">✓</span>' : '',
         p.printed ? `<span class="memark" title="Printed ${p.printed}×">⤓</span>` : '',
       ].join('');
+      /* Tier 0 is a real answer, not a missing one. Testing `p.bestTier` for
+         truthiness meant a child who played and stayed on the first rung saw an
+         empty cell, which reads as "that didn't count". What decides whether
+         there is a score to show is whether they PLAYED. */
+      const tierName = (i) => TIERS[i] ?? '—';
       const score = a.kind === 'game'
-        ? (p.bestTier ? `deepest: ${['warming up', 'getting there', 'the hard ones', 'the very hard ones'][p.bestTier] || '—'}`
-            : (p.bestRight ? `best: ${p.bestRight} right` : ''))
+        ? (!p.plays ? ''
+          : a.adaptive ? `deepest: ${tierName(p.bestTier)}`
+          : `best: ${p.bestRight} of ${a.rounds ?? '?'} right`)
         : (p.pagesDone ? `${p.pagesDone} page${p.pagesDone === 1 ? '' : 's'}` : '');
       return `<tr>
         <td><a href="${base()}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/">${a.title}</a></td>

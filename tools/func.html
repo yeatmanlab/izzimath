@@ -171,6 +171,22 @@ L.push('');
     d.querySelector('[data-food="mango"]').click(); await sleep(300);
     t('right snack signs in', d.querySelector('[data-me-name]')?.textContent !== 'Scores');
 
+    /* A game played at the LOWEST tier must still show a score. `bestTier` of 0
+       is a real answer, not a missing one, and testing it for truthiness left a
+       child who played and stayed on the first rung looking at an empty cell —
+       which reads as "that didn't count". Found by playing it, not by reading. */
+    {
+      const me = await w.__izziProfile.store.getActive();
+      await w.__izziProfile.store.record(me.id, 'decade-duel', { played: true, right: 0, streak: 0, tier: 0 });
+      d.querySelector('.meclose')?.click(); await sleep(120);
+      d.querySelector('[data-me]').click(); await sleep(300);
+      const row = [...d.querySelectorAll('.metable tbody tr')]
+        .find((r) => /Decade Duel/.test(r.cells[0]?.textContent || ''));
+      const cell = row?.cells[1]?.textContent.trim();
+      t('tier 0 still shows a score', !!cell, cell ? '"' + cell + '"' : 'EMPTY CELL');
+      d.querySelector('.meclose')?.click(); await sleep(120);
+    }
+
     /* Nothing may be written while signed out. Counting docs before and after,
        rather than asserting something that is true either way — the first
        version of this check had `|| true` on the end and could not fail. */
