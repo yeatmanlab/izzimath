@@ -23,6 +23,10 @@ function paint() {
     (showKey ? `<div class="pagebreak"></div>` + sheet({ activity: a, seed, ch, base: base(), siteUrl: site, key: true, mode, style, variant: variant || null }) : '');
 }
 
+// A print counts as something done, so it earns a mark alongside completions.
+window.addEventListener('beforeprint', () => {
+  window.__izziProfile?.noteProgress(a?.id, { printed: true });
+});
 document.querySelector('[data-newseed]')?.addEventListener('click', () => { seed = newSeed(); paint(); });
 document.querySelector('[data-togglekey]')?.addEventListener('click', (e) => {
   showKey = !showKey;

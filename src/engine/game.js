@@ -276,6 +276,10 @@ export function mountGame(activity, root) {
   function finish(reason) {
     over = true;
     clearInterval(tHandle); tHandle = null;
+    window.__izziProfile?.noteProgress(activity.id, {
+      played: true, right: score, streak: best, tier: lad ? deepest : 0,
+    });
+    window.__izziProfile?.offerToKeepScore();
     const pct = total ? Math.round((score / Math.max(round, 1)) * 100) : 0;
     // The screen closes the loop on the goal the HUD stated. Missing the target
     // is reported as a number to beat, not as a fail: a game is for getting

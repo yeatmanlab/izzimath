@@ -140,6 +140,10 @@ export function mountBook(activity, root) {
      the same problems again, a fresh set, the printable, or the grade shelf. */
   function paintFinish() {
     const worked = answered.filter((x) => x !== null).length;
+    // Recorded only if a profile is keeping score; a no-op otherwise, which is
+    // what makes not keeping score genuinely cost nothing.
+    window.__izziProfile?.noteProgress(activity.id, { finished: true, pagesDone: worked });
+    window.__izziProfile?.offerToKeepScore();
     bar.innerHTML = `
       <h2>${activity.title}</h2>
       <span class="tag acc">Finished</span>

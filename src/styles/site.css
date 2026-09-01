@@ -451,3 +451,86 @@ a.reflink:hover { border-color: var(--a1); color: var(--a1) }
 a.reflink .g { font-size: 10.5px; color: var(--txt3); border-left: 1px solid var(--line2); padding-left: 6px }
 a.reflink.page { border-style: dashed; color: var(--txt2) }
 a.reflink.page:hover { color: var(--a1) }
+
+/* ============================== profiles ==================================
+   Keeping score is opt-in. The button is quiet until there is a profile, then
+   it becomes that child's face — which is the only persistent reminder that
+   scores are being kept. */
+.mebtn {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  background: var(--glass); border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 12px 4px 6px; color: var(--txt2); font: 500 12.5px/1 var(--fdisp);
+}
+.mebtn:hover { color: var(--txt); border-color: var(--txt3) }
+.mebtn[data-on] { border-color: color-mix(in srgb, var(--a2) 50%, transparent); color: var(--txt) }
+.me-face { display: grid; place-items: center; width: 26px; height: 26px; font-size: 15px }
+.me-face svg { display: block; border-radius: 50% }
+
+.mewrap { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 18px }
+.mebg { position: absolute; inset: 0; background: rgba(4,4,8,.72); backdrop-filter: blur(3px) }
+.mepanel {
+  position: relative; z-index: 1; width: min(720px, 100%); max-height: min(86vh, 780px);
+  overflow: auto; background: #0f0f16; border: 1px solid var(--line);
+  border-radius: 20px; padding: 26px 26px 20px; box-shadow: 0 30px 90px rgba(0,0,0,.7);
+}
+.meclose {
+  position: absolute; top: 12px; right: 14px; background: none; border: 0; cursor: pointer;
+  color: var(--txt3); font-size: 26px; line-height: 1; padding: 4px 8px; border-radius: 8px;
+}
+.meclose:hover { color: var(--txt) }
+.meh { font: 700 21px/1.2 var(--fdisp); margin: 0 0 6px; color: var(--txt) }
+.mesub { color: var(--txt2); font-size: 14px; margin: 0 0 18px; max-width: 52ch }
+.mesub.bad { color: var(--a3) }
+.mebtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px }
+.mepick { display: grid; place-items: center; margin: 0 0 16px }
+
+/* 150 faces. Sized so a whole colourway fits on one screen and a child scans
+   rather than scrolls. */
+.megrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px }
+.mecell {
+  display: grid; place-items: center; cursor: pointer; padding: 4px;
+  background: var(--glass); border: 1px solid var(--line); border-radius: 14px;
+}
+.mecell:hover, .mecell:focus-visible { border-color: var(--a1); transform: scale(1.07) }
+.mecell svg { display: block }
+
+.mechips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center }
+.mefoods { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px }
+.mefood {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; text-align: left;
+  background: var(--glass); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 11px; color: var(--txt2); font: 500 13px/1.2 var(--fdisp);
+}
+.mefood span { font-size: 20px; line-height: 1 }
+.mefood:hover, .mefood:focus-visible { border-color: var(--a1); color: var(--txt) }
+
+.mecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px }
+.mecard {
+  display: grid; place-items: center; gap: 3px; cursor: pointer; padding: 14px 10px;
+  background: var(--glass); border: 1px solid var(--line); border-radius: 16px; color: var(--txt2);
+}
+.mecard b { font: 700 15px/1.2 var(--fdisp); color: var(--txt) }
+.mecard span { font-size: 11px; color: var(--txt3) }
+.mecard:hover, .mecard:focus-visible { border-color: var(--a1) }
+
+.metable { width: 100%; border-collapse: collapse; font-size: 13.5px }
+.metable th { text-align: left; font: 600 10.5px/1 var(--fdisp); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--txt3); padding: 0 8px 8px 0; border-bottom: 1px solid var(--line) }
+.metable td { padding: 9px 8px 9px 0; border-bottom: 1px solid rgba(255,255,255,.05); color: var(--txt2) }
+.metable a { color: var(--txt); text-decoration: none }
+.metable a:hover { color: var(--a1) }
+.memark { display: inline-block; margin-right: 5px; font-size: 14px; color: var(--txt3) }
+.memark.ok { color: var(--ok) }
+
+.mefoot { margin: 20px 0 0; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 11.5px; line-height: 1.55; color: var(--txt3) }
+
+/* the check marks that appear on activity cards once a profile is keeping score */
+.cmarks { display: inline-flex; gap: 5px; margin-left: 8px; vertical-align: middle }
+.cmarks i { font-style: normal; font-size: 13px; color: var(--ok) }
+
+@media (max-width: 560px) {
+  .mepanel { padding: 22px 16px 16px; border-radius: 16px }
+  .megrid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)) }
+  .mefoods { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)) }
+}

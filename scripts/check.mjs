@@ -16,6 +16,9 @@ import { SCHEMAS } from '../content/wordproblems.js';
 import { ssddSets } from '../content/ssdd.js';
 import { plans, planActivityIds, FOUR_PART } from '../content/plans.js';
 import { ladderConfig, initState, record, tierFor, atTop, indexFor, TIERS, STEPS, LADDER_V } from '../src/lib/ladder.js';
+import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS } from '../content/avatars.js';
+import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatarart.js';
+import { createStore, nullDriver, localDriver, mergeProgress, MERGE, blankProgress } from '../src/lib/profile.js';
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
@@ -53,6 +56,153 @@ for (const a of activities) {
 }
 
 console.log(`\n=== generators (all activities x all characters) ===`);
+/* ----------------------------------------------------------------- avatars */
+console.log('\n=== profile avatars ===');
+{
+  if (AVATAR_COUNT !== 150) fail('avatars', `${AVATAR_COUNT} avatars, the design calls for 150`);
+
+  /* Every spec must resolve to a primitive that actually draws something. The
+     deer asked for antlers as an `extra` when antlers are an `ears` primitive,
+     so it rendered a bare head and nothing anywhere failed. */
+  for (const c of CREATURES) {
+    const w = `avatar:${c.id}`;
+    if (!EAR_KINDS.includes(c.ears)) fail(w, `ears "${c.ears}" is not a primitive`);
+    if (!EXTRA_KINDS.includes(c.extra)) fail(w, `extra "${c.extra}" is not a primitive`);
+    if (!FACE_KINDS.includes(c.face)) fail(w, `face "${c.face}" is not a primitive`);
+  }
+
+  /* Two creatures with the same silhouette AND the same feature are the same
+     icon twice, which breaks the one thing that matters: finding yours. */
+  const sig = new Map();
+  for (const c of CREATURES) {
+    const k = `${c.ears}|${c.face}|${c.extra}`;
+    if (sig.has(k)) fail('avatars', `${c.id} and ${sig.get(k)} are visually identical (${k})`);
+    sig.set(k, c.id);
+  }
+
+  // all 150 render, distinctly, and carry a label for screen readers
+  const seen = new Set();
+  for (let i = 0; i < AVATAR_COUNT; i++) {
+    const svg = avatarSvg(i);
+    if (!svg || svg.length < 200) fail('avatars', `avatar ${i} rendered ${svg?.length ?? 0} chars`);
+    if (!/aria-label="/.test(svg)) fail('avatars', `avatar ${i} has no accessible label`);
+    if (seen.has(svg)) fail('avatars', `avatar ${i} is byte-identical to an earlier one`);
+    seen.add(svg);
+    const sp = avatarSpec(i);
+    if (!sp.creature || !sp.colour) fail('avatars', `avatar ${i} has no spec`);
+  }
+  // ids must be stable: creature varies fastest, so a grid shows variety first
+  if (avatarSpec(0).creature.id === avatarSpec(1).creature.id)
+    fail('avatars', 'consecutive ids are the same creature — the grid would show six of each');
+
+  // names
+  for (let i = 0; i < AVATAR_COUNT; i += 7) {
+    const ns = namesFor(i);
+    if (ns.length !== NAMES_OFFERED) fail('avatars', `avatar ${i} offers ${ns.length} names, want ${NAMES_OFFERED}`);
+    if (new Set(ns).size !== ns.length) fail('avatars', `avatar ${i} offers a duplicate name`);
+    if (ns.some((n) => !NAME_POOL.includes(n))) fail('avatars', `avatar ${i} offers a name not in the pool`);
+    if (JSON.stringify(ns) !== JSON.stringify(namesFor(i))) fail('avatars', `namesFor(${i}) is not deterministic`);
+  }
+
+  // foods, and the pick-up check
+  if (FOODS.length !== 25) fail('avatars', `${FOODS.length} foods, the design calls for 25`);
+  if (new Set(FOODS.map((f) => f.id)).size !== FOODS.length) fail('avatars', 'duplicate food id');
+  for (const f of FOODS) if (!f.name || !f.glyph) fail('avatars', `food ${f.id} missing name or glyph`);
+  {
+    const prof = { avatar: 42, name: 'Pip', food: 'mango' };
+    const ch = foodChoicesFor(prof);
+    if (ch.length !== CHECK_DECOYS + 1) fail('avatars', `food check offers ${ch.length}, want ${CHECK_DECOYS + 1}`);
+    if (!ch.some((f) => f.id === 'mango')) fail('avatars', 'the right food is not among the choices');
+    if (new Set(ch.map((f) => f.id)).size !== ch.length) fail('avatars', 'food check repeats a choice');
+    if (JSON.stringify(foodChoicesFor(prof)) !== JSON.stringify(ch))
+      fail('avatars', 'food choices change between visits — a child would think it is broken');
+  }
+  console.log(`  ${AVATAR_COUNT} avatars · ${CREATURES.length} creatures × ${COLOURWAYS.length} colourways · ${FOODS.length} foods · ${NAME_POOL.length} names`);
+}
+
+/* ---------------------------------------------------------------- profiles */
+console.log('\n=== profiles ===');
+{
+  const store = createStore(nullDriver());
+  // the null driver must be genuinely inert: this is the default state, and the
+  // default state must store nothing at all
+  await store.record('nobody', 'times-table-tower', { played: true });
+  if ((await store.listProfiles()).length !== 0) fail('profiles', 'the null driver kept something');
+
+  // progress records are plain JSON, and every field has a declared merge rule
+  const blank = blankProgress('x');
+  for (const k of Object.keys(blank)) {
+    if (['v', 'activityId'].includes(k)) continue;
+    if (!MERGE[k]) fail('profiles', `progress field "${k}" has no declared merge rule`);
+  }
+  if (JSON.parse(JSON.stringify(blank)) === null) fail('profiles', 'progress is not JSON');
+
+  // the merge rules do what they say — this is the spec a Firestore sync follows
+  const a = { ...blank, plays: 3, bestRight: 9, finished: false, lastAt: '2026-01-01' };
+  const b = { ...blank, plays: 2, bestRight: 4, finished: true, lastAt: '2026-02-01' };
+  const m = mergeProgress(a, b);
+  if (m.plays !== 5) fail('profiles', `sum-merge gave ${m.plays}, want 5`);
+  if (m.bestRight !== 9) fail('profiles', `max-merge gave ${m.bestRight}, want 9 — a device would lose a best score`);
+  if (m.finished !== true) fail('profiles', 'or-merge lost a completion');
+  if (m.lastAt !== '2026-02-01') fail('profiles', 'latest-merge picked the older timestamp');
+  /* The local driver's job is to behave like a document store, because that is
+     what makes the Firestore swap a driver change. The subtle part is `list`:
+     a collection query returns DIRECT CHILDREN, not everything under the prefix.
+     Shimmed here because Node has no localStorage. */
+  {
+    const mem = new Map();
+    globalThis.localStorage = {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => mem.set(k, String(v)),
+      removeItem: (k) => mem.delete(k),
+    };
+    const st = createStore(localDriver('test.key'));
+    const p1 = await st.createProfile({ avatar: 3, name: 'Pip', food: 'mango' });
+    const p2 = await st.createProfile({ avatar: 90, name: 'Dot', food: 'taco' });
+    if (p1.id === p2.id) fail('profiles', 'two profiles got the same id');
+    if ((await st.listProfiles()).length !== 2) fail('profiles', 'listProfiles did not return both');
+
+    await st.record(p1.id, 'decade-duel', { played: true, right: 9, streak: 4, tier: 2 });
+    await st.record(p1.id, 'decade-duel', { played: true, right: 5, streak: 7 });
+    const pr = await st.getProgress(p1.id, 'decade-duel');
+    if (pr.plays !== 2) fail('profiles', `plays ${pr.plays}, want 2 (sum)`);
+    if (pr.bestRight !== 9) fail('profiles', `bestRight ${pr.bestRight}, want 9 (max, not last)`);
+    if (pr.bestStreak !== 7) fail('profiles', `bestStreak ${pr.bestStreak}, want 7`);
+
+    // progress must not leak between profiles
+    if ((await st.getProgress(p2.id, 'decade-duel')).plays !== 0)
+      fail('profiles', "one profile's progress leaked into another");
+
+    // a collection query returns direct children only
+    await st.record(p1.id, 'times-table-tower', { printed: true });
+    const all = await st.allProgress(p1.id);
+    if (Object.keys(all).length !== 2) fail('profiles', `allProgress returned ${Object.keys(all).length}, want 2`);
+    if ((await st.listProfiles()).some((x) => !x.id)) fail('profiles', 'listProfiles returned a non-profile doc — prefix leak');
+
+    // active profile, and sign-out
+    await st.setActive(p1.id);
+    if ((await st.getActive())?.id !== p1.id) fail('profiles', 'setActive/getActive disagree');
+    await st.signOut();
+    if (await st.getActive()) fail('profiles', 'signOut left a profile active');
+
+    // deleting a profile takes its progress with it
+    await st.deleteProfile(p1.id);
+    if (await st.getProfile(p1.id)) fail('profiles', 'deleted profile still readable');
+    if (Object.keys(await st.allProgress(p1.id)).length !== 0)
+      fail('profiles', 'deleting a profile orphaned its progress');
+
+    // rejects anything a document store could not hold, or that is out of range
+    for (const bad of [{ avatar: -1, name: 'x', food: 'mango' }, { avatar: 999, name: 'x', food: 'mango' },
+                       { avatar: 1, name: '', food: 'mango' }, { avatar: 1, name: 'x', food: 'nope' }]) {
+      let threw = false;
+      try { await st.createProfile(bad); } catch { threw = true; }
+      if (!threw) fail('profiles', `createProfile accepted ${JSON.stringify(bad)}`);
+    }
+    delete globalThis.localStorage;
+  }
+  console.log(`  ${Object.keys(MERGE).length} progress fields, each with a merge rule · both drivers exercised`);
+}
+
 /* ------------------------------------------------------------------ ladder
    The adaptive controller is a pure reducer, which is the whole reason it is
    worth testing here rather than in a browser. Each case below is one of the

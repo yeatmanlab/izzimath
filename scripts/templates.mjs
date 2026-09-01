@@ -41,6 +41,7 @@ ${body}
 </main>
 ${footer(b)}
 <script type="module" src="${b}/assets/src/lib/theme.js"></script>
+<script type="module" src="${b}/assets/src/mount/profile.js"></script>
 ${scripts.map((s) => `<script type="module" src="${b}${s}"></script>`).join('\n')}
 </body>
 </html>`;
@@ -64,6 +65,13 @@ function nav(b, active) {
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
         ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" aria-label="${esc(characters[id].name)}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg><span class="chname">${esc(characters[id].name)}</span></button>`).join('')}
       </div>
+      <!-- Keeping score is opt-in and this is the only place it is offered
+           unprompted. Renders as a plain "Scores" button until a profile
+           exists, then becomes that child's face. -->
+      <button class="mebtn" data-me aria-haspopup="dialog" aria-label="Scores and characters">
+        <span class="me-face" data-me-face aria-hidden="true">☺</span>
+        <span class="me-name" data-me-name>Scores</span>
+      </button>
     </div>
   </div>
 </header>`;
@@ -92,10 +100,12 @@ function footer(b) {
 export function activityCard(b, a) {
   const href = `${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/`;
   const glyph = a.glyph || (a.kind === 'game' ? '◉' : '◈');
-  return `<a class="card" href="${href}">
+  // data-activity lets the profile script mark this card up with what has been
+  // done, without the build needing to know anything about profiles.
+  return `<a class="card" href="${href}" data-activity="${esc(a.id)}">
   <div class="thumb"><span class="big" aria-hidden="true">${esc(glyph)}</span></div>
   <div class="cbody">
-    <h3>${esc(a.title)}</h3>
+    <h3>${esc(a.title)}<span class="cmarks" data-marks></span></h3>
     <p>${esc(a.blurb)}</p>
     <div class="meta">
       <span class="tag acc">${a.kind === 'book' ? 'Book' : 'Game'}</span>
