@@ -63,7 +63,11 @@ flash mechanic already exist.
   about a tenth of elaborated feedback, and the gap is widest in maths. The
   checker fails the build without one.
 - **Games sit downstream of books.** A game never introduces a concept, always
-  names its strategy first, and never starts a clock unprompted.
+  names its strategy first, and never starts a clock unprompted. A game must also
+  say what it IS: `goal` is the task in the child's words, `strategy` is how to do
+  it, and neither substitutes for the other. The reasoning, and why the start
+  screen is short rather than explanatory, is in
+  [`docs/GAME-DESIGN.md`](docs/GAME-DESIGN.md) — read it before adding a game.
 - **Print is line art, and the cheap option must stay genuinely cheap.** No flood
   fills behind the maths anywhere; shaded fractions are hatched. The `plain`
   style is strictly black hairlines on white with no tints at all — that is the
@@ -102,6 +106,7 @@ scripts/            build templates, and the four checkers
 build.mjs           static site generator — plain Node, no dependencies
 docs/
   next/BACKLOG.md   what is left to build  ← start here
+  GAME-DESIGN.md    why the games look the way they do, with sources
   EVIDENCE.md       what the content is based on, with citations
   SPEC.md           the full research output, verbatim (reference, not the build)
   ROAM.md           what ROAM measures and how we link to it
@@ -113,8 +118,8 @@ docs/
 Add an object to the right `content/activities/grade-*.js`. Required fields are
 enforced by the checker: `id`, `title`, `kind`, `grade`, `strand` (must exist in
 `strands.js`), `skill`, `blurb`, `ccss`, `im`, `refs`, `theory`, `roam`,
-`evidence`, and `generate()`. Books need `pages`, games need `rounds` and a
-`strategy`. Every generated problem needs an `explain`.
+`evidence`, and `generate()`. Books need `pages`; games need `rounds`, a
+`strategy` and a `goal`. Every generated problem needs an `explain`.
 
 Every activity also carries a `trick`: the method, in the fewest words that still
 say how. It prints at the top of the sheet before any problem, which is the one

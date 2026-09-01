@@ -42,6 +42,10 @@ for (const a of activities) {
   if (typeof a.generate !== 'function') fail(where, 'no generate()');
   if (a.kind === 'book' && !a.pages) fail(where, 'book with no pages');
   if (a.kind === 'game' && !a.rounds) fail(where, 'game with no rounds');
+  // A game has to say what the child is being asked to do. Children testing
+  // these could not always name the point of the game, and the strategy field
+  // says how to do it, not what it is. See docs/GAME-DESIGN.md.
+  if (a.kind === 'game' && !a.goal) fail(where, 'game with no goal — what is the child being asked to do?');
   if (!a.evidence) warn(where, 'no evidence note');
 }
 

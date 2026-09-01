@@ -166,6 +166,52 @@ input.ans:focus { border-color: var(--a1); outline: none }
 
 .scorebar { display: flex; gap: 20px; justify-content: center; font-family: var(--fdisp); font-size: 14px; color: var(--txt2); margin-bottom: 14px }
 .scorebar b { color: var(--txt); font-size: 19px; display: block }
+
+/* ---------- the game HUD: it states the goal, so the start screen need not ----
+   "Right 3 of 10" is self-documenting in a way "Score 3" is not, and the bar
+   under it supplies proximity to the goal. Streak only appears once earned;
+   the clock only while it is running. */
+.ghud {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  /* width:100% matters — the stage is a shrink-to-fit centred column, so without
+     it the 1fr bar track collapsed to about 60px and the progress bar, which is
+     the entire point of the HUD, was too short to read as progress. */
+  gap: 10px 16px; margin: 0 auto 20px; width: 100%; max-width: 560px;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass);
+}
+.gh-goal { display: flex; align-items: baseline; gap: 6px; font-family: var(--fdisp); white-space: nowrap }
+.gh-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--txt3) }
+.gh-goal b { font-size: 24px; color: var(--txt); line-height: 1 }
+.gh-of { font-size: 13px; color: var(--txt2) }
+.gh-hit { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ok); margin-left: 4px }
+.gh-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.09); overflow: hidden; min-width: 60px }
+.gh-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--a1), var(--a2)); transition: width .35s cubic-bezier(.2,.7,.3,1) }
+.gh-side { display: flex; align-items: center; gap: 12px; font-family: var(--fdisp); white-space: nowrap }
+.gh-streak { font-size: 12px; color: var(--a1) }
+.gh-clock { font-size: 13px; color: var(--txt2) }
+.gh-clock b { font-size: 19px; color: var(--txt); font-variant-numeric: tabular-nums }
+@media (max-width: 560px) {
+  .ghud { grid-template-columns: 1fr auto; gap: 8px 12px }
+  .gh-bar { grid-column: 1 / -1; order: 3 }
+}
+
+/* ---------- the starting gun, shown only when the clock is on ---------- */
+.gcount { display: grid; place-items: center; min-height: 240px; gap: 6px }
+.gc-num {
+  font-family: var(--fdisp); font-size: clamp(64px, 14vw, 118px); font-weight: 700;
+  line-height: 1; letter-spacing: -.03em;
+  background: linear-gradient(135deg, var(--a1), var(--a2)); -webkit-background-clip: text;
+  background-clip: text; color: transparent;
+  animation: gcpop 620ms cubic-bezier(.18,.9,.28,1.2);
+}
+.gc-num.go { font-size: clamp(48px, 10vw, 86px) }
+.gc-cap { color: var(--txt3); font-size: 13px; letter-spacing: .1em; text-transform: uppercase; margin: 0 }
+@keyframes gcpop { from { transform: scale(.55); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .gc-num { animation: none } }
+
+/* the one line on the start screen that says what winning looks like */
+.gaim { color: var(--txt2); font-size: 14.5px; max-width: 46ch; margin: -14px auto 22px }
+.gaim b { color: var(--txt) }
 .svgwrap { width: 100%; max-width: 660px; margin: 0 auto }
 /* Only figures that ASK for full width get it. An array or a dot pattern carries
    its own pixel size; stretching it to the container turned a 2x1 array into a
