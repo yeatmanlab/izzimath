@@ -147,9 +147,14 @@ export function mountGame(activity, root) {
     let n = 3;
     paintBar();
     const beat = () => {
+      // The numeral IS the count, so the caption must not repeat it — "Ready to
+      // race — 3" above a giant 3 says the same thing twice. The caption stays
+      // constant and a screen-reader-only live region carries the count, which
+      // is the only place the number needs saying in words.
       host.innerHTML = `<div class="gcount">
         <span class="gc-num${n === 0 ? ' go' : ''}" aria-hidden="true">${n > 0 ? n : 'Go!'}</span>
-        <p class="gc-cap" aria-live="assertive">${n > 0 ? `Ready to race \u2014 ${n}` : 'Go!'}</p>
+        <p class="gc-cap" aria-hidden="true">${n > 0 ? 'Ready to race the clock' : ''}</p>
+        <span class="sr" role="status" aria-live="assertive">${n > 0 ? n : 'Go!'}</span>
       </div>`;
       if (n === 0) { countHandle = setTimeout(then, 420); return; }
       n--;
