@@ -214,6 +214,7 @@ const mixedNumberLine = {
   glyph: '1½',
   skill: 'Placing mixed numbers and improper fractions on a 0–2 line.',
   goal: 'Place the number on the line between 0 and 2.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Land on the whole number first, then move the fraction part of the way towards the next one.',
   blurb: 'Past one and under two. Where does 7/4 go?',
   ccss: ['5.NF.A.1', '4.NF.B.3'],

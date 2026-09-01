@@ -100,6 +100,7 @@ export function activityCard(b, a) {
     <div class="meta">
       <span class="tag acc">${a.kind === 'book' ? 'Book' : 'Game'}</span>
       <span class="tag ok">Prints</span>
+      ${a.adaptive ? '<span class="tag adapt">Adjusts as you go</span>' : ''}
       <span class="tag">${esc(gradeName(a.grade).replace(' grade', ''))}</span>
       ${(a.ccss || []).slice(0, 1).map((c) => `<span class="tag">${esc(c)}</span>`).join('')}
     </div>
@@ -129,6 +130,15 @@ export function grownUpsNote(a) {
     rather than moving straight on. Feedback that explains is worth several times more than feedback
     that only marks right or wrong, and that gap is wider in maths than in any other subject.`);
   if (a.kind === 'game') {
+  if (a.adaptive) {
+    // Both halves of this matter. The first says what it does; the second is a
+    // privacy statement as much as a feature note, and it is currently true.
+    lines.push(`<strong>It adjusts as you go:</strong> this one gets harder while they are getting
+      them right and easier if they are not, aiming to keep them succeeding about four times in
+      five &mdash; hard enough to be worth doing, not hard enough to stop being fun. The score is
+      how deep they got rather than how many they answered, because the difficulty moved.
+      <strong>Nothing is stored</strong> &mdash; it starts fresh every time the page loads.`);
+  }
     lines.push(`<strong>On the timer:</strong> it is off unless you turn it on, and it is never
       needed. Use it only once the skill is comfortable, never to introduce it.`);
   } else {

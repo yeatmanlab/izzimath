@@ -41,6 +41,7 @@ import { getCharacter } from '../../content/characters.js';
 import { currentCharacter } from '../lib/theme.js';
 import { avatar } from '../lib/sprites.js';
 import { celebrate, streakNote } from './celebrate.js';
+import { ladderConfig, initState, record, tierFor, atTop, memoryStore } from '../lib/ladder.js';
 
 export function mountGame(activity, root) {
   const host = root.querySelector('[data-stage]');
@@ -58,7 +59,21 @@ export function mountGame(activity, root) {
   let round = 0, score = 0, streak = 0, best = 0, over = false;
   let timed = false, tLeft = 0, tHandle = null;
 
-  const problemFor = (i) => activity.generate(deriveSeed(seed, `r${i}`), i, ch, rng(deriveSeed(seed, `r${i}`)), seed);
+  /* Adaptive difficulty, where the item space has the depth for it. The ladder
+     chooses which difficulty index to serve; the round counter still drives the
+     seed. Both matter: if the SEED followed the level, holding a level would
+     serve the identical problem over and over. */
+  const lad = ladderConfig(activity);
+  const store = memoryStore();
+  let ladState = lad ? initState(lad) : null;
+  let deepest = 0;   // deepest RUNG reached this run
+
+  const levelNow = () => (lad ? ladState.level : round);
+
+  const problemFor = (i, level = i) => {
+    const sd = deriveSeed(seed, `r${i}`);
+    return activity.generate(sd, level, ch, rng(sd), seed);
+  };
 
   function paintBar() {
     bar.innerHTML = `
@@ -108,7 +123,9 @@ export function mountGame(activity, root) {
       <div class="qnum">How to play</div>
       ${ch.id === 'none' ? '' : avatar(ch.id, 'bigface', 'idle')}
       <p class="qtext">${activity.goal || activity.blurb || activity.title}</p>
-      <p class="gaim">Get <b>${target}</b> of <b>${total}</b> right.${
+      <p class="gaim">${lad
+        ? `It gets harder when you get them right. See how deep you can get \u2014 the top is <b>${(lad.tiers ?? ['','','','the very hard ones'])[3] || 'the very hard ones'}</b>.`
+        : `Get <b>${target}</b> of <b>${total}</b> right.`}${
         timerable
           ? timed
             ? ` The clock is <b>on</b> &mdash; ${Math.min(90, Math.max(60, activity.seconds || 60))} seconds, so go as fast as you can.`
@@ -174,6 +191,30 @@ export function mountGame(activity, root) {
      how many you have got right out of the number you are going for, how close
      that is, and — only when it is running — the clock. */
   function hud() {
+    // On an adaptive game the goal is DEPTH, not count. The controller's job is
+    // to hold success near 80-85%, so a count-based goal is close to a constant
+    // exactly when the adaptivity is working — the thing that actually varies is
+    // how far up the ladder the child got.
+    const side = `<div class="gh-side">
+        ${streak >= 2 ? `<span class="gh-streak">${streak} in a row</span>` : ''}
+        ${timed && tHandle ? `<span class="gh-clock">⏱ <b data-clock>${tLeft}s</b></span>` : ''}
+      </div>`;
+
+    if (lad) {
+      const t = tierFor(lad, ladState.step);
+      const top = atTop(ladState);
+      return `<div class="ghud">
+        <div class="gh-goal">
+          <span class="gh-label">You are on</span>
+          <b class="gh-tier">${t.name}</b>
+          ${top ? '<span class="gh-hit">top of the ladder!</span>' : ''}
+        </div>
+        <div class="gh-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+          aria-valuenow="${t.pct}" aria-label="Difficulty: ${t.name}"><i style="width:${Math.max(4, t.pct)}%"></i></div>
+        ${side}
+      </div>`;
+    }
+
     const pct = Math.min(100, (score / target) * 100);
     const hit = score >= target;
     return `<div class="ghud">
@@ -184,10 +225,7 @@ export function mountGame(activity, root) {
       </div>
       <div class="gh-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${target}"
         aria-valuenow="${Math.min(score, target)}" aria-label="Right ${score} of ${target}"><i style="width:${pct}%"></i></div>
-      <div class="gh-side">
-        ${streak >= 2 ? `<span class="gh-streak">${streak} in a row</span>` : ''}
-        ${timed && tHandle ? `<span class="gh-clock">⏱ <b data-clock>${tLeft}s</b></span>` : ''}
-      </div>
+      ${side}
     </div>`;
   }
 
@@ -195,7 +233,7 @@ export function mountGame(activity, root) {
     if (!started) return paintStart();
     if (round >= total) return finish();
     paintBar();
-    const p = problemFor(round);
+    const p = problemFor(round, levelNow());
     host.innerHTML = `
       ${hud()}
       <div data-slot></div>
@@ -210,6 +248,11 @@ export function mountGame(activity, root) {
     });
     renderProblem(slot, p, (response, ok) => {
       if (ok) { score++; streak++; best = Math.max(best, streak); } else { streak = 0; }
+      if (lad) {
+        ladState = record(lad, ladState, ok);
+        store.set(activity.id, ladState);   // memory today, an account later
+        deepest = Math.max(deepest, ladState.step);
+      }
       const voice = ok ? ch.voice.correct : ch.voice.wrong;
       const fb = document.createElement('div');
       fb.style.marginTop = '20px';
@@ -238,22 +281,35 @@ export function mountGame(activity, root) {
     // is reported as a number to beat, not as a fail: a game is for getting
     // quicker at something already met, so the useful next move is another go.
     const hit = score >= target;
+    const tier = lad ? tierFor(lad, deepest) : null;
     host.innerHTML = `
-      <div class="qnum">${reason || (hit ? 'Target hit' : 'Round complete')}</div>
+      <div class="qnum">${reason || (lad ? 'How deep you got' : (hit ? 'Target hit' : 'Round complete'))}</div>
       ${ch.id === 'none' ? '' : avatar(ch.id, 'bigface', 'happy')}
-      <p class="qtext">${hit ? ch.voice.done[0] : `You got ${score}. The target was ${target} &mdash; have another go?`}</p>
+      <p class="qtext">${lad
+        ? `You got to <strong>${tier.name}</strong>.`
+        : (hit ? ch.voice.done[0] : `You got ${score}. The target was ${target} &mdash; have another go?`)}</p>
       <div class="scorebar" style="margin-bottom:22px">
-        <span>Right<b>${score} / ${target}</b></span>
-        <span>Accuracy<b>${pct}%</b></span>
-        <span>Best streak<b>${best}</b></span>
+        ${lad
+          ? `<span>Deepest<b>${tier.name}</b></span>
+             <span>Right<b>${score} / ${round}</b></span>
+             <span>Best streak<b>${best}</b></span>`
+          : `<span>Right<b>${score} / ${target}</b></span>
+             <span>Accuracy<b>${pct}%</b></span>
+             <span>Best streak<b>${best}</b></span>`}
       </div>
+      ${lad ? `<p style="color:var(--txt3);font-size:12.5px;margin:-8px 0 18px">
+        This one got harder as you got them right. Nothing is saved &mdash; it starts fresh next time.</p>` : ''}
       <div class="sfoot">
         <button class="btn pri" data-again>Play again</button>
         <button class="btn" data-fresh>New problems</button>
         <a class="btn" href="${base()}/print/${activity.id}/?seed=${seed}">Print this as a sheet</a>
       </div>`;
-    host.querySelector('[data-again]').addEventListener('click', () => { round = 0; score = 0; streak = 0; over = false; if (timed) startTimer(); paint(); });
-    host.querySelector('[data-fresh]').addEventListener('click', () => { seed = newSeed(); round = 0; score = 0; streak = 0; over = false; paint(); });
+    const resetRun = () => {
+      round = 0; score = 0; streak = 0; over = false;
+      if (lad) { ladState = initState(lad); deepest = 0; }
+    };
+    host.querySelector('[data-again]').addEventListener('click', () => { resetRun(); if (timed) startTimer(); paint(); });
+    host.querySelector('[data-fresh]').addEventListener('click', () => { seed = newSeed(); resetRun(); paint(); });
     paintBar();
   }
 

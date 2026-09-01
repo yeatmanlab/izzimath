@@ -193,6 +193,7 @@ const numberLineHop = {
   glyph: '↦',
   skill: 'Estimating where a number sits on a 0–20 line.',
   goal: 'Slide the marker to where the number belongs on the line. Close enough counts.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Find the middle first — 10 is halfway to 20. Then decide whether your number comes before or after the middle.',
   blurb: 'Slide the marker to the right spot on the line.',
   ccss: ['1.NBT.B.3'],

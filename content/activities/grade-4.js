@@ -196,6 +196,7 @@ const divisionDescent = {
   glyph: '÷',
   skill: 'Dividing a two- or three-digit number by a single digit.',
   goal: 'Share the big number into equal groups, and say how many are in each group.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Divide the biggest place first. Write down what fits, then carry the leftover into the next digit.',
   blurb: 'Climb down: how many times does it go?',
   ccss: ['4.NBT.B.6'],
@@ -228,6 +229,7 @@ const decimalDrop = {
   glyph: '·',
   skill: 'Placing a decimal between 0 and 1, and matching it to its fraction.',
   goal: 'Drop the decimal where it belongs between 0 and 1.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: '0.5 is a half, 0.25 is a quarter, 0.1 is a tenth. Find the nearest of those you know, then adjust from it.',
   blurb: 'Where does 0.35 land? And what fraction is that?',
   ccss: ['4.NF.C.6', '4.NF.C.7'],

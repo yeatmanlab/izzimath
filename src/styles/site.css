@@ -183,6 +183,11 @@ input.ans:focus { border-color: var(--a1); outline: none }
 .gh-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--txt3) }
 .gh-goal b { font-size: 24px; color: var(--txt); line-height: 1 }
 .gh-of { font-size: 13px; color: var(--txt2) }
+/* The tier name replaces the count on an adaptive game. Words, never a number —
+   see docs/next/04-adaptive-and-spacing.md on why this is not an ability score. */
+.gh-goal b.gh-tier { font-size: 17px; letter-spacing: -.01em; line-height: 1.2 }
+/* "Adjusts as you go" — so a parent can tell which activities move. */
+.tag.adapt { color: var(--a2); border-color: color-mix(in srgb, var(--a2) 45%, transparent) }
 .gh-hit { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ok); margin-left: 4px }
 .gh-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.09); overflow: hidden; min-width: 60px }
 .gh-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--a1), var(--a2)); transition: width .35s cubic-bezier(.2,.7,.3,1) }

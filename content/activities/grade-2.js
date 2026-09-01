@@ -213,6 +213,7 @@ const hundredLineHop = {
   glyph: '⇥',
   skill: 'Estimating where a number sits on a 0–100 line.',
   goal: 'Slide the marker to where the number belongs between 0 and 100.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Anchor on 50, then 25 and 75. Place your number next to the nearest anchor instead of counting up from zero.',
   blurb: 'No tick marks this time. Where does 63 go?',
   ccss: ['2.NBT.A.1'],
@@ -246,6 +247,7 @@ const decadeDuel = {
   glyph: '⚖',
   skill: 'Comparing two-digit numbers, including the pairs designed to trick you.',
   goal: 'Two numbers appear. Tap the bigger one — the ones digit is there to trick you.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Look at the tens first. The ones only matter if the tens are the same.',
   blurb: 'Which is bigger: 65 or 49? Careful — the ones digit lies.',
   ccss: ['2.NBT.A.4'],

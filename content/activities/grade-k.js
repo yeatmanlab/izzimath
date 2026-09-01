@@ -172,6 +172,7 @@ const tenFrameFlash = {
   glyph: '⁙',
   skill: 'Subitizing — recognising how many without counting one by one.',
   goal: 'Dots flash up, then hide. Say how many you saw — see it, do not count it.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'A full row is five. So six is five and one more, and eight is five and three more.',
   printDensity: 'd2',
   blurb: 'The dots flash up. How many did you see?',
@@ -215,6 +216,7 @@ const whichIsMore = {
   glyph: '>',
   skill: 'Comparing two numbers — deciding which is larger, fast.',
   goal: 'Two numbers appear. Tap the bigger one.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'The number further along the counting line is the bigger one.',
   blurb: 'Two numbers. Tap the bigger one.',
   ccss: ['K.CC.C.6', 'K.CC.C.7'],

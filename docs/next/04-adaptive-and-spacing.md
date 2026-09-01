@@ -1,6 +1,17 @@
 # 4. Adaptive difficulty and spaced review
 
-Large. **Both blocked on accounts**, for the same reason. Not started.
+**Within-session adaptivity is built** (2026-09-01) — `src/lib/ladder.js`, on ten
+of the fourteen games. Cross-session adaptivity and spaced review remain blocked
+on accounts, for the reason below.
+
+One correction worth recording, because the first build shipped it and the
+checker now prevents it. The ladder originally ran over the raw generator indices
+one step at a time. With a 14-round game, a 0–13 index range and three items of
+evidence per step, perfect play reached index 3 of 13 and the child finished still
+labelled *warming up*: **the depth goal was unreachable, which defeats the entire
+point of making depth the goal.** The ladder now has four rungs spread across
+whatever range an activity authored, and `scripts/check.mjs` fails the build if a
+game's worth of perfect play cannot reach the top rung.
 
 ## Why they are blocked together
 

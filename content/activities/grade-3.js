@@ -207,6 +207,7 @@ const factFamilyForge = {
   glyph: '⟷',
   skill: 'Linking multiplication and division as the same fact seen two ways.',
   goal: 'One number is missing from the fact. Work out which one it is.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'One family, four facts. If 6 × 7 = 42 then 42 ÷ 7 = 6 — the same three numbers read the other way round.',
   blurb: 'Three numbers make four facts. Find the missing one.',
   ccss: ['3.OA.B.6', '3.OA.C.7'],
@@ -244,6 +245,7 @@ const arrayArchitect = {
   glyph: '▩',
   skill: 'Recognising a product from its shape, and knowing that order does not change it.',
   goal: 'Work out how many squares are in the array, without counting them one by one.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'The shape can be turned. 3 rows of 8 and 8 rows of 3 hold exactly the same number of squares.',
   blurb: 'How many squares? Then: does 4×6 match 6×4?',
   ccss: ['3.OA.A.1', '3.OA.B.5'],

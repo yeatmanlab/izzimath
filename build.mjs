@@ -256,6 +256,7 @@ for (const a of activities) {
       </div>
       <div class="meta" style="margin-top:16px">
         <span class="tag acc">${a.kind === 'book' ? 'Book' : 'Game'}</span>
+        ${a.adaptive ? '<span class="tag adapt">Adjusts as you go</span>' : ''}
         <span class="tag">${esc(a.strand)}</span>
         ${(a.ccss || []).map((c) => `<span class="tag">${esc(c)}</span>`).join('')}
         ${roamBadges(a)}

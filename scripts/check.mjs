@@ -15,6 +15,7 @@ import { IM_UNITS, imUnit } from '../content/curriculum.js';
 import { SCHEMAS } from '../content/wordproblems.js';
 import { ssddSets } from '../content/ssdd.js';
 import { plans, planActivityIds, FOUR_PART } from '../content/plans.js';
+import { ladderConfig, initState, record, tierFor, atTop, indexFor, TIERS, STEPS, LADDER_V } from '../src/lib/ladder.js';
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
@@ -52,6 +53,83 @@ for (const a of activities) {
 }
 
 console.log(`\n=== generators (all activities x all characters) ===`);
+/* ------------------------------------------------------------------ ladder
+   The adaptive controller is a pure reducer, which is the whole reason it is
+   worth testing here rather than in a browser. Each case below is one of the
+   four guards from docs/next/04-adaptive-and-spacing.md, because a guard that
+   is not tested is a guard that quietly stops working. */
+console.log('\n=== adaptive ladder ===');
+{
+  const A = activities.find((a) => a.adaptive);
+  const cfg = ladderConfig(A);
+  if (!cfg) fail('ladder', 'no adaptive activity to test against');
+  else {
+    const feed = (st, outcomes) => outcomes.reduce((acc, ok) => record(cfg, acc, !!ok), st);
+
+    // climbs on a good run
+    let st = feed(initState(cfg), [1, 1, 1]);
+    if (st.step <= 0) fail('ladder', `three right did not step up (rung ${st.step})`);
+
+    // one rung at a time, never two
+    const before = initState(cfg);
+    const after = record(cfg, feed(before, [1, 1]), true);
+    if (after.step - before.step > 1) fail('ladder', `stepped ${after.step - before.step} rungs at once`);
+
+    // a rung change clears the window, so one signal cannot move it twice
+    if (st.history.length !== 0) fail('ladder', 'window not cleared on a rung change');
+
+    // no drop on the first miss
+    if (feed(initState(cfg), [0]).step < 0) fail('ladder', 'dropped below the floor on the first item');
+    if (feed(initState(cfg), [0, 0]).step < 0) fail('ladder', 'dropped on the second item — one miss is noise');
+
+    // does drop once there is enough evidence
+    const sunk = feed(initState(cfg), [1, 1, 1, 1, 0, 0, 0, 0, 0, 0]);
+    if (sunk.step > 0) warn('ladder', `six misses left it on rung ${sunk.step}`);
+
+    // clamped in both directions, and the rungs span the authored range
+    const high = feed(initState(cfg), Array(200).fill(1));
+    if (high.step !== STEPS - 1) fail('ladder', `climbed to rung ${high.step} of ${STEPS - 1}`);
+    if (high.level !== cfg.to) fail('ladder', `top rung serves index ${high.level}, not the authored ceiling ${cfg.to}`);
+    const low = feed(initState(cfg), Array(200).fill(0));
+    if (low.step !== 0 || low.level !== cfg.from) fail('ladder', `sank to rung ${low.step}/index ${low.level}`);
+
+    /* The top rung has to be REACHABLE inside one game, or depth is a goal
+       nobody can meet — which is exactly the bug the first build shipped. */
+    const rounds = A.rounds ?? 12;
+    const perfect = feed(initState(cfg), Array(rounds).fill(1));
+    if (!atTop(perfect)) fail('ladder', `${rounds} perfect rounds only reach rung ${perfect.step} of ${STEPS - 1} — the top is unreachable`);
+
+    // tiers are words, one per rung, never a number
+    for (let k = 0; k < STEPS; k++) {
+      const t = tierFor(cfg, k);
+      if (!t.name || /\d/.test(t.name)) fail('ladder', `rung ${k} tier is not a word: "${t.name}"`);
+    }
+    if (TIERS.length !== STEPS) fail('ladder', `${TIERS.length} tier names for ${STEPS} rungs — they must pair up`);
+    if (!atTop(high)) fail('ladder', 'atTop false at the top rung');
+
+    // state is serialisable and versioned, for the account migration
+    const round = JSON.parse(JSON.stringify(high));
+    if (round.v !== LADDER_V) fail('ladder', 'state is not versioned');
+    if (JSON.stringify(round) !== JSON.stringify(high)) fail('ladder', 'state does not survive JSON round-trip');
+  }
+
+  // every adaptive activity must declare a usable range, and only games adapt
+  let n = 0;
+  for (const a of activities) {
+    if (!a.adaptive) continue;
+    n++;
+    const w = `adaptive:${a.id}`;
+    const c = ladderConfig(a);
+    const total = a.rounds ?? a.pages ?? 0;
+    if (a.kind !== 'game') fail(w, `only games adapt for now — this is a ${a.kind}`);
+    if (c.from < 0) fail(w, `floor ${c.from} is below zero`);
+    if (c.to >= total) fail(w, `ceiling ${c.to} is outside the ${total} rounds authored`);
+    if (c.to - c.from < 3) fail(w, `range ${c.from}-${c.to} is too short to be a ladder`);
+    if (!(c.up > c.down)) fail(w, `step-up rate ${c.up} is not above step-down rate ${c.down}`);
+  }
+  console.log(`  ${n} adaptive activities · ${activities.filter((a) => a.kind === 'game').length - n} left on fixed ladders`);
+}
+
 /* -------------------------------------------------------------------- plans
    A plan holds no problems of its own — it is entirely pointers. So the only
    thing that can break it is a pointer, and that is what gets checked: every

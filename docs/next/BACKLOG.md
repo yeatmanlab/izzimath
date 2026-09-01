@@ -4,7 +4,7 @@
 remaining work points here — keep this file current and the rest follows.
 
 Derived from the research pass ([`../SPEC.md`](../SPEC.md), 108 recommendations).
-Current state: **66 implemented · 17 partial · 18 not built · 7 not applicable.**
+Current state: **67 implemented · 17 partial · 17 not built · 7 not applicable.**
 The accounting lives in [`../EVIDENCE.md`](../EVIDENCE.md).
 
 Numbers in brackets are the recommendation numbers in `SPEC.md`, so each item can
@@ -63,9 +63,14 @@ Reduces code. See [`02-staging-and-content.md`](02-staging-and-content.md).
 
 See [`04-adaptive-and-spacing.md`](04-adaptive-and-spacing.md).
 
-- [ ] **Within-session adaptivity** [105] — targets 80–85% success and needs **no
-      stored state**, so this is the honest interim and is not blocked. *Medium.*
-      **Designed, not built** — the concrete design is in
+- [x] **Within-session adaptivity** [105] — done, 2026-09-01. Targets 80–85%
+      success, no stored state. `src/lib/ladder.js` is a pure reducer over four
+      rungs spread across each activity's own authored difficulty range; on ten of
+      the fourteen games. The other four have too shallow an item space to have a
+      ladder worth climbing. Adaptive games are scored on **depth reached, as a
+      named tier**, never as an ability estimate — a game is not a test and the
+      items are not calibrated. Interactive only; printables stay
+      seed-reproducible. Design and reasoning in
       [`04-adaptive-and-spacing.md`](04-adaptive-and-spacing.md#the-concrete-design).
       The short version: every generator's `i` argument already IS its difficulty
       parameter, so this is choosing which index to serve next rather than a new
