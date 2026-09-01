@@ -341,26 +341,38 @@ export const CHECK_DECOYS = 5;
    answer would be the odd one out. Silly answers get silly decoys and plain
    answers get plain ones.
 
-   Different base food. "Dragon pancakes" next to "Moon pancakes" is not a fair
-   question to put to a six-year-old a week later. */
+   Different base food, and different prefix. "Dragon pancakes" next to "Moon
+   pancakes" is not a fair question to put to a six-year-old a week later, and
+   neither is "Musical soup" next to "Musical hot cocoa". Both rules deliberately
+   help a child who only half remembers, at the cost of making the check easier —
+   which is the right way round, because this is a nudge to keep siblings on their
+   own scores and never a password. Six wrong guesses would get anyone in anyway;
+   what matters is that the child whose snack it is gets home first try. */
+const prefixOf = (f) => (f.silly ? f.id.slice(0, f.id.length - (f.base ?? '').length - 1) : '');
 export function foodChoicesFor(profile) {
   const right = profile.food;
   const idx = FOODS.findIndex((f) => f.id === right);
   if (idx < 0) return FOODS.slice(0, CHECK_DECOYS + 1);
   const answer = FOODS[idx];
   const base = answer.base ?? answer.id;
+  const pre = prefixOf(answer);
+  // The prefix rule only exists for silly snacks; a plain one has no prefix, and
+  // testing '' !== '' excluded every plain decoy and left 110 answers alone on
+  // the screen.
   const eligible = FOODS.filter((f) =>
-    f !== answer && !!f.silly === !!answer.silly && (f.base ?? f.id) !== base);
+    f !== answer && !!f.silly === !!answer.silly
+    && (f.base ?? f.id) !== base && (!f.silly || prefixOf(f) !== pre));
   const seedish = (profile.avatar * 31 + idx * 17 + profile.name.length * 7);
   const out = [answer];
-  const bases = new Set([base]);
+  const bases = new Set([base]), prefixes = new Set([pre]);
   let k = seedish % Math.max(1, eligible.length);
   // The no-two-of-a-base rule has to hold between the decoys as well, not just
   // against the answer, or a tray offers "Snowy mochi" beside "Tiny mochi".
   for (let tries = 0; out.length < CHECK_DECOYS + 1 && tries < eligible.length; tries++) {
     const f = eligible[k % eligible.length];
-    const fb = f.base ?? f.id;
-    if (!bases.has(fb)) { bases.add(fb); out.push(f); }
+    const fb = f.base ?? f.id, fp = prefixOf(f);
+    if (bases.has(fb) || (f.silly && prefixes.has(fp))) { k += 9; continue; }
+    bases.add(fb); prefixes.add(fp); out.push(f);
     k += 9;
   }
   /* Stable shuffle, so the right answer is not always first and the same six

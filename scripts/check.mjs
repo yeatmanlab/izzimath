@@ -229,7 +229,8 @@ console.log('\n=== profile avatars ===');
      random decoys would do exactly that), and two decoys sharing a base food ask
      a six-year-old to tell "Snowy mochi" from "Tiny mochi" a week later. */
   {
-    let short = 0, missing = 0, mixed = 0, clashing = 0, unstable = 0;
+    const prefixOf = (f) => (f.silly ? f.id.slice(0, f.id.length - f.base.length - 1) : '');
+    let short = 0, missing = 0, mixed = 0, clashing = 0, samePrefix = 0, unstable = 0;
     for (let i = 0; i < FOODS.length; i++) {
       const prof = { avatar: (i * 7) % AVATAR_COUNT, name: 'Pip', food: FOODS[i].id };
       const ch = foodChoicesFor(prof);
@@ -237,9 +238,14 @@ console.log('\n=== profile avatars ===');
       if (!ch.some((f) => f.id === prof.food)) missing++;
       if (new Set(ch.map((f) => !!f.silly)).size !== 1) mixed++;
       if (new Set(ch.map((f) => f.base ?? f.id)).size !== ch.length) clashing++;
+      if (FOODS[i].silly && new Set(ch.map(prefixOf)).size !== ch.length) samePrefix++;
       if (JSON.stringify(foodChoicesFor(prof)) !== JSON.stringify(ch)) unstable++;
     }
+    /* Counting the SHORT trays is what caught the prefix rule excluding every
+       plain decoy: `prefixOf` is '' for a plain snack, so '' !== '' left 110
+       answers alone on the screen with nothing to choose between. */
     if (short) fail('avatars', `${short} snacks offer the wrong number of choices`);
+    if (samePrefix) fail('avatars', `${samePrefix} snacks get two choices with the same silly word`);
     if (missing) fail('avatars', `${missing} snacks are not among their own choices`);
     if (mixed) fail('avatars', `${mixed} snacks get a tray mixing silly and plain — the answer stands out`);
     if (clashing) fail('avatars', `${clashing} snacks get two choices built on the same food`);
