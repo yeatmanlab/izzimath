@@ -18,16 +18,38 @@ const OUT = 'dist';
 
 /* ------------------------------------------------------------------ helpers */
 const rmrf = (p) => fs.rmSync(p, { recursive: true, force: true });
+
+/* The absolute URL a page actually lives at, derived from its output path.
+
+   Built from SITE and BASE rather than hardcoded, so a build for the GitHub
+   Pages subpath still emits correct tags and a local build does not claim to be
+   the live site. The 404 page deliberately gets none: a not-found response is
+   not a canonical resource, and pointing it at itself tells a crawler to index
+   the error page. */
+function canonicalFor(rel) {
+  if (rel === '404.html') return null;
+  const dir = rel.replace(/index\.html$/, '');
+  return `${SITE}${BASE}/${dir}`.replace(/([^:])\/{2,}/g, '$1/');
+}
+
 function write(rel, html) {
   const p = path.join(OUT, rel);
   fs.mkdirSync(path.dirname(p), { recursive: true });
   // Wrap tables so they scroll inside their own box on a phone rather than
   // pushing the whole document sideways. Done here rather than at every call
   // site so no table can be added later without it.
-  const wrapped = html.replace(
+  let out = html.replace(
     /<table class="tbl">([\s\S]*?)<\/table>/g,
     (m) => `<div class="tblwrap">${m}</div>`);
-  fs.writeFileSync(p, wrapped);
+  // Canonical and og:url, injected here for the same reason: ninety-odd call
+  // sites cannot each be trusted to remember, and a page added next year would
+  // silently ship without one.
+  const canon = canonicalFor(rel);
+  if (canon) {
+    out = out.replace('</head>',
+      `<link rel="canonical" href="${esc(canon)}">\n<meta property="og:url" content="${esc(canon)}">\n</head>`);
+  }
+  fs.writeFileSync(p, out);
   pages.push(rel);
 }
 function copyDir(src, dst) {
