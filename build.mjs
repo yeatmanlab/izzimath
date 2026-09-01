@@ -5,7 +5,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
-import { sheet } from './src/lib/printsheet.js';
+import { sheet, ssddSheet } from './src/lib/printsheet.js';
+import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
 import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from './content/references.js';
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
@@ -363,6 +364,77 @@ function ITEMS_NOTE(a) {
     ${gradeName(a.grade).toLowerCase()}.`;
 }
 
+/* --------------------------------------------------------------------- ssdd */
+for (const set of ssddSets) {
+  const ch = getCharacter('none');
+  const site = SITE;
+  write(`ssdd/${set.id}/index.html`, page({
+    base: b, active: 'printables', title: `${set.title} — SSDD sheet`,
+    desc: `Four questions that look the same and need four different methods. ${gradeName(set.grade)}.`,
+    crumbs: [{ label: 'Home', href: '/' }, { label: 'Printables', href: '/printables/' },
+      { label: 'Same surface', href: '/ssdd/' }, { label: set.title }],
+    body: `<section class="wrap">
+      <div class="ahead noprint">
+        <div class="gbadge" aria-hidden="true">${set.grade}</div>
+        <div><h1>${esc(set.title)}</h1>
+          <p>Same surface, different depth · ${gradeName(set.grade)} · ${esc(set.strand)}</p></div>
+      </div>
+      <div class="sfoot noprint" style="justify-content:flex-start;margin:18px 0 0">
+        <button class="btn pri" onclick="window.print()">↓ Print or save as PDF</button>
+        <button class="btn" data-style aria-pressed="false">Plain black &amp; white</button>
+        <a class="btn" href="${b}/ssdd/">All SSDD sheets</a>
+      </div>
+      <div data-sheet>${ssddSheet({ set, ch, siteUrl: site, style: 'designed' })}
+      <div class="pagebreak"></div>
+      ${ssddSheet({ set, ch, siteUrl: site, style: 'designed', key: true })}</div>
+      <div class="roam noprint" style="margin-top:22px">
+        <h2 style="font-size:15px">Why four questions is the whole sheet</h2>
+        <p>A column of twenty subtractions trains the procedure. It cannot train
+        <em>deciding which procedure the question wants</em>, because on a page of subtraction the
+        answer to “what do I do here” is always the same. That decision is where most mistakes on
+        mixed work come from.</p>
+        <p style="font-size:13px">So these four questions share one surface — ${esc(set.surface)} —
+        and need four different methods. The answer key names the method each one wanted, which is
+        the column to read together afterwards.</p>
+        <p style="font-size:13px">The format is <strong>Craig Barton's</strong>, published as a large
+        open bank at <a href="https://ssddproblems.com/" style="color:var(--txt2)">ssddproblems.com</a>.
+        These sets are ours; the idea is his.</p>
+      </div>
+    </section>`,
+    scripts: ['/assets/src/mount/ssdd.js'],
+    head: `<script type="module">window.__SSDD__ = ${JSON.stringify(set.id)};</script>`,
+  }));
+}
+
+write('ssdd/index.html', page({
+  base: b, active: 'printables', title: 'Same surface, different depth',
+  desc: 'Four questions that look the same and need four different methods. One sheet per grade.',
+  crumbs: [{ label: 'Home', href: '/' }, { label: 'Printables', href: '/printables/' }, { label: 'Same surface' }],
+  body: `<section class="wrap">
+    <div class="ahead"><div class="gbadge" aria-hidden="true">▤</div>
+      <div><h1>Same surface, different depth</h1>
+        <p>Four questions that look alike and need four different methods. One sheet per grade.</p></div></div>
+    <div class="roam" style="margin:18px 0 26px">
+      <h2 style="font-size:16px">What these are for</h2>
+      <p>A page of twenty subtractions trains subtracting. It cannot train <em>working out which
+      method a question wants</em>, because the answer is the same every time. These sheets put that
+      decision back: one shared surface, four questions, four different methods. The key names the
+      method each one needed.</p>
+      <p style="font-size:13px;color:var(--txt3)">Format after Craig Barton's
+      <a href="https://ssddproblems.com/" style="color:var(--txt2)">SSDD Problems</a>.</p>
+    </div>
+    <div class="cards">
+      ${ssddSets.map((set) => `<a class="card" href="${b}/ssdd/${set.id}/">
+        <div class="cbody">
+          <div class="ctag">${gradeName(set.grade)}</div>
+          <h3>${esc(set.title)}</h3>
+          <p>${esc(set.surface)}</p>
+          <p style="color:var(--txt3);font-size:12.5px">${set.items.map((i) => esc(i.procedure.split(' — ')[0])).join(' · ')}</p>
+        </div></a>`).join('')}
+    </div>
+  </section>`,
+}));
+
 /* -------------------------------------------------------------- printables */
 write('printables/index.html', page({
   base: b, active: 'printables', title: 'All printables', desc: 'Every Izzi Math sheet, free to print. Fresh problems on every click.',
@@ -371,6 +443,13 @@ write('printables/index.html', page({
     <h1 style="font-size:30px">All printables</h1>
     <p class="sub">${activities.length} sheets, each with an answer key. Click "new problems" for a
     fresh set — the generator never runs out.</p>
+    <div class="roam" style="margin:0 0 26px">
+      <h2 style="font-size:16px">Also: same surface, different depth</h2>
+      <p>${ssddSets.length} sheets of a different shape — four questions that look alike and need
+      four different methods, one sheet per grade. A column of twenty sums trains the procedure; these
+      train working out <em>which</em> procedure the question wants.</p>
+      <p><a class="btn" href="${b}/ssdd/">Browse SSDD sheets →</a></p>
+    </div>
     ${GRADES.map((g) => {
       const l = byGrade(g);
       if (!l.length) return '';

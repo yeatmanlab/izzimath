@@ -13,6 +13,7 @@ import { parseAnswer, cmpF } from '../src/lib/frac.js';
 import { references, refIds, getRef, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from '../content/references.js';
 import { IM_UNITS, imUnit } from '../content/curriculum.js';
 import { SCHEMAS } from '../content/wordproblems.js';
+import { ssddSets } from '../content/ssdd.js';
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
@@ -50,6 +51,42 @@ for (const a of activities) {
 }
 
 console.log(`\n=== generators (all activities x all characters) ===`);
+/* --------------------------------------------------------------------- ssdd
+   An SSDD set is only doing its job if the four questions genuinely need
+   DIFFERENT methods. A set where two items share a procedure is a normal
+   worksheet wearing the format's clothes, so that is the thing to check. */
+console.log('\n=== ssdd sheets ===');
+{
+  const seen = new Set();
+  for (const set of ssddSets) {
+    const w = `ssdd:${set.id}`;
+    for (const f of ['id', 'grade', 'title', 'strand', 'surface', 'notice']) {
+      if (!set[f]) fail(w, `missing ${f}`);
+    }
+    if (seen.has(set.id)) fail(w, 'duplicate id');
+    seen.add(set.id);
+    if (!GRADES.includes(set.grade)) fail(w, 'bad grade', set.grade);
+    if (!STRANDS[set.grade]?.includes(set.strand)) warn(w, 'strand not in strands.js', set.strand);
+    if (!Array.isArray(set.items) || set.items.length !== 4)
+      fail(w, `SSDD is four items by definition, found ${set.items?.length}`);
+    const procs = new Set();
+    for (const [i, it] of (set.items || []).entries()) {
+      const wi = `${w}#${i}`;
+      if (!it.ask) fail(wi, 'no question');
+      if (it.answer === undefined || it.answer === '') fail(wi, 'no answer');
+      if (!it.explain) fail(wi, 'no worked explanation');
+      if (!it.procedure) fail(wi, 'no named procedure — the key has nothing to teach from');
+      if (it.procedure) procs.add(it.procedure.trim().toLowerCase());
+    }
+    if (procs.size !== (set.items || []).length)
+      fail(w, `procedures repeat (${procs.size} distinct for ${set.items.length} items) — same surface, but not different deep`);
+  }
+  console.log(`  ${ssddSets.length} sets · ${ssddSets.length * 4} questions · one per grade`);
+  for (const g of GRADES) {
+    if (!ssddSets.some((x) => x.grade === g)) warn('ssdd', `no set for grade ${g}`);
+  }
+}
+
 for (const a of activities) {
   const n = a.pages ?? a.rounds ?? 10;
   for (const cid of CHARS) {

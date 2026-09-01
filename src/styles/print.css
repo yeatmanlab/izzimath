@@ -365,3 +365,44 @@
   font-family: 'Space Grotesk', sans-serif; font-size: 11px; color: var(--soft);
 }
 .designed .sh-more { color: var(--acc) }
+
+/* ---------------------------------------------------------------- SSDD sheet
+   Four questions, one shared surface, four different methods. The surface is
+   stated once and given real weight, because every question depends on it; the
+   four items get plenty of room, because four questions on a page is the point
+   and cramming them would defeat it. */
+.ssdd-surface {
+  border: 1px solid var(--hair); border-radius: 8px; padding: 10px 13px; margin: 0 0 14px;
+  break-inside: avoid;
+}
+.designed .ssdd-surface { border: 1.5px solid var(--acc-line) }
+.ssdd-surface .ss-label {
+  font-family: 'Space Grotesk', sans-serif; font-size: 8.5px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--soft); margin: 0 0 4px;
+}
+.designed .ssdd-surface .ss-label { color: var(--acc) }
+.ssdd-surface .ss-text {
+  font-family: 'Space Grotesk', sans-serif; font-size: 16px; margin: 0; line-height: 1.35;
+}
+.ssdd-surface .pv { margin-top: 8px }
+.ssdd-surface .pv svg { max-height: 1in }
+
+.ssdd-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 18px }
+.pr.ssdd-item { font-size: 14px; line-height: 1.4 }
+.designed .pr.ssdd-item { padding: 11px 13px }
+.pr.ssdd-item .ss-ans { margin-top: 10px }
+.pr.ssdd-item .ss-why { font-size: 10.5px; color: #444; margin: 5px 0 0; line-height: 1.45; font-family: Inter, sans-serif }
+.key .pr.ssdd-item .keyline em { display: inline-block; margin-left: 0; color: #333; font-weight: 500 }
+/* On the youngest sheet the questions are longer than the answers, so one column
+   reads better than two squeezed ones. */
+.little .ssdd-grid { grid-template-columns: 1fr }
+.little .pr.ssdd-item { font-size: 15.5px }
+/* On an SSDD sheet the leftover page IS the working area — four multi-step
+   questions need room to be worked out — so the scratch box grows into it
+   instead of leaving a two-inch gap that reads as a layout mistake. */
+.sheet .sh-block:has(.ssdd-grid) { display: flex; flex-direction: column; flex: 1; min-height: 0 }
+.ssdd-sheet .sh-scratch { flex: 1 1 auto; min-height: 1.4in }
+/* Not on the Kindergarten sheet. Its questions are one column at 15.5px and it
+   has no multi-step working to do — "how many altogether" is answered in the
+   box — so a 1.4in floor pushed it 0.07in over the page. */
+.little.ssdd-sheet .sh-scratch { min-height: 0.5in }

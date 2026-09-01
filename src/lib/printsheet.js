@@ -69,7 +69,11 @@ function trickBox(activity, ch, band) {
   const t = activity.trick || activity.strategy;
   if (!t) return '';
   const named = ch.id !== 'none';
-  const label = band === 'big' ? 'Strategy'
+  // An activity can override the label. The SSDD sheet needs it: "the trick"
+  // is exactly wrong on a sheet whose point is that there is no one method.
+  const label = activity.trickLabel
+    ? activity.trickLabel
+    : band === 'big' ? 'Strategy'
     : band === 'little' ? (named ? `${ch.name} says` : 'Try this first')
     : (named ? `${ch.name}\u2019s trick` : 'The trick');
   // On the little band the character says it, so the art belongs in the box.
@@ -359,6 +363,77 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     count: problems.length, problems,
     page: pi + 1, pageCount: perPage.length,
   })).join('');
+}
+
+/* ---------------------------------------------------------------------------
+   SSDD sheet — Same Surface, Different Deep. A named sheet type, not a mode of
+   an activity: the four questions come from different parts of the curriculum
+   on purpose, which is exactly what one activity's generator cannot do. See
+   content/ssdd.js for the reasoning and the credit.
+
+   It reuses shell() through a shim, so it inherits the header, the age band, the
+   accent, the footer and the QR without a second renderer to keep in step.
+--------------------------------------------------------------------------- */
+function ssddFigure(fig) {
+  if (!fig) return '';
+  if (fig.array) return `<div class="pv">${array2d(fig.array[0], fig.array[1], { print: true, cell: 15, gap: 2 })}</div>`;
+  if (fig.rows) {
+    // Rows of plain circles. Counters stay plain for every character — a themed
+    // counter would penalise the child most attached to the character.
+    const r = 9, gap = 6, W = Math.max(...fig.rows) * (r * 2 + gap), H = fig.rows.length * (r * 2 + gap);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="rows of ${fig.rows.join(' and ')} counters">`;
+    fig.rows.forEach((n, ri) => {
+      for (let i = 0; i < n; i++)
+        svg += `<circle cx="${i * (r * 2 + gap) + r + 1}" cy="${ri * (r * 2 + gap) + r + 1}" r="${r}" fill="none" stroke="#111" stroke-width="1.4"/>`;
+    });
+    return `<div class="pv">${svg}</svg></div>`.replace('</svg></svg>', '</svg>');
+  }
+  return '';
+}
+
+export function ssddSheet({ set, ch, key = false, siteUrl, style = 'designed', variant = null }) {
+  const shim = {
+    id: set.id, title: set.title, grade: set.grade, strand: set.strand, kind: 'book',
+    ccss: set.ccss || [],
+    // The notice is the trick box: on this sheet the method is not one method,
+    // and saying so is the whole instruction.
+    trick: set.notice,
+    trickLabel: 'Read this first',
+    printScratch: true,
+  };
+  const surface = `<div class="ssdd-surface">
+    <p class="ss-label">All four questions are about this</p>
+    <p class="ss-text">${esc(set.surface)}</p>
+    ${ssddFigure(set.figure)}
+  </div>`;
+
+  const items = set.items.map((it, i) => `<div class="pr ssdd-item">
+    <span class="lbl">${String.fromCharCode(97 + i)})</span>${esc(it.ask)}
+    ${key
+      ? `<div class="keyline"><span class="ansval">${esc(it.answer)}</span>
+          <em>${esc(it.procedure)}</em></div>
+         <p class="ss-why">${esc(it.explain)}</p>`
+      : `<div class="ss-ans">${ansLine('4em')}</div>`}
+  </div>`).join('');
+
+  const blocks = `<div class="sh-block">
+    ${surface}
+    <p class="sh-inst"><span class="n">1</span><span><b>Four different questions</b><em>${
+      key ? 'Each answer with the method it needed.' : 'They look alike. They are not. Answer each one.'}</em></span></p>
+    <div class="ssdd-grid">${items}</div>
+  </div>`;
+  // Four questions leave a lot of page. On this sheet that space is the working
+  // area, not a gap — four multi-step questions need somewhere to be worked out,
+  // so the scratch box grows into whatever the questions did not use.
+
+
+  return shell({
+    activity: shim, seed: 0, ch, key, siteUrl, style,
+    band: AGE_BAND[set.grade] ?? 'middle',
+    variant: variant ? `${variant} ssdd-sheet` : 'ssdd-sheet',
+    blocks, count: set.items.length, problems: [],
+    footNote: 'Same surface, four different methods. The key names the method each one needed.',
+  });
 }
 
 /* Self-check. There is no teacher in the room, so every sheet carries a way for

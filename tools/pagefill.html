@@ -43,7 +43,8 @@
   // build copies content/ and src/ under dist/assets/, not next to _tools/.
   import { activities } from '/assets/content/activities/index.js';
   import { characters, getCharacter } from '/assets/content/characters.js';
-  import { sheet } from '/assets/src/lib/printsheet.js';
+  import { sheet, ssddSheet } from '/assets/src/lib/printsheet.js';
+  import { ssddSets } from '/assets/content/ssdd.js';
 
   const LIMIT_H = 10.1;   // usable height of US Letter at a 0.45in margin
   const LIMIT_W = 7.62;   // usable width, plus a hair for rounding
@@ -84,9 +85,31 @@
     rig.innerHTML = '';
   }
 
+  // SSDD sheets are a named sheet type, not an activity, so they need measuring
+  // separately — and they are the sheets most likely to overflow, because the
+  // shared surface and its figure sit above four full-width questions.
+  for (const set of ssddSets) {
+    for (const chId of Object.keys(characters)) {
+      for (const style of ['designed', 'plain']) {
+        for (const key of [false, true]) {
+          rig.innerHTML = ssddSheet({ set, ch: getCharacter(chId), siteUrl: 'https://izzimath.com', style, key });
+          const pages = [...rig.children];
+          const hs = pages.map((e) => e.getBoundingClientRect().height / DPI);
+          const where = `ssdd:${set.id} · g${set.grade} · ${chId} · ${style} · ${key ? 'key' : 'sheet'}`;
+          checks++;
+          if (Math.max(...hs) > LIMIT_H) fail.push(`OVER  ${Math.max(...hs).toFixed(2)}in of ${LIMIT_H}in  ${where}`);
+          if (Math.max(...pages.map((e) => e.scrollWidth / DPI)) > LIMIT_W) fail.push(`WIDE  ${where}`);
+          if (!key && hs[hs.length - 1] < MIN_LAST)
+            fail.push(`THIN  last page ${hs[hs.length - 1].toFixed(2)}in of ${LIMIT_H}in  ${where}`);
+        }
+      }
+    }
+    rig.innerHTML = '';
+  }
+
   const twoPage = activities.filter((a) => (a.printPages ?? 1) > 1);
   const lines = [
-    `activities ${activities.length} · characters ${Object.keys(characters).length} · cases ${checks}`,
+    `activities ${activities.length} · ssdd sets ${ssddSets.length} · characters ${Object.keys(characters).length} · cases ${checks}`,
     `deliberately two pages: ${twoPage.length} — ${twoPage.map((a) => a.id).join(', ') || 'none'}`,
     '',
     fail.length ? `<span class="bad">${fail.length} FAILURE${fail.length > 1 ? 'S' : ''}</span>` : '<span class="ok">no failures</span>',
