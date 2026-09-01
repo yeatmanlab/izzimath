@@ -90,8 +90,10 @@ export const characters = {
     verb: { consume: 'eats', consumeBase: 'eat' },
     tagline: '“Ooh — try it this way.”',
     blurb: 'Climbs bamboo towers, hunts for the trick, and counts on a ringed tail.',
-    palette: { a1: '#FFD166', a2: '#FF6B35', a3: '#D7263D', ok: '#8FE388' },
-    printAccent: '#C42432',
+    // Red panda reds. Was sharing Kiwi's yellow and orange almost exactly — see
+    // the note in site.css. Kept in step with the CSS block there.
+    palette: { a1: '#F2504A', a2: '#D02B22', a3: '#8C1519', ok: '#8FE388' },
+    printAccent: '#8C1519',
     world: { place: 'the treetops', places: 'treetops', feature: 'branch', features: 'branches' },
     collectible: { one: 'berry', many: 'berries' },
     container: { one: 'basket', many: 'baskets' },

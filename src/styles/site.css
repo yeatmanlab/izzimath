@@ -22,7 +22,12 @@
 html[data-ch="none"]    { --a1:#22E0F0; --a2:#7C5CFF; --a3:#FF4D9D; --ok:#B6FF3D; --gA:rgba(124,92,255,.55); --gB:rgba(34,224,240,.32); --grid1:rgba(124,92,255,.07); --grid2:rgba(34,224,240,.06) }
 html[data-ch="kiwi"]    { --a1:#FFC24D; --a2:#FF7A45; --a3:#C1440E; --ok:#7CE8B0; --gA:rgba(255,122,69,.45); --gB:rgba(193,68,14,.30);  --grid1:rgba(255,122,69,.07); --grid2:rgba(193,68,14,.07) }
 html[data-ch="georgie"] { --a1:#FF4D9D; --a2:#A855F7; --a3:#22E0F0; --ok:#B6FF3D; --gA:rgba(255,77,157,.50); --gB:rgba(168,85,247,.32); --grid1:rgba(255,77,157,.08); --grid2:rgba(168,85,247,.06) }
-html[data-ch="flame"]   { --a1:#FFD166; --a2:#FF6B35; --a3:#D7263D; --ok:#8FE388; --gA:rgba(255,107,53,.50); --gB:rgba(215,38,61,.30);  --grid1:rgba(255,107,53,.08); --grid2:rgba(215,38,61,.06) }
+/* Flame is a red panda and was wearing Kiwi's colours: a1 #FFD166 against Kiwi's
+   #FFC24D, a2 #FF6B35 against #FF7A45 — 2 and 12 degrees of hue apart, which is
+   no difference at all. Now properly red, 37 degrees off Kiwi and 29 off
+   Georgie's pink. a1 clears 4.5:1 on the dark background because it is the link
+   colour; a2 and a3 are decoration and gradient depth, so they go darker. */
+html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#8C1519; --ok:#8FE388; --gA:rgba(208,43,34,.50); --gB:rgba(140,21,25,.30);  --grid1:rgba(208,43,34,.08); --grid2:rgba(140,21,25,.06) }
 
 * { box-sizing: border-box; margin: 0; padding: 0 }
 html { scroll-behavior: smooth }
@@ -187,7 +192,9 @@ input.ans:focus { border-color: var(--a1); outline: none }
    see docs/next/04-adaptive-and-spacing.md on why this is not an ability score. */
 .gh-goal b.gh-tier { font-size: 17px; letter-spacing: -.01em; line-height: 1.2 }
 /* "Adjusts as you go" — so a parent can tell which activities move. */
-.tag.adapt { color: var(--a2); border-color: color-mix(in srgb, var(--a2) 45%, transparent) }
+/* a1, not a2: this is text, and a2 is now dark enough on some characters that it
+   would not clear 4.5:1. a1 is the primary accent and legible for all four. */
+.tag.adapt { color: var(--a1); border-color: color-mix(in srgb, var(--a1) 45%, transparent) }
 .gh-hit { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ok); margin-left: 4px }
 .gh-bar { height: 8px; border-radius: 99px; background: rgba(255,255,255,.09); overflow: hidden; min-width: 60px }
 .gh-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--a1), var(--a2)); transition: width .35s cubic-bezier(.2,.7,.3,1) }
@@ -480,7 +487,10 @@ a.reflink.page:hover { color: var(--a1) }
 .meclose:hover { color: var(--txt) }
 .meh { font: 700 21px/1.2 var(--fdisp); margin: 0 0 6px; color: var(--txt) }
 .mesub { color: var(--txt2); font-size: 14px; margin: 0 0 18px; max-width: 52ch }
-.mesub.bad { color: var(--a3) }
+/* --pink is the site's colour for a wrong answer (see .fb.bad); --a3 is a
+   character accent, and for Georgie it is CYAN — so this rendered "not that one"
+   in cyan and for Flame would now render it in near-black maroon. */
+.mesub.bad { color: var(--pink) }
 .mebtns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px }
 .mepick { display: grid; place-items: center; margin: 0 0 16px }
 

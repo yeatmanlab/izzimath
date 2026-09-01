@@ -3,6 +3,7 @@
 // doesn't contain its own answer, a generator that isn't deterministic, an
 // unreachable ROAM subscale, NaN leaking into a problem.
 
+import fs from 'node:fs';
 import { activities, STRANDS } from '../content/activities/index.js';
 import { characters, getCharacter } from '../content/characters.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
@@ -56,6 +57,47 @@ for (const a of activities) {
 }
 
 console.log(`\n=== generators (all activities x all characters) ===`);
+/* --------------------------------------------------- character palettes
+   A character's palette is defined twice: in content/characters.js (used by the
+   print sheets) and as CSS variables in site.css (used by the screen). They have
+   to agree, and nothing forces them to — Flame's two copies could drift apart
+   silently and only the printable would be wrong. */
+console.log('\n=== character palettes ===');
+{
+  const css = fs.readFileSync(new URL('../src/styles/site.css', import.meta.url), 'utf8');
+  for (const [id, ch] of Object.entries(characters)) {
+    const line = css.split('\n').find((l) => l.includes(`data-ch="${id}"`));
+    if (!line) { fail(`palette:${id}`, 'no CSS block for this character'); continue; }
+    for (const [tok, hex] of Object.entries(ch.palette || {})) {
+      if (!line.toLowerCase().includes(hex.toLowerCase()))
+        fail(`palette:${id}`, `${tok} is ${hex} in characters.js but that hex is not in the CSS block`);
+    }
+    if (ch.printAccent && !/^#[0-9a-f]{6}$/i.test(ch.printAccent))
+      fail(`palette:${id}`, `printAccent "${ch.printAccent}" is not a hex colour`);
+  }
+
+  /* And the characters have to be told apart. Flame shipped wearing Kiwi's
+     yellow and orange — 2 degrees of hue apart on the primary accent, which is
+     no difference at all. */
+  const hue = (h) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (!d) return 0;
+    const t = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return t * 60;
+  };
+  const named = Object.entries(characters).filter(([id]) => id !== 'none');
+  for (let i = 0; i < named.length; i++) {
+    for (let j = i + 1; j < named.length; j++) {
+      const [ia, a] = named[i], [ib, b] = named[j];
+      let d = Math.abs(hue(a.palette.a1) - hue(b.palette.a1));
+      d = Math.min(d, 360 - d);
+      if (d < 20) fail('palette', `${ia} and ${ib} have primary accents only ${Math.round(d)}deg apart — they will read as the same character`);
+    }
+  }
+  console.log(`  ${Object.keys(characters).length} palettes agree with the CSS · primary accents all distinguishable`);
+}
+
 /* ----------------------------------------------------------------- avatars */
 console.log('\n=== profile avatars ===');
 {
