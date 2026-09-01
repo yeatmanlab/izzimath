@@ -323,7 +323,7 @@ for (const a of activities) {
           <span>How much</span>
           <select data-amount aria-describedby="amt-sum">
             <option value="p1">One sheet</option>
-            ${maxPagesFor(a) > 1 ? `<optgroup label="A longer sheet">
+            ${maxPagesFor(a) > 1 ? `<optgroup label="A longer sheet" data-longer>
               ${Array.from({ length: maxPagesFor(a) - 1 }, (_, k) =>
                 `<option value="p${k + 2}">${k + 2} pages</option>`).join('')}
             </optgroup>` : ''}
@@ -542,9 +542,17 @@ for (const set of ssddSets) {
         <div><h1>${esc(set.title)}</h1>
           <p>Same surface, different depth · ${gradeName(set.grade)} · ${esc(set.strand)}</p></div>
       </div>
-      <div class="sfoot noprint" style="justify-content:flex-start;margin:18px 0 0">
+      <!-- Same language as the activity print page: a segmented control whose
+           live option is visible, not a button labelled with its own action. -->
+      <div class="prow noprint">
         <button class="btn pri" onclick="window.print()">↓ Print or save as PDF</button>
-        <button class="btn" data-style aria-pressed="false">Plain black &amp; white</button>
+        <span class="inkpick">
+          <span class="inklabel">Ink</span>
+          <span class="seg">
+            <label><input type="radio" name="sstyle" value="designed" checked data-style-radio><span>Designed</span></label>
+            <label><input type="radio" name="sstyle" value="plain" data-style-radio><span>Plain black &amp; white</span></label>
+          </span>
+        </span>
         <a class="btn" href="${b}/ssdd/">All SSDD sheets</a>
       </div>
       <div data-sheet>${ssddSheet({ set, ch, siteUrl: site, style: 'designed' })}

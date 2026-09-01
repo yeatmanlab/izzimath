@@ -613,6 +613,11 @@ a.reflink.page:hover { color: var(--a1) }
 .seg input:focus-visible + span { outline: 2px solid var(--a1); outline-offset: -2px }
 .seg label + label span { border-left: 1px solid var(--line) }
 
+/* The SSDD page has one option, so it wears the control inline rather than
+   behind a disclosure — same component, same words. */
+.inkpick { display: inline-flex; align-items: center; gap: 9px }
+.inklabel { font: 600 10px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase; color: var(--txt3) }
+
 .optcheck { display: inline-flex; align-items: center; gap: 9px; align-self: flex-end;
   font: 500 12.5px/1 var(--fdisp); color: var(--txt2); cursor: pointer }
 /* 24px, matching the site-wide rule for checkboxes — this had overridden it to

@@ -127,6 +127,37 @@ L.push('');
     await sleep2(500);
     pc('pack of 5 renders 5 sheets', d2.querySelectorAll('[data-sheet] .sheet').length === 5);
 
+    /* Review is a fixed short sheet by design, so it cannot be made longer — and
+       the summary must not claim otherwise. Choosing review while three pages
+       were selected left the line reading "39 problems on 3 sheets of paper"
+       above a single eight-problem page. The length is parked and restored, and
+       the clamp has to run BEFORE the render or the select and the sheet
+       disagree — which is exactly what the first fix did. */
+    d2.querySelector('.opts').open = true; await sleep2(120);
+    const setMode = (v) => { const r = [...d2.querySelectorAll('[data-mode-radio]')].find((x) => x.value === v);
+      r.checked = true; r.dispatchEvent(new w2.Event('change', { bubbles: true })); };
+    const agrees = () => {
+      const m = (d2.querySelector('[data-total]')?.textContent || '').match(/on (\d+) sheet/);
+      return m ? +m[1] === d2.querySelectorAll('[data-sheet] .sheet').length : false;
+    };
+    sel.value = 'p3'; sel.dispatchEvent(new w2.Event('change', { bubbles: true })); await sleep2(400);
+    pc('summary agrees at 3 pages', agrees(), d2.querySelector('[data-total]')?.textContent);
+    setMode('review'); await sleep2(420);
+    pc('review clamps to one page', d2.querySelectorAll('[data-sheet] .sheet').length === 1);
+    pc('summary agrees in review', agrees(), d2.querySelector('[data-total]')?.textContent);
+    /* And the CONTROL has to agree too. Asserting only summary-against-sheets was
+       too weak: the summary and the render can both be right while the select
+       still reads "3 pages" over a one-page review sheet. Caught by breaking the
+       clamp on purpose and watching every other check pass. */
+    pc('control agrees in review', sel.value === 'p1', 'select reads "' + sel.value + '"');
+    pc('longer sheet unavailable in review',
+      d2.querySelector('[data-amount] optgroup[data-longer]')?.disabled === true);
+    setMode('practice'); await sleep2(450);
+    pc('length comes back after review', d2.querySelectorAll('[data-sheet] .sheet').length === 3,
+      d2.querySelectorAll('[data-sheet] .sheet').length + ' pages');
+    pc('control agrees after review', sel.value === 'p3', 'select reads "' + sel.value + '"');
+    pc('summary agrees again', agrees(), d2.querySelector('[data-total]')?.textContent);
+
     // and a grade-1 activity must not offer a longer sheet at all
     const f3 = document.createElement('iframe');
     f3.style.cssText = frame2.style.cssText;

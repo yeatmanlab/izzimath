@@ -71,6 +71,16 @@ export const itemsForPages = (activity, pages) => {
    already an inference from mechanism rather than a replication. */
 const REVIEW_ITEMS = { little: 5, middle: 8, big: 8 };
 
+/* Exported so the print page can state the truth. A mixed review sheet is a
+   fixed short set by design — Rohrer's template — so it ignores a page count,
+   and the summary line has to know that rather than multiplying a number that
+   does not apply. */
+export const reviewItemsFor = (activity) => {
+  const band = AGE_BAND[activity.grade] ?? 'middle';
+  const authored = activity.printItems ?? ITEMS_PER_SHEET[activity.grade] ?? 16;
+  return Math.max(3, Math.min(REVIEW_ITEMS[band] ?? 8, authored));
+};
+
 /* A section heading a child would actually read. "Answer each one" is what an
    adult calls it; these are what it is. Used on the little and middle bands —
    the big band gets the plain instruction, because by grade 4 the jolly title

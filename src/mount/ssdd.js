@@ -26,11 +26,9 @@ function paint() {
     ssddSheet({ set, ch, siteUrl, style, key: true });
 }
 
-document.querySelector('[data-style]')?.addEventListener('click', (e) => {
-  style = style === 'designed' ? 'plain' : 'designed';
-  e.currentTarget.setAttribute('aria-pressed', String(style === 'plain'));
-  e.currentTarget.textContent = style === 'plain' ? 'Designed sheet' : 'Plain black & white';
-  paint();
-});
+// Radios rather than a toggling button: the chosen ink is visible without
+// having to read the sheet to work out which one you are looking at.
+document.querySelectorAll('[data-style-radio]').forEach((el) =>
+  el.addEventListener('change', () => { if (el.checked) { style = el.value; paint(); } }));
 document.addEventListener('characterchange', paint);
 paint();

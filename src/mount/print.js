@@ -4,7 +4,7 @@ import { activities } from '../../content/activities/index.js';
 import { getCharacter } from '../../content/characters.js';
 import { currentCharacter } from '../lib/theme.js';
 import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
-import { sheet, maxPagesFor, itemsForPages } from '../lib/printsheet.js';
+import { sheet, maxPagesFor, itemsForPages, reviewItemsFor } from '../lib/printsheet.js';
 import { newSeed as freshSeed } from '../lib/url.js';
 
 const a = activities.find((x) => x.id === window.__ACTIVITY__);
@@ -20,6 +20,7 @@ const url = new URL(location.href);
 const maxPages = a ? maxPagesFor(a) : 1;
 let pages = Math.max(1, Math.min(maxPages, parseInt(url.searchParams.get('pages'), 10) || (a?.printPages ?? 1)));
 let pack = Math.max(1, Math.min(5, parseInt(url.searchParams.get('pack'), 10) || 1));
+let parkedPages = 0;   // a length set aside while the review sheet is showing
 
 function remember() {
   const u = new URL(location.href);
@@ -28,8 +29,23 @@ function remember() {
   history.replaceState(null, '', u);
 }
 
+/* A mixed review sheet is a fixed short set by design, so it cannot be made
+   longer. The length is PARKED rather than discarded, so peeking at the review
+   sheet and coming back does not silently undo a choice already made.
+
+   This has to run before the render, not after: the first version lived in
+   paintAmountUI(), which paint() calls last — so the select and the summary said
+   three pages while one page had already been built. */
+function syncModeLength() {
+  if (mode === 'review' && pages > 1) { parkedPages = pages; pages = 1; remember(); }
+  else if (mode !== 'review' && parkedPages) {
+    pages = Math.min(maxPages, parkedPages); parkedPages = 0; remember();
+  }
+}
+
 function paint() {
   if (!a || !host) return;
+  syncModeLength();
   const ch = getCharacter(currentCharacter());
   const site = location.origin + base();
   const common = { activity: a, ch, base: base(), siteUrl: site, mode, style, variant: variant || null, pages };
@@ -52,12 +68,22 @@ function paint() {
    about — problems, and sheets of paper — which is also the honest answer to
    "how much ink is this". */
 function paintAmountUI() {
+  /* A mixed review sheet is a fixed short set by design, so it cannot be made
+     longer — and the summary must not claim otherwise. Choosing review while a
+     longer sheet was selected used to leave the line reading "39 problems on 3
+     sheets of paper" above a single eight-problem page. The longer-sheet options
+     go away, and a pack still makes sense: five review sheets is a week of them. */
+  const reviewing = mode === 'review';
+  const grp = document.querySelector('[data-amount] optgroup[data-longer]');
+  if (grp) grp.disabled = reviewing;
+
   const sel = document.querySelector('[data-amount]');
   if (sel) sel.value = pack > 1 ? `k${pack}` : `p${pages}`;
   const tot = document.querySelector('[data-total]');
   if (!tot) return;
-  const sheets = pages * pack * (showKey ? 2 : 1);
-  tot.textContent = `${itemsForPages(a, pages) * pack} problems on ${sheets} sheet${sheets === 1 ? '' : 's'} of paper`
+  const perSheet = reviewing ? reviewItemsFor(a) : itemsForPages(a, pages);
+  const paper = (reviewing ? 1 : pages) * pack * (showKey ? 2 : 1);
+  tot.textContent = `${perSheet * pack} problem${perSheet * pack === 1 ? '' : 's'} on ${paper} sheet${paper === 1 ? '' : 's'} of paper`
     + (showKey ? ', answer key included' : '');
 }
 
@@ -72,6 +98,7 @@ document.querySelector('[data-togglekey]')?.addEventListener('change', (e) => {
 });
 document.querySelectorAll('[data-mode-radio]').forEach((el) =>
   el.addEventListener('change', () => { if (el.checked) { mode = el.value; paint(); } }));
+// paint() ends in paintAmountUI(), which is where the review clamp lives.
 document.querySelectorAll('[data-style-radio]').forEach((el) =>
   el.addEventListener('change', () => { if (el.checked) { style = el.value; paint(); } }));
 document.querySelectorAll('[data-variant-radio]').forEach((el) =>
