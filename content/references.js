@@ -111,7 +111,8 @@ export const references = {
     url: 'https://ies.ed.gov/ncee/wwc/Docs/InterventionReports/wwc_STEM_FFO_IR_mar2020.pdf',
     kind: 'report', strength: 'strong',
     finding: 'Potentially positive effects in all three domains reviewed. Improvement index +33 (geometry and measurement), +31 (number and operations), +24 (general achievement). Author-reported effects around 1 SD on number line estimation and 1–2.5 SD on fraction calculation.',
-    use: 'The closest thing to a validated blueprint for what this site is. Its lesson shape — warm-up, explicit instruction, speed game, worksheet — is the book-plus-game-plus-printable model, already tested.',
+    use: 'The closest thing to a validated blueprint for what this site is. Its lesson shape — warm-up, explicit instruction, speed game, worksheet — is the book-plus-game-plus-printable model, already tested. Both are now used explicitly: the four-part session shape and the validated week order are the twelve-week fraction plan.',
+    showsUpIn: [['/plans/grade-4-fractions/', 'The twelve-week fraction plan']],
   },
   'fuchs-2013-fractions': {
     authors: 'Fuchs, Schumacher, Long, Namkung, Hamlett & Cirino', year: 2013,

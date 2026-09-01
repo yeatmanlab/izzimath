@@ -7,6 +7,7 @@ import path from 'node:path';
 import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet, ssddSheet } from './src/lib/printsheet.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
+import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
 import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from './content/references.js';
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
@@ -197,7 +198,14 @@ for (const g of GRADES) {
           <p>${strandsFor(g).join(' · ')} — ${books.length} book${books.length === 1 ? '' : 's'},
              ${games.length} game${games.length === 1 ? '' : 's'}, all printable.</p></div>
       </div>
-      ${books.length ? `<div class="sec"><h2>Books</h2><p class="sub">Guided practice with hints. Not timed.</p>
+      ${books.length ? `${plansForGrade(g).length ? `<div class="roam" style="margin:0 0 24px">
+        <h2 style="font-size:16px">Not sure where to start?</h2>
+        ${plansForGrade(g).map((p) => `<p>There is a sequenced plan for this grade:
+          <a href="${b}/plans/${p.id}/" style="color:var(--a1)"><strong>${esc(p.title)}</strong></a>
+          — ${p.weeks} weeks, ${p.sessionsPerWeek} sessions a week, ${p.minutesPerSession} minutes each.
+          It says what to do in what order, using the books, games and sheets below.</p>`).join('')}
+      </div>` : ''}
+      <div class="sec"><h2>Books</h2><p class="sub">Guided practice with hints. Not timed.</p>
         <div class="cards">${books.map((a) => activityCard(b, a)).join('')}</div></div>` : ''}
       ${games.length ? `<div class="sec"><h2>Games</h2><p class="sub">Short rounds for building speed.</p>
         <div class="cards">${games.map((a) => activityCard(b, a)).join('')}</div></div>` : ''}
@@ -363,6 +371,112 @@ function ITEMS_NOTE(a) {
   return `It has ${n} problems on ${pages === 1 ? 'one page' : pages + ' pages'}, which is the density we use for
     ${gradeName(a.grade).toLowerCase()}.`;
 }
+
+/* -------------------------------------------------------------------- plans */
+const actById = new Map(activities.map((a) => [a.id, a]));
+const planLink = (id, label) => {
+  const a = actById.get(id);
+  if (!a) return esc(label || id);
+  const href = `${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/`;
+  return `<a href="${href}" style="color:var(--a1)">${esc(a.title)}</a>`;
+};
+const planSheetLink = (id, mode) => {
+  const a = actById.get(id);
+  if (!a) return esc(id);
+  return `<a href="${b}/print/${a.id}/" style="color:var(--txt2)">${esc(a.title)}${mode === 'review' ? ' (mixed review)' : ''}</a>`;
+};
+
+for (const plan of plans) {
+  const ref = getRef(plan.credit);
+  write(`plans/${plan.id}/index.html`, page({
+    base: b, active: 'grades', title: `${plan.title} — a ${plan.weeks}-week plan`,
+    desc: `${plan.blurb} ${plan.weeks} weeks, ${plan.sessionsPerWeek} sessions a week, ${plan.minutesPerSession} minutes each.`,
+    crumbs: [{ label: 'Home', href: '/' }, { label: 'Plans', href: '/plans/' }, { label: plan.title }],
+    body: `<section class="wrap">
+      <div class="ahead">
+        <div class="gbadge" aria-hidden="true">${plan.grade}</div>
+        <div><h1>${esc(plan.title)}</h1>
+          <p>${esc(plan.blurb)}</p></div>
+      </div>
+
+      <div class="sec">
+        <h2 style="font-size:20px">Every session has the same four parts</h2>
+        <p class="sub">About ${plan.minutesPerSession} minutes, ${plan.sessionsPerWeek} times a week. The
+        shape is the part that was tested, so it does not change from week to week.</p>
+        <div class="tblwrap"><table class="tbl"><thead><tr>
+          <th>Part</th><th>Min</th><th>What you do</th><th>Why it is in this order</th>
+        </tr></thead><tbody>
+        ${FOUR_PART.map((x) => `<tr>
+          <td><strong>${esc(x.part)}</strong></td>
+          <td>${esc(x.minutes)}</td>
+          <td>${esc(x.what)}</td>
+          <td style="color:var(--txt3)">${esc(x.why)}</td>
+        </tr>`).join('')}
+        </tbody></table></div>
+      </div>
+
+      <div class="sec">
+        <h2 style="font-size:20px">The ${plan.weeks} weeks</h2>
+        <p class="sub">Magnitude and ordering come <strong>before</strong> equivalence, and equivalence
+        before adding. That order is the unusual part, and it is the part worth copying.</p>
+        <div class="tblwrap"><table class="tbl"><thead><tr>
+          <th>Week</th><th>Focus</th><th>Warm-up</th><th>Book</th><th>Game</th><th>Sheet</th>
+        </tr></thead><tbody>
+        ${plan.schedule.map((w) => `<tr>
+          <td><strong>${w.n}</strong></td>
+          <td>${esc(w.focus)}${w.note ? `<br><span style="color:var(--txt3);font-size:12px">${esc(w.note)}</span>` : ''}</td>
+          <td style="font-size:13px">${esc(w.warmUp.text)}</td>
+          <td>${planLink(w.instruction.activity)}${w.instruction.pages ? `<br><span style="color:var(--txt3);font-size:12px">pages ${esc(w.instruction.pages)}</span>` : ''}</td>
+          <td>${planLink(w.game.activity)}</td>
+          <td>${planSheetLink(w.sheet.activity, w.sheet.mode)}${w.ssdd ? `<br><a href="${b}/ssdd/${w.ssdd}/" style="color:var(--txt2);font-size:12px">SSDD sheet</a>` : ''}</td>
+        </tr>`).join('')}
+        </tbody></table></div>
+      </div>
+
+      <div class="roam">
+        <h2 style="font-size:16px">Where this order comes from, and what it does not promise</h2>
+        <p>The four-part session and the week order are taken from
+        <strong>${esc(ref ? ref.title : 'Fraction Face-Off!')}</strong>${ref ? ` (${esc(ref.venue)})` : ''}, a
+        fraction program reviewed by the What Works Clearinghouse with potentially positive effects in
+        all three domains it examined.</p>
+        <p><strong>That is the program's result, not ours.</strong> It was produced with the program's
+        own materials and a trained interventionist. What has been copied here is the sequence and the
+        session shape — nothing about running this plan at home entitles anyone to that number, and the
+        realistic ceiling for a light-touch home product is far smaller. We say so on
+        <a href="${b}/about/" style="color:var(--txt2)">the about page</a> and we are not going to say
+        anything else here.</p>
+        <p style="font-size:13px">Two honest joins: weeks 1–5 use the <em>grade 3</em> number-line book,
+        because that is where the magnitude work lives, and weeks 8–9 use the <em>grade 5</em> book,
+        because that is where adding fractions lives. Each week says which.</p>
+        ${ref ? `<p style="font-size:13px"><a href="${b}/references/#ref-${esc(plan.credit)}" style="color:var(--txt2)">The reference, with the numbers →</a></p>` : ''}
+      </div>
+    </section>`,
+  }));
+}
+
+write('plans/index.html', page({
+  base: b, active: 'grades', title: 'Plans', desc: 'Sequenced plans: what to do, in what order, for how long.',
+  crumbs: [{ label: 'Home', href: '/' }, { label: 'Plans' }],
+  body: `<section class="wrap">
+    <div class="ahead"><div class="gbadge" aria-hidden="true">▦</div>
+      <div><h1>Plans</h1><p>What to do, in what order, for how long.</p></div></div>
+    <div class="roam" style="margin:18px 0 26px">
+      <h2 style="font-size:16px">Why a plan and not just a list</h2>
+      <p>Everything else here you can do in any order. A plan is the other thing a parent asks for:
+      a sequence, with an end. Each one borrows its week order from a program that was actually
+      trialled, and points at the books, games and sheets already on the site — so a plan can never
+      drift out of step with the content.</p>
+    </div>
+    <div class="cards">
+      ${plans.map((p) => `<a class="card" href="${b}/plans/${p.id}/"><div class="cbody">
+        <div class="ctag">${gradeName(p.grade)} · ${p.weeks} weeks</div>
+        <h3>${esc(p.title)}</h3>
+        <p>${esc(p.blurb)}</p>
+        <p style="color:var(--txt3);font-size:12.5px">${p.sessionsPerWeek} sessions a week · ${p.minutesPerSession} minutes each</p>
+      </div></a>`).join('')}
+    </div>
+  </section>`,
+}));
 
 /* --------------------------------------------------------------------- ssdd */
 for (const set of ssddSets) {

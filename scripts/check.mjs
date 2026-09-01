@@ -14,6 +14,7 @@ import { references, refIds, getRef, buildReverseIndex, isSiteScope, STRENGTH, K
 import { IM_UNITS, imUnit } from '../content/curriculum.js';
 import { SCHEMAS } from '../content/wordproblems.js';
 import { ssddSets } from '../content/ssdd.js';
+import { plans, planActivityIds, FOUR_PART } from '../content/plans.js';
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
@@ -51,6 +52,49 @@ for (const a of activities) {
 }
 
 console.log(`\n=== generators (all activities x all characters) ===`);
+/* -------------------------------------------------------------------- plans
+   A plan holds no problems of its own — it is entirely pointers. So the only
+   thing that can break it is a pointer, and that is what gets checked: every
+   activity a plan names must exist, every game slot must actually be a game,
+   every book slot a book, and every SSDD reference a real set. A plan whose
+   links have rotted is worse than no plan. */
+console.log('\n=== plans ===');
+{
+  const byId = new Map(activities.map((a) => [a.id, a]));
+  const ssddIds = new Set(ssddSets.map((x) => x.id));
+  for (const plan of plans) {
+    const w0 = `plan:${plan.id}`;
+    for (const f of ['id', 'title', 'grade', 'weeks', 'blurb', 'credit']) {
+      if (!plan[f]) fail(w0, `missing ${f}`);
+    }
+    if (!GRADES.includes(plan.grade)) fail(w0, 'bad grade', plan.grade);
+    if (!getRef(plan.credit)) fail(w0, `credit "${plan.credit}" is not a reference id`);
+    if (plan.schedule.length !== plan.weeks)
+      fail(w0, `says ${plan.weeks} weeks but the schedule has ${plan.schedule.length}`);
+    plan.schedule.forEach((wk, i) => {
+      const w = `${w0}#wk${wk.n}`;
+      if (wk.n !== i + 1) fail(w, `weeks out of order — index ${i} is numbered ${wk.n}`);
+      if (!wk.focus) fail(w, 'no focus');
+      if (!wk.warmUp?.text) fail(w, 'no warm-up problem');
+      if (wk.warmUp?.schema && !SCHEMAS[wk.warmUp.schema])
+        fail(w, `warm-up schema "${wk.warmUp.schema}" is not a CGI schema`);
+      // the four parts must all be there, and be the right KIND of thing
+      const inst = byId.get(wk.instruction?.activity);
+      if (!inst) fail(w, `instruction points at "${wk.instruction?.activity}", which does not exist`);
+      else if (inst.kind !== 'book') fail(w, `instruction points at a ${inst.kind}, not a book`);
+      const gm = byId.get(wk.game?.activity);
+      if (!gm) fail(w, `game points at "${wk.game?.activity}", which does not exist`);
+      else if (gm.kind !== 'game') fail(w, `game points at a ${gm.kind}, not a game`);
+      if (!byId.get(wk.sheet?.activity)) fail(w, `sheet points at "${wk.sheet?.activity}", which does not exist`);
+      if (wk.sheet?.mode && !['practice', 'review'].includes(wk.sheet.mode))
+        fail(w, `sheet mode "${wk.sheet.mode}" is not a print mode`);
+      if (wk.ssdd && !ssddIds.has(wk.ssdd)) fail(w, `ssdd "${wk.ssdd}" is not a set`);
+    });
+    console.log(`  ${plan.id}: ${plan.weeks} weeks · ${planActivityIds(plan).length} activities referenced · all resolve`);
+  }
+  if (FOUR_PART.length !== 4) fail('plans', `the four-part lesson has ${FOUR_PART.length} parts`);
+}
+
 /* --------------------------------------------------------------------- ssdd
    An SSDD set is only doing its job if the four questions genuinely need
    DIFFERENT methods. A set where two items share a procedure is a normal

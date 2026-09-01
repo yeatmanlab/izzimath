@@ -13,6 +13,12 @@ const PAGES = [
   ['/games/decade-duel/', 'game: decade duel'],
   ['/print/times-table-tower/', 'print: times table'], ['/print/counting-crew/', 'print: counting crew'],
   ['/print/fraction-number-line/', 'print: fraction NL'],
+  // The two page types added later. A new page type that the responsive audit
+  // does not list is a page type nobody is checking, which is how the print
+  // overflow went unnoticed for so long.
+  ['/plans/', 'plans index'], ['/plans/grade-4-fractions/', 'plan: g4 fractions'],
+  ['/ssdd/', 'ssdd index'], ['/ssdd/g3-four-by-six/', 'ssdd: g3 array'],
+  ['/ssdd/k-two-rows/', 'ssdd: K counters'],
 ];
 const WIDTHS = [[360,'phone-sm'],[390,'phone'],[768,'tablet'],[1024,'laptop'],[1440,'desktop']];
 const L=[]; let checks=0;

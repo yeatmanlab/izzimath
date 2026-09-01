@@ -4,7 +4,7 @@
 remaining work points here — keep this file current and the rest follows.
 
 Derived from the research pass ([`../SPEC.md`](../SPEC.md), 108 recommendations).
-Current state: **63 implemented · 17 partial · 21 not built · 7 not applicable.**
+Current state: **66 implemented · 17 partial · 18 not built · 7 not applicable.**
 The accounting lives in [`../EVIDENCE.md`](../EVIDENCE.md).
 
 Numbers in brackets are the recommendation numbers in `SPEC.md`, so each item can
@@ -33,12 +33,17 @@ started. See [`01-lesson-structure.md`](01-lesson-structure.md) for the detail.
       ships "show your thinking" without 3–4 strategies to watch for and a
       pre-written question that surfaces the target one. For a product with no
       teacher in the room this is the highest-value structure to steal. *Medium.*
-- [ ] **Fraction Face-Off's four-part lesson template** [32] — warm-up word
-      problem → explicit instruction → speed game → worksheet. This is the
-      closest thing to a WWC-validated blueprint for what this site is, and our
-      book/game/printable split already resembles it. *Medium.*
-- [ ] **Fraction Face-Off's 12-week sequence for the grade-4 fraction book** [33].
-      *Medium.*
+- [x] **Fraction Face-Off's four-part lesson template** [32] — done, 2026-09-01.
+      Warm-up word problem → explicit instruction → speed game → worksheet, stated
+      once and used as the shape of every session in the plan. The
+      book/game/printable split already covered parts 2–4; part 1 and the order
+      were what was missing.
+- [x] **Fraction Face-Off's 12-week sequence for the grade-4 fraction book** [33] —
+      done, 2026-09-01. `/plans/grade-4-fractions/`, with magnitude and 0–1
+      ordering in weeks 3–5 before equivalence (6–7) and before addition (8–9),
+      which is the unusual part worth copying. A plan holds no problems of its
+      own — every week points at a book, a game and a sheet that already exist,
+      so it cannot drift out of step. New content type in `content/plans.js`.
 - [ ] **Consolidation section per book, and let children author a routine** [15].
       *Medium.*
 
@@ -76,8 +81,12 @@ See [`03-print-craft.md`](03-print-craft.md).
 - [ ] **Printable manipulatives as a content line** [53] — ten-frames, number
       lines, fraction strips, digit cards, nets. Cheap, self-contained, and the
       thing parents actually search for. *Medium.*
-- [ ] **SSDD sheets** [72] — four items, one page, one shared surface feature,
-      four different procedures. A named sheet type. *Small.*
+- [x] **SSDD sheets** [72] — done, 2026-09-01. Six sheets, one per grade, at
+      `/ssdd/`. One shared surface, four questions, four genuinely different
+      methods; the key names the method each one needed. The checker enforces that
+      the four procedures are distinct, which is the only thing that makes it an
+      SSDD sheet rather than a worksheet in the format's clothes. Authored rather
+      than generated because the format is cross-topic by construction.
 - [ ] **Generator parameter controls** [51, 87] — number range, operation, item
       count, work space, exposed progressively and carried in the URL beside the
       seed. *Medium.*
