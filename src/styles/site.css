@@ -15,6 +15,11 @@
   --radius: 12px;
   --wrap: 1180px;
   --sp: linear-gradient(100deg, var(--a1), var(--a2) 55%, var(--a3));
+  /* The colour of TEXT that sits ON --sp: the logo mark, primary buttons and
+     grade badges all put a label on that gradient. Near-black works for three of
+     the four characters because their accents are light. A character with dark
+     accents overrides this and --sp together. */
+  --onsp: #05060E;
   --fdisp: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   --fbody: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
@@ -27,7 +32,14 @@ html[data-ch="georgie"] { --a1:#FF4D9D; --a2:#A855F7; --a3:#22E0F0; --ok:#B6FF3D
    no difference at all. Now properly red, 37 degrees off Kiwi and 29 off
    Georgie's pink. a1 clears 4.5:1 on the dark background because it is the link
    colour; a2 and a3 are decoration and gradient depth, so they go darker. */
-html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#8C1519; --ok:#8FE388; --gA:rgba(208,43,34,.50); --gB:rgba(140,21,25,.30);  --grid1:rgba(208,43,34,.08); --grid2:rgba(140,21,25,.06) }
+html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#6B2318; --ok:#8FE388; --gA:rgba(208,43,34,.50); --gB:rgba(107,35,24,.30);  --grid1:rgba(208,43,34,.08); --grid2:rgba(107,35,24,.06);
+  /* Flame's accents are dark, so the near-black label does not work on them: on
+     a1 -> a3 it fell to 2.81:1 where Kiwi is 5.42. Two overrides fix that without
+     lightening the reds. The gradient starts at a2 rather than a1 because no
+     single colour can be BOTH a legible link on a near-black page (luminance
+     above ~0.20) and a background for light text (below ~0.17) — a1 must be the
+     former, so it cannot carry a light label. Light on a2 -> a3 is 4.87:1. */
+  --onsp: #FFF6F4; --sp: linear-gradient(100deg, var(--a2), var(--a3)) }
 
 * { box-sizing: border-box; margin: 0; padding: 0 }
 html { scroll-behavior: smooth }
@@ -61,7 +73,7 @@ main { position: relative; z-index: 1; flex: 1 }
 .nav { position: relative; z-index: 20; border-bottom: 1px solid var(--line); background: rgba(5,6,14,.72); backdrop-filter: blur(14px) }
 .nav-in { display: flex; align-items: center; gap: 26px; padding: 14px 0; flex-wrap: wrap }
 .logo { display: flex; align-items: center; gap: 10px; font-family: var(--fdisp); font-weight: 700; font-size: 19px; letter-spacing: -.03em; text-decoration: none; flex: none }
-.logo .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--sp); display: grid; place-items: center; color: #05060E; font-size: 16px; flex: none }
+.logo .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--sp); display: grid; place-items: center; color: var(--onsp); font-size: 16px; flex: none }
 .nav a.nl { color: var(--txt2); text-decoration: none; font-size: 14px; font-weight: 500 }
 .nav a.nl:hover, .nav a.nl[aria-current="page"] { color: var(--txt) }
 .nav-r { margin-left: auto; display: flex; gap: 8px; align-items: center }
@@ -75,7 +87,7 @@ main { position: relative; z-index: 1; flex: 1 }
 }
 .btn:hover { background: var(--glass2) }
 .btn:active { transform: scale(.98) }
-.btn.pri { border: 0; color: #05060E; font-weight: 700; background: var(--sp) }
+.btn.pri { border: 0; color: var(--onsp); font-weight: 700; background: var(--sp) }
 .btn.sm { padding: 6px 12px; font-size: 12.5px }
 .btn[disabled] { opacity: .45; cursor: not-allowed }
 
@@ -128,7 +140,7 @@ main { position: relative; z-index: 1; flex: 1 }
 
 /* ---------- activity shell ---------- */
 .ahead { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; padding: 34px 0 0 }
-.gbadge { width: 66px; height: 66px; border-radius: 17px; background: var(--sp); display: grid; place-items: center; font-family: var(--fdisp); font-size: 31px; color: #05060E; flex: none }
+.gbadge { width: 66px; height: 66px; border-radius: 17px; background: var(--sp); display: grid; place-items: center; font-family: var(--fdisp); font-size: 31px; color: var(--onsp); flex: none }
 .ahead h1 { font-size: clamp(26px, 4vw, 36px) }
 .ahead p { color: var(--txt2); font-size: 14.5px }
 

@@ -92,7 +92,7 @@ export const characters = {
     blurb: 'Climbs bamboo towers, hunts for the trick, and counts on a ringed tail.',
     // Red panda reds. Was sharing Kiwi's yellow and orange almost exactly — see
     // the note in site.css. Kept in step with the CSS block there.
-    palette: { a1: '#F2504A', a2: '#D02B22', a3: '#8C1519', ok: '#8FE388' },
+    palette: { a1: '#F2504A', a2: '#D02B22', a3: '#6B2318', ok: '#8FE388' },
     printAccent: '#8C1519',
     world: { place: 'the treetops', places: 'treetops', feature: 'branch', features: 'branches' },
     collectible: { one: 'berry', many: 'berries' },

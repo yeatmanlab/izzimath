@@ -95,6 +95,56 @@ console.log('\n=== character palettes ===');
       if (d < 20) fail('palette', `${ia} and ${ib} have primary accents only ${Math.round(d)}deg apart — they will read as the same character`);
     }
   }
+  /* The --sp gradient is the BACKGROUND for the logo mark, primary buttons and
+     grade badges, and --onsp is the label on it. Darkening a character's accents
+     therefore darkens a text background, which is how Flame's button label
+     silently fell to 2.81:1 while every other check stayed green. This measures
+     the label against the gradient across the span text actually occupies. */
+  const relLum = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const f = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  };
+  const contrast = (a, b) => {
+    const [x, y] = [relLum(a), relLum(b)];
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  };
+  const mix = (a, b, t) => '#' + [1, 3, 5].map((i) => {
+    const s2 = parseInt(a.slice(i, i + 2), 16), e = parseInt(b.slice(i, i + 2), 16);
+    return Math.round(s2 + (e - s2) * t).toString(16).padStart(2, '0');
+  }).join('').toUpperCase();
+
+  const cssVar = (line, name, fallback) => {
+    const m = line.match(new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6})`));
+    return m ? m[1] : fallback;
+  };
+  const root = css.split('\n').find((l) => l.includes('--onsp:')) || '';
+  const defaultOnsp = cssVar(root, 'onsp', '#05060E');
+
+  for (const [id, ch] of Object.entries(characters)) {
+    const block = css.split('\n').find((l) => l.includes(`data-ch="${id}"`)) || '';
+    // the whole rule can span lines; take everything up to the closing brace
+    const start = css.indexOf(`data-ch="${id}"`);
+    const rule = css.slice(start, css.indexOf('}', start) + 1);
+    const onsp = cssVar(rule, 'onsp', defaultOnsp);
+    // which stops the gradient uses: a2->a3 if the rule overrides --sp, else a1->a2->a3
+    const stops = /--sp:\s*linear-gradient\([^)]*var\(--a2\)[^)]*var\(--a3\)/.test(rule.replace(/\s+/g, ' '))
+      ? [ch.palette.a2, ch.palette.a3]
+      : [ch.palette.a1, ch.palette.a2, ch.palette.a3];
+    let worst = Infinity, worstAt = 0;
+    for (let i = 30; i <= 80; i++) {
+      const p = i / 100;
+      let c;
+      if (stops.length === 2) c = mix(stops[0], stops[1], p);
+      else c = p <= 0.55 ? mix(stops[0], stops[1], p / 0.55) : mix(stops[1], stops[2], (p - 0.55) / 0.45);
+      const r = contrast(onsp, c);
+      if (r < worst) { worst = r; worstAt = i; }
+    }
+    if (worst < 4.5)
+      fail(`palette:${id}`, `the label on its gradient is only ${worst.toFixed(2)}:1 at ${worstAt}% — buttons and badges become unreadable`);
+    else
+      console.log(`  ${id.padEnd(8)} label on gradient ${worst.toFixed(2)}:1 (${onsp} on ${stops.length} stops)`);
+  }
   console.log(`  ${Object.keys(characters).length} palettes agree with the CSS · primary accents all distinguishable`);
 }
 
