@@ -556,3 +556,16 @@ a.reflink.page:hover { color: var(--a1) }
   .megrid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)) }
   .mefoods { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)) }
 }
+
+/* ---------- number line: making it obvious that the number moves ----------
+   A third grader could not tell what the game wanted. The token now carries the
+   number being placed, and these are the cues that it travels. */
+.nlhow { color: var(--txt3); font-size: 13px; margin: 6px 0 0; text-align: center }
+.nlhow strong { color: var(--txt2) }
+.nlhow.nudgeme { color: var(--amber) }
+.nlhow.nudgeme strong { color: var(--amber) }
+/* A small idle sway until the first touch — the standard "this is draggable"
+   cue. Three seconds of it, then it stops so it never becomes a distraction. */
+@keyframes nlsway { 0%,100% { transform: translateX(0) } 50% { transform: translateX(9px) } }
+.knob.nudge { animation: nlsway 1.15s ease-in-out 3 }
+@media (prefers-reduced-motion: reduce) { .knob.nudge { animation: none } }

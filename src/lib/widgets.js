@@ -56,6 +56,22 @@ export function numberLine({
 }
 
 /* evenly spaced tick values, inclusive */
+/* Split a pool into three difficulty bands and return the one this level should
+   draw from. Thirds of the pool sorted by a difficulty measure, rather than
+   hand-picked thresholds: fixed cut-offs left mixed-number-line's easiest band
+   with two members, so a held ladder rung still repeated itself. Thirds are
+   self-balancing for any pool.
+
+   The BAND comes from the level so the ladder still means something; the PICK
+   within it comes from the rng, so holding a rung varies the question. */
+export function band3(pool, difficulty, level) {
+  const sorted = pool.slice().sort((a, b) => difficulty(a) - difficulty(b));
+  const n = Math.max(1, Math.ceil(sorted.length / 3));
+  const which = level <= 3 ? 0 : level <= 7 ? 1 : 2;
+  const band = sorted.slice(which * n, which * n + n);
+  return band.length ? band : sorted;
+}
+
 export function tickRange(lo, hi, step) {
   const out = [];
   for (let v = lo; v <= hi + 1e-9; v += step) out.push(Math.round(v * 1e6) / 1e6);

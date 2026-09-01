@@ -1,4 +1,4 @@
-import { tenFrame, numberBond, numberLine, tickRange, baseTen, dots, esc } from '../../src/lib/widgets.js';
+import { tenFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3 } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -192,23 +192,32 @@ const numberLineHop = {
   id: 'number-line-hop', title: 'Number Line Hop', kind: 'game', grade: '1', strand: S[2],
   glyph: '↦',
   skill: 'Estimating where a number sits on a 0–20 line.',
-  goal: 'Slide the marker to where the number belongs on the line. Close enough counts.',
+  goal: 'Drag the number to where it belongs on the line. You do not have to be exact — close counts.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Find the middle first — 10 is halfway to 20. Then decide whether your number comes before or after the middle.',
-  blurb: 'Slide the marker to the right spot on the line.',
+  blurb: 'Drag the number to the right spot on the line.',
   ccss: ['1.NBT.B.3'],
   im: [4, 6],
   refs: ['wwc-2021-math', 'schneider-2018', 'siegler-ramani-2009'],
   theory: 'Number line estimation: mapping a numeral onto a spatial position.',
   roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_20' }],
   evidence: 'Linear number line practice is among the best-evidenced early number interventions there is — Siegler and Ramani’s work on linear board games showed gains in numerical magnitude that transferred to broader arithmetic. Ticks are provided at this stage so the child can count as well as estimate.',
-  strategy: { name: 'Use the middle', text: 'Find the halfway mark first, then decide if your number is before or after it.' },
+  strategy: { name: 'Use the middle', text: 'Look at the middle label first. Is your number smaller than it, or bigger? That tells you which half to drop it in.' },
   rounds: 12, printItems: 6, seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
-    // MagPI 0-20 uses odd and landmark targets; mirror that spread.
+    /* MagPI 0-20 uses odd and landmark targets; mirror that spread.
+
+       Banded by distance to the nearest LABELLED landmark (0, 10, 20), because
+       that is what actually makes a placement hard — a number sitting next to a
+       label can be read off, one in the middle of a gap has to be estimated.
+       The band comes from the level so the ladder still means something; the
+       target comes from the rng so a held rung does not ask the same question
+       twice. It used to be `pool[(i * 5 + 3) % pool.length]`, which ignored the
+       rng entirely and served "Where does 5 go?" three rounds running. */
     const pool = [1, 2, 3, 5, 7, 9, 10, 11, 13, 15, 17, 19];
-    const target = pool[(i * 5 + 3) % pool.length];
+    const gap = (v) => Math.min(Math.abs(v - 0), Math.abs(v - 10), Math.abs(v - 20));
+    const target = r.pick(band3(pool, gap, i));
     return {
       type: 'numberline', lo: 0, hi: 20, target, targetLabel: String(target),
       tolerance: 1.2,

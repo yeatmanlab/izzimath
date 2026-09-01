@@ -1,4 +1,4 @@
-import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc } from '../../src/lib/widgets.js';
+import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc, band3 } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -212,7 +212,7 @@ const hundredLineHop = {
   id: 'hundred-line-hop', title: 'Hundred Line Hop', kind: 'game', grade: '2', strand: S[2],
   glyph: '⇥',
   skill: 'Estimating where a number sits on a 0–100 line.',
-  goal: 'Slide the marker to where the number belongs between 0 and 100.',
+  goal: 'Drag the number to where it belongs between 0 and 100. Close counts.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Anchor on 50, then 25 and 75. Place your number next to the nearest anchor instead of counting up from zero.',
   blurb: 'No tick marks this time. Where does 63 go?',
@@ -226,9 +226,13 @@ const hundredLineHop = {
   rounds: 12, printItems: 7, seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
-    // MagPI's own 0-100 targets
+    /* MagPI's own 0-100 targets, banded by distance to the nearest landmark the
+       child can actually see or infer (0, 25, 50, 75, 100). Same reasoning as
+       number-line-hop: the band is the level, the pick is the rng, so holding a
+       rung does not repeat the question. */
     const pool = [3, 7, 14, 19, 24, 32, 44, 51, 63, 76, 84, 98];
-    const target = pool[(i * 7 + 2) % pool.length];
+    const gap = (v) => Math.min(...[0, 25, 50, 75, 100].map((m) => Math.abs(v - m)));
+    const target = r.pick(band3(pool, gap, i));
     return {
       type: 'numberline', lo: 0, hi: 100, target, targetLabel: String(target),
       tolerance: 5,

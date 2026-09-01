@@ -228,7 +228,7 @@ const decimalDrop = {
   id: 'decimal-drop', title: 'Decimal Drop', kind: 'game', grade: '4', strand: S[1],
   glyph: '·',
   skill: 'Placing a decimal between 0 and 1, and matching it to its fraction.',
-  goal: 'Drop the decimal where it belongs between 0 and 1.',
+  goal: 'Drag the decimal to where it belongs between 0 and 1. Close counts.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: '0.5 is a half, 0.25 is a quarter, 0.1 is a tenth. Find the nearest of those you know, then adjust from it.',
   blurb: 'Where does 0.35 land? And what fraction is that?',

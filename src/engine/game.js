@@ -70,9 +70,33 @@ export function mountGame(activity, root) {
 
   const levelNow = () => (lad ? ladState.level : round);
 
-  const problemFor = (i, level = i) => {
-    const sd = deriveSeed(seed, `r${i}`);
-    return activity.generate(sd, level, ch, rng(sd), seed);
+  /* The round counter drives the seed and the ladder drives the difficulty. If
+     the SEED followed the level, holding a rung would serve the identical problem
+     over and over.
+
+     `lastKey` stops a round repeating the one before it. At chance, a pick from a
+     five-item difficulty band repeats the previous question about one round in
+     five, which a child reads as the game being stuck. One resample fixes it,
+     the same way collect() does for printables.
+
+     (An earlier attempt double-hashed the seed here, on the theory that
+     deriveSeed's FNV walk puts consecutive labels in an arithmetic progression
+     and correlates mulberry32's first output. The seeds ARE in progression, but
+     measuring 400 rounds put adjacent repeats at 19.5% single-hashed and 19.0%
+     double-hashed against a chance rate of 20% — so the rng was never the
+     problem, and the whole bug was a generator that ignored `r` and picked by
+     index. The double hash is gone.) */
+  let lastKey = null;
+  const keyOf = (p) => JSON.stringify([p.target, p.targetLabel, p.left, p.right, p.n, p.answer, p.prompt]);
+  const problemFor = (i, level = i, remember = false) => {
+    const make = (salt) => {
+      const sd = deriveSeed(seed, `r${i}${salt}`);
+      return activity.generate(sd, level, ch, rng(sd), seed);
+    };
+    let p = make('');
+    if (remember && lastKey && keyOf(p) === lastKey) p = make('#b');
+    if (remember) lastKey = keyOf(p);
+    return p;
   };
 
   function paintBar() {
@@ -233,7 +257,7 @@ export function mountGame(activity, root) {
     if (!started) return paintStart();
     if (round >= total) return finish();
     paintBar();
-    const p = problemFor(round, levelNow());
+    const p = problemFor(round, levelNow(), true);
     host.innerHTML = `
       ${hud()}
       <div data-slot></div>

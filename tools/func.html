@@ -76,6 +76,51 @@ for(const t of T.TYPES){
    Every assertion below is a defect this found or would find. Two were real:
    closing the dialog dropped focus at the top of the document, and Tab walked
    straight out of a dialog marked aria-modal. */
+/* ------------------------------------------------------------- number line
+   A third grader could not tell what Number Line Hop wanted, so these guard the
+   cues that were missing. All of them are things the old version failed. */
+L.push('');
+{
+  const A2 = A.activities.find((x) => x.id === 'number-line-hop');
+  const sd = R.deriveSeed(4242, 'r0');
+  const prob = A2.generate(sd, 0, C.getCharacter('kiwi'), R.rng(sd), 4242);
+  host.innerHTML = '';
+  const w = RD.renderProblem(host, prob, () => {});
+  const svg = host.querySelector('svg[role="slider"]');
+  const nl = (name, pass, note = '') => { checks++; L.push((pass ? '· ' : '✗ ') + ('numberline:' + name).padEnd(30) + (note || (pass ? 'ok' : 'FAILED'))); };
+
+  const pill = svg?.querySelector('.knob text');
+  nl('token carries the number', pill?.textContent === String(prob.targetLabel ?? prob.target),
+    '"' + (pill?.textContent ?? '') + '" vs target ' + prob.target);
+  nl('token parks off the answer', Math.abs(parseFloat(svg.querySelector('.knob rect').getAttribute('x')) - 0) < 80,
+    'parked left, not at the midpoint');
+  nl('shows a travel track', !!svg?.querySelector('.track'));
+  nl('shows grab arrows', !!svg?.querySelector('.grip'));
+  nl('readout blank before moving', (svg?.querySelector('.rdout')?.textContent || '') === '');
+  nl('names both ways in', /tap the line/i.test(host.querySelector('.nlhow')?.textContent || ''));
+  nl('button names the number', new RegExp('Put\\s+' + String(prob.targetLabel ?? prob.target)).test(
+    host.querySelector('.ansrow button')?.textContent || ''),
+    '"' + (host.querySelector('.ansrow button')?.textContent || '') + '"');
+  // pressing before moving must teach, not submit
+  host.querySelector('.ansrow button').click();
+  nl('press before moving teaches', !svg.dataset.locked && /Move the/i.test(host.querySelector('.nlhow')?.textContent || ''));
+  // integer lines must not show a decimal readout mid-drag
+  nl('integer line reads whole numbers', !/\./.test(svg.querySelector('.rdout')?.textContent || '0'));
+  host.innerHTML = '';
+
+  /* And the generator must consult the rng. It used to pick purely by index, so
+     a held ladder rung asked the same question every round. */
+  for (const id of ['number-line-hop', 'hundred-line-hop', 'mixed-number-line']) {
+    const act = A.activities.find((x) => x.id === id);
+    const seen = new Set();
+    for (let k = 0; k < 12; k++) {
+      const s2 = R.deriveSeed(4242, 'r' + k);
+      seen.add(String(act.generate(s2, 0, C.getCharacter('kiwi'), R.rng(s2), 4242).targetLabel));
+    }
+    nl(id + ' varies at one rung', seen.size >= 3, seen.size + ' distinct in 12 rounds at rung 0');
+  }
+}
+
 L.push('');
 {
   const frame = document.createElement('iframe');

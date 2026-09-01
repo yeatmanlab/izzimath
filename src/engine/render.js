@@ -69,7 +69,28 @@ function renderInput(host, p, cb) {
   };
 }
 
-/* -------------------------------------------------------------- numberline */
+/* -------------------------------------------------------------- numberline
+   Rebuilt after a third grader could not tell what this game wanted.
+
+   What they were looking at: the prompt "Where does 5 go?", a line marked
+   0-10-20, a plain dot ALREADY SITTING AT THE MIDDLE with a readout saying
+   "10", and a button labelled "Place it here". Three separate problems, all of
+   them the interface's fault:
+
+     - nothing said the dot could move. `cursor: grab` is invisible on a tablet
+       and means nothing to an eight-year-old.
+     - the dot was anonymous, and the number it displayed (10) was not the number
+       being asked about (5). Two numbers on screen, neither of them explained.
+     - it started on a plausible answer, so pressing the button straight away
+       submitted the midpoint — and on "where does 10 go" that is CORRECT, which
+       teaches the wrong lesson and feeds the adaptive ladder a false success.
+
+   So, per docs/GAME-DESIGN.md principle 1 — the interface states the goal, text
+   is the last resort — the thing you drag is now the number itself. You drag a
+   token labelled 5 to where 5 goes. It parks off to the left so its position is
+   visibly not an answer yet, it carries grab arrows and a dashed track so it
+   reads as movable, and pressing the button before moving anything teaches the
+   two ways to move it rather than silently submitting. */
 function renderNumberLine(host, p, cb) {
   const lo = p.lo, hi = p.hi;
   const wrap = el(`<div class="svgwrap"></div>`);
@@ -81,26 +102,58 @@ function renderNumberLine(host, p, cb) {
   const majors = p.majors ?? [lo, hi];
   const labels = p.labels ?? [[lo, String(lo)], [hi, String(hi)]];
 
-  let val = (lo + hi) / 2;
+  // Parked at the left edge, not the middle: wherever it starts it must not look
+  // like an answer, and the midpoint is the one position that sometimes IS one.
+  let val = lo;
+  let moved = false;
+  const label = String(p.targetLabel ?? p.target ?? '');
+  const pillW = Math.max(38, 15 + label.length * 12);
   const svg = el(`<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" tabindex="0"
-      role="slider" aria-label="Place the value on the number line"
+      role="slider" aria-label="Drag ${esc(label)} to where it belongs between ${lo} and ${hi}"
       aria-valuemin="${lo}" aria-valuemax="${hi}" aria-valuenow="${val}" style="touch-action:none;cursor:grab">
     <line x1="${padX}" y1="${y}" x2="${W - padX}" y2="${y}" stroke="var(--line2)" stroke-width="3" stroke-linecap="round"/>
     ${ticks.map((t) => `<line x1="${toX(t).toFixed(2)}" y1="${y - 6}" x2="${toX(t).toFixed(2)}" y2="${y + 6}" stroke="var(--txt3)" stroke-width="1.5"/>`).join('')}
     ${majors.map((t) => `<line x1="${toX(t).toFixed(2)}" y1="${y - 11}" x2="${toX(t).toFixed(2)}" y2="${y + 11}" stroke="var(--txt3)" stroke-width="2.4"/>`).join('')}
     ${labels.map(([v, l]) => `<text x="${toX(v).toFixed(2)}" y="${y + 32}" text-anchor="middle" font-size="14" fill="var(--txt2)" font-family="'Space Grotesk',sans-serif">${esc(l)}</text>`).join('')}
-    <g class="knob"><circle cx="${toX(val)}" cy="${y}" r="15" fill="var(--a2)" stroke="#fff" stroke-opacity=".4" stroke-width="2.5"/></g>
-    <text class="rdout" x="${toX(val)}" y="${y - 28}" text-anchor="middle" font-size="17" font-weight="700" fill="var(--txt)" font-family="'Space Grotesk',sans-serif"></text>
+    <!-- the road the token can travel, so it reads as movable before it moves -->
+    <line class="track" x1="${padX}" y1="${y - 30}" x2="${W - padX}" y2="${y - 30}"
+      stroke="var(--a1)" stroke-width="1.4" stroke-dasharray="5 6" opacity=".38"/>
+    <g class="knob">
+      <rect x="${(toX(val) - pillW / 2).toFixed(2)}" y="${y - 30 - 15}" width="${pillW}" height="30" rx="15"
+        fill="var(--a2)" stroke="#fff" stroke-opacity=".45" stroke-width="2"/>
+      <text x="${toX(val).toFixed(2)}" y="${y - 30 + 6}" text-anchor="middle" font-size="16" font-weight="700"
+        fill="var(--onsp, #05060E)" font-family="'Space Grotesk',sans-serif">${esc(label)}</text>
+      <path class="grip" d="M${(toX(val) - pillW / 2 - 9).toFixed(2)} ${y - 30} l6 -5 v10 z
+                            M${(toX(val) + pillW / 2 + 9).toFixed(2)} ${y - 30} l-6 -5 v10 z"
+        fill="var(--a1)" opacity=".85"/>
+    </g>
+    <line class="drop" x1="${toX(val).toFixed(2)}" y1="${y - 15}" x2="${toX(val).toFixed(2)}" y2="${y + 12}"
+      stroke="var(--a1)" stroke-width="2" stroke-dasharray="3 3" opacity=".55"/>
+    <text class="rdout" x="${toX(val)}" y="${y - 54}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--txt2)" font-family="'Space Grotesk',sans-serif"></text>
   </svg>`);
-  const knob = svg.querySelector('.knob circle');
+  const knobRect = svg.querySelector('.knob rect');
+  const knobText = svg.querySelector('.knob text');
+  const grip = svg.querySelector('.grip');
+  const drop = svg.querySelector('.drop');
   const rd = svg.querySelector('.rdout');
-  const dp = (hi - lo) <= 2 ? 3 : (hi - lo) <= 20 ? 1 : 0;
+  /* Readout precision follows the LINE, not the range. On a line ticked in whole
+     numbers, dragging used to show "7.3", which on an integer line looks broken.
+     Fraction lines keep their finer readout. */
+  const allTicksWhole = ticks.length > 1 && ticks.every((t) => Number.isInteger(t));
+  const dp = allTicksWhole ? 0 : (hi - lo) <= 2 ? 3 : (hi - lo) <= 20 ? 1 : 0;
 
   const paint = () => {
     const x = toX(val);
-    knob.setAttribute('cx', x.toFixed(2));
+    knobRect.setAttribute('x', (x - pillW / 2).toFixed(2));
+    knobText.setAttribute('x', x.toFixed(2));
+    grip.setAttribute('d', `M${(x - pillW / 2 - 9).toFixed(2)} ${y - 30} l6 -5 v10 z
+                            M${(x + pillW / 2 + 9).toFixed(2)} ${y - 30} l-6 -5 v10 z`);
+    drop.setAttribute('x1', x.toFixed(2));
+    drop.setAttribute('x2', x.toFixed(2));
     rd.setAttribute('x', x.toFixed(2));
-    rd.textContent = p.showReadout === false ? '' : Number(val).toFixed(dp).replace(/\.0+$/, '');
+    // The running readout only appears once they have moved it — before that it
+    // would be a second number on screen with nothing to do with the question.
+    rd.textContent = (p.showReadout === false || !moved) ? '' : Number(val).toFixed(dp).replace(/\.0+$/, '');
     svg.setAttribute('aria-valuenow', String(Number(val.toFixed(dp))));
   };
   paint();
@@ -110,7 +163,7 @@ function renderNumberLine(host, p, cb) {
     const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
     return (cx / r.width) * W;
   };
-  const move = (ev) => { ev.preventDefault(); val = Math.min(hi, Math.max(lo, toV(pt(ev)))); paint(); };
+  const move = (ev) => { ev.preventDefault(); moved = true; val = Math.min(hi, Math.max(lo, toV(pt(ev)))); paint(); nudgeOff(); };
   let dragging = false;
   const down = (ev) => { if (svg.dataset.locked) return; dragging = true; svg.style.cursor = 'grabbing'; move(ev); };
   const up = () => { dragging = false; svg.style.cursor = 'grab'; };
@@ -121,14 +174,39 @@ function renderNumberLine(host, p, cb) {
   svg.addEventListener('keydown', (e) => {
     if (svg.dataset.locked) return;
     const step = (hi - lo) / (e.shiftKey ? 10 : 100);
-    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { val = Math.min(hi, val + step); paint(); e.preventDefault(); }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { val = Math.max(lo, val - step); paint(); e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { moved = true; val = Math.min(hi, val + step); paint(); nudgeOff(); e.preventDefault(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { moved = true; val = Math.max(lo, val - step); paint(); nudgeOff(); e.preventDefault(); }
     if (e.key === 'Enter') submit();
   });
 
-  const btn = el(`<div class="ansrow"><button class="btn pri" type="button">Place it here</button></div>`);
+  /* One line, stating both ways in. Principle 2 warns against walls of pre-game
+     text; one sentence naming the interaction is not a wall, and it is the
+     difference between a child playing and a child stuck. */
+  const how = el(`<p class="nlhow">Drag the <strong>${esc(label)}</strong> along the line &mdash; or just tap the line where you think it goes.</p>`);
+
+  // The button says what it does TO WHAT. "Place it here" left "it" undefined.
+  const btn = el(`<div class="ansrow"><button class="btn pri" type="button">Put ${esc(label)} here</button></div>`);
+
+  /* The nudge is the "this moves" cue, and it stops the moment anything moves.
+     Skipped entirely for reduced motion, where the arrows and dashed track carry
+     the same message statically. */
+  const reduced = typeof window !== 'undefined' && window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+  if (!reduced) svg.querySelector('.knob')?.classList.add('nudge');
+  function nudgeOff() { svg.querySelector('.knob')?.classList.remove('nudge'); }
+
   const submit = () => {
     if (svg.dataset.locked) return;
+    /* Pressing before moving anything used to submit the starting position as an
+       answer. It now teaches instead — and this is why the token parks at the
+       left rather than the middle, where "where does 10 go" would have been
+       marked CORRECT for touching nothing. */
+    if (!moved) {
+      how.classList.add('nudgeme');
+      how.innerHTML = `<strong>Move the ${esc(label)} first.</strong> Drag it along the line, or tap the line where you think it goes.`;
+      svg.focus();
+      return;
+    }
     svg.dataset.locked = '1';
     const ok = check(p, val);
     const tx = toX(p.target), vx = toX(val);
@@ -154,7 +232,12 @@ function renderNumberLine(host, p, cb) {
         <text x="${((vx + tx) / 2).toFixed(2)}" y="${my - 7}" text-anchor="middle" font-size="11" fill="#FF6B8A" font-family="'Space Grotesk',sans-serif">this far off</text>`;
     }
     svg.insertAdjacentHTML('beforeend', g + `</g>`);
-    knob.setAttribute('fill', ok ? 'var(--ok)' : '#FF6B8A');
+    // The token itself turns green or pink, so the thing they placed is the thing
+    // that reports back. (This line referenced the old circle after the token
+    // became a labelled pill, and threw before the callback ever fired — the
+    // round silently stopped responding.)
+    knobRect.setAttribute('fill', ok ? 'var(--ok)' : '#FF6B8A');
+    knobText.setAttribute('fill', '#05060E');
 
     // name the landmark under the line
     if (near) {
@@ -165,8 +248,15 @@ function renderNumberLine(host, p, cb) {
   };
   btn.querySelector('button').addEventListener('click', submit);
   wrap.appendChild(svg);
-  host.appendChild(wrap); host.appendChild(btn);
-  return { reset: () => { delete svg.dataset.locked; val = (lo + hi) / 2; paint(); } };
+  host.appendChild(wrap); host.appendChild(how); host.appendChild(btn);
+  return {
+    reset: () => {
+      delete svg.dataset.locked;
+      val = lo; moved = false;
+      if (!reduced) svg.querySelector('.knob')?.classList.add('nudge');
+      paint();
+    },
+  };
 }
 
 /* ----------------------------------------------------------------- compare */

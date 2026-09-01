@@ -1,4 +1,4 @@
-import { numberLine, tickRange, fractionBar, array2d, esc } from '../../src/lib/widgets.js';
+import { numberLine, tickRange, fractionBar, array2d, esc, band3 } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { wordProblem } from '../wordproblems.js';
 import { frac, fracText, simplify, addF, subF, mulF, divF, valF, cmpF, lcm } from '../../src/lib/frac.js';
@@ -213,7 +213,7 @@ const mixedNumberLine = {
   id: 'mixed-number-line', title: 'Mixed Number Line', kind: 'game', grade: '5', strand: S[1],
   glyph: '1½',
   skill: 'Placing mixed numbers and improper fractions on a 0–2 line.',
-  goal: 'Place the number on the line between 0 and 2.',
+  goal: 'Drag the number to where it belongs between 0 and 2. Close counts.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
   trick: 'Land on the whole number first, then move the fraction part of the way towards the next one.',
   blurb: 'Past one and under two. Where does 7/4 go?',
@@ -233,7 +233,11 @@ const mixedNumberLine = {
       [6, 4, '1 2/4'], [9, 6, '1 3/6'], [12, 8, '1 4/8'], [11, 6, '1 5/6'],
       [13, 7, '1 6/7'], [15, 8, '1 7/8'], [7, 4, '7/4'], [5, 4, '5/4'], [7, 6, '7/6'], [6, 5, '6/5'],
     ];
-    const [n, d, label] = pool[(i * 5 + 1) % pool.length];
+    /* Banded by distance to a whole number, which is the landmark on this line —
+       11/12 sits almost on 1 and is easy; 7/6 and 6/5 are the awkward ones. The
+       band is the level, the pick is the rng, so a held rung varies. */
+    const dist = ([n, d]) => { const v = n / d; return Math.min(Math.abs(v - 0), Math.abs(v - 1), Math.abs(v - 2)); };
+    const [n, d, label] = r.pick(band3(pool, dist, i));
     const target = n / d;
     return {
       type: 'numberline', lo: 0, hi: 2, target, targetLabel: label,
