@@ -14,9 +14,12 @@ as a pass.
 ## Running them
 
 ```bash
-node build.mjs
-python3 -m http.server 8890 --directory dist
+npm run serve
 ```
+
+That builds first and then serves `dist/` on 8890. Build first or not at all —
+serving a stale `dist/` means the harness measures the last build rather than
+your change, and reports a clean pass for code it never loaded.
 
 Then open, or drive headless:
 

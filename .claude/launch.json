@@ -3,8 +3,11 @@
   "configurations": [
     {
       "name": "izzimath",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8890", "--directory", "dist"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "serve"
+      ],
       "port": 8890
     }
   ]

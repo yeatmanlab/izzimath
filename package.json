@@ -6,7 +6,7 @@
   "description": "Interactive math workbooks and games for K-5, every activity also printable.",
   "scripts": {
     "build": "node build.mjs",
-    "serve": "node build.mjs && python3 -m http.server 8899 --directory dist",
+    "serve": "node build.mjs && python3 -m http.server 8890 --directory dist",
     "check": "node scripts/check.mjs",
     "verify": "node scripts/check.mjs && node build.mjs && node scripts/links.mjs && node scripts/a11y.mjs && node scripts/backlog.mjs",
     "backlog": "node scripts/backlog.mjs"
