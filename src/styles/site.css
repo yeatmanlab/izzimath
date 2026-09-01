@@ -41,6 +41,22 @@ html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#6B2318; --ok:#8FE388
      former, so it cannot carry a light label. Light on a2 -> a3 is 4.87:1. */
   --onsp: #FFF6F4; --sp: linear-gradient(100deg, var(--a2), var(--a3)) }
 
+/* The shelf beside the scores. `bdnext` and the disclosure exist so a new
+   profile is not met by 24 empty circles; see shelf() in src/mount/profile.js. */
+.bdnone { color: var(--txt2); font-size: 14px; margin: 2px 0 14px }
+.bdnext {
+  font: 600 11px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--txt3); margin: 16px 0 8px;
+}
+.bdall { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 6px }
+.bdall > summary {
+  cursor: pointer; color: var(--txt2); font-size: 14px;
+  padding: 8px 2px; min-height: 24px; border-radius: 8px;
+}
+.bdall > summary:hover { color: var(--txt) }
+.bdall[open] > summary { margin-bottom: 6px }
+.bdstrip { margin: 0 }
+
 /* Badge glyph ink. The glyph sits ON the accent, so whether near-black or
    near-white reads depends on the accent — and the accents change with the
    character. Picked by measuring the worst point of the disc gradient against
@@ -502,6 +518,13 @@ a.reflink.page:hover { color: var(--a1) }
   overflow: auto; background: #0f0f16; border: 1px solid var(--line);
   border-radius: 20px; padding: 26px 26px 20px; box-shadow: 0 30px 90px rgba(0,0,0,.7);
 }
+/* The dialog box takes focus when it opens so the panel is read from the top
+   rather than from whichever control happened to be first (see open() in
+   src/mount/profile.js). It is a container, not an operable control, so it does
+   not carry a ring: the global :focus-visible outline drew a 3px accent border
+   around the whole panel, which read as "all of this is selected". Every control
+   inside it keeps its own ring, and that is what WCAG 2.4.7 is about. */
+.mepanel:focus, .mepanel:focus-visible { outline: none }
 .meclose {
   position: absolute; top: 12px; right: 14px; background: none; border: 0; cursor: pointer;
   color: var(--txt3); font-size: 26px; line-height: 1; padding: 4px 8px; border-radius: 8px;

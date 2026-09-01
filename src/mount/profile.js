@@ -25,8 +25,8 @@ import { avatar } from '../lib/sprites.js';
 import { getCharacter } from '../../content/characters.js';
 import { createStore, localDriver } from '../lib/profile.js';
 import { TIERS } from '../lib/ladder.js';
-import { evaluate as evaluateBadges, badgeById, BADGE_COUNT } from '../../content/badges.js';
-import { badgeSvg, shelfHtml } from '../lib/badgeart.js';
+import { evaluate as evaluateBadges, badgeById, BADGE_COUNT, BADGES } from '../../content/badges.js';
+import { badgeSvg, shelfHtml, badgeStrip } from '../lib/badgeart.js';
 import { celebrate } from '../engine/celebrate.js';
 import { activities } from '../../content/activities/index.js';
 import { base } from '../lib/url.js';
@@ -61,7 +61,12 @@ async function paintButton() {
   }
 }
 
-function open(html) {
+/* `focus: 'top'` for a panel that is mainly something to READ. The default
+   picks the first real control, which is right for the choose-an-avatar screens
+   but wrong for the score panel: the first control there is two thirds of the
+   way down, so focusing it scrolled the greeting — including the snack the child
+   has to remember to come back — clean off the top of the panel. */
+function open(html, { focus = 'control' } = {}) {
   /* Where focus goes when the dialog closes. Captured only on the FIRST open of
      a run, because the flows re-render by calling open() again and grabbing
      focus each time would end up restoring it to a button that no longer exists.
@@ -86,7 +91,14 @@ function open(html) {
   document.body.appendChild(panel);
   panel.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
   document.addEventListener('keydown', onKey);
-  panel.querySelector('button:not([data-close])')?.focus();
+  const box = panel.querySelector('.mepanel');
+  if (focus === 'top') {
+    box.tabIndex = -1;
+    box.focus({ preventScroll: true });
+    box.scrollTop = 0;
+  } else {
+    panel.querySelector('button:not([data-close])')?.focus();
+  }
 }
 
 function close({ restore = true } = {}) {
@@ -113,6 +125,31 @@ function onKey(e) {
   const first = items[0], last = items[items.length - 1];
   if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+/* The shelf, as it appears beside the scores: what has been earned, then the
+   few easiest badges that have not, then the whole set behind a disclosure.
+
+   It used to render all 24 inline. For a brand-new profile that meant the first
+   thing a child saw was seven headings of things they had not done — and it was
+   tall enough to push the greeting, including the snack they need to come back,
+   off the top of the panel. Gaps are still what make a set worth filling; the
+   gaps worth putting in front of someone are the near ones. Nearest is taken as
+   lowest rank, which is true without inventing a progress bar. */
+function shelf(me, badges) {
+  const held = new Set(badges.map((b) => b.badgeId));
+  const got = BADGES.filter((b) => held.has(b.id)).map((b) => b.id);
+  const near = BADGES.filter((b) => !held.has(b.id))
+    .sort((a, b) => a.rank - b.rank).slice(0, 4).map((b) => b.id);
+  return `<div class="bdshelf">
+    <p class="bdshelf-h">${me.name}'s badges <span>${got.length} of ${BADGE_COUNT}</span></p>
+    ${got.length
+      ? badgeStrip(got, held)
+      : `<p class="bdnone">None yet. Each one says something ${me.name} did.</p>`}
+    ${near.length ? `<p class="bdnext">Close by</p>${badgeStrip(near, held)}` : ''}
+    <details class="bdall"><summary>See all ${BADGE_COUNT} badges</summary>
+      ${shelfHtml(got)}</details>
+  </div>`;
 }
 
 /* ------------------------------------------------------------- new profile */
@@ -284,17 +321,13 @@ async function flowMine(me, justMade = false) {
       ? `<table class="metable"><thead><tr><th>What</th><th>Best</th><th>Times</th><th></th></tr></thead>
           <tbody>${rows}</tbody></table>`
       : `<p class="mesub">Nothing here yet. Finish a book or play a game and it will show up.</p>`}
-    <div class="bdshelf">
-      <p class="bdshelf-h">${me.name}'s badges
-        <span>${badges.length} of ${BADGE_COUNT}</span></p>
-      ${shelfHtml(badges.map((b) => b.badgeId))}
-    </div>
+    ${shelf(me, badges)}
     <div class="mebtns">
       <button class="btn" data-close>Keep going</button>
       <button class="btn" data-switch>Switch character</button>
       <button class="btn" data-out>Stop keeping score</button>
     </div>
-    ${grownUps()}`);
+    ${grownUps()}`, { focus: 'top' });
   panel.querySelector('[data-switch]').addEventListener('click', flowPickUp);
   panel.querySelector('[data-out]').addEventListener('click', async () => {
     await store.signOut();

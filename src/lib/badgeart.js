@@ -73,6 +73,20 @@ export function badgeSvg(badgeId, { size = 64, locked = false, decorative = fals
   </svg>`;
 }
 
+/* A flat row of specific badges, for showing a handful rather than the set.
+   Same cell markup as the shelf, so they look like the same objects. */
+export function badgeStrip(ids, held = new Set(), { size = 54 } = {}) {
+  const have = held instanceof Set ? held : new Set(held);
+  return `<div class="bdrow bdstrip">${ids.map((id) => {
+    const b = badgeById(id);
+    if (!b) return '';
+    return `<span class="bdcell${have.has(b.id) ? ' got' : ''}" title="${b.name} — ${b.says}">
+      ${badgeSvg(b.id, { size, locked: !have.has(b.id), decorative: true })}
+      <b>${b.name}</b>
+    </span>`;
+  }).join('')}</div>`;
+}
+
 /* The shelf: every badge, earned ones lit, the rest as silhouettes. Grouped by
    category so it reads as a set with gaps rather than a flat wall. */
 export function shelfHtml(earnedIds, { size = 54 } = {}) {

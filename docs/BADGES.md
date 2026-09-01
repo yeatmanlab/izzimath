@@ -52,6 +52,20 @@ produce genuine pride. Every source agrees points do not fix boring.
    function of the progress records, so the shelf recomputes and cannot drift.
    Only the earning *date* and which character was present are stored.
 
+## Where the shelf goes, and how much of it shows
+
+The shelf sits under the score table in the profile panel, and the earned count
+rides along in the header button (`Cobble · 6★`) so it travels with the name.
+
+It shows the earned badges in full, then the four easiest that are not earned
+yet under "Close by", then the whole set behind a disclosure. Rendering all
+twenty-four inline was the first thing a new profile saw — seven headings of
+things they had not done — and it made the panel tall enough that the browser
+scrolled the greeting, including the snack the child needs in order to come
+back, off the top. Gaps are still what make a set worth filling; the gaps worth
+putting in front of someone are the near ones. "Nearest" is lowest rank, which
+is true without inventing a progress bar.
+
 ## What is deliberately absent
 
 No streak-loss punishment, no expiring badges, no daily-login rewards, no
