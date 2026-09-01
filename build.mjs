@@ -21,11 +21,15 @@ const rmrf = (p) => fs.rmSync(p, { recursive: true, force: true });
 
 /* The absolute URL a page actually lives at, derived from its output path.
 
-   Built from SITE and BASE rather than hardcoded, so a build for the GitHub
-   Pages subpath still emits correct tags and a local build does not claim to be
-   the live site. The 404 page deliberately gets none: a not-found response is
-   not a canonical resource, and pointing it at itself tells a crawler to index
-   the error page. */
+   Composed from SITE and BASE rather than hardcoded, so the GitHub Pages subpath
+   build emits https://yeatmanlab.github.io/izzimath/about/ and the production
+   build emits https://izzimath.com/about/, both correct. SITE defaults to the
+   production origin, so a local build with no env set names the live URL too —
+   which is what you want from a canonical: it says where the page belongs, not
+   where it happened to be generated.
+
+   The 404 page deliberately gets none: a not-found response is not a canonical
+   resource, and pointing it at itself tells a crawler to index the error page. */
 function canonicalFor(rel) {
   if (rel === '404.html') return null;
   const dir = rel.replace(/index\.html$/, '');
