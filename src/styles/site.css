@@ -595,7 +595,10 @@ a.reflink.page:hover { color: var(--a1) }
 @media (max-width: 560px) {
   .mepanel { padding: 22px 16px 16px; border-radius: 16px }
   .megrid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)) }
-  .mefoods { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)) }
+  /* Was 92px, set when every snack was one short word. Three columns that narrow
+     broke "Rainbow lollipop" into "Rainb / ow / lollipo / p" — inside the button,
+     so no overflow check saw it, and unreadable. Two columns hold two words. */
+  .mefoods { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)) }
 }
 
 /* ---------- number line: making it obvious that the number moves ----------

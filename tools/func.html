@@ -320,12 +320,26 @@ L.push('');
     }).map((b) => b.textContent.trim());
     t('no snack name escapes its button', escapes().length === 0, escapes().slice(0, 3).join(' / '));
     {
-      const narrow = d.createElement('style');
-      narrow.textContent = '.mepanel{width:340px}';
-      d.head.appendChild(narrow);
-      await sleep(80);
-      t('and not on a narrow panel either', escapes().length === 0, escapes().slice(0, 3).join(' / '));
-      narrow.remove();
+      /* Narrow the FRAME, not the panel. The mobile rules are viewport media
+         queries, so shrinking .mepanel inside a 1100px frame leaves them
+         inactive — the first version of this test could not fail, and the 92px
+         mobile columns it was meant to catch sailed through it. */
+      frame.style.width = '375px';
+      await sleep(150);
+      t('and not on a phone-width screen either', escapes().length === 0, escapes().slice(0, 3).join(' / '));
+      /* Escaping is not the only failure. At 92px columns the names stayed inside
+         their buttons and broke mid-word instead — "Rainb / ow / lollipo / p".
+         Nothing measuring overflow can see that, so measure line count: a name
+         over two lines is a name being broken, not wrapped. */
+      const tall = [...d.querySelectorAll('.mefood b')].filter((b) => {
+        const lh = parseFloat(getComputedStyle(b).lineHeight) || 16;
+        return b.getBoundingClientRect().height > lh * 2.4;
+      }).map((b) => b.textContent.trim());
+      t('no snack name is broken mid-word', tall.length === 0, tall.slice(0, 3).join(' / '));
+      t('snack buttons stay tappable', [...d.querySelectorAll('.mefood')]
+        .every((b) => b.getBoundingClientRect().height >= 24));
+      frame.style.width = '1100px';
+      await sleep(150);
     }
 
     d.querySelector('[data-shuffle]').click(); await sleep(220);
