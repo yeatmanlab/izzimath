@@ -136,16 +136,24 @@ if (!process.env.CI && fs.existsSync('tools')) copyDir('tools', path.join(OUT, '
 
 <section class="wrap sec">
   <h2>How it works</h2>
+  <!-- These three were plain divs: a reader who had just been told what a book IS had
+       nowhere to click. Each now goes to its own list, and those lists are already
+       grouped by grade with a jump row, so the grade cut lives one click in rather than
+       as a second navigation model competing with "Choose a grade" above. -->
   <div class="cards">
-    <div class="card"><div class="cbody"><h3>◈ Interactive books</h3>
+    <a class="card" href="${b}/books/"><div class="cbody"><h3>◈ Interactive books</h3>
       <p>Chaptered practice with hints and worked explanations. Never timed — books are for
-      learning, games are for speed.</p></div></div>
-    <div class="card"><div class="cbody"><h3>◉ Fluency games</h3>
+      learning, games are for speed.</p>
+      <div class="meta"><span class="tag">${activities.filter((a) => a.kind === 'book').length} books, K–5</span></div></div></a>
+    <a class="card" href="${b}/games/"><div class="cbody"><h3>◉ Fluency games</h3>
       <p>Short replayable rounds built on the same skills. Timers are off by default and
-      always optional.</p></div></div>
-    <div class="card"><div class="cbody"><h3>▤ Infinite printables</h3>
+      always optional.</p>
+      <div class="meta"><span class="tag">${activities.filter((a) => a.kind === 'game').length} games, K–5</span></div></div></a>
+    <a class="card" href="${b}/printables/"><div class="cbody"><h3>▤ Infinite printables</h3>
       <p>Every activity generates a fresh sheet plus an answer key. Click again for new
-      problems. Designed to be light on ink.</p></div></div>
+      problems. Designed to be light on ink.</p>
+      <div class="meta"><span class="tag">${activities.length} sheets, every one with a key</span></div></div></a>
+  </div>
   </div>
 </section>
 
@@ -216,6 +224,17 @@ for (const g of GRADES) {
   }));
 }
 
+
+/* The grade cut belongs on the lists, not on the home page: the home page already
+   says "Grade is the only question we ask" and gives six tiles, so a second
+   format-by-grade grid there would compete with it. Here it costs one row and makes
+   /games/#grade-3 a real address, linkable from anywhere. */
+const gradeJump = (b, has) => `<nav class="gjump" aria-label="Jump to a grade">
+  <span>Jump to</span>
+  ${GRADES.filter((g) => has(g)).map((g) =>
+    `<a href="#grade-${g}">${g === 'K' ? 'K' : 'Grade ' + g}</a>`).join('')}
+</nav>`;
+
 /* -------------------------------------------------------- books/games index */
 for (const kind of ['book', 'game']) {
   const dir = kind === 'book' ? 'books' : 'games';
@@ -227,10 +246,11 @@ for (const kind of ['book', 'game']) {
     body: `<section class="wrap sec" style="padding-top:24px">
       <h1 style="font-size:30px">${kind === 'book' ? 'All books' : 'All games'}</h1>
       <p class="sub">${list.length} ${kind}s across K–5. Every one prints.</p>
+      ${gradeJump(b, (g) => list.some((a) => a.grade === g))}
       ${GRADES.map((g) => {
         const l = list.filter((a) => a.grade === g);
         if (!l.length) return '';
-        return `<div class="sec"><h2 style="font-size:20px">${gradeName(g)}</h2>
+        return `<div class="sec" id="grade-${g}"><h2 style="font-size:20px">${gradeName(g)}</h2>
           <div class="cards">${l.map((a) => activityCard(b, a)).join('')}</div></div>`;
       }).join('')}
     </section>`,
@@ -621,10 +641,11 @@ write('printables/index.html', page({
       train working out <em>which</em> procedure the question wants.</p>
       <p><a class="btn" href="${b}/ssdd/">Browse SSDD sheets →</a></p>
     </div>
+    ${gradeJump(b, (g) => byGrade(g).length > 0)}
     ${GRADES.map((g) => {
       const l = byGrade(g);
       if (!l.length) return '';
-      return `<div class="sec"><h2 style="font-size:20px">${gradeName(g)}</h2>
+      return `<div class="sec" id="grade-${g}"><h2 style="font-size:20px">${gradeName(g)}</h2>
         <table class="tbl"><thead><tr><th>Sheet</th><th>Skill</th><th>Standard</th><th></th></tr></thead>
         <tbody>${l.map((a) => `<tr>
           <td><strong>${esc(a.title)}</strong></td>

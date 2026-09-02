@@ -171,6 +171,21 @@ main { position: relative; z-index: 1; flex: 1 }
 
 /* ---------- cards ---------- */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(258px, 1fr)); gap: 16px }
+/* Grade jump row on the books, games and printables lists. */
+.gjump { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 24px }
+.gjump span {
+  font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--txt3);
+}
+.gjump a {
+  font: 500 13px/1 var(--fdisp); color: var(--txt2); text-decoration: none;
+  padding: 8px 12px; min-height: 24px; display: inline-flex; align-items: center;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--glass);
+}
+.gjump a:hover { color: var(--txt); border-color: var(--line2) }
+/* Anchored sections must not land under the sticky header. */
+.sec[id^="grade-"] { scroll-margin-top: 84px }
+
 .card { border-radius: 16px; border: 1px solid var(--line); background: var(--glass); overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: transform .15s, border-color .15s }
 .card:hover { transform: translateY(-3px); border-color: var(--line2) }
 .thumb { height: 116px; display: grid; place-items: center; border-bottom: 1px solid var(--line); background: linear-gradient(140deg, var(--gA), transparent) }
