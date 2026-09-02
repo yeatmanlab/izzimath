@@ -78,6 +78,10 @@ fs.mkdirSync(OUT, { recursive: true });
 copyDir('src', path.join(OUT, 'assets/src'));
 copyDir('content', path.join(OUT, 'assets/content'));
 fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+/* Favicons and anything else that is a file rather than a page. Copied from
+   static/ so a binary (the PNG for iOS, which cannot use an SVG icon) lives in
+   the repo rather than being generated on every build. */
+copyDir('static', OUT);
 
 // CNAME tells GitHub Pages which custom domain this artifact is for. Written from
 // the SITE host so there is one source of truth: change SITE and the CNAME

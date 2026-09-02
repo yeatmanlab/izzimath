@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Izzi Math">
+  <!-- The header logo mark, standalone: same rounded square, same gradient, same
+       infinity. The nav version uses the live character gradient and the infinity
+       GLYPH from a webfont; an icon can rely on neither, so the default palette
+       is baked in and the mark is a path.
+       No double hyphen anywhere in here: it is illegal inside an XML comment, and
+       writing the CSS variable name cost this file its first render. -->
+  <defs>
+    <linearGradient id="izzi" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22E0F0"/>
+      <stop offset=".55" stop-color="#7C5CFF"/>
+      <stop offset="1" stop-color="#FF4D9D"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#izzi)"/>
+  <!-- Two tangent circles read as an infinity at 16px, where the thin crossing
+       of a true lemniscate disappears. -->
+  <g fill="none" stroke="#0A0D1C" stroke-width="7" stroke-linecap="round">
+    <circle cx="23.2" cy="32" r="8.6"/>
+    <circle cx="40.8" cy="32" r="8.6"/>
+  </g>
+</svg>

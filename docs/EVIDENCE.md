@@ -225,7 +225,7 @@ arithmetic fluency transfers to word problems only weakly (g=0.25).
 
 ### Implemented, in rough order of how much the evidence supports it
 
-- Number line as the spine — seven activities, never circular
+- Number line as the spine — six activities, never circular
 - The linear board game, faithfully, with count-on enforced in the type system
 - Interleaved review: eight-item mixed sheets, and the last page of every book
 - Elaborated feedback on misses as well as hits, now **enforced by the checker**:

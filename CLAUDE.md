@@ -19,7 +19,7 @@ Deployment is automatic: pushing to `main` runs the checks, builds with
 
 Three things the Node checkers cannot test, because they need a real layout
 engine, live in [`tools/`](tools/README.md) and are copied to `dist/_tools/` by
-the build: a **responsive audit** (28 pages × 5 widths, checking overflow,
+the build: a **responsive audit** (29 pages × 5 widths, checking overflow,
 tap-target size and text size), a **problem-type test** (all nine types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
@@ -33,6 +33,38 @@ The page-fill harness exists because the sheets quietly ran onto second and thir
 pages for a long time while the site claimed each one was a single full page. The
 heights had been judged from the on-screen preview, which carries a CSS `zoom`,
 so nothing looked wrong. Only measuring at print geometry catches it.
+
+## Break every new check before trusting it
+
+A check that cannot fail is worse than no check, because it reads as coverage.
+Several in this repo could not fail when first written:
+
+- A focus-trap check asserted where focus ended up after a *synthetic* Tab. A
+  browser does not move focus for a synthetic key event, so it passed always.
+- Another ended in `|| true`.
+- Two scroll assertions ran in a 3000px-tall frame where the panel always fitted,
+  so they passed under the exact mutation they existed to catch — the mobile
+  rules they were testing are *viewport* media queries.
+- Adding `boardmove` to the own-answer round trip proved nothing: `isCorrect`
+  compares the response to `problem.answer`, so feeding a problem its own answer
+  back is a tautology. It needed a structural check instead.
+- The harness-extraction one-liners matched lines starting `✗` or `FAIL`, and
+  `pagefill.html` reports `OVER`/`WIDE`/`THIN`/`COUNT`. They could not see a
+  page-fill failure at all.
+
+So: after writing a check, **reintroduce the bug and watch it go red.** Back up
+the file, `perl -0pi -e` the fix out, re-run, confirm the failure names the right
+thing, restore. If the bug only appears under some condition — a narrow viewport,
+a particular character, private browsing — force that condition inside the
+harness rather than hoping the default reproduces it.
+
+Read each harness's **own** verdict line (`no failures` / `N FAILURES`) rather
+than grepping for a marker you assume it uses.
+
+And render the thing and look at it. Contrast, overlap and a figure that is
+present in the markup but 7px tall on the page all pass every DOM assertion.
+`halves-and-quarters` printed a true/false question with 520 characters of SVG
+silently dropped, and every checker was green.
 
 ## There is a backlog, and it is worth reading
 
@@ -113,6 +145,7 @@ src/
   mount/            per-page entry points
   styles/           site.css and print.css
 scripts/            build templates, and the four checkers
+static/             favicon.svg + the two PNG sizes; copied verbatim into dist/
 build.mjs           static site generator — plain Node, no dependencies
 docs/
   next/BACKLOG.md   what is left to build  ← start here

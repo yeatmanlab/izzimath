@@ -19,7 +19,7 @@ with no backend and no login. The URL is the save file.
 
 ## What's in it
 
-41 activities across K–5 — 27 books and 14 games — covering counting, place value,
+45 activities across K–5 — 31 books and 14 games — covering counting, place value,
 addition and subtraction with and without regrouping, times tables, fractions on the
 number line, decimals, area, volume and coordinates.
 

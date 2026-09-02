@@ -895,6 +895,57 @@ for (const s of subs) {
    would have flagged five pairs that are fine and left standing noise, which is
    the failure mode a11y.mjs just had. */
 /* Character levels — the gear a character puts on as badges accumulate. */
+/* Counts written into the docs, checked against the code.
+
+   Prose is the one thing in this repo nothing verified, and it drifts every time
+   the catalogue grows. In one session the printing notes said "Six of the
+   forty-one sheets" on all 43 print pages, the README said 41 activities when
+   there were 45, and two files disagreed with each other about how many pages the
+   responsive audit covers. A doc that states a wrong number is worse than one
+   that states none, because it gets believed.
+
+   Only claims about the CURRENT build are listed. docs/SPEC.md is the research
+   output kept verbatim and its numbers are the spec's, not the repo's. */
+console.log('\n=== documented counts ===');
+{
+  const auditPages = (() => {
+    const h = fs.readFileSync(new URL('../tools/audit.html', import.meta.url), 'utf8');
+    const m = h.match(/const PAGES = \[([\s\S]*?)\n\];/);
+    return m ? [...m[1].matchAll(/\['([^']+)'/g)].length : 0;
+  })();
+  const truth = {
+    activities: activities.length,
+    books: activities.filter((a) => a.kind === 'book').length,
+    games: activities.filter((a) => a.kind === 'game').length,
+    badges: BADGE_COUNT,
+    snacks: FOODS.length,
+    avatars: AVATAR_COUNT,
+    auditPages,
+  };
+  const CLAIMS = [
+    ['README.md', /(\d+) activities across K–5 — (\d+) books and (\d+) games/, ['activities', 'books', 'games']],
+    ['docs/next/README.md', /\| Activities \| (\d+) — (\d+) books, (\d+) games/, ['activities', 'books', 'games']],
+    ['docs/DISCOVERY.md', /`(\d+) books`, `(\d+) games`, `(\d+) activities`, `(\d+)\s*\n?\s*badges`/, ['books', 'games', 'activities', 'badges']],
+    ['CLAUDE.md', /responsive audit\*\* \((\d+) pages × \d+ widths/, ['auditPages']],
+    ['tools/README.md', /responsive audit\. (\d+) pages ×/, ['auditPages']],
+  ];
+  let checkedClaims = 0;
+  for (const [file, re, keys] of CLAIMS) {
+    let text;
+    try { text = fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'); }
+    catch { fail(`docs: cannot read ${file}`); continue; }
+    const m = text.match(re);
+    if (!m) { fail(`docs: ${file} no longer states its counts in the form this check knows — reword the check or the doc, do not drop it`); continue; }
+    keys.forEach((k, i) => {
+      checkedClaims++;
+      if (Number(m[i + 1]) !== truth[k]) {
+        fail(`docs: ${file} says ${m[i + 1]} ${k}, the code says ${truth[k]}`);
+      }
+    });
+  }
+  console.log(`  ${checkedClaims} documented counts agree with the code across ${CLAIMS.length} files`);
+}
+
 console.log('\n=== character levels ===');
 {
   const sprites = SPRITES;

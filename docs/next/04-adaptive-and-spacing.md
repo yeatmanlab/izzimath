@@ -72,7 +72,7 @@ So adaptivity is not a new difficulty system. It is **choosing which `i` to serv
 next instead of walking 0, 1, 2, 3 in order.**
 
 That is the whole change. No generator is touched, no content is rewritten, and
-all 41 activities become adaptable at once. Any scheme that requires editing 41
+all 45 activities become adaptable at once. Any scheme that requires editing 45
 generators is the wrong scheme.
 
 ### Where the code goes

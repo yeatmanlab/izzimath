@@ -27,6 +27,12 @@ export function page({ base, title, desc, cls = '', body, head = '', scripts = [
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="${FONTS}">
+<!-- The logo mark as an icon. SVG first for anything modern, a 32px PNG for
+     browsers that ignore it, and the 180px one for an iOS home screen, which
+     cannot use an SVG. All three are files in static/, copied by the build. -->
+<link rel="icon" href="${b}/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="${b}/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="${b}/apple-touch-icon.png">
 <link rel="stylesheet" href="${b}/assets/src/styles/site.css">
 <link rel="stylesheet" href="${b}/assets/src/styles/print.css">
 ${head}

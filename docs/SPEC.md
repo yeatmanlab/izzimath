@@ -25,7 +25,7 @@
 
 ## 0. Deltas from the current registry (`content/activities/`)
 
-The repo currently holds **31** activities (18 books / 13 games). This spec is **30** (18 / 12). Three changes, all reductions in code with **no loss of ROAM coverage**:
+The repo currently holds **45** activities (31 books / 14 games), well past this spec. This spec is **30** (18 / 12). Three changes, all reductions in code with **no loss of ROAM coverage**:
 
 | Change | Was | Becomes | Why |
 | --- | --- | --- | --- |
