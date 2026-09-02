@@ -11,6 +11,38 @@ Both print `CHECKS_RUN=<n>` at the end. **If that marker is missing or zero, the
 harness did not run and the result means nothing** — do not read an empty report
 as a pass.
 
+## `sweep.html` — every problem of every activity
+
+The other harnesses test the renderers; this one tests the CONTENT. func.html
+samples one problem per type and variant — about fourteen problems — which is
+right for proving a renderer works and blind to one activity being broken at one
+index. Both of the worst bugs in this codebase were exactly that shape:
+`halves-and-quarters` printed a true/false question with 520 characters of SVG
+silently dropped, and a deer avatar drew nothing because an ears primitive was
+referenced as an extra. Every checker was green for both.
+
+So this walks all of it — 561 problems across 45 activities — and for each one
+asserts that it renders a control a child could use, that it is not blank, that
+any figure it declares has real size on screen, and that both print forms are
+free of holes. Then it answers one problem per activity through the real
+interface: clicking the option, typing in the box, pressing submit.
+
+It loads **both** stylesheets, in the order a real page does. `print.css` is not
+media-gated — only its `@media print` block is — so `.tenframe`, `.arr` and
+`.vstack` style the screen figures too. Without it a ten frame measures 320x0 and
+the harness reports 34 phantom failures.
+
+One check earns its place above the others: **the arithmetic oracle.** Where a
+stem is a plain two-operand sum it is worked out here and compared to the stated
+answer. Every other check in the build asks an activity to agree with itself —
+feeding a problem its own answer back proves only that the checker is
+self-consistent. This is the one that catches a generator that states the wrong
+answer, and it covers 83 of the 561.
+
+Known gaps, stated rather than implied: 55 items need pointer input
+(numberline, tap, ordinal, boardmove) and are rendered but not answered, and the
+oracle only reaches stems of the form `a op b =`.
+
 ## Running them
 
 ```bash

@@ -1,0 +1,219 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<title>Activity sweep</title>
+<!-- The site's own stylesheet, because figures are not all svg: a ten frame is a
+     <div class="tenframe"> of <i> elements sized entirely by CSS, and without
+     this every one of them measures zero and the harness reports 44 phantom
+     failures. -->
+<link rel="stylesheet" href="/assets/src/styles/site.css">
+<!-- print.css too, in the order a real page loads them. It is NOT media-gated:
+     only its @media print block is, and .tenframe / .arr / .vstack live above
+     that, so they style the SCREEN figures as well. Without this file a ten frame
+     measures 320x0 and the harness reports 34 phantom failures. -->
+<link rel="stylesheet" href="/assets/src/styles/print.css">
+<!--
+  EVERY problem of EVERY activity, rendered and exercised.
+
+  func.html samples one problem per type+variant — about fourteen problems in
+  total. That is the right shape for testing the RENDERERS, and it is blind to a
+  fault in one activity at one index. Both of the worst bugs found in this
+  codebase were exactly that: halves-and-quarters printed "Split into 3 parts.
+  Are they equal?" with 520 characters of SVG silently dropped, and a deer avatar
+  drew nothing because an ears primitive was referenced as an extra. Every
+  checker was green for both.
+
+  So this walks all of it: ~45 activities x every page or round, and for each
+  problem asserts that it renders something a child can use, that any figure it
+  declares actually has a size, that the stated answer passes the checker, and
+  that a sample of them can be ANSWERED through the real interface.
+
+  Ends with CHECKS_RUN=<n>. If that is missing or zero the harness did not run.
+-->
+<style>
+  body { background:#0b0b0f; color:#e8e8ea; font:13px/1.5 ui-monospace,monospace; margin:0; padding:20px }
+  h1 { font:600 17px/1.2 ui-sans-serif,system-ui; margin:0 0 4px }
+  p.sub { color:#8a8a93; margin:0 0 16px }
+  #out { white-space:pre; font-size:12px }
+  #host { position:absolute; left:-99999px; top:0; width:680px }
+</style>
+<h1>Activity sweep</h1>
+<p class="sub">Every problem of every activity: renders, has a usable control, its figure has a size, its answer checks out, and a sample answers through the real UI.</p>
+<div id="host"></div>
+<div id="out">running…</div>
+<script type="module">
+import { activities } from '/assets/content/activities/index.js';
+import { characters, getCharacter } from '/assets/content/characters.js';
+import * as T from '/assets/content/types.js';
+import * as RD from '/assets/src/engine/render.js';
+import * as P from '/assets/src/lib/printsheet.js';
+import * as R from '/assets/src/lib/rng.js';
+import * as F from '/assets/src/lib/frac.js';
+
+document.documentElement.dataset.ch = 'kiwi';
+const host = document.getElementById('host');
+const L = [];
+let checks = 0, fails = 0;
+const bad = (msg) => { fails++; L.push('✗ ' + msg); };
+
+const correctResponse = (p) => ({
+  choice: String(p.answer), input: String(p.answer), compare: p.answer,
+  truefalse: p.answer, numberline: p.target, tap: p.answer ?? p.n,
+  ordinal: p.answer ?? p.n, bond: p.answer, boardmove: p.answer,
+}[p.type]);
+
+const passes = (p, resp) => {
+  if (p.type === 'input' && p.accept === 'fraction') {
+    const g = F.parseAnswer(String(resp)), w = F.parseAnswer(String(p.answer));
+    return !!(g && w && F.cmpF(g, w) === 0);
+  }
+  return T.isCorrect(p, resp) === true;
+};
+
+/* ---------------------------------------------- tier A: render everything */
+let rendered = 0, figs = 0, oracled = 0;
+for (const a of activities) {
+  const n = a.pages ?? a.rounds ?? 12;
+  for (let i = 0; i < n; i++) {
+    const sd = R.deriveSeed(8817, 'p' + i);
+    let p;
+    try { p = a.generate(sd, i, getCharacter('kiwi'), R.rng(sd), 8817); }
+    catch (e) { bad(`${a.id} i=${i} generate THREW ${e.message}`); checks++; continue; }
+    checks++;
+    rendered++;
+
+    // 1. it renders, and gives the child something to press or type
+    host.innerHTML = '';
+    const slot = document.createElement('div');
+    host.appendChild(slot);
+    let cbOk = null;
+    try { RD.renderProblem(slot, p, (_r, ok) => { cbOk = ok; }); }
+    catch (e) { bad(`${a.id} i=${i} (${p.type}) render THREW ${e.message}`); continue; }
+    const controls = slot.querySelectorAll('button,input,[role="slider"],[tabindex]').length;
+    if (!controls) bad(`${a.id} i=${i} (${p.type}) renders no control a child could use`);
+
+    // 2. it is not blank — some text or a figure with real area
+    const txt = slot.textContent.replace(/\s+/g, '');
+    const svgArea = [...slot.querySelectorAll('svg')]
+      .reduce((m, s) => Math.max(m, s.getBoundingClientRect().width * s.getBoundingClientRect().height), 0);
+    if (txt.length < 2 && svgArea < 400) bad(`${a.id} i=${i} (${p.type}) renders blank (text ${txt.length}, svg area ${Math.round(svgArea)})`);
+
+    /* 3. a declared figure must actually have a size. This is the class that
+          survived every checker twice: markup present, nothing visible.
+
+          Measured on the SCREEN figure only. A print figure's size depends on
+          print.css inside an @media print block, so measuring it here would read
+          zero for everything; pagefill.html measures print geometry properly.
+          For printVisual the assertion is that it is real markup. */
+    if (p.visual) {
+      figs++;
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:absolute;left:-99999px;top:0;width:320px';
+      probe.innerHTML = p.visual;
+      document.body.appendChild(probe);
+      const el = probe.firstElementChild;
+      const r = el ? el.getBoundingClientRect() : { width: 0, height: 0 };
+      if (!el) bad(`${a.id} i=${i} visual is not markup: ${JSON.stringify(String(p.visual).slice(0, 40))}`);
+      else if (r.width < 4 || r.height < 4) {
+        bad(`${a.id} i=${i} visual renders ${Math.round(r.width)}x${Math.round(r.height)} — invisible (<${el.tagName.toLowerCase()} class="${el.className}">)`);
+      }
+      probe.remove();
+    }
+    if (p.printVisual) {
+      figs++;
+      const probe = document.createElement('div');
+      probe.innerHTML = p.printVisual;
+      if (!probe.firstElementChild) bad(`${a.id} i=${i} printVisual is not markup`);
+      if (/undefined|NaN/.test(String(p.printVisual))) bad(`${a.id} i=${i} printVisual contains undefined or NaN`);
+    }
+
+    /* 4. the stated answer must pass the checker.
+          This one is nearly tautological and it is worth being honest about:
+          correctResponse feeds the problem's OWN answer back, so it catches a
+          checker that disagrees with itself and nothing else. It does NOT catch
+          an activity that states the wrong answer — the same flaw the boardmove
+          round trip turned out to have. */
+    const resp = correctResponse(p);
+    if (resp !== undefined && !passes(p, resp)) {
+      bad(`${a.id} i=${i} (${p.type}) its own answer ${JSON.stringify(resp)} does not pass the checker`);
+    }
+
+    /* 4b. an INDEPENDENT oracle, which is what actually catches a wrong answer.
+           Where the stem is a plain two-operand sum, work it out here and compare.
+           Nothing else in the build recomputes an activity's arithmetic; every
+           other check asks the activity to agree with itself. */
+    if (p.accept !== 'fraction' && p.type !== 'truefalse') {
+      const stem = String(p.printStem ?? p.prompt ?? '')
+        .replace(/<[^>]+>/g, '').replace(/&minus;/g, '-').replace(/&times;/g, '*')
+        .replace(/[×x]/g, '*').replace(/[−–—]/g, '-').replace(/[÷]/g, '/').trim();
+      const m = stem.match(/^(\d+)\s*([*+\-/])\s*(\d+)\s*=\s*\??$/);
+      if (m) {
+        const x = +m[1], y = +m[3];
+        const truth = { '*': x * y, '+': x + y, '-': x - y, '/': y ? x / y : NaN }[m[2]];
+        if (Number.isFinite(truth) && Number.isInteger(truth) && Number(p.answer) !== truth) {
+          bad(`${a.id} i=${i} says ${stem} ${p.answer}, but it is ${truth}`);
+        }
+        oracled++;
+      }
+    }
+
+    // 5. both print forms must render without holes
+    for (const key of [false, true]) {
+      let h = '';
+      try { h = P.printProblem(p, i, { key }); }
+      catch (e) { bad(`${a.id} i=${i} print ${key ? 'key' : 'sheet'} THREW ${e.message}`); continue; }
+      if (h.length < 20) bad(`${a.id} i=${i} print ${key ? 'key' : 'sheet'} is empty`);
+      if (/undefined|NaN|\[object/.test(h)) bad(`${a.id} i=${i} print ${key ? 'key' : 'sheet'} contains ${(h.match(/undefined|NaN|\[object \w+/) || [])[0]}`);
+    }
+  }
+}
+L.push(`· tier A: ${rendered} problems from ${activities.length} activities rendered · ${figs} declared figures measured · ${oracled} answers recomputed independently`);
+
+/* ------------------------- tier B: answer one item per activity for real */
+let driven = 0, undrivable = 0;
+for (const a of activities) {
+  const n = a.pages ?? a.rounds ?? 12;
+  let done = false;
+  for (let i = 0; i < n && !done; i++) {
+    const sd = R.deriveSeed(4242, 'q' + i);
+    let p;
+    try { p = a.generate(sd, i, getCharacter('kiwi'), R.rng(sd), 4242); } catch { continue; }
+    host.innerHTML = '';
+    const slot = document.createElement('div');
+    host.appendChild(slot);
+    let got = null;
+    let w;
+    try { w = RD.renderProblem(slot, p, (_r, ok) => { got = ok; }); } catch { continue; }
+
+    const btns = [...slot.querySelectorAll('button')];
+    const want = String(p.answer);
+    if (p.type === 'choice' || p.type === 'bond' && p.choices) {
+      const b = btns.find((x) => x.textContent.trim() === want);
+      if (!b) { bad(`${a.id} i=${i} choice: no button reads the answer ${JSON.stringify(want)} — options were ${JSON.stringify(btns.map((x) => x.textContent.trim()))}`); done = true; checks++; continue; }
+      b.click();
+    } else if (p.type === 'truefalse') {
+      const b = btns.find((x) => x.textContent.trim() === (p.answer ? 'True' : 'False'));
+      if (!b) { bad(`${a.id} i=${i} truefalse: no True/False button`); done = true; checks++; continue; }
+      b.click();
+    } else if (p.type === 'compare') {
+      const b = btns.find((x) => x.textContent.trim() === String(p.answer === 'left' ? p.left : p.right));
+      if (!b) { bad(`${a.id} i=${i} compare: neither button reads the bigger side`); done = true; checks++; continue; }
+      b.click();
+    } else if (p.type === 'input' || (p.type === 'bond' && !p.choices)) {
+      const inp = slot.querySelector('input.ans');
+      const go = slot.querySelector('button.go, button.btn');
+      if (!inp || !go) { bad(`${a.id} i=${i} input: no box or no submit button`); done = true; checks++; continue; }
+      inp.value = want;
+      go.click();
+    } else { undrivable++; continue; }   // numberline / tap / ordinal / boardmove need pointer work
+    checks++; driven++;
+    if (got !== true) bad(`${a.id} i=${i} (${p.type}) answering correctly through the UI reported ${got}`);
+    done = true;
+  }
+}
+L.push(`· tier B: ${driven} activities answered through the real interface · ${undrivable} skipped (need pointer input)`);
+
+L.push('');
+L.push(fails ? `${fails} FAILURE${fails > 1 ? 'S' : ''}` : 'no failures');
+L.push(`CHECKS_RUN=${checks}`);
+document.getElementById('out').textContent = L.join('\n');
+window.__DONE__ = true;
+</script>
