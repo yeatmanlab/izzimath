@@ -293,6 +293,127 @@ const arrayArchitect = {
 };
 
 
+/* ------------------------------------------------ BOOK: four ways to subtract
+   Three-digit subtraction is one procedure with four quite different faces, and
+   a child who has only met the middle one stalls on the other three. The four
+   here are named: no regrouping, one borrow, a borrow across a zero, and
+   compensation.
+
+   Why the true/false items are TRANSFORMATION claims and not preferences.
+   content/types.js scores `truefalse` as strict boolean equality, so "this one
+   is easier by compensating" has no truth value and its required `explain` would
+   have to assert a taste as a fact. Every claim here is instead something that
+   is true or false about the numbers — "503 - 298 gives the same answer as
+   505 - 300" — and the explanation writes itself.
+
+   Every true/false item prints its own subtraction in the stem. collect()
+   resamples with a stride and both the type grouping and interleave() reorder
+   items, so an item that says "the one above" is broken on paper. */
+const fourWaysToSubtract = {
+  id: 'four-ways-to-subtract', title: 'Four Ways to Subtract', kind: 'book', grade: '3', strand: S[3],
+  glyph: '\u2212',
+  skill: 'Three-digit subtraction across all four cases, and knowing which one you are looking at.',
+  trick: 'Look at the columns before you start. If every top digit is bigger, just subtract. If one is smaller, borrow. If it is a zero, borrow from further along. And if the number you are taking away is nearly a hundred, move both numbers.',
+  printScratch: true,
+  printDensity: 'd2',
+  blurb: 'Take away with no borrow, one borrow, a borrow across zero — and the trick that avoids borrowing altogether.',
+  ccss: ['3.NBT.A.2'],
+  im: [3],
+  refs: ['im-scope-sequence', 'wwc-2021-math', 'rohrer-2020'],
+  theory: 'A written method is not one skill. The regrouping cases differ enough that a child fluent in one can be stuck in another, and compensation is the case that shows subtraction is about the gap between two numbers rather than about digits.',
+  /* sub-borrow declares grades 2-3, so a grade-3 activity is in its window.
+     sub-noborrow is NOT declared even though the book contains the no-regroup
+     form: that subscale is defined as two-digit and grades ['2'], so claiming it
+     from a three-digit grade-3 book would misreport what was practised. */
+  roam: [{ task: 'fluencyCalf', subscale: 'sub-borrow' }],
+  evidence: 'Written subtraction is where the site had the thinnest coverage above grade 2: addition has a game and division has one, and subtraction with regrouping had a single grade-2 holder. The four cases are named rather than mixed silently, because the case a child is looking at determines what they should do first. The compensation case is the one that carries an idea rather than a procedure: adding the same amount to both numbers leaves the difference unchanged, which is why 503 - 298 can be done in your head and 503 - 298 in columns cannot. Interleaving warrant: Rohrer et al. (2020) found interleaved practice beat blocked practice 61% to 38% (d = 0.83) with the same problems and the same total practice, but that trial was grade 7, so applying it here is an inference from mechanism; it is claimed only for the compensation-versus-columns contrast and the word-problem stride, not for the regrouping cases, which differ in difficulty rather than in method.',
+  pages: 12, printItems: 14,
+  printInstruction: 'Work out each subtraction. For the true or false questions, circle T or F.',
+  printInstructions: {
+    input: 'Subtract. Show your borrowing.',
+    truefalse: 'Is the claim true or false? Circle T or F.',
+  },
+  generate(seed, i, ch, r) {
+    const mode = i % 4;
+
+    // no regrouping: every top digit is larger, so the columns are independent
+    if (mode === 0) {
+      const h = r.int(4, 9), t = r.int(3, 9), o = r.int(3, 9);
+      const bh = r.int(1, h - 3), bt = r.int(1, t - 2), bo = r.int(1, o - 2);
+      const a = h * 100 + t * 10 + o, b = bh * 100 + bt * 10 + bo;
+      return {
+        type: 'input',
+        prompt: `<strong>${a} &minus; ${b}</strong>`,
+        answer: String(a - b), placeholder: '?',
+        printStem: `${a} \u2212 ${b} =`,
+        printKeyWorking: true,
+        hint: `Every digit on top is bigger than the one below it, so no borrowing is needed. Take each column on its own.`,
+        explain: `No borrowing here: ${o} \u2212 ${bo} = ${o - bo}, ${t} \u2212 ${bt} = ${t - bt}, ${h} \u2212 ${bh} = ${h - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
+      };
+    }
+
+    // one borrow, in the ones
+    if (mode === 1) {
+      const h = r.int(4, 9), t = r.int(2, 8), o = r.int(0, 4);
+      const bh = r.int(1, h - 2), bt = r.int(0, t - 1), bo = r.int(o + 1, 9);
+      const a = h * 100 + t * 10 + o, b = bh * 100 + bt * 10 + bo;
+      return {
+        type: 'input',
+        prompt: `<strong>${a} &minus; ${b}</strong>`,
+        answer: String(a - b), placeholder: '?',
+        printStem: `${a} \u2212 ${b} =`,
+        printKeyWorking: true,
+        hint: `${o} is smaller than ${bo}, so borrow a ten: the ${o} becomes ${o + 10} and the ${t} becomes ${t - 1}.`,
+        explain: `Borrow one ten: ${o + 10} \u2212 ${bo} = ${o + 10 - bo}, then ${t - 1} \u2212 ${bt} = ${t - 1 - bt}, then ${h} \u2212 ${bh} = ${h - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
+      };
+    }
+
+    /* a borrow across a zero — the case children get wrong most often, because
+       there is no ten in the tens column to borrow, so it comes from the hundred */
+    if (mode === 2) {
+      /* Three digits on both sides: with a two-digit subtrahend the hundreds
+         column is untouched and the case is much easier than the one it is
+         meant to teach (400 - 137, where every column does something). */
+      const h = r.int(3, 9);
+      const a = h * 100;
+      const bh = r.int(1, h - 1), bt = r.int(0, 8), bo = r.int(1, 9);
+      const b = bh * 100 + bt * 10 + bo;
+      return {
+        type: 'input',
+        prompt: `<strong>${a} &minus; ${b}</strong>`,
+        answer: String(a - b), placeholder: '?',
+        printStem: `${a} \u2212 ${b} =`,
+        printKeyWorking: true,
+        hint: `There are no tens to borrow from. Take one hundred and turn it into ten tens first, then borrow one of those.`,
+        explain: `${a} is ${h - 1} hundreds and 10 tens. Borrow one of those tens: 10 \u2212 ${bo} = ${10 - bo}, then 9 \u2212 ${bt} = ${9 - bt}, then ${h - 1} \u2212 ${bh} = ${h - 1 - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
+      };
+    }
+
+    /* compensation, as a claim about the numbers. The false variants move only
+       ONE side, which is exactly the mistake: the difference then changes. */
+    const gap = r.pick([1, 2, 3, 4]);
+    const near = 100 * r.int(2, 4);
+    const sub = near - gap;                       // 298, 397, ...
+    const top = r.int(sub + 105, sub + 480);
+    const truth = r.pick([true, false, false]);   // false has two shapes
+    const claim = truth
+      ? { l: top + gap, rr: near }                // both moved: same answer
+      : r.pick([{ l: top, rr: near }, { l: top + gap, rr: sub }]);  // one side only
+    const same = (top - sub) === (claim.l - claim.rr);
+    const stem = `${top} \u2212 ${sub} gives the same answer as ${claim.l} \u2212 ${claim.rr}`;
+    return {
+      type: 'truefalse',
+      prompt: `<strong>${top} &minus; ${sub}</strong> gives the same answer as <strong>${claim.l} &minus; ${claim.rr}</strong>.`,
+      printStem: stem,
+      answer: same,
+      hint: `Adding the same amount to BOTH numbers keeps the gap between them the same. Adding to only one changes it.`,
+      explain: same
+        ? `Both numbers went up by ${gap}, so the gap between them did not change: ${top} \u2212 ${sub} = ${top - sub} and ${claim.l} \u2212 ${claim.rr} = ${claim.l - claim.rr}. That is the whole trick \u2014 ${sub} is ${gap} short of ${near}, so take ${near} away (${top - near}) and give the ${gap} back: ${top - sub}.`
+        : `Only one number moved, so the gap changed: ${top} \u2212 ${sub} = ${top - sub}, but ${claim.l} \u2212 ${claim.rr} = ${claim.l - claim.rr}. To keep the answer the same you have to add ${gap} to both.`,
+    };
+  },
+};
+
 /* ------------------------------------------------- BOOK: round and reckon (G3 S4) */
 const roundAndReckon = {
   id: 'round-and-reckon', title: 'Round and Reckon', kind: 'book', grade: '3', strand: S[3],
@@ -430,4 +551,4 @@ const timeAndData = {
   },
 };
 
-export default [timesTableTower, fractionNumberLine, areaAndPerimeter, roundAndReckon, timeAndData, factFamilyForge, arrayArchitect];
+export default [timesTableTower, fractionNumberLine, areaAndPerimeter, roundAndReckon, fourWaysToSubtract, timeAndData, factFamilyForge, arrayArchitect];
