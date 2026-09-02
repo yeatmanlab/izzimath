@@ -183,8 +183,15 @@ export function printProblem(p, i, { key = false } = {}) {
       const own = ownBlank(raw);
       const stem = key || !own ? raw : stemBlanks(raw);
       const tail = own && !key ? '' : ' ' + A(answerText(p));
+      /* `explain` reaches a key today only for word problems, via p.schema above.
+         An activity whose whole point is the method — where the regrouping line
+         or the compensation step IS the answer worth checking — could not put its
+         working on the key at all. Opt-in, so the other input-using activities'
+         keys do not silently grow a second line each. */
+      const working = key && p.printKeyWorking && p.explain
+        ? `<div class="keyline"><em>${esc(p.explain)}</em></div>` : '';
       return `<div class="pr">${lbl}${stem}${p.printVisual ? '' : tail}
-        ${p.printVisual ? `<div class="pv">${p.printVisual}</div>${own && !key ? '' : A(answerText(p))}` : ''}</div>`;
+        ${p.printVisual ? `<div class="pv">${p.printVisual}</div>${own && !key ? '' : A(answerText(p))}` : ''}${working}</div>`;
     }
 
     case 'compare':

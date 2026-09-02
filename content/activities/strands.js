@@ -14,6 +14,16 @@
 //    problems) is rated STRONG on 18 studies, and fact fluency transfers to word
 //    problems only weakly (g=0.25) — so word problems have to be taught, not
 //    assumed to fall out of arithmetic practice.
+//    That argument does not stop at grade 1, and today the strand does: grades
+//    2-5 have no story strand and no dedicated story activity, though word
+//    problems still appear as ITEMS at every grade via wordProblem(). The strand
+//    is due to extend upward, but only in step with an activity to fill it — an
+//    empty strand still prints in the grade-page subtitle, which would advertise
+//    something a parent cannot click.
+//  - Grade 4's third strand was 'Angles and lines'. Widened to name shapes so
+//    symmetry and classification (4.G.A.2, 4.G.A.3) have somewhere honest to
+//    live; 4.G.A.1 work is unaffected because activities index the list (S[2]).
+//    Renamed rather than added, to keep five per grade.
 
 export const STRANDS = {
   K: [
@@ -47,7 +57,7 @@ export const STRANDS = {
   4: [
     'Multi-digit operations',
     'Equivalent fractions and decimals',
-    'Angles and lines',
+    'Shapes, angles and lines',
     'Factors and multiples',
     'Times as many',
   ],

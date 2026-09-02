@@ -604,6 +604,19 @@ for (const a of activities) {
           const cs = p.choices.map(String);
           if (!cs.includes(String(p.answer))) fail(a.id, `i=${i} answer ${p.answer} not in choices ${JSON.stringify(cs)}`);
           if (new Set(cs).size !== cs.length) fail(a.id, `i=${i} duplicate choices ${JSON.stringify(cs)}`);
+          /* Two options can differ as strings and still be the same NUMBER, which
+             makes a distractor a second right answer. cmpF has been imported here
+             since fractions arrived and never called; this is what it was for.
+             A proposal reached review offering "3/4 + 1/8" as a wrong way to make
+             7/8, and nothing in the build would have objected. */
+          for (let x = 0; x < cs.length; x++) {
+            for (let y = x + 1; y < cs.length; y++) {
+              const fx = parseAnswer(cs[x]), fy = parseAnswer(cs[y]);
+              if (fx && fy && cmpF(fx, fy) === 0) {
+                fail(a.id, `i=${i} choices ${JSON.stringify(cs[x])} and ${JSON.stringify(cs[y])} are the same value`);
+              }
+            }
+          }
           if (cs.length < 2) fail(a.id, `i=${i} only ${cs.length} choice`);
         }
       }
@@ -658,7 +671,33 @@ for (const a of activities) {
       }
 
       // the stated answer must actually pass the checker
-      if (['choice', 'compare', 'truefalse', 'tap', 'ordinal', 'bond'].includes(p.type)) {
+      /* boardmove needs a STRUCTURAL check, not a round trip. isCorrect compares
+         the response element-wise against problem.answer, so feeding the answer
+         back to itself passes for any array whatsoever — the round trip below
+         catches only a non-array answer, which is worth having but is not the
+         thing that matters.
+
+         What matters is that the squares are the ones you COUNT ON to. Laski &
+         Siegler (2014) found counting on produced roughly double the gains of
+         counting from one, and great-race's own evidence field says so; if the
+         sequence ever started at 1 instead of at the token, the activity would
+         still pass every check while teaching the thing the citation warns
+         against. */
+      if (p.type === 'boardmove') {
+        const want = [];
+        for (let k = 1; k <= p.spin; k++) want.push(p.from + k);
+        if (!Array.isArray(p.answer)) fail(a.id, `i=${i} boardmove answer is not an array`);
+        else if (p.answer.length !== p.spin) {
+          fail(a.id, `i=${i} boardmove moves ${p.answer.length} squares on a spin of ${p.spin}`);
+        } else if (p.answer.some((v, k) => Number(v) !== want[k])) {
+          fail(a.id, `i=${i} boardmove counts ${JSON.stringify(p.answer)} from ${p.from}, not on: want ${JSON.stringify(want)}`);
+        } else if (p.hi !== undefined && p.answer[p.answer.length - 1] > p.hi) {
+          fail(a.id, `i=${i} boardmove runs past the last square (${p.answer[p.answer.length - 1]} > ${p.hi})`);
+        }
+      }
+
+      // and the round trip, which for boardmove catches a non-array answer only
+      if (['choice', 'compare', 'truefalse', 'tap', 'ordinal', 'bond', 'boardmove'].includes(p.type)) {
         const resp = p.type === 'compare' ? p.answer
           : p.type === 'truefalse' ? p.answer
           : p.type === 'tap' || p.type === 'ordinal' ? (p.answer ?? p.n)

@@ -28,7 +28,19 @@ for(const a of A.activities){
   for(let i=0;i<n;i++){
     const sd=R.deriveSeed(8817,'p'+i);
     let p; try{ p=a.generate(sd,i,C.getCharacter('kiwi'),R.rng(sd),8817); }catch(e){ continue; }
-    if(!samples[p.type]) samples[p.type]={p,from:a.id};
+    /* One sample per type was one sample too few. `bond` is claimed by
+       number-friends (Kindergarten, whole numbers), so a fraction bond's render,
+       print and key paths would report green while never being rendered at all —
+       and the same for a bare-ticked number line or a fraction input. Key by the
+       variations that take different code paths. */
+    const variant=[
+      p.type,
+      p.accept||'',
+      p.type==='bond' && [p.whole,p.a,p.b].some(v=>String(v).includes('/')) ? 'frac':'',
+      p.type==='numberline' && Array.isArray(p.ticks) && p.ticks.length===0 ? 'bare':'',
+      p.printVisual?'vis':'', p.printWide?'wide':'', p.printKeyWorking?'kw':'',
+    ].filter(Boolean).join('|');
+    if(!samples[variant]) samples[variant]={p,from:a.id,variant};
   }
 }
 const correctResponse=(p)=>({
@@ -36,10 +48,15 @@ const correctResponse=(p)=>({
   numberline:p.target, tap:p.answer??p.n, ordinal:p.answer??p.n, bond:p.answer, boardmove:p.answer,
 }[p.type]);
 
+/* Walk the SAMPLES, not the type list: there is now more than one sample per
+   type. The per-type guard stays, as its own assertion. */
+const sampleList=Object.values(samples);
 for(const t of T.TYPES){
-  const s=samples[t];
-  if(!s){ L.push('✗ '+t.padEnd(11)+'NO SAMPLE in any activity'); continue; }
-  const {p,from}=s; checks++;
+  checks++;
+  if(!sampleList.some(s=>s.p.type===t)) L.push('✗ '+t.padEnd(11)+'NO SAMPLE in any activity');
+}
+for(const s of sampleList){
+  const {p,from,variant}=s; const t=p.type; checks++;
   const slot=document.createElement('div'); host.innerHTML=''; host.appendChild(slot);
   RD.renderProblem(slot,p,()=>{});
   const rendered=slot.children.length>0;
@@ -51,13 +68,13 @@ for(const t of T.TYPES){
     ownOk=!!(g&&w&&F.cmpF(g,w)===0);
   } else ownOk=T.isCorrect(p,own);
   const ok=rendered&&controls>0&&ownOk===true&&!!p.explain;
-  L.push((ok?'· ':'✗ ')+t.padEnd(11)+'from '+from.padEnd(22)
+  L.push((ok?'· ':'✗ ')+variant.padEnd(20)+'from '+from.padEnd(22)
     +'rendered:'+(rendered?'y':'N')+' controls:'+String(controls).padStart(2)
     +' ownAnswerOK:'+(ownOk===true?'y':String(ownOk))+' explain:'+(p.explain?'y':'N'));
 }
 L.push('');
-for(const t of T.TYPES){
-  const s=samples[t]; if(!s) continue; checks++;
+for(const s of sampleList){
+  const t=s.variant; checks++;
   let sheetOk=false,keyOk=false;
   try{
     const h=P.printProblem(s.p,0,{key:false}), k=P.printProblem(s.p,0,{key:true});
