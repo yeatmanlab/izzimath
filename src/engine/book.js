@@ -47,6 +47,16 @@ export function mountBook(activity, root) {
     return activity.generate(deriveSeed(seed, `p${i}`), i, ch, rng(deriveSeed(seed, `p${i}`)), seed);
   };
 
+  /* Nothing is silent about a skipped question: it is reported on the page you
+     land on, counted on the finish screen, and reachable from both. A child who
+     meant to come back should not have to remember which one it was.
+
+     Pages the reader walked past without answering. `answered[i] === null` alone
+     cannot tell a skipped question from one not reached yet, and the difference
+     is the whole point of saying so out loud. */
+  const skipped = new Set();
+  let announce = null;   // the page just skipped, reported once on arrival
+
   function paintBar() {
     const done = answered.filter((x) => x !== null).length;
     bar.innerHTML = `
@@ -66,11 +76,26 @@ export function mountBook(activity, root) {
     host.innerHTML = `<div class="qnum">${isReview(page)
       ? 'Mixed review — something from earlier'
       : 'Question ' + (page + 1)}</div><div data-slot></div>`;
+    /* Skipping used to be completely silent: the page changed and nothing said
+       the question had been left behind, or that nothing was recorded for it.
+       Said here, on arrival, with the way back attached rather than described. */
+    if (announce !== null) {
+      const n = announce;
+      const note = document.createElement('p');
+      note.className = 'skipnote';
+      note.setAttribute('role', 'status');
+      note.innerHTML = `<span>Question ${n + 1} was skipped &mdash; no answer was recorded for it.</span>
+        <button class="btn sm" data-backto="${n}">Go back to it</button>`;
+      host.prepend(note);
+      note.querySelector('[data-backto]').addEventListener('click', () => { page = n; paint(); });
+      announce = null;
+    }
     const slot = host.querySelector('[data-slot]');
     widget = renderProblem(slot, p, (response, ok) => {
       if (!ok) wrongOnce.add(page);
       else if (wrongOnce.has(page)) { wrongOnce.delete(page); fixes++; }
       answered[page] = { response, ok };
+      skipped.delete(page);
       const voice = ok ? ch.voice.correct : ch.voice.wrong;
       const msg = voice[page % voice.length];
 
@@ -107,24 +132,40 @@ export function mountBook(activity, root) {
     nav();
   }
 
+  /* Two primary buttons on screen at once was the problem here: the submit
+     button ("Check", or "Put 5 here", or "Done") and "Next" were both .btn.pri,
+     so nothing said which one recorded the answer. Next never submitted — it
+     only changed the page, and a question left unanswered was silently not
+     counted at the end rather than marked wrong.
+
+     So while a question is unanswered, the submit button is the only primary
+     action and the way past it says "Skip". Once answered, that button becomes
+     the primary "Next". Moving on without answering is still allowed: a child
+     who is stuck should be able to leave a question, and "Show me and move on"
+     already exists for a wrong one. It just no longer looks like the way to
+     submit. */
   function nav() {
     const p = problemFor(page);
     const done = answered[page] !== null;
     const foot = document.createElement('div');
-    foot.className = 'sfoot';
+    foot.className = 'sfoot qnav';
     foot.innerHTML = `
       <button class="btn" ${page === 0 ? 'disabled' : ''} data-prev>← Back</button>
       ${p.hint && !done ? '<button class="btn" data-hint>Give me a hint</button>' : ''}
       ${done && !answered[page].ok ? '<button class="btn" data-retry>Try again</button>' : ''}
       ${done && !answered[page].ok ? '<button class="btn" data-skip>Show me and move on</button>' : ''}
       ${page >= total - 1
-        ? '<button class="btn pri" data-finish>I\u2019m finished \u2192</button>'
-        : '<button class="btn pri" data-next>Next \u2192</button>'}`;
+        ? `<button class="btn${done ? ' pri' : ''}" data-finish>I\u2019m finished \u2192</button>`
+        : `<button class="btn${done ? ' pri' : ''}" data-next>${done ? 'Next' : 'Skip'} \u2192</button>`}`;
     host.querySelector('.sfoot')?.remove();
     host.appendChild(foot);
 
     foot.querySelector('[data-prev]')?.addEventListener('click', () => { if (page > 0) { page--; paint(); } });
-    foot.querySelector('[data-next]')?.addEventListener('click', () => { if (page < total - 1) { page++; paint(); } });
+    foot.querySelector('[data-next]')?.addEventListener('click', () => {
+      if (page >= total - 1) return;
+      if (answered[page] === null) { skipped.add(page); announce = page; }
+      page++; paint();
+    });
     foot.querySelector('[data-retry]')?.addEventListener('click', () => { answered[page] = null; paint(); });
     foot.querySelector('[data-hint]')?.addEventListener('click', () => {
       if (host.querySelector('[data-hintbox]')) return;
@@ -168,7 +209,14 @@ export function mountBook(activity, root) {
       <div class="scorebar" style="margin-bottom:22px">
         <span>Pages<b>${total}</b></span>
         <span>Answered<b>${worked}</b></span>
+        ${skipped.size ? `<span>Skipped<b>${skipped.size}</b></span>` : ''}
       </div>
+      ${skipped.size ? `<p class="skipnote" style="margin-bottom:20px">
+        <span>Question${skipped.size === 1 ? '' : 's'}
+          ${[...skipped].sort((a, b) => a - b).map((i) => i + 1).join(', ')}
+          ${skipped.size === 1 ? 'was' : 'were'} skipped.</span>
+        <button class="btn sm" data-goskipped>Go and do ${skipped.size === 1 ? 'it' : 'them'}</button>
+      </p>` : ''}
       <div class="sfoot">
         <button class="btn pri" data-fresh>Do it again with new problems</button>
         <button class="btn" data-same>Start this one over</button>
@@ -177,17 +225,26 @@ export function mountBook(activity, root) {
       </div>
       <p style="color:var(--txt3);font-size:12.5px;margin-top:16px">
         Now that you have met it, a game is a good way to get quicker at it.</p>`;
+    /* Every restart clears the skip marks too. Resetting `answered` alone would
+       carry "question 3 was skipped" into a run where question 3 does not exist
+       yet, and the finish screen would report a skip that never happened. */
+    const restart = () => {
+      page = 0; answered = new Array(total).fill(null);
+      skipped.clear(); announce = null; finished = false; paint();
+    };
     host.querySelector('[data-fresh]').addEventListener('click', () => {
-      seed = newSeed(); writeSeed(seed);
-      page = 0; answered = new Array(total).fill(null); finished = false; paint();
+      seed = newSeed(); writeSeed(seed); restart();
     });
-    host.querySelector('[data-same]').addEventListener('click', () => {
-      page = 0; answered = new Array(total).fill(null); finished = false; paint();
+    host.querySelector('[data-same]').addEventListener('click', restart);
+    // Straight back to the first one they left, rather than making them find it.
+    host.querySelector('[data-goskipped]')?.addEventListener('click', () => {
+      page = Math.min(...skipped); finished = false; paint();
     });
   }
 
   root.querySelector('[data-newseed]')?.addEventListener('click', () => {
-    seed = newSeed(); page = 0; answered = new Array(total).fill(null); finished = false; paint();
+    seed = newSeed(); page = 0; answered = new Array(total).fill(null);
+    skipped.clear(); announce = null; finished = false; paint();
   });
   document.addEventListener('characterchange', (e) => { ch = getCharacter(e.detail.id); paint(); });
 

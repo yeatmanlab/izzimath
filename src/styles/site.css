@@ -104,6 +104,13 @@ main { position: relative; z-index: 1; flex: 1 }
 .nav a.nl:hover, .nav a.nl[aria-current="page"] { color: var(--txt) }
 .nav-r { margin-left: auto; display: flex; gap: 8px; align-items: center }
 
+/* `hidden` has to actually hide. The browser's own [hidden]{display:none} is a
+   UA rule, so any author rule that sets display beats it regardless of
+   specificity — and .fb sets display:inline-flex, so the answer box's hidden
+   "Type an answer first" message rendered as a small empty capsule under every
+   input question. Asserting it once here rather than per class. */
+[hidden] { display: none !important }
+
 .btn {
   font-family: var(--fdisp); font-weight: 500; font-size: 13.5px;
   padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line2);
@@ -115,6 +122,27 @@ main { position: relative; z-index: 1; flex: 1 }
 .btn:active { transform: scale(.98) }
 .btn.pri { border: 0; color: var(--onsp); font-weight: 700; background: var(--sp) }
 .btn.sm { padding: 6px 12px; font-size: 12.5px }
+/* The submit button. Separated from everything else by weight and position
+   rather than by a symbol: full width of the answer column, taller, filled. It
+   and "Next" were both .btn.pri, so nothing on the page said which one recorded
+   the answer. See the note above renderInput in src/engine/render.js. */
+.btn.go {
+  display: flex; justify-content: center; width: 100%; max-width: 320px;
+  margin: 2px auto 0; padding: 15px 22px; font-size: 16px; font-weight: 700;
+  border: 0; border-radius: 14px; color: var(--onsp); background: var(--sp);
+}
+/* Compact and outlined, so the way PAST a question never competes with the way
+   to answer it. Scoped to the question footer: the finish screen uses .sfoot too
+   and its buttons are the whole point of that page. */
+.sfoot.qnav .btn { padding: 7px 13px; font-size: 12.5px }
+.skipnote {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  justify-content: center; margin: 0 auto 18px; max-width: 52ch;
+  padding: 11px 16px; border-radius: 12px; font-size: 13.5px;
+  font-family: var(--fdisp); color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--amber) 40%, transparent);
+  background: var(--glass2);
+}
 .btn[disabled] { opacity: .45; cursor: not-allowed }
 
 /* character switcher */
@@ -187,7 +215,9 @@ main { position: relative; z-index: 1; flex: 1 }
 .fb.hint { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 40%, transparent) }
 
 /* answer inputs */
-.ansrow { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 4px 0 6px }
+/* Column, not row: the submit button spans the answer area, which is what makes
+   it unmistakable. Was a row with the input and a small button side by side. */
+.ansrow { display: flex; flex-direction: column; gap: 12px; align-items: center; margin: 4px 0 6px }
 input.ans {
   font-family: var(--fdisp); font-size: 30px; font-weight: 700; text-align: center;
   width: 132px; padding: 10px 12px; border-radius: 12px;

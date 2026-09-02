@@ -38,13 +38,21 @@ function renderChoice(host, p, cb) {
   return { reset: () => { delete wrap.dataset.locked; [...wrap.children].forEach((x) => x.className = 'choice'); } };
 }
 
+/* The button that RECORDS an answer is `.btn.go` in all three places it appears
+   — "Check my answer" here, "Put 5 here" on a number line, "Done counting" for
+   tap-counting. One shape, wider and taller than anything else on the page, so
+   the thing that submits is recognisable before the words are read. It used to
+   be .btn.pri, the same as "Next", which is what made the two indistinguishable.
+   No tick and no green: both already mean "correct" elsewhere in the UI, and this
+   button is pressed before anyone knows that. */
+
 /* ------------------------------------------------------------------- input */
 function renderInput(host, p, cb) {
   const row = el(`<div class="ansrow">
     <input class="ans" type="text" inputmode="${p.accept === 'fraction' ? 'text' : 'decimal'}"
       autocomplete="off" autocapitalize="off" spellcheck="false"
       aria-label="Your answer" placeholder="${esc(p.placeholder || '?')}">
-    <button class="btn pri" type="button">Check</button>
+    <button class="btn go" type="button">Check my answer</button>
   </div>`);
   const input = row.querySelector('input');
   const btn = row.querySelector('button');
@@ -185,7 +193,7 @@ function renderNumberLine(host, p, cb) {
   const how = el(`<p class="nlhow">Drag the <strong>${esc(label)}</strong> along the line &mdash; or just tap the line where you think it goes.</p>`);
 
   // The button says what it does TO WHAT. "Place it here" left "it" undefined.
-  const btn = el(`<div class="ansrow"><button class="btn pri" type="button">Put ${esc(label)} here</button></div>`);
+  const btn = el(`<div class="ansrow"><button class="btn go" type="button">Put ${esc(label)} here</button></div>`);
 
   /* The nudge is the "this moves" cue, and it stops the moment anything moves.
      Skipped entirely for reduced motion, where the arrows and dashed track carry
@@ -294,7 +302,7 @@ function renderTap(host, p, cb) {
     grid.appendChild(b);
   }
   const count = el(`<p style="color:var(--txt2);font-family:var(--fdisp);margin-top:12px">0 chosen</p>`);
-  const btn = el(`<div class="ansrow"><button class="btn pri" type="button">Done</button></div>`);
+  const btn = el(`<div class="ansrow"><button class="btn go" type="button">Done counting</button></div>`);
   btn.querySelector('button').addEventListener('click', () => {
     if (grid.dataset.locked) return;
     grid.dataset.locked = '1';

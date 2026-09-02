@@ -546,6 +546,73 @@ L.push('');
   frame.remove();
 }
 
+/* ----------------------------------------------- submitting versus moving on
+   "Check" and "Next" were both .btn.pri, so nothing on the page said which one
+   recorded an answer. Next never submitted — it only turned the page, and the
+   question was then silently not counted at the end. These guard the three
+   things that fixed it: one unmistakable submit button, a way past that says
+   Skip and is not primary, and a skip that announces itself. */
+L.push('');
+{
+  const bf = document.createElement('iframe');
+  bf.style.cssText = 'position:absolute;left:-99999px;top:0;width:1000px;height:1100px';
+  bf.src = '/books/tens-and-ones/?seed=8817';
+  document.body.appendChild(bf);
+  await new Promise((r) => { bf.onload = r; setTimeout(r, 8000); });
+  const bd = bf.contentDocument, bw = bf.contentWindow;
+  const bc = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('book:' + n).padEnd(30) + (note ? '  ' + note : '  ok')); };
+  // the sleeps above are scoped to their own blocks
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    await nap(500);
+    const fwd = () => bd.querySelector('.sfoot.qnav [data-next], .sfoot.qnav [data-finish]');
+
+    // one submit button, and it is the ONLY primary-weight thing on the page
+    bc('one submit button', bd.querySelectorAll('.btn.go').length === 1);
+    bc('submit is wider than the way past', (() => {
+      const go = bd.querySelector('.btn.go').getBoundingClientRect();
+      return go.width > fwd().getBoundingClientRect().width * 2;
+    })(), Math.round(bd.querySelector('.btn.go').getBoundingClientRect().width) + 'px vs '
+      + Math.round(fwd().getBoundingClientRect().width) + 'px');
+    bc('nothing else claims primary weight',
+      bd.querySelectorAll('.sfoot.qnav .btn.pri').length === 0);
+    bc('the way past says Skip, not Next', /Skip/.test(fwd().textContent), fwd().textContent.trim());
+
+    /* `hidden` must actually hide: .fb sets display:inline-flex, which beats the
+       browser's own [hidden]{display:none}, so the answer box's hidden "Type an
+       answer first" rendered as a small empty capsule under every question. */
+    bc('hidden elements have no box', [...bd.querySelectorAll('[hidden]')]
+      .every((e) => e.getBoundingClientRect().height === 0),
+      bd.querySelectorAll('[hidden]').length + ' hidden');
+
+    // skipping announces itself, names the question, and offers the way back
+    fwd().click(); await nap(350);
+    const note = bd.querySelector('.skipnote');
+    bc('skipping says so', !!note, (note?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 52));
+    bc('it names the question left behind', /Question 1\b/.test(note?.textContent || ''));
+    bc('and says nothing was recorded', /no answer was recorded/i.test(note?.textContent || ''));
+    bc('it offers the way back', !!note?.querySelector('[data-backto]'));
+    note.querySelector('[data-backto]').click(); await nap(350);
+    bc('the way back returns to it', /Question 1\b/.test(bd.querySelector('.qnum')?.textContent || ''),
+      bd.querySelector('.qnum')?.textContent);
+
+    // answering promotes the forward button instead
+    const inp = bd.querySelector('input.ans');
+    inp.value = '31';
+    bd.querySelector('.btn.go').click(); await nap(350);
+    bc('answering changes the way past to Next', /Next/.test(fwd().textContent), fwd().textContent.trim());
+    bc('and makes it the primary action', fwd().classList.contains('pri'));
+
+    /* An answered question must stop counting as skipped. Without clearing it,
+       the finish screen reported a skip the child had gone back and done. */
+    bc('a question done later is no longer skipped',
+      !/was skipped/.test(bd.querySelector('.skipnote')?.textContent || ''));
+  } catch (e) {
+    bc('harness itself', false, 'THREW ' + e.message);
+  }
+  bf.remove();
+}
+
 L.push(''); L.push('CHECKS_RUN='+checks);
 document.getElementById('out').textContent=L.join('\n');
 window.__DONE__=true;
