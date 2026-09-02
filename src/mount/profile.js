@@ -31,6 +31,7 @@ import { getCharacter } from '../../content/characters.js';
 import { createStore, localDriver } from '../lib/profile.js';
 import { TIERS } from '../lib/ladder.js';
 import { evaluate as evaluateBadges, badgeById, BADGE_COUNT, BADGES } from '../../content/badges.js';
+import { levelFor, nextLevel } from '../../content/levels.js';
 import { badgeSvg, shelfHtml, badgeStrip } from '../lib/badgeart.js';
 import { celebrate } from '../engine/celebrate.js';
 import { activities } from '../../content/activities/index.js';
@@ -57,9 +58,25 @@ async function paintButton() {
     // The count sits next to the name, which is the "shown next to the score"
     // the shelf is reached from. A zero is not shown: an empty counter is a
     // reproach, and nothing has been earned yet by definition.
+    /* The level title rides with the badge count, because the count is what
+       earned it and the two disagreeing would be the first thing a child
+       noticed. */
+    /* Built as nodes, not innerHTML. This file has no escape helper — my first
+       draft called esc() here, which is not defined anywhere in it, and a
+       ReferenceError in the header paint would have broken the profile button
+       for everyone. */
+    const lv = levelFor(n);
     name.textContent = n ? `${me.name} · ${n}★` : me.name;
+    if (n && lv.name) {
+      const tag = document.createElement('span');
+      tag.className = 'me-lv';
+      tag.textContent = lv.name;
+      name.append(' ', tag);
+    }
     document.querySelector('[data-me]')?.setAttribute('data-on', '1');
+    await paintLevel();
   } else {
+    delete document.documentElement.dataset.lv;
     face.textContent = '☺';
     name.textContent = 'Scores';
     document.querySelector('[data-me]')?.removeAttribute('data-on');
@@ -429,17 +446,33 @@ async function checkBadges(id) {
   const held = await store.listBadges(id);
   const characters = new Set(held.map((b) => b.earnedWith).filter((c) => c && c !== 'none'));
   characters.add(currentCharacter());
+  const before = levelFor(held.length).n;
   const earned = evaluateBadges(prog, activities, { characters, earnedCount: held.length });
   const fresh = await store.awardBadges(id, earned, currentCharacter());
+  const after = levelFor(held.length + fresh.length).n;
   repaint();
-  if (fresh.length) announceBadges(fresh);
+  /* The level is derived from the badge count, never stored — same rule as the
+     badges themselves, so it cannot drift out of step with them. */
+  if (fresh.length) announceBadges(fresh, after > before ? levelFor(held.length + fresh.length) : null);
   return fresh;
+}
+
+/* One attribute on <html>, and every character on the page is dressed. Set on
+   every repaint rather than only on a level-up, because a page load has to arrive
+   already wearing the gear. */
+async function paintLevel() {
+  const id = await store.getActiveId();
+  if (!id) { delete document.documentElement.dataset.lv; return 0; }
+  const n = levelFor((await store.listBadges(id)).length).n;
+  if (n > 0) document.documentElement.dataset.lv = String(n);
+  else delete document.documentElement.dataset.lv;
+  return n;
 }
 
 /* One short flourish, then it is gone. The rule is in celebrate.js: a reward
    layer that outshines the maths is the failure mode. So this is a card, the
    character's own particle burst, and no sound. */
-function announceBadges(ids) {
+function announceBadges(ids, levelUp = null) {
   const ch = getCharacter(currentCharacter());
   const card = document.createElement('div');
   card.className = 'bdpop noprint';
@@ -448,7 +481,12 @@ function announceBadges(ids) {
      is 5, 10 and 15. Showing two and silently dropping four made four badges
      appear from nowhere later. Three cards, then a line that accounts for the
      rest, so nothing arrives unexplained. */
-  const SHOWN = 3;
+  /* How many cards fit, not how many look good on a desktop. Three cards plus
+     "and N more" plus a level-up line measured 708px on an 844px phone — 84% of
+     the screen, with the maths entirely behind it. That is the reward layer
+     outshining the work, which is the rule celebrate.js exists to enforce.
+     Showing fewer and counting the rest is what "and N more" was already for. */
+  const SHOWN = window.innerHeight < 700 ? 1 : window.innerHeight < 980 ? 2 : 3;
   const extra = Math.max(0, ids.length - SHOWN);
   card.innerHTML = ids.slice(0, SHOWN).map((id) => {
     const b = badgeById(id);
@@ -463,7 +501,14 @@ function announceBadges(ids) {
     </div>`;
   }).join('') + (extra
     ? `<p class="bdpop-more">and ${extra} more &mdash; they are all on ${ch.id === 'none' ? 'your' : ch.name + '\u2019s'} shelf</p>`
-    : '');
+    : '')
+    /* The level-up rides on the same card rather than queuing a second one. Two
+       popups in a row for one action is the reward layer outshining the maths,
+       which is the rule in celebrate.js. */
+    + (levelUp && ch.id !== 'none'
+      ? `<p class="bdpop-lv"><b>Level ${levelUp.n} &middot; ${levelUp.name}</b>
+          <span>${levelUp.says.replace('{name}', ch.name)}</span></p>`
+      : '');
   document.body.appendChild(card);
   celebrate(card.querySelector('.bdpop-medal'), ch);
   const go = () => card.remove();

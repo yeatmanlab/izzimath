@@ -94,3 +94,43 @@ because they are a record rather than an engine.
 The pedagogy behind the activities the badges point at is in
 [`EVIDENCE.md`](EVIDENCE.md); the game-design principles behind the HUD and the
 adaptive ladder are in [`GAME-DESIGN.md`](GAME-DESIGN.md).
+
+## Levels — what the badges add up to
+
+The kids asked for this: after enough badges the character puts something on.
+Four levels, cumulative, so you can see how far someone has got at a glance.
+
+| badges | level | the character gains |
+|---|---|---|
+| 3 | Explorer | a headband |
+| 8 | Adventurer | goggles |
+| 15 | Pathfinder | a scarf |
+| 24 | Champion | a crown |
+
+Three things it inherits from the rules above, because they apply unchanged:
+
+**The title belongs to the character.** "Kiwi is a Pathfinder", never "you are a
+Pathfinder" — the same distance the shelf keeps, and the reason a title is
+allowed where a praise word is not. It names what the character has become,
+which is a fact about the badges earned. `check.mjs` fails the build on a praise
+word in a level name.
+
+**It is derived, never stored.** The level is a function of the badge count, so
+it cannot drift out of step with it, and nothing new is written to storage.
+
+**Nothing is ever lost.** Gear only accumulates and a level never drops.
+
+The top level needs every badge there is, and `check.mjs` asserts that it is
+*exactly* reachable — one badge short and the crown would be decoration nobody
+could earn, which is the defect The Whole Shelf shipped with.
+
+Two implementation notes worth keeping, both found the hard way:
+
+- The trim colour is `var(--gear-trim)`, not `currentColor`. `currentColor`
+  inside a `<symbol>` resolves against the symbol's own inherited colour — it
+  lives in `<defs>` under `<body>` — so it came out near-white whatever colour
+  the `<use>` was given. A custom property does inherit into the shadow tree.
+- The kit is dark with a bright trim rather than bright all over. Kiwi's accent
+  is amber and Kiwi's face is tan, so a band in the accent nearly vanished. Real
+  gear is not the colour of the animal wearing it. The crown is the exception,
+  because it is the award rather than equipment.

@@ -1,7 +1,7 @@
 // Page templates. Build-time only (Node). Emits plain static HTML — the site has
 // no client framework and no hydration step.
 
-import { SPRITES } from '../src/lib/sprites.js';
+import { SPRITES, avatar } from '../src/lib/sprites.js';
 import { characters, characterList } from '../content/characters.js';
 import { tasks, roamLabel, ROAM_URL } from '../content/roam.js';
 
@@ -63,7 +63,7 @@ function nav(b, active) {
     ${link('/references/', 'Research', 'references')}
     <div class="nav-r">
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
-        ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" aria-label="${esc(characters[id].name)}" title="${esc(characters[id].name)}"><svg aria-hidden="true"><use href="#av-${id}"/></svg><span class="chname">${esc(characters[id].name)}</span></button>`).join('')}
+        ${characterList.map((id) => `<button class="chbtn" data-ch="${id}" aria-pressed="${id === 'none'}" aria-label="${esc(characters[id].name)}" title="${esc(characters[id].name)}">${avatar(id)}<span class="chname">${esc(characters[id].name)}</span></button>`).join('')}
       </div>
       <!-- Keeping score is opt-in and this is the only place it is offered
            unprompted. Renders as a plain "Scores" button until a profile

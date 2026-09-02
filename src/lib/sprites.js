@@ -167,6 +167,68 @@ const LINE_ART = {
 export const CHARACTERS = ['kiwi', 'georgie', 'flame', 'none'];
 export const EXPRESSIONS = ['idle', 'happy', 'think'];
 
+/* ------------------------------------------------------------------- gear
+   Levelling-up props, layered OVER a character in the same 64x64 space. The
+   kids asked for this: after enough badges the character puts something on.
+
+   Drawn in `currentColor` rather than a literal, so each character wears it in
+   their own accent — the bodies above are hard-coded hex because they never
+   change, and this does.
+
+   Positions are chosen against the head, which is an ellipse at cx 32, cy 33,
+   rx 21, ry 17.6 — so it spans y 15.4 to 50.6. The four pieces stack without
+   overlapping: crown above the head, goggles on the forehead, band at the brow,
+   scarf at the chin. That matters because they are cumulative; at level 4 all
+   four are on at once. */
+const GEAR = {
+  /* The kit is DARK with a bright trim in the character's colour, not bright all
+     over. Kiwi's accent is amber and Kiwi's face is tan, so a band in the accent
+     nearly vanished; a charcoal strap reads on a tan face, a pink one and a red
+     one alike, and the pinstripe still says whose it is. Real gear is not the
+     same colour as the animal wearing it.
+     The crown is the exception and stays bright: it is the award, not equipment.
+
+     The trim is var(--gear-trim), NOT currentColor. currentColor inside a
+     <symbol> resolves against the symbol's own inherited colour — it sits in
+     <defs> under <body>, so it came out --txt, near-white, no matter what colour
+     the <use> element was given. A custom property does inherit into the use
+     shadow tree, which is how icon theming normally works. */
+
+  /* 1 — brow band. */
+  1: `<path d="M12.4 28Q32 20.8 51.6 28" fill="none" stroke="#20222C" stroke-width="7" stroke-linecap="round"/>
+      <path d="M12.4 27.2Q32 20 51.6 27.2" fill="none" stroke="var(--gear-trim, #EAF0FF)" stroke-width="1.9" stroke-linecap="round"/>
+      <circle cx="32" cy="23.6" r="4" fill="#20222C"/>
+      <circle cx="32" cy="23.6" r="2.4" fill="var(--gear-trim, #EAF0FF)"/>
+      <circle cx="31.1" cy="22.7" r="0.9" fill="#fff" opacity=".85"/>`,
+
+  /* 2 — goggles up on the forehead, above the band. */
+  2: `<path d="M11.8 20.4Q32 13.2 52.2 20.4" fill="none" stroke="#20222C" stroke-width="4" stroke-linecap="round"/>
+      <path d="M26.4 18.2h11.2" stroke="#20222C" stroke-width="3.4"/>
+      <g fill="#11131A" stroke="#20222C" stroke-width="3.2">
+        <circle cx="21.2" cy="18.2" r="5.9"/><circle cx="42.8" cy="18.2" r="5.9"/></g>
+      <g fill="none" stroke="var(--gear-trim, #EAF0FF)" stroke-width="1.9">
+        <circle cx="21.2" cy="18.2" r="5.9"/><circle cx="42.8" cy="18.2" r="5.9"/></g>
+      <circle cx="19.1" cy="16.1" r="1.8" fill="#fff" opacity=".6"/>
+      <circle cx="40.7" cy="16.1" r="1.8" fill="#fff" opacity=".6"/>`,
+
+  /* 3 — scarf at the throat, below the mouth. The head ends at y 50.6, so this
+     straddles the jaw; at y 45 it covered the muzzle and read as one. */
+  3: `<path d="M18.6 47.8q13.4 7.4 26.8 0l-2.9 6.6q-10.5 4.9-21 0z"
+        fill="#20222C" stroke="#20222C" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M20.4 49.6q11.6 5.6 23.2 0l-1.1 2.5q-10.5 4.6-21 0z" fill="var(--gear-trim, #EAF0FF)"/>
+      <path d="M29 53.6 24.4 62l7.6-1.8 7.6 1.8-4.6-8.4z"
+        fill="#20222C" stroke="#20222C" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M30.4 55.2 27.8 60l4.2-1 4.2 1-2.6-4.8z" fill="var(--gear-trim, #EAF0FF)"/>`,
+
+  /* 4 — crown, clear of the head (starts y 15.4) and of the goggles (reach
+     y 12.4), so it lives in y 1 to 11. Bright, because it is the award. */
+  4: `<path d="M18.4 11 21.6 1.4 32 8.2 42.4 1.4 45.6 11z"
+        fill="var(--gear-trim, #EAF0FF)" stroke="#20222C" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="32" cy="6.6" r="1.9" fill="#fff" opacity=".72"/>`,
+};
+
+
+
 function symbol(id, inner) {
   return `<symbol id="${id}" viewBox="0 0 64 64">${inner}</symbol>`;
 }
@@ -181,6 +243,7 @@ for (const ex of EXPRESSIONS) {
   parts.push(symbol(`av-none${ex === 'idle' ? '' : '-' + ex}`, NONE[ex]));
 }
 for (const ch of CHARACTERS) parts.push(symbol(`ln-${ch}`, LINE_ART[ch]));
+for (const [n, inner] of Object.entries(GEAR)) parts.push(symbol(`gear-${n}`, inner));
 
 export const SPRITES =
   `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>\n${parts.join('\n')}\n</defs></svg>`;
@@ -188,8 +251,22 @@ export const SPRITES =
 export const spriteId = (ch, expr = 'idle') =>
   `av-${CHARACTERS.includes(ch) ? ch : 'none'}${expr && expr !== 'idle' ? '-' + expr : ''}`;
 
+/* Every avatar carries all four gear layers and CSS shows the ones earned, keyed
+   off html[data-lv]. Done this way because avatar() is a pure string builder used
+   at BUILD time in the page shell, and the badge count only exists in the
+   browser — so the level cannot be known here. One attribute on <html> then
+   dresses every character on the page at once, and with no profile the rules
+   never match and nothing shows. */
+const GEAR_LAYERS = Object.keys(GEAR)
+  .map((n) => `<use class="gear g${n}" href="#gear-${n}"/>`).join('');
+
+// 'none' is in CHARACTERS — it is the first-class "Just math" option — but there
+// is no character there to dress, so it never gets gear.
+const WEARS_GEAR = CHARACTERS.filter((c) => c !== 'none');
+
 export const avatar = (ch, cls = '', expr = 'idle') =>
-  `<svg class="${cls}" aria-hidden="true"><use href="#${spriteId(ch, expr)}"/></svg>`;
+  `<svg class="${cls}" aria-hidden="true"><use href="#${spriteId(ch, expr)}"/>${
+    WEARS_GEAR.includes(ch) ? GEAR_LAYERS : ''}</svg>`;
 
 export const lineArt = (ch, cls = '') =>
   `<svg class="${cls}" aria-hidden="true"><use href="#ln-${CHARACTERS.includes(ch) ? ch : 'none'}"/></svg>`;

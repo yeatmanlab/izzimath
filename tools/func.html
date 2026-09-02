@@ -419,6 +419,11 @@ L.push('');
       const me = await w.__izziProfile.store.getActive();
       t('no badges on a new profile', (await w.__izziProfile.store.listBadges(me.id)).length === 0);
 
+      /* Pick a character first. A level-up dresses the CHARACTER, so with Just
+         math selected there is nobody to dress and no line to announce — correct
+         behaviour, and it made this check unfalsifiable until the harness chose
+         one. */
+      d.querySelector('.chbtn[data-ch="kiwi"]').click(); await sleep(220);
       // a real accomplishment earns badges and celebrates
       await w.__izziProfile.noteProgress('decade-duel', { played: true, right: 16, streak: 16, tier: 3 });
       await sleep(600);
@@ -427,6 +432,18 @@ L.push('');
       t('records which character was there', held.every((b) => !!b.earnedWith));
       const pop = d.querySelector('.bdpop');
       t('the character celebrates', !!pop && !!pop.querySelector('.celebrate'));
+      const lvSaid = (pop?.querySelector('.bdpop-lv')?.textContent || '').replace(/\s+/g, ' ').trim();
+      /* The celebration must not bury the maths. Three cards plus "and N more"
+         plus a level line measured 708px on an 844px phone — 84% of the screen.
+         SHOWN scales with the viewport now; this stops it drifting back. */
+      t('the celebration leaves the maths visible', (() => {
+        const box = d.querySelector('.bdpop');
+        if (!box) return false;
+        return box.getBoundingClientRect().height <= w.innerHeight * 0.7;
+      })(), (() => {
+        const box = d.querySelector('.bdpop');
+        return box ? Math.round(box.getBoundingClientRect().height / w.innerHeight * 100) + '% of the frame' : 'no card';
+      })());
       const cards = pop ? pop.querySelectorAll('.bdpop-name').length : 0;
       const moreTxt = pop?.querySelector('.bdpop-more')?.textContent || '';
       const moreN = parseInt((moreTxt.match(/and (\d+) more/) || [])[1] || '0', 10);
@@ -441,6 +458,26 @@ L.push('');
       await sleep(500);
       t('does not re-award', (await w.__izziProfile.store.listBadges(me.id)).length === held.length);
       t('does not re-celebrate', !d.querySelector('.bdpop'));
+
+      /* Character levels. The gear is driven by one attribute on <html>, so
+         these check that attribute and the header title — the sprites and the
+         CSS rules are checked in check.mjs. */
+      t('a level shows once enough badges are earned',
+        d.documentElement.dataset.lv === '1', 'data-lv=' + d.documentElement.dataset.lv
+        + ' at ' + held.length + ' badges');
+      t('the level title rides with the count',
+        /Explorer/.test(d.querySelector('[data-me-name]')?.textContent || ''),
+        d.querySelector('[data-me-name]')?.textContent);
+      t('the gear layers are in every character avatar', (() => {
+        const chb = d.querySelector('.chbtn[data-ch="kiwi"] svg');
+        return chb && chb.querySelectorAll('use.gear').length === 4;
+      })());
+      t('Just math never wears gear', (() => {
+        const none = d.querySelector('.chbtn[data-ch="none"] svg');
+        return none && none.querySelectorAll('use.gear').length === 0;
+      })());
+      t('the level-up was announced on the badge card', lvSaid,
+        lvSaid || '(no level line seen)');
 
       // the shelf and the store agree, and the count reaches the header
       d.querySelector('[data-me]').click(); await sleep(350);

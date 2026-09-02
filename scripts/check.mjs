@@ -20,6 +20,8 @@ import { ladderConfig, initState, record, tierFor, atTop, indexFor, TIERS, STEPS
 import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS } from '../content/avatars.js';
 import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatarart.js';
 import { BADGES, BADGE_COUNT, CATEGORIES, badgeById, evaluate as evaluateBadges } from '../content/badges.js';
+import { LEVELS, levelFor } from '../content/levels.js';
+import { SPRITES } from '../src/lib/sprites.js';
 import { badgeSvg, shelfHtml } from '../src/lib/badgeart.js';
 import { createStore, nullDriver, localDriver, mergeProgress, MERGE, blankProgress } from '../src/lib/profile.js';
 
@@ -892,6 +894,42 @@ for (const s of subs) {
    warns — a margin, not a second standard. Warning at the 4.5 text threshold
    would have flagged five pairs that are fine and left standing noise, which is
    the failure mode a11y.mjs just had. */
+/* Character levels — the gear a character puts on as badges accumulate. */
+console.log('\n=== character levels ===');
+{
+  const sprites = SPRITES;
+  const css = fs.readFileSync(new URL('../src/styles/site.css', import.meta.url), 'utf8');
+  let prevAt = -1, prevN = -1;
+  for (const l of LEVELS) {
+    if (l.at <= prevAt && l.n > 0) fail(`level ${l.n} threshold ${l.at} does not increase`);
+    if (l.n !== prevN + 1) fail(`level numbers skip: ${prevN} then ${l.n}`);
+    prevAt = l.at; prevN = l.n;
+    if (l.n === 0) continue;
+    if (!l.name || !l.gear || !l.says) fail(`level ${l.n} is missing a name, gear or line`);
+    // the gear it promises has to exist as a sprite, or the level shows nothing
+    if (!sprites.includes(`id="gear-${l.n}"`)) fail(`level ${l.n} has no gear-${l.n} sprite`);
+    // and CSS has to reveal every layer up to it, or later gear never appears
+    for (let k = 1; k <= l.n; k++) {
+      if (!new RegExp(`html\\[data-lv="${l.n}"\\] \\.g${k}\\b`).test(css)) {
+        fail(`level ${l.n} does not reveal .g${k} in site.css`);
+      }
+    }
+    if (!l.says.includes('{name}')) fail(`level ${l.n} line does not name the character`);
+    /* The title is the CHARACTER's, so a praise word aimed at the child is the
+       thing to keep out — the same rule badges follow. */
+    if (/\b(great|awesome|amazing|well done|good job|clever|smart)\b/i.test(l.says + ' ' + l.name)) {
+      fail(`level ${l.n} uses a praise word: ${l.name} / ${l.says}`);
+    }
+  }
+  /* The top level must be exactly reachable. One badge short and the crown is
+     decoration nobody can earn — the same defect The Whole Shelf had. */
+  const top = LEVELS[LEVELS.length - 1];
+  if (top.at > BADGE_COUNT) fail(`top level needs ${top.at} badges but only ${BADGE_COUNT} exist`);
+  if (levelFor(BADGE_COUNT).n !== top.n) fail(`earning every badge does not reach the top level`);
+  if (levelFor(0).n !== 0) fail('a profile with no badges is not at level 0');
+  console.log(`  ${LEVELS.length - 1} levels, ${LEVELS.slice(1).map((l) => l.at).join('/')} badges · top reachable at ${BADGE_COUNT} · gear layers all present`);
+}
+
 console.log('\n=== badge legibility ===');
 {
   const css = fs.readFileSync(new URL('../src/styles/site.css', import.meta.url), 'utf8');
