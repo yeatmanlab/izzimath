@@ -595,6 +595,30 @@ a.reflink.page:hover { color: var(--a1) }
 }
 .mefood span { font-size: 20px; line-height: 1; flex: 0 0 auto }
 .mefood b { min-width: 0; font-weight: 500; overflow-wrap: break-word }
+
+/* All 500 snacks, scrolling inside the panel rather than growing it. If the list
+   grew the dialog, the warning and the child's name would be pushed off the top —
+   the same failure the score panel had. The panel keeps its own scroll for the
+   rest of its content; this region owns the list. */
+.mefoods.mescroll {
+  max-height: min(42vh, 330px); overflow-y: auto; overscroll-behavior: contain;
+  padding: 10px; margin-top: 2px;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: rgba(0, 0, 0, .22);
+}
+.mefoodhint {
+  font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--txt3); margin: 14px 0 0;
+}
+/* Full-width row inside the grid, so the two halves of the list are findable. */
+.mefoodsec {
+  grid-column: 1 / -1; margin: 6px 0 2px; padding: 0 2px;
+  font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--txt3);
+}
+.mefoodsec:first-child { margin-top: 0 }
+/* The roving tab stop still has to be visible when arrow keys move it. */
+.mefoods.mescroll .mefood:focus-visible { outline: 3px solid var(--a1); outline-offset: 2px }
 .mefood:hover, .mefood:focus-visible { border-color: var(--a1); color: var(--txt) }
 
 .mecards { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px }

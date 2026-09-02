@@ -17,7 +17,7 @@ import { SCHEMAS } from '../content/wordproblems.js';
 import { ssddSets } from '../content/ssdd.js';
 import { plans, planActivityIds, FOUR_PART } from '../content/plans.js';
 import { ladderConfig, initState, record, tierFor, atTop, indexFor, TIERS, STEPS, LADDER_V } from '../src/lib/ladder.js';
-import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS, foodTray, TRAY_SIZE } from '../content/avatars.js';
+import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, NAMES_OFFERED, FOODS, NAME_POOL, foodChoicesFor, CHECK_DECOYS } from '../content/avatars.js';
 import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatarart.js';
 import { BADGES, BADGE_COUNT, CATEGORIES, badgeById, evaluate as evaluateBadges } from '../content/badges.js';
 import { badgeSvg, shelfHtml } from '../src/lib/badgeart.js';
@@ -264,22 +264,6 @@ console.log('\n=== profile avatars ===');
     if (unstable) fail('avatars', `${unstable} snacks change their choices between visits — a child would think it is broken`);
   }
 
-  /* The creation tray. Five hundred buttons is not a screen, so it shows two
-     dozen; half plain and half silly, because a straight sample of 500 would be
-     almost all silly, and never two of the same food. */
-  {
-    let wrongSize = 0, lopsided = 0, clashing = 0;
-    for (let i = 0; i < 200; i++) {
-      const tray = foodTray();
-      if (tray.length !== TRAY_SIZE) wrongSize++;
-      const p = tray.filter((f) => !f.silly).length;
-      if (p !== Math.floor(TRAY_SIZE / 2)) lopsided++;
-      if (new Set(tray.map((f) => f.base ?? f.id)).size !== tray.length) clashing++;
-    }
-    if (wrongSize) fail('avatars', `${wrongSize}/200 trays are not ${TRAY_SIZE} snacks`);
-    if (lopsided) fail('avatars', `${lopsided}/200 trays are not half plain and half silly`);
-    if (clashing) fail('avatars', `${clashing}/200 trays offer two snacks built on the same food`);
-  }
   console.log(`  ${AVATAR_COUNT} avatars · ${CREATURES.length} creatures × ${COLOURWAYS.length} colourways · ${FOODS.length} snacks (${plain.length} plain, ${silly.length} silly) · ${NAME_POOL.length} names`);
 }
 

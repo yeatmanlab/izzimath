@@ -293,11 +293,41 @@ L.push('');
     cells[42].click(); await sleep(180);
     t('offers 10 names', d.querySelectorAll('[data-name]').length === 10);
     d.querySelectorAll('[data-name]')[0].click(); await sleep(180);
-    /* Five hundred snacks cannot all be buttons, so the screen offers a tray of
-       two dozen with a fresh draw on request. */
-    const tray1 = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
-    t('offers a tray, not all 500', tray1.length === 24, tray1.length + ' shown');
-    t('a fresh draw is offered', !!d.querySelector('[data-shuffle]'));
+    /* All 500 snacks in one scrolling list. Two things it must not do: grow the
+       panel until the warning is off the top, or put 500 stops in the tab order. */
+    const flist = d.querySelector('[data-foodlist]');
+    const fbtns = [...d.querySelectorAll('[data-food]')];
+    t('every snack is on the page', fbtns.length === 500, fbtns.length + ' shown');
+    t('no reshuffle button left', !d.querySelector('[data-shuffle]'));
+    t('the list scrolls', flist.scrollHeight > flist.clientHeight + 20,
+      flist.scrollHeight + ' > ' + flist.clientHeight);
+    t('the list, not the panel, owns the scroll',
+      flist.getBoundingClientRect().height <= d.querySelector('.mepanel').getBoundingClientRect().height,
+      Math.round(flist.getBoundingClientRect().height) + 'px of '
+      + Math.round(d.querySelector('.mepanel').getBoundingClientRect().height) + 'px panel');
+    /* The warning is the whole point of this screen; 500 buttons must not push it
+       out of view the way they would if the panel simply grew. */
+    t('the warning stays visible', (() => {
+      const box = d.querySelector('.mepanel').getBoundingClientRect();
+      const warn = d.querySelector('.mesub').getBoundingClientRect();
+      return warn.top >= box.top - 1 && warn.bottom <= box.bottom + 1;
+    })());
+    t('the way back is reachable without scrolling the list',
+      !!d.querySelector('[data-back]'));
+    // one tab stop, and arrows move inside the list
+    t('exactly one snack is tabbable', fbtns.filter((b) => b.tabIndex === 0).length === 1,
+      fbtns.filter((b) => b.tabIndex === 0).length + ' tabbable');
+    fbtns[0].focus();
+    flist.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    await sleep(60);
+    t('arrow keys move inside the list', d.activeElement === fbtns[1],
+      d.activeElement?.textContent?.trim());
+    t('and the tab stop travels with focus',
+      fbtns[1].tabIndex === 0 && fbtns[0].tabIndex === -1);
+    flist.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'End', bubbles: true, cancelable: true }));
+    await sleep(60);
+    t('End reaches the last snack', d.activeElement === fbtns[fbtns.length - 1],
+      d.activeElement?.textContent?.trim());
     /* The warning has to state the CONSEQUENCE, not just say "remember it". This
        is the only thing a child carries between visits and there is no recovery. */
     const warn = d.querySelector('.mesub')?.textContent || '';
@@ -305,55 +335,12 @@ L.push('');
     t('and says what happens otherwise', /only way back/i.test(warn) && /look it up/i.test(warn), warn.slice(0, 60));
     t('grown-ups note is honest', /not a password/.test(d.querySelector('.mefoot')?.textContent || '')
       && /no way to recover/.test(d.querySelector('.mefoot')?.textContent || ''));
+    t('a section heading names each half',
+      d.querySelectorAll('.mefoodsec').length === 2,
+      [...d.querySelectorAll('.mefoodsec')].map((e) => e.textContent).join(' / '));
 
-    /* Long silly names used to push straight out of their button and over the
-       one beside it: a grid item defaults to min-width auto, so the button could
-       not shrink into its column. Names now range from "Corn" to "Upside-down
-       bento box", so this is measured rather than eyeballed — and at a narrow
-       width too, where the columns are tightest. */
-    const escapes = () => [...d.querySelectorAll('.mefood')].filter((b) => {
-      const r = b.getBoundingClientRect();
-      return [...b.children].some((c) => {
-        const q = c.getBoundingClientRect();
-        return q.right > r.right + 0.5 || q.left < r.left - 0.5;
-      });
-    }).map((b) => b.textContent.trim());
-    t('no snack name escapes its button', escapes().length === 0, escapes().slice(0, 3).join(' / '));
-    {
-      /* Narrow the FRAME, not the panel. The mobile rules are viewport media
-         queries, so shrinking .mepanel inside a 1100px frame leaves them
-         inactive — the first version of this test could not fail, and the 92px
-         mobile columns it was meant to catch sailed through it. */
-      frame.style.width = '375px';
-      await sleep(150);
-      t('and not on a phone-width screen either', escapes().length === 0, escapes().slice(0, 3).join(' / '));
-      /* Escaping is not the only failure. At 92px columns the names stayed inside
-         their buttons and broke mid-word instead — "Rainb / ow / lollipo / p".
-         Nothing measuring overflow can see that, so measure line count: a name
-         over two lines is a name being broken, not wrapped. */
-      const tall = [...d.querySelectorAll('.mefood b')].filter((b) => {
-        const lh = parseFloat(getComputedStyle(b).lineHeight) || 16;
-        return b.getBoundingClientRect().height > lh * 2.4;
-      }).map((b) => b.textContent.trim());
-      t('no snack name is broken mid-word', tall.length === 0, tall.slice(0, 3).join(' / '));
-      t('snack buttons stay tappable', [...d.querySelectorAll('.mefood')]
-        .every((b) => b.getBoundingClientRect().height >= 24));
-      frame.style.width = '1100px';
-      await sleep(150);
-    }
-
-    d.querySelector('[data-shuffle]').click(); await sleep(220);
-    t('focus stays on the draw button after a shuffle',
-      d.activeElement === d.querySelector('[data-shuffle]'),
-      d.activeElement?.textContent?.trim().slice(0, 24));
-    const tray2 = [...d.querySelectorAll('[data-food]')].map((b) => b.dataset.food);
-    t('a fresh draw gives different snacks', tray2.length === 24
-      && tray2.join() !== tray1.join(), tray2.filter((f) => !tray1.includes(f)).length + ' new');
-    t('a tray never shows two of one food',
-      new Set(tray2.map((f) => (f.includes('-') ? f.split('-').slice(1).join('-') : f))).size === tray2.length);
-
-    // whatever the tray happens to offer — no hardcoded snack survives a shuffle
-    const mine = tray2[7];
+    // a silly one, so the same-kind decoy rule is exercised on the way back in
+    const mine = fbtns.find((b) => b.dataset.food.includes('-')).dataset.food;
     d.querySelector('[data-food="' + mine + '"]').click(); await sleep(350);
     t('profile created', d.querySelector('[data-me-name]')?.textContent !== 'Scores',
       'button now says "' + d.querySelector('[data-me-name]')?.textContent + '"');

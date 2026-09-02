@@ -55,8 +55,8 @@ Optional, and never forced: the offer appears once, after something is finished,
 never again that session if it is waved away.
 
 A child picks a creature from 150 icons, a name from 10 offered, and a **secret snack**
-from a pool of 500 — shown two dozen at a time, half plain and half silly, with a button
-for a different draw. That triple is the whole identity. Scores, completion and download marks, and
+from a scrolling list of 500, split into everyday snacks and silly ones. That triple is the
+whole identity. Scores, completion and download marks, and
 the 24 [badges](docs/BADGES.md) hang off it in this browser's `localStorage` — nothing
 is sent anywhere, and no name, email or age is collected. Coming back means picking your
 creature out of the ones on the device, then your snack out of six.

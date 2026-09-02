@@ -282,39 +282,6 @@ export const FOODS = [
   })),
 ];
 
-/* The creation screen cannot show five hundred buttons, so it shows a tray:
-   half plain and half silly, so both kinds are always on offer and the child can
-   ask for a different draw. Half-and-half rather than a straight random sample,
-   which at 500-to-110 would be almost all silly ones. */
-export const TRAY_SIZE = 24;
-export function foodTray(size = TRAY_SIZE, rand = Math.random) {
-  const draw = (list, n) => {
-    const pool = [...list], out = [];
-    while (out.length < n && pool.length) out.push(pool.splice(Math.floor(rand() * pool.length), 1)[0]);
-    return out;
-  };
-  const half = Math.floor(size / 2);
-  const plain = draw(FOODS.filter((f) => !f.silly), half);
-  /* One tray, one base food. Without this a draw could offer "Glitter
-     marshmallow" next to "Snowy marshmallow" — same emoji, nearly the same word,
-     hard to tell apart and harder to remember, which is the one thing the snack
-     has to be. */
-  const used = new Set(plain.map((f) => f.id));
-  const sillyPool = FOODS.filter((f) => f.silly && !used.has(f.base));
-  const seen = new Set(), spread = [];
-  for (const f of draw(sillyPool, sillyPool.length)) {
-    if (seen.has(f.base)) continue;
-    seen.add(f.base); spread.push(f);
-    if (spread.length >= size - half) break;
-  }
-  const tray = [...plain, ...spread];
-  for (let i = tray.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [tray[i], tray[j]] = [tray[j], tray[i]];
-  }
-  return tray;
-}
-
 export const foodById = (id) => FOODS.find((f) => f.id === id) ?? null;
 
 /* The food is the pick-up check. Child-facing copy calls it a secret snack,

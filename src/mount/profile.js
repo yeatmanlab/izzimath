@@ -24,7 +24,7 @@
    a parent will actually read it.
 */
 
-import { AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, foodById, foodChoicesFor, foodTray } from '../../content/avatars.js';
+import { AVATAR_COUNT, avatarSpec, avatarLabel, namesFor, FOODS, foodById, foodChoicesFor } from '../../content/avatars.js';
 import { avatarSvg } from '../lib/avatarart.js';
 import { avatar } from '../lib/sprites.js';
 import { getCharacter } from '../../content/characters.js';
@@ -230,28 +230,64 @@ const foodBtn = (f) =>
    if they do not. There is no reset and no way to look it up — that is the price
    of having no accounts — so the screen has to say so before they choose.
 
-   Five hundred snacks cannot all be buttons, so it offers a tray of two dozen
-   with a fresh draw on request. Picking from what is in front of you is a better
-   ask of a six-year-old than searching a list. */
-function flowFood({ reshuffled = false } = {}) {
-  const tray = foodTray();
+   All five hundred are here, in a scrolling list of their own rather than a tray
+   with a reshuffle button. Two things that needs:
+
+   The list scrolls INSIDE the panel, not the panel itself. Letting five hundred
+   buttons grow the dialog would push the warning — and the child's name — off the
+   top, which is the exact bug that made a new profile unreadable before.
+
+   And it is one tab stop, not five hundred. The buttons carry a roving tabindex
+   with arrow keys moving inside the list, so Tab still steps out to the footer in
+   one press. Five hundred tab stops between a keyboard user and "a different
+   name" would be worse than the tray it replaced. */
+function flowFood() {
+  const plain = FOODS.filter((f) => !f.silly);
+  const silly = FOODS.filter((f) => f.silly);
   open(`
     <h2 class="meh">Now pick a secret snack</h2>
     <p class="mesub"><strong>You have to remember this one.</strong> Picking ${draft.name}'s snack is
       the only way back to these scores next time &mdash; nobody can look it up for you, so choose
       one you will not forget. The silly ones are the easiest to remember.</p>
     <div class="mepick">${avatarSvg(draft.avatar, { size: 60, decorative: true })}</div>
-    <div class="mefoods">${tray.map(foodBtn).join('')}</div>
-    <div class="mebtns">
-      <button class="btn" data-shuffle>Show me different snacks</button>
-      <button class="btn" data-back>← A different name</button>
+    <p class="mefoodhint">All ${FOODS.length} of them &mdash; scroll to see more.</p>
+    <div class="mefoods mescroll" data-foodlist role="group" aria-label="Choose a secret snack">
+      <p class="mefoodsec">Everyday snacks</p>
+      ${plain.map(foodBtn).join('')}
+      <p class="mefoodsec">Silly snacks</p>
+      ${silly.map(foodBtn).join('')}
     </div>
+    <div class="mebtns"><button class="btn" data-back>&larr; A different name</button></div>
     ${grownUps()}`);
-  /* Keep focus on the draw button across a reshuffle. The default lands on the
-     first snack, which left a keyboard user tabbing past two dozen buttons to
-     draw again — and drawing again is the one thing you do repeatedly here. */
-  if (reshuffled) panel.querySelector('[data-shuffle]').focus();
-  panel.querySelector('[data-shuffle]').addEventListener('click', () => flowFood({ reshuffled: true }));
+
+  /* Roving tabindex. Only the first snack is in the tab order; arrows move within
+     the list and carry the tab stop along. */
+  const list = panel.querySelector('[data-foodlist]');
+  const btns = [...list.querySelectorAll('[data-food]')];
+  btns.forEach((b, i) => { b.tabIndex = i === 0 ? 0 : -1; });
+  // Column count read off the layout rather than assumed, so it follows the grid
+  // at every width including the two-column phone case.
+  const cols = (() => {
+    let n = 0;
+    while (n < btns.length && btns[n].offsetTop === btns[0].offsetTop) n++;
+    return Math.max(1, n);
+  })();
+  const moveTo = (from, to) => {
+    const i = Math.min(btns.length - 1, Math.max(0, to));
+    if (i === from) return;
+    btns[from].tabIndex = -1;
+    btns[i].tabIndex = 0;
+    btns[i].focus();
+  };
+  list.addEventListener('keydown', (e) => {
+    const i = btns.indexOf(document.activeElement);
+    if (i < 0) return;
+    const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+    if (step !== undefined) { e.preventDefault(); moveTo(i, i + step); return; }
+    if (e.key === 'Home') { e.preventDefault(); moveTo(i, 0); }
+    if (e.key === 'End') { e.preventDefault(); moveTo(i, btns.length - 1); }
+  });
+
   panel.querySelectorAll('[data-food]').forEach((b) =>
     b.addEventListener('click', async () => {
       draft.food = b.dataset.food;
