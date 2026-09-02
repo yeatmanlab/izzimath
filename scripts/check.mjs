@@ -272,6 +272,43 @@ console.log('\n=== profile avatars ===');
    did. The checks below are that rule made executable — most of all that nothing
    is earned for showing up, because a labour badge is both the hollow kind and,
    on the evidence, the kind that undermines motivation in children. */
+/* No sheet may print the same item twice.
+   There was no per-sheet distinctness test at all, which is how make-ten-race
+   shipped ten items with nine distinct ones and halves-and-quarters eight with
+   eight. collect() dedups on a key, but the key is only as good as what the
+   generator varies: bake a random rotation into printVisual and every repeat
+   looks distinct to the machine while reading as a repeat to the child. This
+   compares the rendered problem blocks, which is what the child actually sees. */
+console.log('\n=== sheet distinctness ===');
+{
+  const SEEDS = [8817, 4242, 1009, 60613];
+  let worst = { n: 0 }, checkedSheets = 0;
+  for (const a of activities) {
+    for (const seed of SEEDS) {
+      for (const mode of ['practice', 'review']) {
+        let html;
+        try {
+          html = sheet({ activity: a, seed, ch: getCharacter('kiwi'), base: '',
+            siteUrl: 'https://izzimath.com', style: 'plain', mode, key: false });
+        } catch (e) { fail(a.id, `sheet threw (${mode}, seed ${seed}): ${e.message}`); continue; }
+        checkedSheets++;
+        const items = [...html.matchAll(/<div class="pr">([\s\S]*?)<\/div>\s*<\/div>/g)]
+          .map((m) => m[1].replace(/<span class="lbl">[^<]*<\/span>/, '').replace(/\s+/g, ' ').trim())
+          .filter((t) => t.length > 8);
+        const seen = new Map();
+        for (const it of items) seen.set(it, (seen.get(it) ?? 0) + 1);
+        const repeats = [...seen.entries()].filter(([, n]) => n > 1);
+        if (repeats.length) {
+          const n = repeats.reduce((t, [, c]) => t + c - 1, 0);
+          if (n > worst.n) worst = { n, id: a.id, mode, seed, sample: repeats[0][0].slice(0, 70) };
+          fail(a.id, `${mode} sheet at seed ${seed} prints ${n} repeated item${n > 1 ? 's' : ''}: "${repeats[0][0].slice(0, 60)}"`);
+        }
+      }
+    }
+  }
+  console.log(`  ${checkedSheets} sheets rendered across ${SEEDS.length} seeds · ${worst.n ? `worst ${worst.n} repeats (${worst.id})` : 'no sheet repeats an item'}`);
+}
+
 console.log('\n=== badges ===');
 {
   const ids = new Set();

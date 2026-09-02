@@ -127,6 +127,244 @@ const equivalentFractions = {
   },
 };
 
+/* --------------------------------------------------------- BOOK: fold and sort
+   Symmetry judged by eye is guesswork. Symmetry judged by FOLDING is a test the
+   child can run, and 4.G.A.3 defines a line of symmetry as exactly that — a fold
+   into matching parts. On paper the sheet answers itself: you fold it and find
+   out, which is the one thing paper does better than a screen here.
+
+   Every answer is DERIVED, not asserted. The helpers below reflect the polygon
+   across the candidate line and measure its interior angles, so a wrong claim
+   cannot be authored by mistake. That caught two of my own: an "obtuse" triangle
+   whose largest angle was 92.6 degrees — technically obtuse, visually a right
+   angle, an unfair thing to ask a nine-year-old — and an "isosceles" triangle so
+   close to equilateral that a child could reasonably see three lines of symmetry
+   in it. Both are now unambiguous.
+
+   The two difficulties this targets are the grade-4 ones: a rectangle's diagonal
+   cuts it into congruent parts that do NOT coincide, and hierarchical
+   classification (a square is also a rectangle and also a rhombus). No item ever
+   claims a rhombus cannot have a right angle, because a square is one. */
+
+const ang = (a, b, c) => {
+  const u = [a[0] - b[0], a[1] - b[1]], v = [c[0] - b[0], c[1] - b[1]];
+  const d = (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v));
+  return Math.acos(Math.max(-1, Math.min(1, d))) * 180 / Math.PI;
+};
+const interior = (P) => P.map((p, k) => ang(P[(k - 1 + P.length) % P.length], p, P[(k + 1) % P.length]));
+const reflectPt = ([px, py], [[x1, y1], [x2, y2]]) => {
+  const dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy;
+  const t = ((px - x1) * dx + (py - y1) * dy) / L;
+  return [2 * (x1 + t * dx) - px, 2 * (y1 + t * dy) - py];
+};
+// A fold works when every corner lands on a corner. 0.9 units on an 80-unit box.
+const foldsOnto = (P, line) => P.every((p) => {
+  const q = reflectPt(p, line);
+  return P.some((o) => Math.hypot(o[0] - q[0], o[1] - q[1]) < 0.9);
+});
+const rotPt = ([x, y], deg) => {
+  const t = deg * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+  return [40 + (x - 40) * c - (y - 40) * s, 40 + (x - 40) * s + (y - 40) * c];
+};
+/* Off-axis on purpose: a child who has only seen upright shapes reads "vertical"
+   as "symmetric". Rotating the shape AND its candidate line together preserves
+   the relationship, so the answer is unchanged and the shortcut stops working. */
+const figure = (P, line, deg, print) => {
+  const pts = P.map((p) => rotPt(p, deg)).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const ink = print ? '#111' : 'var(--a1)';
+  const l = line ? line.map((p) => rotPt(p, deg)) : null;
+  return `<svg viewBox="0 0 80 80" width="${print ? 108 : 132}" height="${print ? 108 : 132}" role="img" aria-hidden="true">
+    <polygon points="${pts}" fill="none" stroke="${ink}" stroke-width="${print ? 2.2 : 3}" stroke-linejoin="round"/>
+    ${l ? `<line x1="${l[0][0].toFixed(1)}" y1="${l[0][1].toFixed(1)}" x2="${l[1][0].toFixed(1)}" y2="${l[1][1].toFixed(1)}"
+      stroke="${ink}" stroke-width="${print ? 1.4 : 2}" stroke-dasharray="5 4" opacity=".85"/>` : ''}
+  </svg>`;
+};
+
+const SH = {
+  square:   { P: [[15, 15], [65, 15], [65, 65], [15, 65]], name: 'square' },
+  rect:     { P: [[10, 22], [70, 22], [70, 58], [10, 58]], name: 'rectangle' },
+  rhombus:  { P: [[40, 14], [76, 40], [40, 66], [4, 40]], name: 'rhombus' },
+  parallel: { P: [[12, 55], [45, 20], [75, 20], [42, 55]], name: 'parallelogram' },
+  isoTri:   { P: [[40, 8], [68, 70], [12, 70]], name: 'triangle' },
+  scalene:  { P: [[14, 64], [70, 58], [36, 16]], name: 'triangle' },
+  rightTri: { P: [[14, 66], [66, 66], [14, 20]], name: 'triangle' },
+  obtuse:   { P: [[8, 58], [74, 58], [30, 40]], name: 'triangle' },
+  acuteTri: { P: [[40, 14], [63, 62], [17, 62]], name: 'triangle' },
+  isoTrap:  { P: [[22, 20], [58, 20], [72, 62], [8, 62]], name: 'trapezoid' },
+  /* Added because a pool of five triangles cannot fill ten slots: collect()
+     wanders the index space hunting a distinct item and lands back on the same
+     questions. Each was measured through the helpers before being written down.
+     Two candidates were thrown out by that: a 94-degree "obtuse" triangle, which
+     is obtuse to a protractor and a right angle to a nine-year-old, and a "right
+     trapezoid" whose coordinates made a square. */
+  rightTri2: { P: [[20, 20], [20, 68], [64, 68]], name: 'triangle' },
+  obtuse2:   { P: [[10, 30], [70, 30], [50, 50]], name: 'triangle' },
+  acute2:    { P: [[16, 64], [64, 64], [34, 18]], name: 'triangle' },
+  rightTrap: { P: [[14, 22], [54, 22], [70, 62], [14, 62]], name: 'trapezoid' },
+  kite:      { P: [[40, 8], [66, 38], [40, 72], [14, 38]], name: 'kite' },
+};
+const VERT = [[40, 2], [40, 78]], HORZ = [[2, 40], [78, 40]];
+const ROTS = [18, 35, 52, 74, 108, 143, 200, 250, 310];
+// Candidate folds, mixing real lines of symmetry with plausible fakes. The
+// rectangle's and parallelogram's diagonals are the fakes worth having.
+const FOLDS = [
+  ['square', VERT], ['square', [[15, 15], [65, 65]]],
+  ['rect', VERT], ['rect', HORZ], ['rect', [[10, 22], [70, 58]]],
+  ['rhombus', VERT], ['rhombus', HORZ],
+  ['parallel', [[12, 55], [75, 20]]], ['parallel', VERT], ['parallel', HORZ],
+  ['isoTri', VERT], ['isoTri', HORZ],
+  ['scalene', VERT], ['scalene', HORZ],
+  ['isoTrap', VERT], ['isoTrap', HORZ],
+  ['rightTri', VERT], ['acuteTri', VERT],
+  ['kite', VERT], ['kite', HORZ], ['kite', [[14, 38], [66, 38]]],
+  ['rightTrap', VERT], ['rightTrap', HORZ],
+  ['obtuse2', VERT], ['acute2', VERT], ['rightTri2', HORZ],
+  ['square', HORZ], ['rhombus', [[8, 40], [72, 40]]],
+];
+/* A right-angle question is only fair if the corners that are NOT right angles
+   are visibly not right angles. The print cap is 0.72in, so a corner within 10
+   degrees of square is a coin flip on paper. The kite sits 8.2 degrees off, which
+   is why the first threshold here (8) let it through when I tested the guard. The kite is excluded for exactly that
+   reason — its axis corners sit near 90 whatever the proportions — and it stays
+   in FOLDS, where the question is symmetry and the angle does not matter.
+   Enforced below, at module load, rather than left to whoever edits this next. */
+const CORNERS = ['square', 'rect', 'rightTri', 'rhombus', 'parallel', 'isoTri', 'scalene',
+  'obtuse', 'acuteTri', 'isoTrap', 'rightTri2', 'obtuse2', 'acute2', 'rightTrap'];
+const TRIS = ['rightTri', 'obtuse', 'acuteTri', 'isoTri', 'scalene', 'rightTri2', 'obtuse2', 'acute2'];
+
+/* Loud at module load rather than an unfair question on a child's sheet. */
+for (const k of CORNERS) {
+  const a = interior(SH[k].P);
+  const off = a.filter((x) => Math.abs(x - 90) >= 0.6).map((x) => Math.abs(x - 90));
+  const tight = off.length ? Math.min(...off) : 90;
+  if (tight < 10) {
+    throw new Error(`fold-and-sort: "${k}" has a corner ${tight.toFixed(1)} degrees off square, `
+      + `which is not decidable at the 0.72in print cap. Use it in FOLDS, not CORNERS.`);
+  }
+}
+
+const foldAndSort = {
+  id: 'fold-and-sort', title: 'Fold and Sort', kind: 'book', grade: '4', strand: S[2],
+  glyph: '◿',
+  skill: 'Finding lines of symmetry by folding, and sorting triangles by their angles.',
+  trick: 'A fold line only counts if the two halves land exactly on top of each other. Same size is not enough — a rectangle cut corner to corner gives two matching halves that will not stack.',
+  printDensity: 'd2',
+  printMaxPages: 1,
+  blurb: 'Would it fold in half exactly? Then sort the triangles by their corners.',
+  ccss: ['4.G.A.2', '4.G.A.3'],
+  im: [8],
+  refs: ['im-k5', 'im-scope-sequence'],
+  theory: 'A line of symmetry is defined by a fold, so the test is physical rather than visual. Shapes are drawn off-axis because a child who has only met upright figures learns "upright" as part of the definition.',
+  /* ROAM has no geometry construct: roamAlpaca cat3 is "grades 3-5 multiplication,
+     division, fractions, decimals" and every other grade-4 subscale is numeric.
+     This is a GRADE-BAND placement, not a construct match, and it is recorded here
+     rather than in user-visible text. shape-sorter does the same at K. */
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
+  evidence: 'Geometry was the largest hole in the catalogue: 4.G.A.2 and 4.G.A.3 appeared nowhere, and IM grade-4 Unit 8 had no activity at all. Stated plainly, because the site does not claim what it cannot support: there is no efficacy evidence behind this one. references.js holds 37 sources and not one is geometry; the WWC practice guide that touches it rates geometry Minimal and is a preschool/K guide. im-k5 is cited as a design source for the sequence, not as evidence of effect. What this activity is defended on is coverage, and one affordance paper has and screens do not — you can fold the sheet and find out.',
+  /* Six, because that is what fits. The print grid is three columns and the
+     figures are capped at 0.72in by printDensity d2; six items fill two rows and
+     land at 9.9in, and the seventh starts a third row that takes the sheet to
+     11.75in — a cliff, not a slope. d3 would allow more rows at a 0.6in cap, but
+     these figures have to be judged by eye and folded, so the smaller cap is the
+     wrong trade. A reader who wants more gets the practice pack: several
+     finishable sheets on different seeds, which is this project's answer to
+     wanting more practice rather than one long sheet. Twelve pages on screen. */
+  pages: 12, printItems: 6,
+  printInstruction: 'Fold lines are dashed. For each one, would the two halves land exactly on top of each other?',
+  printInstructions: {
+    truefalse: 'Would it fold along the dashed line so the halves land exactly on top of each other? Circle T or F.',
+    choice: 'Sort each triangle by its biggest corner.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 3;
+    /* The rotation is DERIVED from which question this is, never rolled. Rotation
+       is baked into the SVG string and collect()'s dedup key includes
+       printVisual, so a random angle made every repeat look distinct to the
+       machine while reading as the same question to the child: measured at 100%
+       of ten-item sheets carrying a duplicate. Same question, same angle, and the
+       existing dedup does its job. */
+    const rotFor = (idx) => ROTS[(idx * 4 + mode) % ROTS.length];
+    /* WHICH question this is, is derived too. Rolling it left 48% of real sheets
+       carrying a repeated figure even with the rotation fixed, because
+       collect()'s dedup retry walks idx = i + tries*7 — which changes `mode`, so
+       it escapes sideways instead of finding a fresh question. Indexed by `i`
+       with a stride coprime to each pool, so neighbouring items cannot collide;
+       bookSeed moves the starting point, so "new problems" still works. */
+    const pick = (pool, stride) => (Math.floor(Math.abs(bookSeed) / 7) + i * stride) % pool;
+
+    // would it fold? — answer derived by reflecting the corners
+    if (mode === 0) {
+      const fi = pick(FOLDS.length, 7);        // 29 folds, stride 7
+      const [k, line] = FOLDS[fi];
+      const deg = rotFor(fi);
+      const sh = SH[k];
+      const folds = foldsOnto(sh.P, line);
+      return {
+        type: 'truefalse',
+        prompt: `Would this ${sh.name} fold along the dashed line so the two halves land exactly on top of each other?${figure(sh.P, line, deg, false)}`,
+        printStem: `Would this ${sh.name} fold exactly in half along the dashed line?`,
+        printVisual: figure(sh.P, line, deg, true),
+        answer: folds,
+        hint: `Imagine folding along the dashed line. Do the corners land on corners?`,
+        explain: folds
+          ? `Yes. Every corner lands on another corner, so the two halves sit exactly on top of each other.`
+          : `No. The two parts are the same size, but they do not land on top of each other, so the dashed line is not a line of symmetry.`,
+      };
+    }
+
+    // sort a triangle by its biggest corner — class derived from the angles
+    if (mode === 1) {
+      const ti = pick(TRIS.length, 3);         // 8 triangles, stride 3
+      const k = TRIS[ti];
+      const deg = rotFor(ti);
+      const sh = SH[k];
+      const big = Math.max(...interior(sh.P));
+      const cls = big > 90.6 ? 'Obtuse' : big > 89.4 ? 'Right' : 'Acute';
+      return {
+        type: 'choice',
+        prompt: `What kind of triangle is this?${figure(sh.P, null, deg, false)}`,
+        /* printProblem never renders p.choices, so on paper a choice item is a
+           blank box unless the options are written into the stem. Without this the
+           sheet asked "What kind of triangle is this?" and gave nothing to pick
+           from. */
+        printStem: `What kind of triangle is this?  (acute / right / obtuse)`,
+        printVisual: figure(sh.P, null, deg, true),
+        choices: ['Acute', 'Right', 'Obtuse'],
+        answer: cls,
+        hint: `Look at the biggest corner. Is it smaller than a square corner, exactly a square corner, or bigger?`,
+        explain: cls === 'Right'
+          ? `Its biggest corner is exactly a square corner, so it is a right triangle.`
+          : cls === 'Obtuse'
+            ? `Its biggest corner opens wider than a square corner, so it is an obtuse triangle.`
+            : `Every corner is smaller than a square corner, so it is an acute triangle.`,
+      };
+    }
+
+    /* does it have a right angle? — one shape, one claim, so the item stands on
+       its own when collect() reorders the sheet. Never phrased as a fact about
+       the CLASS: a square is a rhombus, so "a rhombus has no right angles" is
+       false, and this asks only about the shape that is drawn. */
+    const ci = pick(CORNERS.length, 4);        // 15 shapes, stride 4
+    const k = CORNERS[ci];
+    const deg = rotFor(ci);
+    const sh = SH[k];
+    const angles = interior(sh.P);
+    const has = angles.some((x) => Math.abs(x - 90) < 0.6);
+    const biggest = Math.round(Math.max(...angles));
+    return {
+      type: 'truefalse',
+      prompt: `This ${sh.name} has at least one right angle.${figure(sh.P, null, deg, false)}`,
+      printStem: `This ${sh.name} has at least one right angle.`,
+      printVisual: figure(sh.P, null, deg, true),
+      answer: has,
+      hint: `A right angle is a square corner. Turning the shape does not change its corners.`,
+      explain: has
+        ? `Yes — one of its corners is a square corner, and turning the shape does not change that.`
+        : `No — this one's corners are about ${angles.map((x) => Math.round(x)).join('°, ')}°, and none of them is a square corner. The widest is ${biggest}°.`,
+    };
+  },
+};
+
 /* ------------------------------------------------------------- BOOK: angles and lines */
 const anglesAndLines = {
   id: 'angles-and-lines', title: 'Angles and Lines', kind: 'book', grade: '4', strand: S[2],
@@ -405,4 +643,4 @@ const timesAsMany = {
   },
 };
 
-export default [longMultiplication, equivalentFractions, anglesAndLines, factorForest, timesAsMany, divisionDescent, decimalDrop];
+export default [longMultiplication, foldAndSort, equivalentFractions, anglesAndLines, factorForest, timesAsMany, divisionDescent, decimalDrop];
