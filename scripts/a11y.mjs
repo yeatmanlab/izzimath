@@ -94,6 +94,41 @@ for (const f of files) {
   }
 }
 
+/* Every page SHAPE has to be in the responsive audit's list.
+
+   tools/audit.html says it itself: "a new page type that the responsive audit
+   does not list is a page type nobody is checking, which is how the print
+   overflow went unnoticed for so long." /guide/ was then added to the site and
+   not to that list, and when it finally was, five of its links turned out to be
+   20px tall. Nobody remembers to update a list; a check does.
+
+   Shapes, not pages — one book page stands for all 31, because they are one
+   template. */
+{
+  const shape = (p) => ('/' + path.relative(OUT, p).replace(/index\.html$/, ''))
+    .replace(/^\/(books|games|print|plans|ssdd)\/[^/]+\/$/, '/$1/<id>/')
+    .replace(/^\/grades\/[^/]+\/$/, '/grades/<g>/');
+  const built = new Set(files.map(shape));
+  let listed = new Set();
+  try {
+    const h = fs.readFileSync(new URL('../tools/audit.html', import.meta.url), 'utf8');
+    const m = h.match(/const PAGES = \[([\s\S]*?)\n\];/);
+    listed = new Set([...m[1].matchAll(/\['([^']+)'/g)]
+      .map((x) => shape(path.join(OUT, x[1].replace(/\/$/, '/index.html')))));
+  } catch (e) {
+    console.log(`  fail  cannot read tools/audit.html to check page coverage: ${e.message}`);
+    errors++;
+  }
+  const gaps = [...built].sort().filter((s) => !listed.has(s));
+  for (const s of gaps) {
+    console.log(`  fail  page shape ${s} is in the build but not in tools/audit.html PAGES — nothing checks it at any width`);
+    errors++;
+  }
+  console.log(gaps.length
+    ? `  ${built.size} page shapes, ${gaps.length} of them checked by nothing`
+    : `  ${built.size} page shapes, all listed in the responsive audit`);
+}
+
 console.log(`\n=== accessibility ===`);
 console.log(`${files.length} pages checked · ${errors} errors · ${warns} warnings`);
 if (errors) { console.log('A11Y CHECK FAILED\n'); process.exit(1); }
