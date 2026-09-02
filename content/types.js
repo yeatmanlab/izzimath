@@ -17,6 +17,11 @@
 // A generator returns problems shaped like these. One renderer per type serves
 // every activity, on screen and in print.
 
+/* A bond part can be a fraction from grade 4 on, so answer checking needs the
+   fraction parser. This is the file's only import; it stayed dependency-free
+   while every part was a whole number. */
+import { parseRaw } from '../src/lib/frac.js';
+
 export const TYPES = ['choice', 'input', 'numberline', 'compare', 'tap', 'ordinal', 'bond', 'truefalse', 'boardmove'];
 
 // Answer checking. Kept in one place so screen and answer key never disagree.
@@ -31,8 +36,20 @@ export function isCorrect(problem, response) {
     case 'tap':
     case 'ordinal':
       return Number(response) === Number(problem.answer ?? problem.n);
-    case 'bond':
-      return Number(response) === Number(problem.answer);
+    case 'bond': {
+      /* Number() is not enough once a part can be a fraction: Number('2/6') is
+         NaN, so every fraction bond would mark wrong.
+
+         DENOMINATOR-STRICT on purpose. 1/2 must not pass for a 3/6 blank in a
+         book whose whole point is that the size of the piece does not change —
+         eqF would accept it, and so would parseAnswer, which reduces. parseRaw
+         keeps the written denominator. Whole numbers are unaffected: parseRaw
+         returns d = 1 for them. */
+      const want = parseRaw(String(problem.answer));
+      const got = parseRaw(String(response));
+      if (!want || !got) return false;
+      return got.n === want.n && got.d === want.d;
+    }
     case 'numberline': {
       const tol = problem.tolerance ?? (problem.hi - problem.lo) * 0.04;
       return Math.abs(Number(response) - problem.target) <= tol;

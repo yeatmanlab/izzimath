@@ -7,6 +7,148 @@ import { wordProblem } from '../wordproblems.js';
 // duplicated here, which silently desynced when the list grew to five.
 const S = STRANDS['2'];
 
+/* --------------------------------------------------------- BOOK: take it apart
+   The Kindergarten three-circle bond, doing grade-2 work. `bond` was used by
+   exactly one activity before this — number-friends, at K — and part-whole
+   reasoning runs all the way through fractions, so the type was idle for four
+   grades.
+
+   carry-and-borrow's own trick says "if a column makes ten or more, carry the
+   ten next door", and nothing on the site drew that decomposition. This draws
+   it.
+
+   Form 1 is deliberately NON-CANONICAL. "34 at the top, 30 in one part" can be
+   read straight off the ones digit; it is notation restated, not a question. The
+   regrouping IS the non-canonical split: 34 as 20 and 14.
+
+   Form 4 is paired with an input item rather than being one bond: check.mjs
+   requires answer === parts[blank], and the difference 15 - 8 = 7 is not one of
+   the circles in 8 = 5 + 3. */
+const takeItApart = {
+  id: 'take-it-apart', title: 'Take It Apart', kind: 'book', grade: '2', strand: S[1],
+  glyph: '○',
+  skill: 'Splitting a number into parts that make the next step easy, and reading a total-first equation.',
+  trick: 'A number can come apart more than one way. 34 is 30 and 4, but it is also 20 and 14 — and when you need to take away 6, the second way is the useful one.',
+  printScratch: true,
+  printDensity: 'd2',
+  blurb: 'Break a number into two parts. The same picture keeps turning out to be about something new.',
+  ccss: ['2.NBT.B.5', '2.OA.B.2', '1.OA.D.7'],
+  im: [3, 4],
+  refs: ['im-scope-sequence', 'wwc-2021-math'],
+  theory: 'A number bond makes the part-whole relation visible and reversible: the same three numbers answer a missing-part question and a missing-total one, which is what makes the equal sign a relation rather than an instruction to compute.',
+  roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'fluencyArf', subscale: 'minus' }],
+  evidence: 'Part-whole decomposition is one of the six representations this site keeps constant across grades (docs/EVIDENCE.md), and until now it appeared at Kindergarten and nowhere else. The claim here is narrow and worth stating precisely: WWC 2021 Recommendation 3 reports 0.64 for representation-based intervention across nine studies, and keeping a representation constant across grades is the panel’s advice in its obstacles box rather than something those nine studies measured. The number bond is Izzi Math’s choice of representation, not one the guide names — it contains no occurrence of the phrase. The total-first form (10 = 7 + ___) is practice in the form that reads the equal sign as a relation, which Recommendation 2 on mathematical language gives as its Example 2.2; it is not claimed to change a belief.',
+  /* Measured, not chosen. On one page only five items fit — the bond figure is
+     tall even at the d2 cap of 0.72in, and the sixth item takes the sheet to
+     10.82in. Two pages hold fourteen with no thin last page, which is a real
+     grade-2 sheet rather than five questions and a lot of white paper. Grade 2
+     may be two pages; only K and grade 1 must be one. */
+  pages: 12, printItems: 14, printPages: 2,
+  printInstruction: 'Fill in the empty circle. For the take-away questions, write the answer on the line.',
+  printInstructions: {
+    bond: 'Fill in the empty circle so the two parts make the number at the top.',
+    input: 'Use the bond above it to work out the answer.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const form = i % 5;
+
+    /* 1 — a non-canonical tens-and-ones split. The part given is a multiple of
+       ten SMALLER than the tens digit, so the other part carries the extra ten
+       and the child cannot read it off the digits. */
+    if (form === 0) {
+      const tens = r.int(3, 8), ones = r.int(1, 8);
+      const whole = tens * 10 + ones;
+      const given = (tens - 1) * 10;            // 34 -> 20, not 30
+      const other = whole - given;              // 14
+      return {
+        type: 'bond', whole, a: given, b: other, blank: 'b', answer: String(other),
+        prompt: `<strong>${whole}</strong> is ${given} and how many?`,
+        printStem: `${whole} is ${given} and how many?`,
+        hint: `${given} is ${tens - 1} tens. ${whole} is ${tens} tens and ${ones}, so there is a whole ten left over as well as the ${ones}.`,
+        explain: `${given} + ${other} = ${whole}. This is the useful split when you need more than ${ones} ${ones === 1 ? 'one' : 'ones'} to take away from.`,
+      };
+    }
+
+    /* 2 — decade bonds. Widened from bonds-to-100 (only 9 distinct printed
+       figures, and a reader can ask for four pages) to bonds of any multiple of
+       ten within 100: 45 distinct. */
+    if (form === 1) {
+      const whole = r.int(3, 10) * 10;
+      const a = r.int(1, whole / 10 - 1) * 10;
+      const b = whole - a;
+      return {
+        type: 'bond', whole, a, b, blank: 'b', answer: String(b),
+        prompt: `<strong>${whole}</strong> is ${a} and how many?`,
+        printStem: `${whole} is ${a} and how many?`,
+        hint: `Count in tens: ${a}, then how many more tens to reach ${whole}?`,
+        explain: `${a} + ${b} = ${whole}. In tens: ${a / 10} and ${b / 10} make ${whole / 10}.`,
+      };
+    }
+
+    /* 3 — split to cross ten. The bond is drawn on the SECOND addend, split into
+       the bit that finishes the ten and the bit left over. */
+    if (form === 2) {
+      const first = r.int(6, 9);
+      const need = 10 - first;                  // 8 -> 2
+      const rest = r.int(1, 6);
+      const second = need + rest;               // the number being split
+      return {
+        type: 'bond', whole: second, a: need, b: rest, blank: 'b', answer: String(rest),
+        prompt: `To work out <strong>${first} + ${second}</strong>, split the ${second}. ${first} needs ${need} to make ten — what is left?`,
+        printStem: `${first} + ${second}: split the ${second}. ${first} needs ${need} to make ten — what is left?`,
+        hint: `${need} of the ${second} goes to finish the ten. Take ${need} away from ${second}.`,
+        explain: `${second} is ${need} and ${rest}. So ${first} + ${second} = 10 + ${rest} = ${first + second}.`,
+      };
+    }
+
+    /* 4 — back through ten, as a bond on the number being taken away... */
+    if (form === 3) {
+      /* Both parts of the split have to be worth writing down. At whole = 11 the
+         number needed to reach ten is always 1, so "split the 3 into 2 and 1" is
+         a step a child would not take and would not learn from. Start at 12 and
+         require at least 2 left over after landing on ten. */
+      const whole = r.int(12, 17);
+      const toTen = whole - 10;                 // 15 - 8: split 8 into 3 and 5
+      const sub = r.int(toTen + 2, 9);
+      const first = sub - toTen;
+      return {
+        type: 'bond', whole: sub, a: first, b: toTen, blank: 'a', answer: String(first),
+        prompt: `To work out <strong>${whole} − ${sub}</strong>, split the ${sub} so you can get to ten first. ${whole} needs to lose ${toTen} to reach ten — what is the other part?`,
+        printStem: `${whole} − ${sub}: split the ${sub}. ${whole} loses ${toTen} to reach ten — what is the other part?`,
+        hint: `${sub} has to come apart into ${toTen} and something. Take ${toTen} away from ${sub}.`,
+        explain: `${sub} is ${first} and ${toTen}. Take the ${toTen} first to land on ten, then take ${first} more.`,
+      };
+    }
+
+    /* ...and 5 — the difference itself, as an input, because the answer to
+       "15 - 8" is not one of the circles. Also the total-first form, which
+       exists nowhere else on the site. */
+    const total = r.int(11, 17);
+    const sub = r.int(total - 9, 9);
+    if (r.int(0, 1) === 0) {
+      return {
+        type: 'input',
+        prompt: `<strong>${total} − ${sub} = ?</strong>`,
+        answer: String(total - sub), placeholder: '?',
+        printStem: `${total} − ${sub} =`,
+        printKeyWorking: true,
+        hint: `Get to ten first: ${total} − ${total - 10} = 10, then take the rest.`,
+        explain: `${sub} is ${sub - (total - 10)} and ${total - 10}. Take ${total - 10} to reach ten, then ${sub - (total - 10)} more: ${total - sub}.`,
+      };
+    }
+    const part = r.int(2, total - 2);
+    return {
+      type: 'input',
+      prompt: `<strong>${total} = ${part} + ?</strong>`,
+      answer: String(total - part), placeholder: '?',
+      printStem: `${total} = ${part} + `,
+      printKeyWorking: true,
+      hint: `The total is on the left this time. What goes with ${part} to make ${total}?`,
+      explain: `${part} + ${total - part} = ${total}, so the missing part is ${total - part}. The equals sign means the two sides balance — it does not mean "work it out".`,
+    };
+  },
+};
+
 /* ------------------------------------------------------------ BOOK: place value palace */
 const placeValuePalace = {
   id: 'place-value-palace', title: 'Place Value Palace', kind: 'book', grade: '2', strand: S[0],
@@ -457,4 +599,4 @@ const measureAndChart = {
   },
 };
 
-export default [placeValuePalace, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel];
+export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel];

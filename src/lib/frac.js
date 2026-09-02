@@ -46,6 +46,30 @@ export function fracSvg({ n, d }, { size = 26, color = 'currentColor' } = {}) {
 }
 
 // Parse a kid-typed answer: "3/4", "0.75", "1 1/2", "6"
+/* Same grammar as parseAnswer, but WITHOUT simplifying — the written denominator
+   survives. parseAnswer exists to compare values, and it deliberately reduces, so
+   it cannot tell 3/6 from 1/2. A number bond needs exactly that distinction: the
+   whole point of "5/6 = 2/6 + 3/6" is that the size of the piece does not change,
+   so accepting 1/2 for a 3/6 blank would mark the misconception correct.
+
+   A mixed number still becomes improper, keeping its denominator: "1 1/2" and
+   "3/2" are the same written piece size and both pass a 3/2 blank. */
+export function parseRaw(s) {
+  const t = String(s).trim().replace(/\s+/g, ' ');
+  if (!t) return null;
+  let m = t.match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
+  if (m) {
+    const w = +m[1], n = +m[2], d = +m[3];
+    if (!d) return null;
+    return { n: w * d + (w < 0 ? -n : n), d };
+  }
+  m = t.match(/^(-?\d+)\s*\/\s*(-?\d+)$/);
+  if (m) return +m[2] ? { n: +m[1], d: +m[2] } : null;
+  m = t.match(/^-?\d+$/);
+  if (m) return { n: +t, d: 1 };
+  return null;
+}
+
 export function parseAnswer(s) {
   const t = String(s).trim().replace(/\s+/g, ' ');
   if (!t) return null;

@@ -10,7 +10,7 @@ import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
 import { rng, deriveSeed } from '../src/lib/rng.js';
 import { sheet, printProblem } from '../src/lib/printsheet.js';
-import { parseAnswer, cmpF } from '../src/lib/frac.js';
+import { parseAnswer, cmpF, parseRaw, frac, simplify } from '../src/lib/frac.js';
 import { references, refIds, getRef, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from '../content/references.js';
 import { IM_UNITS, imUnit } from '../content/curriculum.js';
 import { SCHEMAS } from '../content/wordproblems.js';
@@ -702,9 +702,25 @@ for (const a of activities) {
         if (/ (gives away|eats) \?/.test(stem)) fail(a.id, `i=${i} malformed verb slot: ${stem}`);
       }
       if (p.type === 'bond') {
+        /* Both of these were plain JS coercions, which is fine while every part
+           is a whole number and silently wrong the moment one is a fraction:
+           '2/6' + '3/6' string-concatenates to "2/63/6", and Number('2/6') is
+           NaN, so `NaN !== NaN` made the answer check pass for anything.
+
+           parseRaw, not parseAnswer: the sum is checked by value (2/6 + 3/6 does
+           equal 5/6), but the ANSWER is checked denominator-strict, because a
+           book about pieces not changing size must not accept 1/2 for 3/6. */
         const parts = { whole: p.whole, a: p.a, b: p.b };
-        if (p.a + p.b !== p.whole) fail(a.id, `i=${i} bond ${p.a}+${p.b} != ${p.whole}`);
-        if (Number(p.answer) !== Number(parts[p.blank])) fail(a.id, `i=${i} bond answer ${p.answer} != blank part ${parts[p.blank]}`);
+        const pa = parseRaw(String(p.a)), pb = parseRaw(String(p.b)), pw = parseRaw(String(p.whole));
+        if (!pa || !pb || !pw) {
+          fail(a.id, `i=${i} bond part is not a number or a fraction: ${JSON.stringify([p.whole, p.a, p.b])}`);
+        } else if (cmpF(simplify(frac(pa.n * pb.d + pb.n * pa.d, pa.d * pb.d)), simplify(pw)) !== 0) {
+          fail(a.id, `i=${i} bond ${p.a} + ${p.b} != ${p.whole}`);
+        }
+        const want = parseRaw(String(parts[p.blank])), got = parseRaw(String(p.answer));
+        if (!want || !got || want.n !== got.n || want.d !== got.d) {
+          fail(a.id, `i=${i} bond answer ${p.answer} != blank part ${parts[p.blank]} (denominator-strict)`);
+        }
       }
 
       // the stated answer must actually pass the checker

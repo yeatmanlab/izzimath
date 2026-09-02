@@ -206,15 +206,41 @@ export function printProblem(p, i, { key = false } = {}) {
       return `<div class="pr">${lbl}${p.printStem ?? stripTags(p.prompt)} &nbsp; ${key ? `<span class="ansval">${answerText(p)}</span>` : 'T / F'}${
         p.printVisual ? `<div class="pv">${p.printVisual}</div>` : ''}</div>`;
 
-    case 'bond':
+    case 'bond': {
       // Wrapped in .pv like every other figure. It used to sit in a bare div,
       // which is why it was the one figure the height cap never reached — it
       // rendered at its natural 150px and made a six-item sheet two pages long.
-      return `<div class="pr" style="text-align:center">${lbl}<div class="pv bond">${numberBond(
-        p.blank === 'whole' && key ? p.whole : p.whole,
+      //
+      // The blanked value is passed as '' as well as via the `blank` option, and
+      // that is deliberate rather than redundant: numberBond puts the values in
+      // its aria-label, and the print page is a real page on screen, so passing
+      // the real number would read the answer out to a screen reader looking at
+      // the sheet. (The `p.blank === 'whole' ? p.whole : p.whole` that used to be
+      // here WAS redundant — both branches were the same.)
+      //
+      /* Only printStem is added, and only when an activity supplies one, so
+         number-friends prints byte-for-byte what it printed before.
+         .
+         The wave-2 plan also asked for an answer line and the explain on the key.
+         Both are wrong, and the rendered sheet is what showed it:
+         .
+         An answer line gives the child TWO places to write one answer — the
+         empty circle and the line — which is the defect already documented above
+         for stems carrying their own blanks. The blank circle IS the answer
+         field.
+         .
+         And the explain on the key duplicates itself in the worked example,
+         which calls printProblem(items[0], 0, {key:true}) and then prints
+         items[0].explain immediately underneath. The key already fills the circle
+         in, which is the answer; printKeyWorking exists for the types whose
+         method is worth showing. */
+      const stem = p.printStem ? `<div class="bondstem">${p.printStem}</div>` : '';
+      return `<div class="pr" style="text-align:center">${lbl}${stem}<div class="pv bond">${numberBond(
+        p.whole,
         p.blank === 'a' && !key ? '' : p.a,
         p.blank === 'b' && !key ? '' : p.b,
         { print: true, blank: key ? null : p.blank, size: 150 })}</div></div>`;
+    }
 
     case 'ordinal':
       return `<div class="pr">${lbl}${p.printStem ?? stripTags(p.prompt)} ${A(answerText(p))}</div>`;
