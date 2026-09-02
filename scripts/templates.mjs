@@ -84,9 +84,24 @@ function breadcrumbs(b, crumbs) {
   </ol></nav>`;
 }
 
+/* The door to the walkthrough. Deliberately NOT in nav(): the header is already
+   a dozen tab stops before <main> on every page, and a control that pays off once
+   must not tax every keyboard and screen-reader visit. It goes on six index pages
+   and in the footer — never on an activity or print page, which is where
+   Refraction's harmful help button sat. The face is whichever character is on;
+   theme.js keeps svg[data-avatar] in sync for free, and a face is the most
+   picture-like thing in the row, which is what a child presses. */
+export function tourDoor(b, cls = '') {
+  return `<button class="tdoor ${cls}" data-tour aria-haspopup="dialog">
+    <svg class="tdoor-av" aria-hidden="true" data-avatar="idle" viewBox="0 0 64 64"><use href="#av-none"/></svg>
+    <span>Take a tour of Izzi Math</span>
+  </button>`;
+}
+
 function footer(b) {
   return `<footer class="foot noprint"><div class="wrap fin">
   <span>Izzi Math — free math practice for families.</span>
+  <a href="${b}/guide/">Take a tour</a>
   <a href="${b}/parents/">How to help</a>
   <a href="${b}/references/">Research and references</a>
   <a href="${b}/about/">About &amp; credits</a>

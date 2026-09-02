@@ -4,7 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { page, activityCard, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
+import { page, activityCard, tourDoor, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet, ssddSheet, maxPagesFor } from './src/lib/printsheet.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
@@ -104,6 +104,9 @@ if (!process.env.CI && fs.existsSync('tools')) copyDir('tools', path.join(OUT, '
   write('index.html', page({
     base: b, active: '', title: 'Math that glows on screen and on paper',
     desc: 'Free interactive math workbooks and games for kindergarten through 5th grade. Every activity also prints. No account needed.',
+    // Only the index pages carry the walkthrough, so the other 100+ pages' JS is
+    // unchanged and no activity page gains a help affordance.
+    scripts: ['/assets/src/mount/tour.js'],
     body: `
 <section class="wrap hero">
   <div class="pill">◆ Every book prints</div>
@@ -113,7 +116,7 @@ if (!process.env.CI && fs.existsSync('tools')) copyDir('tools', path.join(OUT, '
   <div style="display:flex;gap:11px;flex-wrap:wrap">
     <a class="btn pri" href="${b}/grades/">Pick your grade</a>
     <a class="btn" href="${b}/printables/">Browse printables</a>
-    <a class="btn" href="${b}/parents/">How to help</a>
+    ${tourDoor(b)}
   </div>
 </section>
 
@@ -629,6 +632,58 @@ write('ssdd/index.html', page({
     </div>
   </section>`,
 }));
+
+/* ------------------------------------------------------------------- the guide
+   "Everything on Izzi Math, on one page." Where the walkthrough ends and, more
+   importantly, the parent's own destination — readable in silence in about thirty
+   seconds, and built to print on one sheet.
+
+   Every count is generated. A page whose claim is "this is all of it" cannot
+   carry a hand-typed number: the printing notes read "Six of the forty-one
+   sheets" for the two days after two activities landed, and no checker reads
+   prose. */
+{
+  const rows = [
+    ['Grades', `${b}/grades/`, 'Start here. Grade is the only question we ask.'],
+    ['Books', `${b}/books/`,
+      `${activities.filter((a) => a.kind === 'book').length} of them. Guided practice with hints, and the working shown after every answer. Never timed.`],
+    ['Games', `${b}/games/`,
+      `${activities.filter((a) => a.kind === 'game').length} of them. Short rounds on the same skills, for when something is comfortable enough to speed up. The clock is off unless you ask for it.`],
+    ['Printables', `${b}/printables/`,
+      `All ${activities.length} activities print, each with an answer key. ${activities.filter((a) => (a.printPages ?? 1) > 1).length} are two pages; the rest are one.`],
+    ['A practice pack', `${b}/printables/`,
+      'Three or five one-page sheets with different numbers on each — a week of practice in one print job.'],
+    ['New problems', `${b}/books/tens-and-ones/`,
+      'Press it and the numbers change; the kind of question does not. The set you had stays at its own link, so a bookmark brings it back and the practice never runs out.'],
+    ['Plans', `${b}/plans/`,
+      `${plans.length === 1 ? 'A sequenced plan' : `${plans.length} sequenced plans`}: what to do, in what order, three times a week.`],
+    ['Same surface, different depth', `${b}/ssdd/`,
+      `${ssddSets.length} sheets of four questions that look alike and need four different methods — one per grade.`],
+    ['By skill', `${b}/skills/`, 'If you already know the sticking point, this is the faster way in.'],
+    ['How to help', `${b}/parents/`, 'How long, how often, and what to say when they are stuck.'],
+    ['Keeping score', `${b}/`, 'Optional and never asked for twice: pick a creature, a name and a secret snack, and scores stay in this browser. No account, and nothing is sent anywhere.'],
+  ];
+  write('guide/index.html', page({
+    base: b, active: '', title: 'Everything on Izzi Math, on one page',
+    desc: 'Every part of Izzi Math in one list: books, games, printables, plans and how scores work.',
+    crumbs: [{ label: 'Home', href: '/' }, { label: 'Take a tour' }],
+    scripts: ['/assets/src/mount/tour.js'],
+    body: `<section class="wrap sec" style="padding-top:24px">
+      <h1 style="font-size:30px">Everything on Izzi Math, on one page.</h1>
+      <p class="sub">Nothing here needs an account. Every activity works on screen and prints,
+      and the maths is the same whichever character is on.</p>
+      <div class="prow noprint" style="margin-bottom:22px">
+        <button class="btn pri" onclick="window.print()">&darr; Print this page</button>
+        ${tourDoor(b)}
+      </div>
+      <dl class="gmap">
+        ${rows.map(([name, href, line]) => `<div class="gmap-row">
+          <dt><a href="${href}">${esc(name)}</a></dt>
+          <dd>${esc(line)}</dd></div>`).join('')}
+      </dl>
+    </section>`,
+  }));
+}
 
 /* -------------------------------------------------------------- printables */
 write('printables/index.html', page({
