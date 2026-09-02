@@ -617,6 +617,92 @@ L.push('');
   bf.remove();
 }
 
+/* -------------------------------------------------- the tour, driven for real
+   Three panels, two of them a press. The mechanic is that pressing the REAL
+   control is what advances it, so these assert on that rather than on copy:
+   no Next until something has been pressed, the site actually changes behind
+   the dialog, and the last panel names the features it claims to. */
+L.push('');
+{
+  const tf = document.createElement('iframe');
+  tf.style.cssText = 'position:absolute;left:-99999px;top:0;width:1000px;height:1100px';
+  tf.src = '/';
+  document.body.appendChild(tf);
+  await new Promise((r) => { tf.onload = r; setTimeout(r, 8000); });
+  const td = tf.contentDocument, tw = tf.contentWindow;
+  const tc = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('tour:' + n).padEnd(34) + (note ? '  ' + note : '  ok')); };
+  const kip = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    await kip(500);
+    // nothing appears unbidden
+    tc('nothing opens by itself', !td.querySelector('.tpanel'));
+    const door = td.querySelector('[data-tour]');
+    tc('there is a door, and it is not in the nav', !!door && !door.closest('nav'),
+      door?.textContent.trim());
+
+    door.click(); await kip(400);
+    const panel = () => td.querySelector('.tpanel');
+    tc('it opens a modal dialog', panel()?.getAttribute('role') === 'dialog'
+      && panel()?.getAttribute('aria-modal') === 'true');
+    tc('step 1 offers one class of target',
+      td.querySelectorAll('.tface').length === 4
+      && td.querySelectorAll('.tpanel button:not(.tclose):not(.tface)').length === 0,
+      td.querySelectorAll('.tface').length + ' faces, ' +
+      td.querySelectorAll('.tpanel button:not(.tclose):not(.tface)').length + ' other buttons');
+    /* No Next until something has been pressed. That IS the mechanic: the
+       consequence is the instruction, so an unearned Next skips the lesson. */
+    tc('no Next before anything is pressed', !td.querySelector('[data-tnext]'));
+
+    const before = td.documentElement.dataset.ch;
+    td.querySelector('[data-tch="flame"]').click(); await kip(450);
+    tc('pressing a face changes the whole site', td.documentElement.dataset.ch === 'flame',
+      before + ' -> ' + td.documentElement.dataset.ch);
+    tc('and only then does Next appear', !!td.querySelector('[data-tnext]'));
+    const said = td.querySelector('.tsaid-c')?.textContent || '';
+    tc('it says what just happened', /Flame/.test(said), said.slice(0, 46));
+    tc('and the detail line is not addressed to a third party',
+      !/your child/i.test(td.querySelector('.tsaid-more')?.textContent || ''));
+
+    td.querySelector('[data-tnext]').click(); await kip(400);
+    tc('step 2 shows real sums', td.querySelectorAll('.tsum').length === 3,
+      [...td.querySelectorAll('.tsum')].map((e) => e.textContent.trim()).join(' '));
+    tc('the sums are distinct',
+      new Set([...td.querySelectorAll('.tsum')].map((e) => e.textContent.trim())).size === 3);
+    const first = [...td.querySelectorAll('.tsum')].map((e) => e.textContent.trim()).join('|');
+    td.querySelector('[data-tnew]').click(); await kip(400);
+    const second = [...td.querySelectorAll('.tsum')].map((e) => e.textContent.trim()).join('|');
+    tc('pressing it changes the numbers', first !== second, second);
+    tc('and only then does Next appear', !!td.querySelector('[data-tdone]'));
+
+    td.querySelector('[data-tdone]').click(); await kip(400);
+    const rows = [...td.querySelectorAll('.tway dt')].map((e) => e.textContent.trim());
+    tc('the last panel maps the site', rows.length >= 8, rows.join(', '));
+    /* The features a new visitor most needs and least easily finds. /plans/ has
+       zero editorial inbound links in the whole site, so a tour that omits it
+       leaves it exactly as invisible as it was. */
+    for (const want of ['Grades', 'Books', 'Games', 'Printables', 'Badges', 'By skill', 'Plans', 'How to help']) {
+      checks++;
+      if (!rows.includes(want)) L.push('\u2717 ' + ('tour:names ' + want).padEnd(34) + '  MISSING');
+    }
+    const mapText = td.querySelector('.tways').textContent;
+    tc('no unresolved count placeholder', !/\{\w+\}|undefined|NaN/.test(mapText),
+      (mapText.match(/\{\w+\}|undefined|NaN/) || ['clean'])[0]);
+    tc('counts are real numbers', /\b45\b/.test(mapText) && /\b24\b/.test(mapText));
+    tc('it offers a way on and a way to everything',
+      !!td.querySelector('.tfoot .btn.pri') && /guide/.test(td.querySelector('.tfoot .btn:not(.pri)')?.href || ''));
+
+    // Escape closes it and the chosen character survives
+    tw.dispatchEvent(new tw.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    td.dispatchEvent(new tw.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await kip(300);
+    tc('Escape closes it', !td.querySelector('.tpanel'));
+    tc('the character you chose stays chosen', td.documentElement.dataset.ch === 'flame');
+  } catch (e) {
+    tc('harness itself', false, 'THREW ' + e.message);
+  }
+  tf.remove();
+}
+
 L.push(''); L.push('CHECKS_RUN='+checks);
 document.getElementById('out').textContent=L.join('\n');
 window.__DONE__=true;

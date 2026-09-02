@@ -25,6 +25,7 @@
 import { TOUR } from '../../content/tour.js';
 import { characters, getCharacter } from '../../content/characters.js';
 import { activities } from '../../content/activities/index.js';
+import { plans } from '../../content/plans.js';
 import { BADGE_COUNT } from '../../content/badges.js';
 import { setCharacter, currentCharacter } from '../lib/theme.js';
 import { rng, deriveSeed } from '../lib/rng.js';
@@ -165,7 +166,12 @@ const counts = (line) => line
   .replace('{books}', activities.filter((a) => a.kind === 'book').length)
   .replace('{games}', activities.filter((a) => a.kind === 'game').length)
   .replace('{total}', activities.length)
-  .replace('{badges}', BADGE_COUNT);
+  .replace('{badges}', BADGE_COUNT)
+  // plans[0] carries `grade` and `title`; my first draft guessed at gradeLabel
+  // and topic, which do not exist and would have printed "undefined".
+  .replace('{plans}', plans.length === 1
+    ? `There is one so far: ${plans[0].title}, for grade ${plans[0].grade}.`
+    : `There are ${plans.length}, one per grade where we have built one.`);
 
 function paintDone() {
   const b = base();

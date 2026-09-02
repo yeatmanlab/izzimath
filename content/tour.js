@@ -78,6 +78,16 @@ export const TOUR = {
         '{badges} to collect — for climbing to the hard ones, for streaks, for finishing a book, and for going back and fixing an answer. They live behind the Scores button, top right.'],
       ['By skill', '/skills/',
         'If you already know the tricky bit, go straight at it.'],
+      /* Added after auditing the tour against the site's actual features. A
+         sequenced plan is the answer to "what do I actually do?", and it is also
+         the page with ZERO editorial inbound links in the whole site — a tour
+         that never mentions it leaves it as invisible as it was. {plans} is
+         filled from content/plans.js, because there is one plan today and a
+         hand-typed "a plan" becomes wrong the moment there are three. */
+      ['Plans', '/plans/',
+        'What to do and in what order, three times a week. {plans}'],
+      ['How to help', '/parents/',
+        'For a grown-up: how long a session should be, how often, and what to say when someone is stuck.'],
     ],
     said: 'Three ways to a sheet: the Printables page, the Print button on any book or game, '
       + 'or a pack of several sheets at once.',
