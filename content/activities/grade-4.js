@@ -127,6 +127,258 @@ const equivalentFractions = {
   },
 };
 
+/* ---------------------------------------------------- BOOK: same size pieces
+   IM grade 4 Unit 3 (Extending Operations to Fractions) was the one content unit
+   in the whole map with no activity at all — while content/plans.js admits, in
+   its own text, that weeks 8-9 of the flagship grade-4 plan "lean on the grade-5
+   book because that is where adding fractions lives".
+
+   The one idea, in five stages: the unit is the countable thing and it does not
+   change. Three eighths and four eighths are seven eighths. Three lots of two
+   fifths are six of those same fifths.
+
+   What is deliberately NOT claimed here: the add-versus-multiply contrast. That
+   is 5.NF.B.4 and it is fraction-foundry's trick verbatim; told to a grade-4
+   child doing 3 x 2/5 it would be wrong rather than merely empty.
+
+   Print constraints, each of them measured rather than assumed:
+     - The bond stage is pinned to single-digit denominators. At the 0.6in figure
+       cap a two-digit denominator like 11/12 does not fit inside the 20px node
+       outline, on the sheet or the key. 10 and 12 appear only in the stages whose
+       answer is typed.
+     - Every figure is ONE svg. The cap is a descendant selector, so four sibling
+       svgs each get 0.6in of their own and the row becomes 2.4in tall.
+     - Bars are hatched, never filled — print is line art.
+     - explain is plain prose. printsheet.js escapes it at all three print sites,
+       so markup in an explain prints a kilobyte of literal tags into the
+       worked-example box on page one. Figures live in visual/printVisual. */
+
+/* Piece names, because `${d}ths` produces "3ths" and "4ths". CCSS naming, which
+   is what grade-1.js already uses for its fraction names ("one fourth", "three
+   fourths") even though its prose says quarters. Local to this file, following
+   the house pattern for a small table used by one activity. */
+const PIECE = {
+  2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['fourth', 'fourths'],
+  5: ['fifth', 'fifths'], 6: ['sixth', 'sixths'], 8: ['eighth', 'eighths'],
+  10: ['tenth', 'tenths'], 12: ['twelfth', 'twelfths'],
+};
+const pieceName = (d, plural = true) => {
+  const e = PIECE[d];
+  // Loud at module load rather than "3ths" on a child's sheet.
+  if (!e) throw new Error(`same-size-pieces: no piece name for denominator ${d}`);
+  return e[plural ? 1 : 0];
+};
+const pieces = (n, d) => `${n} ${pieceName(d, n !== 1)}`;
+
+/* Bars in ONE svg, laid SIDE BY SIDE. Two reasons, both measured:
+
+   One svg, because the 0.6in figure cap is a descendant selector — four sibling
+   svgs each get 0.6in of their own and the row becomes 2.4in tall.
+
+   Side by side rather than stacked, because one svg gets 0.6in in TOTAL: three
+   stacked bars come out 0.2in each and four are unreadable. Laid in a row the
+   height is fixed whatever the count, and only the width divides.
+
+   Takes a LIST of numerators, so "5/12 + 6/12" draws 5 and then 6. It used to
+   take a count and one numerator, which drew the first addend twice — the sum
+   was 5/12 + 6/12 and the picture said 5/12 and 5/12. Only the rendered sheet
+   showed it. */
+const barsSvg = (nums, den, print = false) => {
+  /* Bar width is small ON PURPOSE. width:100% means the svg fills its grid cell
+     — about 1.7in at d3 — and the rendered HEIGHT is then cell width / aspect
+     ratio. At 148 units a bar, two bars gave an aspect near 10:1 and the bars
+     came out about 7px tall on the sheet. 64 keeps three bars legible. */
+  const H = 30, gap = 10;
+  const each = 64, W = nums.length * each + (nums.length - 1) * gap;
+  const ink = print ? '#111' : 'var(--line2)';
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
+    aria-label="${nums.map((n) => `${n} out of ${den}`).join(', then ')}">`;
+  nums.forEach((num, bi) => {
+    const x0 = bi * (each + gap), seg = each / den;
+    for (let i = 0; i < den; i++) {
+      const on = i < num;
+      s += `<rect x="${(x0 + i * seg).toFixed(2)}" y="0" width="${seg.toFixed(2)}" height="${H}"
+        fill="${print ? 'none' : (on ? 'var(--a2)' : 'rgba(255,255,255,.05)')}"
+        stroke="${ink}" stroke-width="${print ? 1.2 : 1}"/>`;
+      if (print && on) {
+        for (let h = -H; h < seg; h += 4.5) {
+          s += `<line x1="${(x0 + i * seg + h).toFixed(2)}" y1="${H}" x2="${(x0 + i * seg + h + H).toFixed(2)}" y2="0"
+            stroke="#111" stroke-width=".8" clip-path="inset(0)"/>`;
+        }
+      }
+    }
+    s += `<rect x="${x0}" y="0" width="${each}" height="${H}" fill="none" stroke="${ink}" stroke-width="${print ? 1.9 : 1.5}"/>`;
+  });
+  return `${s}</svg>`;
+};
+
+const sameSizePieces = {
+  id: 'same-size-pieces', title: 'Same Size Pieces', kind: 'book', grade: '4', strand: S[1],
+  glyph: '⅗',
+  skill: 'Adding, subtracting and multiplying fractions that share a denominator, and decomposing one into a sum.',
+  trick: 'Count the pieces, not the numbers. Three eighths and four eighths are seven eighths, because they are the same size of piece. The bottom number says what the piece IS, so it does not change when you count more of them.',
+  printScratch: true,
+  printDensity: 'd3',
+  blurb: 'Break a fraction into pieces, then add, take away and repeat them. The piece never changes size.',
+  ccss: ['4.NF.B.3a', '4.NF.B.3b', '4.NF.B.3c', '4.NF.B.4b'],
+  im: [3],
+  refs: ['im-k5', 'im-scope-sequence', 'fuchs-2013-fractions'],
+  theory: 'A fraction with a fixed denominator behaves like a unit that can be counted. Decomposition makes that countability visible, which is what 4.NF.B.3b asks for in so many words: decompose a fraction into a sum of fractions with the same denominator in more than one way.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }],
+  evidence: 'This closes the one Illustrative Mathematics content unit in the whole K-5 map with no activity against it: 4.NF.B.3 appeared once in the repo, on a grade-5 game, and 4.NF.B.4 only in an SSDD set. The warrant for the bond is the standard itself — 4.NF.B.3b is literally "decompose a fraction into a sum of fractions with the same denominator in more than one way". Fuchs et al. (2013) is cited for exactly one job, and the limit matters: that trial’s winning arm taught the MEASUREMENT interpretation of fractions and its control condition focused more on part-whole work and on procedures, with part-whole improvement explicitly not mediating the effect. So it is the reason the crossing-a-whole stage is anchored on a number line, and it is not a warrant for part-whole work. A book that cited it the other way round would be inverting its own source.',
+  /* Measured. Six items fit one page; the eighth takes it to 10.65in. Two pages
+     hold eighteen at 9.90in with no thin last page. Twenty also fits, at 10.02in
+     against a 10.1in limit — 0.08in of margin is not margin, so eighteen. */
+  pages: 15, printItems: 22, printPages: 2,
+  printInstruction: 'Count the pieces. The bottom number says what size the piece is, so it stays the same.',
+  printInstructions: {
+    bond: 'Fill in the empty circle so the two parts make the fraction at the top.',
+    input: 'Work it out. Leave the answer in the same size of piece.',
+    numberline: 'Mark where the total lands.',
+    truefalse: 'Is the claim true or false? Circle T or F.',
+  },
+  generate(seed, i, ch, r) {
+    // Pinned to single digits: at the 0.6in cap, "11/12" does not fit the node.
+    const BOND_DENS = [3, 4, 5, 6, 8];
+    const WIDE_DENS = [3, 4, 5, 6, 8, 10, 12];
+    const stage = i % 5;
+
+    /* 1 — decompose with a fraction bond. Half the time the whole is written as
+       1, which makes the denominator answer-bearing rather than copyable: the
+       child has to see that 1 is six sixths before the other part exists. */
+    if (stage === 0) {
+      const d = r.pick(BOND_DENS);
+      const wholeIsOne = r.int(0, 1) === 0;
+      // When the whole is written as a fraction it must be a PROPER one: n = d
+      // gives "6/6 is 3/6 and how many more sixths", which is the wholeIsOne
+      // case wearing a disguise and reads as a mistake.
+      const n = wholeIsOne ? d : r.int(2, d - 1);
+      const a = r.int(1, n - 1);
+      const b = n - a;
+      return {
+        type: 'bond',
+        whole: wholeIsOne ? '1' : `${n}/${d}`,
+        a: `${a}/${d}`, b: `${b}/${d}`, blank: 'b', answer: `${b}/${d}`,
+        prompt: wholeIsOne
+          ? `<strong>1</strong> is ${a}/${d} and how many more ${pieceName(d)}?`
+          : `<strong>${n}/${d}</strong> is ${a}/${d} and how many more ${pieceName(d)}?`,
+        printStem: wholeIsOne
+          ? `1 is ${a}/${d} and how many more ${pieceName(d)}?`
+          : `${n}/${d} is ${a}/${d} and how many more ${pieceName(d)}?`,
+        hint: wholeIsOne
+          ? `One whole is ${d} pieces of size 1/${d}. You already have ${a} of them.`
+          : `${n}/${d} means ${n} pieces of size 1/${d}. You already have ${a} of them.`,
+        explain: `${wholeIsOne ? `1 is ${d}/${d}` : `${n}/${d} is ${pieces(n, d)}`}, and ${a} of them ${a === 1 ? 'is' : 'are'} used, so ${b} ${b === 1 ? 'is' : 'are'} left: ${a}/${d} + ${b}/${d} = ${wholeIsOne ? '1' : `${n}/${d}`}.`,
+      };
+    }
+
+    // 2 — add or subtract, same denominator
+    if (stage === 1) {
+      const d = r.pick(WIDE_DENS);
+      const add = r.int(0, 1) === 0;
+      if (add) {
+        const a = r.int(1, d - 2), b = r.int(1, d - 1 - a);
+        return {
+          type: 'input', accept: 'fraction',
+          prompt: `<strong>${a}/${d} + ${b}/${d} = ?</strong>`,
+          answer: `${a + b}/${d}`, placeholder: '?/?',
+          printStem: `${a}/${d} + ${b}/${d} =`,
+          visual: barsSvg([a, b], d), printVisual: barsSvg([a, b], d, true),
+          hint: `${a} pieces and ${b} more pieces, all of size 1/${d}.`,
+          explain: `${pieces(a, d)} and ${pieces(b, d)} make ${pieces(a + b, d)}. The piece stays 1/${d}, so only the count changes.`,
+        };
+      }
+      /* n may equal d, so "4/4 - 3/4" turns up in about one item in thirty. That
+         is deliberate, not an oversight: a fully hatched bar labelled 4/4 is a
+         good way to meet d/d = 1, and it is the same idea the bond stage teaches
+         when the whole is written as 1. */
+      const n = r.int(3, d), take = r.int(1, n - 1);
+      return {
+        type: 'input', accept: 'fraction',
+        prompt: `<strong>${n}/${d} − ${take}/${d} = ?</strong>`,
+        answer: `${n - take}/${d}`, placeholder: '?/?',
+        printStem: `${n}/${d} − ${take}/${d} =`,
+        visual: barsSvg([n], d), printVisual: barsSvg([n], d, true),
+        hint: `Start with ${n} pieces of size 1/${d} and take ${take} of them away.`,
+        explain: `${pieces(n, d)} take away ${pieces(take, d)} leaves ${pieces(n - take, d)}.`,
+      };
+    }
+
+    /* 3 — cross a whole, on the line, in jumps of 1/d. 4.NF.B.3c names this
+       method. The sum is constrained to land inside 0 to 2 AND past 1: the
+       plan's own example, 1 3/5 + 4/5, is 2.4 and would sit off the end of the
+       line it specified. */
+    if (stage === 2) {
+      const d = r.pick(BOND_DENS);
+      const a = r.int(2, d - 1);
+      // a + b must pass d (so it crosses 1) and stay within 2d (so it is on the
+      // line). Capping b at d also keeps both addends at or below one whole,
+      // which is what a grade-4 child is being asked to add.
+      // b < d as well, so BOTH addends are proper fractions: "jump 4 more
+      // fourths from 2/4" is adding a whole, which is not the skill.
+      const b = r.int(d - a + 1, d - 1);
+      const sum = a + b;
+      const ticks = [];
+      for (let k = 0; k <= 2 * d; k++) ticks.push(k / d);
+      return {
+        type: 'numberline',
+        lo: 0, hi: 2, target: sum / d, tolerance: 0.5 / d,
+        ticks, showReadout: false,
+        prompt: `<strong>${a}/${d} + ${b}/${d}</strong> — jump ${b} more ${pieceName(d)} from ${a}/${d}. Where do you land?`,
+        printStem: `${a}/${d} + ${b}/${d}: jump ${b} more ${pieceName(d)} from ${a}/${d} and mark where you land.`,
+        hint: `Each tick is 1/${d}. Start at ${a}/${d} and count on ${b} ticks — you will go past 1.`,
+        explain: `${a}/${d} + ${b}/${d} = ${sum}/${d}. That is past 1, because ${d}/${d} is one whole and ${sum} is more than ${d}. As a mixed number it is ${Math.floor(sum / d)} ${sum % d === 0 ? '' : `${sum % d}/${d}`}`.trim() + '.',
+      };
+    }
+
+    // 4 — a whole number of same-size pieces. One svg, k bars.
+    if (stage === 3) {
+      /* The bar count and the denominator trade against each other, and both are
+         measured on the rendered sheet rather than guessed. The figure fills a
+         d3 grid cell about 122px wide, so its height is 122 / aspect: two bars
+         render 27px tall, three render 17px. And each segment is
+         122 / bars / denominator wide — at three bars and twelfths that is 3.4px,
+         about 0.9mm on paper, which no hatching survives.
+         So three bars only go with a small denominator. WIDE_TYPES is per-type,
+         so making one input item full-width would widen every input on the
+         site. */
+      const k = r.int(2, 3);
+      const d = r.pick(k === 3 ? [3, 4, 5, 6] : WIDE_DENS);
+      const a = r.int(1, Math.max(1, Math.floor(d / 2)));
+      return {
+        type: 'input', accept: 'fraction',
+        prompt: `<strong>${k} × ${a}/${d} = ?</strong>`,
+        answer: `${k * a}/${d}`, placeholder: '?/?',
+        printStem: `${k} × ${a}/${d} =`,
+        visual: barsSvg(Array.from({ length: k }, () => a), d), printVisual: barsSvg(Array.from({ length: k }, () => a), d, true),
+        hint: `${k} lots of ${a} pieces, and every piece is 1/${d}.`,
+        explain: `${k} lots of ${pieces(a, d)} is ${pieces(k * a, d)}. The pieces are all the same size, so you only count how many there are.`,
+      };
+    }
+
+    /* 5 — the durable error, as a claim. Numerators must be UNEQUAL: mis-adding
+       2/5 + 2/5 to 4/10 draws as a bar identical to one addend, so the figure
+       shows no contradiction at all and the item argues nothing. */
+    const d = r.pick(BOND_DENS);
+    let a = r.int(1, d - 2), b = r.int(1, d - 1 - a);
+    if (a === b) b = b === 1 ? b + 1 : b - 1;
+    const bigger = Math.max(a, b);
+    const claimWrong = r.int(0, 1) === 0;
+    const claimed = claimWrong ? `${a + b}/${d * 2}` : `${a + b}/${d}`;
+    return {
+      type: 'truefalse',
+      prompt: `<strong>${a}/${d} + ${b}/${d} = ${claimed}</strong>`,
+      printStem: `${a}/${d} + ${b}/${d} = ${claimed}`,
+      visual: barsSvg([a, b], d), printVisual: barsSvg([a, b], d, true),
+      answer: !claimWrong,
+      hint: `Adding cannot give you less than you started with. Is ${claimed} bigger or smaller than ${bigger}/${d}?`,
+      explain: claimWrong
+        ? `False. Adding the bottom numbers together makes the pieces smaller, so the answer comes out smaller than the ${bigger}/${d} you started with — and adding can never do that. The pieces stay ${pieceName(d)}: ${a}/${d} + ${b}/${d} = ${a + b}/${d}.`
+        : `True. Both pieces are ${pieceName(d)}, so ${a} of them and ${b} of them make ${a + b} of them: ${a + b}/${d}.`,
+    };
+  },
+};
+
 /* --------------------------------------------------------- BOOK: fold and sort
    Symmetry judged by eye is guesswork. Symmetry judged by FOLDING is a test the
    child can run, and 4.G.A.3 defines a line of symmetry as exactly that — a fold
@@ -643,4 +895,4 @@ const timesAsMany = {
   },
 };
 
-export default [longMultiplication, foldAndSort, equivalentFractions, anglesAndLines, factorForest, timesAsMany, divisionDescent, decimalDrop];
+export default [longMultiplication, foldAndSort, sameSizePieces, equivalentFractions, anglesAndLines, factorForest, timesAsMany, divisionDescent, decimalDrop];
