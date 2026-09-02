@@ -413,8 +413,12 @@ for (const a of activities) {
         Grades 2 and 3 get named sections and a self-check strip. Grades 4 and 5 get a compact
         strategy note, a denser grid and a challenge instead of the stars, because by then a row of
         stars reads as a sheet meant for somebody younger.</p>
-        <p style="font-size:13px"><strong>Length is chosen, not left to chance.</strong> Six of the
-        forty-one sheets are two pages; the rest are one. Every page was measured in a real browser,
+        <!-- Generated, because a hand-typed count goes stale silently: this read
+             "Six of the forty-one sheets" on all 43 print pages the day two more
+             activities landed, and no checker looks at prose. -->
+        <p style="font-size:13px"><strong>Length is chosen, not left to chance.</strong> ${
+          activities.filter((a) => (a.printPages ?? 1) > 1).length} of the ${activities.length
+          } sheets are two pages; the rest are one. Every page was measured in a real browser,
         and the rule is that no sheet may be a page and a bit — if the last page would not be at
         least four fifths full, the problem count comes down instead.</p>
         <p style="font-size:13px"><strong>Text size.</strong> <em>Large print</em> drops to fewer,
