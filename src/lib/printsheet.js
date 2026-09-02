@@ -198,7 +198,13 @@ export function printProblem(p, i, { key = false } = {}) {
       return `<div class="pr">${lbl}<span style="letter-spacing:.06em">${esc(p.left)} &nbsp;${key ? (p.answer === 'left' ? '&gt;' : '&lt;') : '<span class="ansline" style="min-width:1.4em"></span>'}&nbsp; ${esc(p.right)}</span></div>`;
 
     case 'truefalse':
-      return `<div class="pr">${lbl}${p.printStem ?? stripTags(p.prompt)} &nbsp; ${key ? `<span class="ansval">${answerText(p)}</span>` : 'T / F'}</div>`;
+      /* The figure has to print. This case ignored printVisual entirely, so
+         halves-and-quarters (grade 1) asked "Split into 3 parts. Are they equal?"
+         on paper with 520 characters of SVG dropped — a question with no way to
+         answer it. Wrapped in .pv like every other figure, because that is the
+         selector the height cap reaches. */
+      return `<div class="pr">${lbl}${p.printStem ?? stripTags(p.prompt)} &nbsp; ${key ? `<span class="ansval">${answerText(p)}</span>` : 'T / F'}${
+        p.printVisual ? `<div class="pv">${p.printVisual}</div>` : ''}</div>`;
 
     case 'bond':
       // Wrapped in .pv like every other figure. It used to sit in a bare div,

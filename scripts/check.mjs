@@ -9,7 +9,7 @@ import { characters, getCharacter } from '../content/characters.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
 import { rng, deriveSeed } from '../src/lib/rng.js';
-import { sheet } from '../src/lib/printsheet.js';
+import { sheet, printProblem } from '../src/lib/printsheet.js';
 import { parseAnswer, cmpF } from '../src/lib/frac.js';
 import { references, refIds, getRef, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from '../content/references.js';
 import { IM_UNITS, imUnit } from '../content/curriculum.js';
@@ -671,6 +671,19 @@ for (const a of activities) {
       }
 
       // the stated answer must actually pass the checker
+      /* If a problem provides a figure, the figure must reach the paper. The
+         truefalse print case dropped printVisual silently, which made a grade-1
+         item unanswerable on the sheet while every check stayed green. This is
+         type-agnostic on purpose: the next type to grow a figure gets it free. */
+      if (p.printVisual) {
+        for (const asKey of [false, true]) {
+          const out = printProblem(p, i, { key: asKey });
+          if (!out.includes(p.printVisual)) {
+            fail(a.id, `i=${i} printVisual is dropped from the ${asKey ? 'key' : 'sheet'} (${p.type})`);
+          }
+        }
+      }
+
       /* boardmove needs a STRUCTURAL check, not a round trip. isCorrect compares
          the response element-wise against problem.answer, so feeding the answer
          back to itself passes for any array whatsoever — the round trip below
