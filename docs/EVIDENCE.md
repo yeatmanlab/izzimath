@@ -143,7 +143,7 @@ its own sake. Ours, used from K to 5:
 Base-ten blocks and number bonds are the two additions, both for place value and
 part-whole specifically. Nothing else gets invented per-activity.
 
-## On Illustrative Mathematics## On Illustrative Mathematics — and being honest about it
+## On Illustrative Mathematics — and being honest about it
 
 IM K–5 supplies the topic order and the choice of representations. It is free, openly
 licensed, and coherent across the grade band, and EdReports rates it **Meets
@@ -209,8 +209,8 @@ The research pass produced a complete build specification, kept verbatim at
 the score-to-practice tables, print geometry measured from production worksheets,
 and the citation policy.
 
-**Current state against its 108 recommendations: 62 implemented, 17 partial,
-22 not built, 7 not applicable** to a stateless home product (multiplayer barrier
+**Current state against its 108 recommendations: 67 implemented, 17 partial,
+17 not built, 7 not applicable** to a stateless home product (multiplayer barrier
 tasks, business-model calls, a "first unit builds classroom community" move, and
 the suggestion that the site measure its own effect, which is a research project
 rather than a feature).

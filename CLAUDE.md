@@ -23,7 +23,7 @@ the build: a **responsive audit** (29 pages × 5 widths, checking overflow,
 tap-target size and text size), a **problem-type test** (all nine types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
-client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (1,408
+client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (1,568
 cases — every activity × character × style × mode × sheet/key — failing anything
 taller or wider than one page of Letter, or whose last page is under 80% full).
 All three end with `CHECKS_RUN=<n>` — **if that is missing or zero the harness did
@@ -73,16 +73,20 @@ left to build, traced back to the research that asked for it. Also mirrored as
 [GitHub issues #1–6](https://github.com/yeatmanlab/izzimath/issues?q=is%3Aopen+label%3Abacklog),
 one per section. `npm run verify` prints the top of it when it finishes.
 
-State against the research pass: **62 of 108 recommendations implemented, 17
-partial, 22 not built, 7 not applicable.** Everything with a replicated effect
+State against the research pass: **67 of 108 recommendations implemented, 17
+partial, 17 not built, 7 not applicable.** Everything with a replicated effect
 size behind it is in. What remains is mostly Illustrative Mathematics' structural
 apparatus and things that need stored state.
 
-**If someone asks "what should we build next", the answer is item 1 of the
-backlog: IM's lesson skeleton and its ten warm-up routines.** The research is
-reasonably clear that it is worth more than another ten activities, and two of
-the ten routines are nearly free because the `truefalse` type and the `flashMs`
-flash mechanic already exist.
+**If someone asks "what should we build next", the answer is still item 1 of the
+backlog — but read it first, because it is now half-built.** The warm-up shipped
+on 2026-09-04: two of the ten routines (Number Talk and Which One Doesn't
+Belong), the registry and ladder machinery the other eight need, and a third
+player in `src/engine/routine.js`. What remains of item 1 is the **lesson
+synthesis**, the **cool-down** and the **monitoring list** — the parts a book has
+no shape for. Of the eight remaining routines, **True or False and How Many Do
+You See need no new renderer**: the `truefalse` type and the `flashMs` mechanic
+already exist, and a routine only needs a `ui` the registry knows.
 
 ## Invariants — please do not break these
 

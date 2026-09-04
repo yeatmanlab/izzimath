@@ -943,6 +943,7 @@ console.log('\n=== documented counts ===');
     return m ? [...m[1].matchAll(/\['([^']+)'/g)].length : 0;
   })();
   const truth = {
+    pagefillCases: activities.length * CHARS.length * 2 * 2 * 2,   // char x style x mode x sheet/key
     routines: ROUTINE_IDS.length,
     routineTotal: 10,          // IM ships ten; this one is the target, not the code
     quads: WODB_QUAD_COUNT,
@@ -960,6 +961,7 @@ console.log('\n=== documented counts ===');
     ['docs/next/README.md', /\| Activities \| (\d+) — (\d+) books, (\d+) games/, ['activities', 'books', 'games']],
     ['docs/DISCOVERY.md', /`(\d+) books`, `(\d+) games`, `(\d+) activities`, `(\d+)\s*\n?\s*badges`/, ['books', 'games', 'activities', 'badges']],
     ['CLAUDE.md', /responsive audit\*\* \((\d+) pages × \d+ widths/, ['auditPages']],
+    ['CLAUDE.md', /print page-fill test\*\* \(([\d,]+)\s*\n?cases/, ['pagefillCases']],
     ['tools/README.md', /responsive audit\. (\d+) pages ×/, ['auditPages']],
     ['docs/next/01-lesson-structure.md',
       /\*\*(\d+) of (\d+) routines\*\* built, from (\d+) defensible quadruples and (\d+)\s*\n?perturbation ladders/,
@@ -974,10 +976,42 @@ console.log('\n=== documented counts ===');
     if (!m) { fail(`docs: ${file} no longer states its counts in the form this check knows — reword the check or the doc, do not drop it`); continue; }
     keys.forEach((k, i) => {
       checkedClaims++;
-      if (Number(m[i + 1]) !== truth[k]) {
+      if (Number(String(m[i + 1]).replace(/,/g, '')) !== truth[k]) {
         fail(`docs: ${file} says ${m[i + 1]} ${k}, the code says ${truth[k]}`);
       }
     });
+  }
+
+  /* The recommendation accounting is stated in three places and maintained by
+     hand, so it drifts: BACKLOG.md said 67/17/17/7 while CLAUDE.md and
+     EVIDENCE.md both still said 62/17/22/7. There is no per-recommendation
+     ledger to recount from, so this cannot check the numbers are RIGHT — what it
+     can do is refuse to let the three disagree, and insist they still sum to
+     108. BACKLOG.md is the single list, so it is the one to edit. */
+  {
+    const re = /(\d+)(?: of 108)? (?:recommendations )?implemented[^\d]+(\d+)\s*\n?partial[^\d]+(\d+) not built[^\d]+(\d+) not applicable/;
+    const alt = /\*\*(\d+) implemented · (\d+) partial · (\d+) not built · (\d+) not applicable\.\*\*/;
+    const seen = [];
+    for (const file of ['docs/next/BACKLOG.md', 'CLAUDE.md', 'docs/EVIDENCE.md']) {
+      const text = fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8');
+      const m = text.match(alt) ?? text.match(re);
+      if (!m) { fail(`docs: ${file} no longer states the 108-recommendation accounting in a form this check knows`); continue; }
+      const nums = m.slice(1, 5).map(Number);
+      const sum = nums.reduce((t, n) => t + n, 0);
+      if (sum !== 108) fail(`docs: ${file} accounting sums to ${sum}, not 108: ${nums.join('/')}`);
+      seen.push([file, nums.join('/')]);
+    }
+    if (new Set(seen.map(([, v]) => v)).size > 1) {
+      fail(`docs: the recommendation accounting disagrees across files — ${
+        seen.map(([f, v]) => `${f} ${v}`).join(', ')}`);
+    }
+    checkedClaims += seen.length;
+    // Do not say they agree when they do not — a summary line that contradicts
+    // the failures above it is the third time that has happened in this file.
+    const values = [...new Set(seen.map(([, v]) => v))];
+    console.log(values.length === 1
+      ? `  ${seen.length} files agree the accounting is ${values[0]} and sums to 108`
+      : `  ${seen.length} files state the accounting and ${values.length} different versions of it: ${values.join(' vs ')}`);
   }
   console.log(`  ${checkedClaims} documented counts agree with the code across ${CLAIMS.length} files`);
 }
