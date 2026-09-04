@@ -251,6 +251,36 @@ export function printProblem(p, i, { key = false } = {}) {
 
     case 'boardmove': {
       const N = p.hi ?? 10;
+      const cols = p.cols ?? 0;
+      /* A board above ten is a REFERENCE, and a reference is drawn once. Drawn
+         beside every question, a hundred squares fits two questions on a page
+         and wastes the other eight inches; and drawn small enough to repeat, the
+         numerals stop being legible. So the first item on the sheet carries the
+         board and the rest are compact lines under it. `i` is the item's index
+         within the sheet, and boardmove is a WIDE type, which never gets a
+         worked example — so index 0 really is the first thing on the page. */
+      if (cols) {
+        const u = 23, ox = 1, rows = Math.ceil(N / cols);
+        let board = '';
+        if (i === 0) {
+          const W = cols * u + ox * 2, H = rows * u + ox * 2;
+          board = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="number board 1 to ${N}, ${cols} to a row, 1 at the bottom left"><g font-family="'Space Grotesk',sans-serif" font-size="9.5">`;
+          let ry = 0;
+          for (let top = rows * cols; top > 0; top -= cols, ry++) {
+            for (let k = 0; k < cols; k++) {
+              const v = top - cols + 1 + k;
+              if (v > N) continue;
+              const x = ox + k * u, y = ox + ry * u;
+              board += `<rect x="${x}" y="${y}" width="${u - 1}" height="${u - 1}" fill="none" stroke="#111" stroke-width="1"/>`;
+              board += `<text x="${(x + (u - 1) / 2).toFixed(1)}" y="${(y + u * 0.68).toFixed(1)}" text-anchor="middle" fill="#111">${v}</text>`;
+            }
+          }
+          board += '</g></svg>';
+        }
+        return `<div class="pr${i === 0 ? ' wide b100' : ''}"${i === 0 ? ' style="grid-column:1/-1"' : ''}>${lbl}On <strong>${p.from}</strong>, spin <strong>${p.spin}</strong> — write the squares you pass.
+          ${board ? `<div class="pv">${board}</div>` : ''}
+          ${key ? `<span class="ansval">${answerText(p)}</span>` : ansLine('8em')}</div>`;
+      }
       const u = 30, ox = 2, oy = 2;
       let board = `<svg viewBox="0 0 ${ox * 2 + N * u} 40" width="100%" height="40" role="img" aria-label="board 1 to ${N}"><g font-family="'Space Grotesk',sans-serif" font-size="14">`;
       for (let v = 1; v <= N; v++) {
@@ -416,7 +446,12 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
       ? `<div class="sh-example">
           <p class="ex-label">Worked example</p>
           <div class="sh-grid ${density}">${printProblem(items[0], 0, { key: true })}</div>
-          ${items[0].explain ? `<p class="ex-why">${esc(items[0].explain)}</p>` : ''}
+          ${items[0].explain && !items[0].printKeyWorking
+            /* The panel renders the item AS A KEY, so an item carrying
+               printKeyWorking has already printed its own working inside the
+               box — printing `explain` again below it put the same sentence on
+               the sheet twice. four-ways-to-subtract shipped like that. */
+            ? `<p class="ex-why">${esc(items[0].explain)}</p>` : ''}
           <p class="ex-next">Now try the rest. The next one is almost the same.</p>
         </div>`
       : '';

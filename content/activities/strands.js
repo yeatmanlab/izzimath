@@ -1,4 +1,5 @@
-// Scope and sequence. Five strands per grade, ordered roughly as the year runs.
+// Scope and sequence. Five strands per grade — six at grade 3, which gained a
+// story strand; see the note below.  Ordered roughly as the year runs.
 //
 // Order follows Illustrative Mathematics K-5 — the only free, openly licensed,
 // coherent K-5 sequence — cross-checked against Eureka Math², EngageNY/Zearn and
@@ -14,12 +15,15 @@
 //    problems) is rated STRONG on 18 studies, and fact fluency transfers to word
 //    problems only weakly (g=0.25) — so word problems have to be taught, not
 //    assumed to fall out of arithmetic practice.
-//    That argument does not stop at grade 1, and today the strand does: grades
-//    2-5 have no story strand and no dedicated story activity, though word
-//    problems still appear as ITEMS at every grade via wordProblem(). The strand
-//    is due to extend upward, but only in step with an activity to fill it — an
-//    empty strand still prints in the grade-page subtitle, which would advertise
-//    something a parent cannot click.
+//    That argument does not stop at grade 1, so grade 3 now has one too, filled
+//    by Draw the Story — the multiplicative schemas need the same treatment the
+//    additive ones got, and a tape diagram is the representation IM uses for it.
+//    Grades 2, 4 and 5 still have none, and will not get one until there is an
+//    activity to fill it: an empty strand still prints in the grade-page
+//    subtitle, which would advertise something a parent cannot click.
+//    Grade 3's is APPENDED rather than slotted into year order, because
+//    activities index this list positionally (S[2] and friends) and inserting
+//    would silently re-point every grade-3 activity at the wrong strand.
 //  - Grade 4's third strand was 'Angles and lines'. Widened to name shapes so
 //    symmetry and classification (4.G.A.2, 4.G.A.3) have somewhere honest to
 //    live; 4.G.A.1 work is unaffected because activities index the list (S[2]).
@@ -53,6 +57,7 @@ export const STRANDS = {
     'Area and perimeter',
     'Add, subtract and round within 1000',
     'Measurement and data',
+    'Story problems',
   ],
   4: [
     'Multi-digit operations',

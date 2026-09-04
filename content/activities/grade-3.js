@@ -1,4 +1,4 @@
-import { array2d, numberLine, tickRange, fractionBar, barChart, esc } from '../../src/lib/widgets.js';
+import { array2d, numberLine, tickRange, fractionBar, barChart, tapeDiagram, esc } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { frac, fracText, simplify, valF, gcd } from '../../src/lib/frac.js';
 import { fill } from '../characters.js';
@@ -552,4 +552,142 @@ const timeAndData = {
   },
 };
 
-export default [timesTableTower, fractionNumberLine, areaAndPerimeter, roundAndReckon, fourWaysToSubtract, timeAndData, factFamilyForge, arrayArchitect];
+/* ---------------------------------------------------------- BOOK: draw the story
+   The additive schemas got their own book at grade 1 (All Kinds of Stories);
+   the multiplicative ones never got one, and they are harder, because "4 bags of
+   6" and "6 bags of 4" hold the same number and mean different things. This is
+   the tape diagram, which is IM's answer to exactly that: the structure becomes
+   a shape, and the shape is what the child is being asked to get right.
+
+   Four stages, and the order is deliberate — name the shape before you read one,
+   read one before you invert one, and only then judge somebody else's. */
+const drawTheStory = {
+  id: 'draw-the-story', title: 'Draw the Story', kind: 'book', grade: '3', strand: S[5],
+  glyph: '▤',
+  skill: 'Drawing and reading a tape diagram for equal-groups and sharing stories.',
+  trick: 'One box for each group. Write the group size inside every box. The brace underneath holds the total.',
+  blurb: 'Four bags of six, or six bags of four? Draw the story and you can see which.',
+  ccss: ['3.OA.A.1', '3.OA.A.2', '3.OA.A.3', '3.OA.B.6'],
+  im: [1, 4],
+  refs: ['wwc-2021-math', 'im-scope-sequence', 'im-k5', 'fyfe-2014-fading', 'van-der-kleij-2015'],
+  theory: 'A multiplicative story has a structure — equal groups, or a total shared out — and the tape diagram makes the structure visible before any arithmetic happens.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat3' }, { task: 'fluencyArf', subscale: 'mult' }],
+  evidence: 'WWC Recommendation 5 — teach the structure of word problems, and use visual representations to expose it — is rated STRONG on 18 studies, and it does not stop at addition. The multiplicative schemas are where the structure and the arithmetic come apart most sharply: 4 × 6 and 6 × 4 are the same product and different stories, so a child who reaches for the numbers can be right about the total and wrong about the problem. Illustrative Mathematics uses the tape diagram for precisely this across grades 3 and 4, and the same fading argument applies as everywhere else (Fyfe 2014) — the diagram is drawn for the child, then read, then completed, then judged.',
+  /* Measured. Seven items opens a third type block and jumps to 11.45in; six
+     fits at 9.49in. Two pages measures inside the limits but leaves the second
+     page under half full — a page and a bit, which is the one length a
+     printable may not be — so one page is the decision. */
+  pages: 12, printItems: 6,
+  printMaxPages: 1,
+  printScratch: true,
+  printInstruction: 'Fill in the boxes so the diagram matches the story, then write the answer.',
+  printInstructions: {
+    choice: 'For each story, write how many boxes the diagram needs and how many go in each.',
+    input: 'Fill in the boxes, then write the answer.',
+    truefalse: 'Does the diagram match the story? Circle T or F, then fix it if it is wrong.',
+  },
+  generate(seed, i, ch, r) {
+    const A = fill('{Actor}', ch);
+    const C = fill('{collectible.many}', ch);
+    const K = fill('{container.many}', ch), K1 = fill('{container.one}', ch);
+    const groups = r.int(3, 8);
+    /* Never equal: "6 boxes of 6" makes the swapped distractor identical to the
+       answer, and the swap is the whole point of stage 1. */
+    let per = r.int(3, 9);
+    if (per === groups) per = per === 9 ? 8 : per + 1;
+    const total = groups * per;
+    const story = `${A} has ${groups} ${K}. There are ${per} ${C} in each ${K1}.`;
+
+    /* Stage 1 — name the shape. No diagram yet: the choices ARE the diagrams,
+       described in words, because the swap (${per} boxes of ${groups}) has the
+       same total and the wrong structure, and that is the whole item. */
+    if (i < 3) {
+      const right = `${groups} boxes of ${per}`;
+      /* The swap is ALWAYS offered. It has the same total and the wrong shape,
+         so it is the only distractor that tests the thing being taught —
+         sampling two of three distractors dropped it a third of the time. */
+      const swap = `${per} boxes of ${groups}`;
+      const filler = r.pick([`${groups} boxes of ${total}`, `${total} boxes of ${per}`]);
+      return {
+        type: 'choice',
+        prompt: `${story} Which diagram matches?`,
+        choices: r.shuffle([right, swap, filler]),
+        answer: right,
+        /* No tape on paper for this stage, and the stem does not ask for one.
+           An earlier version said "draw the diagram" beside a one-line answer
+           box, which gave the child nowhere to do it; drawing the boxes instead
+           costs 0.85in per item and takes the grouped-practice sheet to 12.07in
+           of a 10.1in page. Naming the structure is the stage-1 task on screen
+           too, the scratch space is where it gets worked out, and the key's
+           "4 boxes of 6" answers exactly the question asked. */
+        printStem: `${story} How many boxes, and how many in each?`,
+        printKeyWorking: true,
+        hint: 'Count the groups in the story. That is how many boxes the diagram needs.',
+        explain: `One box for each group: ${groups} boxes, with ${per} inside each one. ${groups} × ${per} = ${total}.`,
+      };
+    }
+
+    /* Stage 2 — read a drawn one. The boxes are filled and the brace is the
+       question, so the diagram is doing the explaining rather than the child. */
+    if (i < 6) {
+      return {
+        type: 'input',
+        prompt: `${story} How many ${C} altogether?`,
+        visual: tapeDiagram(Array(groups).fill(String(per)), { total: '?' }), visualWidth: 340,
+        answer: String(total), placeholder: '?',
+        printStem: `${story} How many ${C} altogether?`,
+        printVisual: tapeDiagram(Array(groups).fill(''), { total: '?', print: true, width: 250 }),
+        printKeyWorking: true,
+        hint: `${groups} boxes with ${per} in each. Count in ${per}s, or multiply.`,
+        explain: `${groups} boxes of ${per} is ${groups} × ${per} = ${total}.`,
+      };
+    }
+
+    /* Stage 3 — the inverse. Same diagram, the total known and one of the two
+       other numbers missing. Which one is missing decides whether the story is
+       "how many in each group" or "how many groups", and IM treats those as
+       different problems even though both are one division. */
+    if (i < 9) {
+      /* Partitive only — boxes known, group size unknown. The measurement form
+         ("how many bags of 4 make 28?") is a real and different problem, but it
+         cannot be drawn with equal boxes without the box count giving the answer
+         away, and a diagram that is wrong is the one thing this activity must
+         not print. It lives in division-descent and fact-family-forge instead. */
+      return {
+        type: 'input',
+        prompt: `${A} shares ${total} ${C} equally between ${groups} ${K}. How many in each ${K1}?`,
+        visual: tapeDiagram(Array(groups).fill('?'), { total: String(total) }), visualWidth: 340,
+        answer: String(per), placeholder: '?',
+        printStem: `${A} shares ${total} ${C} equally between ${groups} ${K}. How many in each ${K1}?`,
+        printVisual: tapeDiagram(Array(groups).fill(''), { total: String(total), print: true, width: 250 }),
+        printKeyWorking: true,
+        hint: `The brace holds ${total} and there are ${groups} boxes. Split it evenly.`,
+        explain: `${total} shared into ${groups} equal boxes: ${total} ÷ ${groups} = ${per} in each.`,
+      };
+    }
+
+    /* Stage 4 — judge somebody else's. The wrong diagram is wrong in the box
+       COUNT or the box SIZE, never in a way that leaves the total right: a
+       diagram with the right total and the wrong shape is a fair question, but
+       not one a child can settle by adding it up. */
+    const off = r.pick([1, -1, 2]);
+    const shownGroups = Math.max(2, groups + off);
+    const matches = r.chance(0.5);
+    const drawn = matches ? groups : shownGroups;   // off is never 0, so these differ
+    return {
+      type: 'truefalse',
+      prompt: `${story} <strong>This diagram matches the story.</strong> True or false?`,
+      visual: tapeDiagram(Array(drawn).fill(String(per)), { total: '?' }), visualWidth: 340,
+      answer: drawn === groups,
+      printStem: `${story} Does this diagram match?`,
+      printVisual: tapeDiagram(Array(drawn).fill(String(per)), { total: '?', print: true, width: 250 }),
+      printKeyWorking: true,
+      hint: 'Count the boxes in the diagram, then count the groups in the story.',
+      explain: drawn === groups
+        ? `${drawn} boxes of ${per} is exactly the story: ${groups} ${K} with ${per} in each.`
+        : `The diagram shows ${drawn} boxes, but the story has ${groups} ${K}. It needs ${groups} boxes of ${per}, which is ${total}.`,
+    };
+  },
+};
+
+export default [timesTableTower, fractionNumberLine, areaAndPerimeter, roundAndReckon, fourWaysToSubtract, timeAndData, factFamilyForge, arrayArchitect, drawTheStory];

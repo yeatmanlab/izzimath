@@ -473,6 +473,12 @@ footer.foot a:hover { color: var(--txt) }
 .board { max-width: 660px; margin: 0 auto }
 .bspin { font-family: var(--fdisp); font-size: 17px; margin-bottom: 18px; color: var(--txt) }
 .bstrip { display: flex; align-items: stretch; gap: 4px; justify-content: center; flex-wrap: nowrap }
+/* The matrix layout for boards above ten. Square cells, not the strip's 1/1.25:
+   ten rows of a 1.25 cell is 460px tall on a phone, which pushes the trail line
+   off screen. */
+.board.big { max-width: 460px }
+.bgrid { display: grid; grid-template-columns: repeat(var(--bcols, 10), 1fr); gap: 3px }
+.bgrid .bsq { aspect-ratio: 1; font-size: clamp(11px, 2.6vw, 15px) }
 .bend { font-family: var(--fdisp); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--txt3); align-self: center; padding: 0 4px }
 .bsq {
   flex: 1 1 0; min-width: 0; aspect-ratio: 1 / 1.25; border-radius: 8px;

@@ -5,14 +5,24 @@
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------------- ten-frame (subitizing, number bonds to 10) ---------------- */
-export function tenFrame(filled, { print = false, cols = 5, total = 10 } = {}) {
+export function tenFrame(filled, { print = false, cols = 5, total = 10, bare = false } = {}) {
   const cells = [];
-  for (let i = 0; i < total; i++) {
-    const on = i < filled;
-    if (print) cells.push(`<i class="${on ? 'f' : ''}"></i>`);
-    else cells.push(`<i class="${on ? 'f' : ''}"></i>`);
-  }
-  return `<div class="tenframe${print ? '' : ' screen'}" role="img" aria-label="ten frame showing ${filled}" style="--cols:${cols}">${cells.join('')}</div>`;
+  for (let i = 0; i < total; i++) cells.push(`<i class="${i < filled ? 'f' : ''}"></i>`);
+  // `bare` drops the role and label so the frame can sit inside a figure that
+  // describes itself — two nested role="img" elements read as two figures.
+  const label = bare ? '' : ` role="img" aria-label="ten frame showing ${filled}"`;
+  return `<div class="tenframe${print ? '' : ' screen'}"${label} style="--cols:${cols}">${cells.join('')}</div>`;
+}
+
+/* ---------------- double ten-frame (teens as ten and some more) ----------------
+   The standard model for the teens: the first frame FILLS, so the child reads
+   the second one only. That is the whole point, and it is why this is two
+   frames with a gap rather than one twenty-cell grid — a 5x4 block invites
+   counting all twenty. */
+export function doubleFrame(n, { print = false } = {}) {
+  const a = Math.min(10, n), b = Math.max(0, n - 10);
+  return `<div class="dframe" role="img" aria-label="two ten frames showing ${n} dots altogether">${
+    tenFrame(a, { print, bare: true })}${tenFrame(b, { print, bare: true })}</div>`;
 }
 
 /* ---------------- number line ----------------
@@ -116,6 +126,38 @@ export function fractionBar(num, den, { print = false, width = 300, height = 40,
   }
   s += `<rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="${print ? '#111' : 'var(--line2)'}" stroke-width="${print ? 2 : 1.5}"/>`;
   return s + `</svg>`;
+}
+
+/* ---------------- tape diagram (the shape of a story) ----------------
+   IM's workhorse representation, and the one thing that makes a multiplicative
+   story visible: equal groups become equal boxes, and the unknown is whichever
+   label is a question mark. `cells` are the box labels; `total` draws a brace
+   under the whole. Stroke-only in both modes — a tape diagram is a diagram, not
+   a chart, so there is nothing to shade. */
+export function tapeDiagram(cells, { print = false, total = null, width = 320, height = 36 } = {}) {
+  const stroke = print ? '#111' : 'var(--line2)';
+  const tc = print ? '#111' : 'var(--txt)';
+  const n = Math.max(1, cells.length);
+  const seg = width / n;
+  // Print labels are sized against the VIEWBOX, and a 250-unit tape lands in a
+  // 1.6in column — so 11 becomes about 7px of actual ink, which is why the
+  // brace's "?" was invisible on paper. Sized up so it survives the scale.
+  const braceH = total == null ? 0 : (print ? 26 : 26);
+  const H = height + braceH;
+  const words = cells.map((c) => (c === '' ? 'an empty box' : `a box holding ${c}`)).join(', ');
+  let s = `<svg viewBox="0 0 ${width} ${H}" width="100%" height="${H}" role="img" aria-label="tape diagram: ${
+    esc(words)}${total == null ? '' : `, ${esc(String(total))} altogether`}">`;
+  cells.forEach((c, i) => {
+    s += `<rect x="${(i * seg).toFixed(2)}" y="0" width="${seg.toFixed(2)}" height="${height}" fill="none" stroke="${stroke}" stroke-width="${print ? 1.4 : 1.5}"/>`;
+    if (c !== '') s += `<text x="${(i * seg + seg / 2).toFixed(2)}" y="${(height / 2 + (print ? 5 : 5)).toFixed(1)}" text-anchor="middle" font-size="${print ? 15 : 15}" font-weight="700" fill="${tc}" font-family="'Space Grotesk',sans-serif">${esc(String(c))}</text>`;
+  });
+  s += `<rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="${stroke}" stroke-width="${print ? 2 : 2}"/>`;
+  if (total != null) {
+    const y = height + (print ? 5 : 7);
+    s += `<path d="M1,${y} v5 M1,${y + 2.5} H${width - 1} M${width - 1},${y} v5" fill="none" stroke="${stroke}" stroke-width="1.2"/>`;
+    s += `<text x="${width / 2}" y="${y + (print ? 20 : 20)}" text-anchor="middle" font-size="${print ? 17 : 14}" font-weight="700" fill="${tc}" font-family="'Space Grotesk',sans-serif">${esc(String(total))}</text>`;
+  }
+  return s + '</svg>';
 }
 
 /* ---------------- base-ten blocks (place value) ---------------- */

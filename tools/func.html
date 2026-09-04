@@ -8,7 +8,7 @@
 // Exercises every problem type end to end: does it render, is it interactive,
 // does its own stated answer verify, does it have a worked explanation, and does
 // it render on paper both as a sheet and as a key.
-const [S,A,C,R,RD,T,F,P]=await Promise.all([
+const [S,A,C,R,RD,T,F,P,BG]=await Promise.all([
   import('/assets/src/lib/sprites.js'),
   import('/assets/content/activities/index.js'),
   import('/assets/content/characters.js'),
@@ -17,6 +17,7 @@ const [S,A,C,R,RD,T,F,P]=await Promise.all([
   import('/assets/content/types.js'),
   import('/assets/src/lib/frac.js'),
   import('/assets/src/lib/printsheet.js'),
+  import('/assets/content/badges.js'),
 ]);
 document.body.insertAdjacentHTML('afterbegin', S.SPRITES);
 document.documentElement.dataset.ch='kiwi';
@@ -667,7 +668,10 @@ L.push('');
   document.body.appendChild(tf);
   await new Promise((r) => { tf.onload = r; setTimeout(r, 8000); });
   const td = tf.contentDocument, tw = tf.contentWindow;
-  const tc = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('tour:' + n).padEnd(34) + (note ? '  ' + note : '  ok')); };
+  /* A failing check with no note used to print "ok" beside the cross, because
+     the note defaulted to 'ok' whatever the verdict — so the one line a reader
+     scans for contradicted itself. */
+  const tc = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('tour:' + n).padEnd(34) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
   const kip = (ms) => new Promise((r) => setTimeout(r, ms));
   try {
     await kip(500);
@@ -724,7 +728,15 @@ L.push('');
     const mapText = td.querySelector('.tways').textContent;
     tc('no unresolved count placeholder', !/\{\w+\}|undefined|NaN/.test(mapText),
       (mapText.match(/\{\w+\}|undefined|NaN/) || ['clean'])[0]);
-    tc('counts are real numbers', /\b45\b/.test(mapText) && /\b24\b/.test(mapText));
+    /* Derived, never literal. This asserted a hard-coded 45 and went red the
+       day the catalogue grew — the point is that the tour quotes the REAL
+       counts, so the expected value has to come from the same place the tour
+       gets it from. */
+    const wantTotal = String(A.activities.length);
+    const wantBadges = String(BG.BADGE_COUNT);
+    tc('counts are real numbers',
+      new RegExp('\\b' + wantTotal + '\\b').test(mapText) && new RegExp('\\b' + wantBadges + '\\b').test(mapText),
+      `${wantTotal} activities, ${wantBadges} badges`);
     tc('it offers a way on and a way to everything',
       !!td.querySelector('.tfoot .btn.pri') && /guide/.test(td.querySelector('.tfoot .btn:not(.pri)')?.href || ''));
 

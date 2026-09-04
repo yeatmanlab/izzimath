@@ -194,6 +194,11 @@
 .pr.wide > svg { margin: 1px 0 0 }
 .pr.wide .pv { max-width: none }
 .pr.wide svg { width: 100%; max-height: 0.62in }
+/* The hundred board is the one printed figure that is a reference rather than
+   an illustration, so it gets real height — and the 0.62in cap above would
+   squash a 10x10 grid into an unreadable band. */
+.pr.wide.b100 .pv { max-width: 2.5in; margin: 5px auto 2px }
+.pr.wide.b100 .pv svg { max-height: none }
 .pr .pv.bond { max-width: 118px; margin: 4px auto 0 }
 .sh-grid.d1 .pr .pv.bond { max-width: 132px }
 .pr .pv .tenframe { width: 118px }
@@ -204,7 +209,14 @@
 .vstack .rule { border-top: 2px solid var(--ink); margin-top: 3px; height: 32px }
 
 /* ---------------------------------------------------- number line + figures */
-.tenframe { display: inline-grid; grid-template-columns: repeat(5, 1fr); border: 1.5px solid var(--ink); width: 148px }
+.tenframe { display: inline-grid; grid-template-columns: repeat(var(--cols, 5), 1fr); border: 1.5px solid var(--ink); width: 148px }
+/* Two frames with a gap, not one twenty-cell block: the gap is what makes the
+   teen read as "ten and some more" instead of twenty things to count. */
+.dframe { display: inline-flex; gap: 9px; align-items: flex-start }
+.dframe .tenframe { width: 118px }
+.pr .pv .dframe { gap: 6px }
+.pr .pv .dframe .tenframe { width: 84px }
+.sh-grid.d1 .pr .pv .dframe .tenframe { width: 98px }
 .tenframe i { aspect-ratio: 1; border: .75px solid var(--hair); display: grid; place-items: center }
 .tenframe i.f::after { content: ''; width: 60%; height: 60%; border-radius: 50%; border: 1.5px solid var(--ink) }
 .arr { display: inline-grid; gap: 2px }

@@ -149,6 +149,7 @@ static/             favicon.svg + the two PNG sizes; copied verbatim into dist/
 build.mjs           static site generator — plain Node, no dependencies
 docs/
   next/BACKLOG.md   what is left to build  ← start here
+  next/06-content-waves.md  where the catalogue past the original 30 came from
   GAME-DESIGN.md    why the games look the way they do, with sources
   EVIDENCE.md       what the content is based on, with citations
   SPEC.md           the full research output, verbatim (reference, not the build)

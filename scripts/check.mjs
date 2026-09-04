@@ -828,6 +828,34 @@ for (const a of activities) {
   }
 }
 
+/* The worked example renders its item AS A KEY and then prints `explain`
+   underneath. An item carrying printKeyWorking already printed that sentence
+   inside the box, so the panel showed it twice — four-ways-to-subtract shipped
+   like that, on every grouped-practice sheet, and nothing here could see it.
+   This reads the rendered panel and refuses any sentence that appears twice. */
+console.log('\n=== worked example says each thing once ===');
+{
+  let panels = 0, bad = 0;
+  for (const a of activities) {
+    const html = sheet({ activity: a, seed: 8817, ch: getCharacter('kiwi'), base: '',
+      siteUrl: 'https://example.org', style: 'designed', mode: 'practice', key: false });
+    const m = html.match(/<div class="sh-example">([\s\S]*?)<p class="ex-next">/);
+    if (!m) continue;                    // this activity's first block gets no panel
+    panels++;
+    const seen = new Map();
+    for (const part of m[1].replace(/<[^>]+>/g, '|').split('|').map((x) => x.trim())) {
+      if (part.length < 26) continue;
+      seen.set(part, (seen.get(part) ?? 0) + 1);
+    }
+    for (const [part, n] of seen) {
+      if (n > 1) { bad++; fail(a.id, `worked example prints the same sentence ${n} times: "${part.slice(0, 60)}…"`); }
+    }
+  }
+  // Not "none repeating themselves" when some are — a summary line that
+  // contradicts the failures above it is worse than no summary line.
+  console.log(`  ${panels} worked-example panels, ${bad ? `${bad} repeating themselves` : 'none repeating themselves'}`);
+}
+
 console.log(`\n=== references and curriculum wiring ===`);
 {
   // every reference must be well formed

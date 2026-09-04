@@ -1,4 +1,4 @@
-import { tenFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3 } from '../../src/lib/widgets.js';
+import { tenFrame, doubleFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3 } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -400,4 +400,111 @@ const clocksAndRulers = {
   },
 };
 
-export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace];
+/* -------------------------------------------------------- GAME: double-frame flash */
+const doubleFrameFlash = {
+  id: 'double-frame-flash', title: 'Double-Frame Flash', kind: 'game', grade: '1', strand: S[0],
+  glyph: '⁙',
+  skill: 'Seeing a teen number as ten and some more, without counting all of it.',
+  goal: 'Two frames flash up, then hide. Say how many dots there were altogether.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
+  trick: 'The first frame is full, so it is ten. You only have to see the second one. Ten and three is thirteen.',
+  printDensity: 'd2',
+  blurb: 'Two frames flash. How many dots altogether?',
+  ccss: ['1.NBT.B.2', '1.NBT.B.2.B', '1.OA.C.6'],
+  im: [3, 4],
+  refs: ['clements-1999', 'building-blocks-wwc', 'qiu-2021-ans', 'im-scope-sequence'],
+  theory: 'A teen number is one ten and some ones, and the double frame makes that structure visible rather than asserted.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'fluencyArf', subscale: 'sum' }],
+  evidence: 'Ten-Frame Flash trains subitizing up to ten; this is the same mechanic aimed at the place-value idea that follows it. The teens are where children who count everything start to fall behind children who see ten as a unit, and the double frame is the standard representation for that step — the first frame fills, so the answer is ten and whatever is in the second. The same caveat applies as at kindergarten: the ten-frame itself has no isolating trial behind it, but the exposure is brief and the quantity is always tied to a numeral, which is the part the evidence supports.',
+  strategy: { name: 'Ten and some more', text: 'Do not count from one. The full frame is ten — start there and count on through the second frame.' },
+  rounds: 12, printItems: 6,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 60,
+  printInstruction: 'How many dots altogether? Write the number.',
+  generate(seed, i, ch, r) {
+    /* Banded so the ladder means something, and the band is about where the
+       SECOND frame sits: 11 and 12 can be read off almost as a shape, and the
+       upper teens are where "ten and some more" stops being optional. The full
+       first frame is never varied — varying it turns this back into
+       Ten-Frame Flash with more dots. */
+    const n = i < 4 ? r.int(11, 14) : i < 8 ? r.int(13, 17) : r.int(15, 20);
+    const ones = n - 10;
+    const near = [...new Set([n, n + 1, n - 1, n + 2, ones, 10 + (10 - ones)])]
+      .filter((v) => v >= 10 && v <= 20 && v !== n);
+    return {
+      type: 'choice', prompt: 'How many altogether?',
+      visual: doubleFrame(n), visualWidth: 260,
+      // Long enough to see two frames rather than one, short enough that
+      // counting sixteen dots one at a time is not on the table.
+      flashMs: i < 4 ? 1100 : i < 8 ? 850 : 650,
+      choices: r.shuffle([String(n), ...r.sample(near, 3).map(String)]),
+      answer: String(n),
+      printStem: 'How many dots altogether?',
+      printVisual: doubleFrame(n, { print: true }),
+      hint: 'The first frame is full. That is ten. Now count on through the second frame.',
+      explain: `The full frame is 10 and the second frame has ${ones}, so 10 and ${ones} makes ${n}.`,
+    };
+  },
+};
+
+/* ----------------------------------------------------------- GAME: hundred board
+   The Great Race grown up. Same mechanic, same count-on rule, a hundred squares
+   instead of ten — and laid out as a COLUMN-ALIGNED matrix, ten to a row with 1
+   at the bottom left, so 11 sits directly above 1 and every column is a units
+   digit. That is the place-value reading, and it is why this is not the
+   Chutes-and-Ladders serpentine: reversing every other row would destroy the
+   one alignment the board exists to show. */
+const hundredBoard = {
+  id: 'hundred-board', title: 'The Hundred Board', kind: 'game', grade: '1', strand: S[2],
+  glyph: '⊞',
+  skill: 'Counting on across a ten, on a board where the tens are rows and the ones are columns.',
+  goal: 'You are on a square. Spin a number, then tap the squares you move through.',
+  trick: 'Do not go back to one. Count on from the square you are on. Crossing the end of a row just means the next ten has started.',
+  blurb: 'A hundred squares, ten to a row. Count on from where you are.',
+  ccss: ['1.NBT.A.1', '1.NBT.B.2', '1.NBT.C.5'],
+  im: [4, 5],
+  refs: ['siegler-ramani-2009', 'laski-siegler-2014', 'wwc-2021-math', 'schneider-2018', 'im-scope-sequence'],
+  theory: 'A hundred board is two structures at once: a linear count, and a base-ten grid in which moving up a row adds ten.',
+  roam: [{ task: 'roamMagpi', subscale: 'numberline', block: '0_100' }, { task: 'roamAlpaca', subscale: 'cat2' }],
+  evidence: 'The linear board game is the strongest causal result in early number — Siegler and Ramani (2009) found number-line error dropping from 29% to 21% after about an hour of play, and the same game on a circular board did almost nothing, so the left-to-right layout is doing the work. Laski and Siegler (2014) then showed the counting rule matters as much as the board: counting on from where the token is produced roughly double the gains of counting from one. This is the 0–100 version of that, and the column alignment adds the base-ten reading the ten-square board cannot show — the squares directly above each other share a ones digit, so crossing a row is what adding ten looks like. Expectations belong at the pooled meta-analytic g = 0.21 (Nelson 2025), not the original d.',
+  strategy: { name: 'Count on', text: 'Start on the number you are already on and count on. On 38 and spinning 3? Say “thirty-nine, forty, forty-one”.' },
+  /* Measured, not guessed: the board is 2.5in of the page, and eight spin lines
+     under it runs to 10.14in. Seven fits at 9.67in. */
+  rounds: 12, printItems: 7,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 0, timerAvailable: false,
+  printInstruction: 'Use the board. For each spin, write the squares you move through.',
+  generate(seed, i, ch, r) {
+    const N = 100, COLS = 10;
+    const spin = r.int(1, 5);
+    /* The token climbs the board across the rounds, so later rounds start
+       further along — and the START is chosen to sit near the end of a row for
+       most of them, because crossing from 39 to 40 is the whole difficulty and
+       a spin inside a row is nearly free. */
+    /* Banded, then picked with the rng. Pinning the decade straight to `i`
+       collapsed the item space to about fifteen combinations, and rounds 4 and 5
+       came out identical; the game passes the LADDER RUNG as `i`, so a held rung
+       has to stay fresh too. */
+    const [lo, hi] = i < 4 ? [1, 4] : i < 8 ? [3, 7] : [5, 9];
+    const decade = r.int(lo, hi);
+    const nearEdge = i % 3 !== 0;
+    const from = nearEdge
+      ? decade * 10 - r.int(0, Math.min(3, spin - 1))   // about to cross into the next ten
+      : decade * 10 + r.int(1, Math.max(1, 9 - spin));  // comfortably inside a row
+    const start = Math.max(1, Math.min(N - spin, from));
+    const answer = [];
+    for (let k = 1; k <= spin; k++) answer.push(start + k);
+    // A row change is a change of DECADE, not a multiple of ten in the trail:
+    // 40 -> 41, 42 crosses a row and contains no multiple of ten at all.
+    const row = (v) => Math.floor((v - 1) / 10);
+    const crosses = row(answer[answer.length - 1]) !== row(start);
+    return {
+      type: 'boardmove', from: start, spin, hi: N, cols: COLS, answer,
+      hint: `You are on ${start}. The next square is ${start + 1}.`,
+      explain: `Counting on from ${start}: ${answer.join(', ')}.${
+        crosses ? ` The row ended at ${row(start) * 10 + 10}, so ${answer[answer.length - 1]} is in the row above ${start} — one row up is ten more.` : ''}`,
+    };
+  },
+};
+
+export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard];

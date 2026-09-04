@@ -600,4 +600,104 @@ const measureAndChart = {
   },
 };
 
-export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel];
+/* ----------------------------------------------------- GAME: count up to the target
+   The counting-up method for subtraction, which is the one children invent for
+   themselves and the one shopkeepers use for change. It is taught here as
+   DISTANCE — how far from here to there — because that is the reading that makes
+   62 − 48 easy and the borrowing algorithm unnecessary. */
+const countUpToTheTarget = {
+  id: 'count-up-to-the-target', title: 'Count Up to the Target', kind: 'game', grade: '2', strand: S[1],
+  glyph: '⤒',
+  skill: 'Finding a difference by counting up from the smaller number in friendly jumps.',
+  goal: 'You are on one number and you want to reach another. Work out how far it is.',
+  adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
+  trick: 'Jump to the next ten first, then jump in tens, then finish. Add your jumps up.',
+  blurb: 'How far from 48 to 62? Jump to the ten, then jump in tens.',
+  ccss: ['2.OA.B.2', '2.NBT.B.5', '2.MD.B.6'],
+  im: [2, 4],
+  refs: ['im-scope-sequence', 'wwc-2021-math', 'parrish-number-talks', 'fyfe-2014-fading'],
+  theory: 'A difference is a distance. Counting up measures it, and does not need the standard algorithm at all.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }, { task: 'fluencyArf', subscale: 'minus' }],
+  evidence: 'Counting up is the strategy children invent before they are taught anything, and IM grade 2 puts it on the number line before the vertical algorithm arrives — a difference is a distance, and 62 − 48 is a short distance however big the digits look. Number Talks treats naming the jumps out loud as the whole exercise, because the strategy is only useful if the child can choose it. The jump picture is drawn for the first third of the rounds and then withdrawn: concreteness fading beats keeping the support (Fyfe 2014), and a child who can only do this with the diagram has not learned it.',
+  strategy: { name: 'Jump to the ten', text: 'From 48, jump 2 to get to 50. Then jump 10s. Add the jumps: that is the answer.' },
+  rounds: 12, printItems: 10,
+  printMaxPages: 2,
+  seconds: 0, timerAvailable: false,
+  printInstruction: 'How far is it from the first number to the second? Write the jumps, then the total.',
+  printScratch: true,
+  generate(seed, i, ch, r) {
+    /* The bands are about the number of friendly jumps, which is what actually
+       makes this hard — one jump to a ten is nearly free, and a target that is
+       not itself a ten needs three. Banded on the level, picked with the rng, so
+       a held rung asks a fresh question at the same difficulty. */
+    const band = i < 4 ? 0 : i < 8 ? 1 : 2;
+    let from, to;
+    if (band === 0) {
+      from = r.int(2, 8) * 10 + r.int(1, 9);
+      to = Math.ceil(from / 10) * 10;                     // one jump
+    } else if (band === 1) {
+      from = r.int(1, 7) * 10 + r.int(1, 9);
+      to = Math.ceil(from / 10) * 10 + 10 * r.int(1, 3);  // ten, then tens
+    } else {
+      from = r.int(3, 8) * 10 + r.int(1, 9);
+      to = Math.min(100, Math.ceil(from / 10) * 10 + 10 * r.int(1, 2) + r.int(1, 8));
+    }
+
+    // The friendly jumps, in the order a child would make them.
+    const legs = [];
+    let at = from;
+    const firstTen = Math.ceil(at / 10) * 10;
+    if (firstTen > at && firstTen <= to) { legs.push(firstTen - at); at = firstTen; }
+    const lastTen = Math.floor(to / 10) * 10;
+    if (lastTen > at) { legs.push(lastTen - at); at = lastTen; }
+    if (to > at) { legs.push(to - at); at = to; }
+    const answer = to - from;
+    const spoken = legs.length === 1
+      ? `${from} + ${legs[0]} = ${to}`
+      : legs.reduce((acc, leg) => {
+        const next = acc.at + leg;
+        acc.parts.push(`${acc.at} + ${leg} = ${next}`);
+        acc.at = next;
+        return acc;
+      }, { at: from, parts: [] }).parts.join(', then ');
+    const sum = legs.length === 1 ? '' : ` The jumps were ${legs.join(' + ')} = ${answer}.`;
+
+    // Drawn for the first third, then withdrawn — the diagram is scaffolding,
+    // not the method, and a child who needs it at round 12 has not got it yet.
+    const drawn = i < 4;
+    const jumpSvg = (print = false) => {
+      const W = 320, H = 62, pad = 22;
+      const lo = Math.floor(from / 10) * 10;
+      const top = Math.max(Math.ceil(to / 10) * 10, to);
+      const x = (v) => pad + ((v - lo) / Math.max(1, top - lo)) * (W - pad * 2);
+      const st = print ? '#111' : 'var(--line2)';
+      const tc = print ? '#111' : 'var(--txt)';
+      let o = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="a number line from ${from} to ${to} with the jump unmarked">`;
+      o += `<line x1="${pad}" y1="44" x2="${W - pad}" y2="44" stroke="${st}" stroke-width="1.6"/>`;
+      for (const [v, lab] of [[from, String(from)], [to, String(to)]]) {
+        o += `<line x1="${x(v).toFixed(1)}" y1="38" x2="${x(v).toFixed(1)}" y2="50" stroke="${st}" stroke-width="2"/>`;
+        o += `<text x="${x(v).toFixed(1)}" y="${print ? 60 : 61}" text-anchor="middle" font-size="${print ? 11 : 13}" font-weight="700" fill="${tc}" font-family="'Space Grotesk',sans-serif">${lab}</text>`;
+      }
+      const mx = ((x(from) + x(to)) / 2).toFixed(1);
+      o += `<path d="M${x(from).toFixed(1)},40 Q${mx},8 ${x(to).toFixed(1)},40" fill="none" stroke="${print ? '#111' : 'var(--a1)'}" stroke-width="1.6" stroke-dasharray="4 3"/>`;
+      o += `<text x="${mx}" y="${print ? 16 : 18}" text-anchor="middle" font-size="${print ? 12 : 15}" font-weight="700" fill="${print ? '#111' : 'var(--a1)'}" font-family="'Space Grotesk',sans-serif">?</text>`;
+      return o + '</svg>';
+    };
+
+    const asSubtraction = i % 2 === 1;
+    return {
+      type: 'input',
+      prompt: asSubtraction
+        ? `<strong>${to} − ${from} = ?</strong> Count up to work it out.`
+        : `How far is it from <strong>${from}</strong> to <strong>${to}</strong>?`,
+      visual: drawn ? jumpSvg() : null, visualWidth: 340,
+      answer: String(answer), placeholder: '?',
+      printStem: asSubtraction ? `${to} − ${from} = ____` : `From ${from} to ${to} is ____`,
+      printVisual: drawn ? jumpSvg(true) : null,
+      hint: `Jump from ${from} to ${firstTen > from ? firstTen : to} first.`,
+      explain: `Counting up: ${spoken}.${sum} So it is ${answer}.`,
+    };
+  },
+};
+
+export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel, countUpToTheTarget];

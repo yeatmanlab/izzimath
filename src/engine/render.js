@@ -374,16 +374,33 @@ function renderTrueFalse(host, p, cb) {
 function renderBoardMove(host, p, cb) {
   const N = p.hi ?? 10;
   const picked = [];
-  const wrap = el(`<div class="board" role="group" aria-label="Number board from 1 to ${N}"></div>`);
+  const wrap = el(`<div class="board${p.cols ? ' big' : ''}" role="group" aria-label="Number board from 1 to ${N}"></div>`);
 
-  const strip = el(`<div class="bstrip"></div>`);
-  strip.appendChild(el(`<span class="bend">Start</span>`));
-  for (let v = 1; v <= N; v++) {
+  /* Two layouts, and the choice is forced by measurement rather than taste. A
+     single flex row is right up to about ten squares; at twenty each square is
+     already 17px wide on a phone, under the 24px tap minimum, and at a hundred
+     it is 3.8px inside a strip wider than the viewport. So a board above ten
+     wraps into a column-aligned matrix: `cols` squares per row, rows emitted
+     from the TOP decade down, so 1 sits bottom-left and 11 lands directly above
+     it. Decades are rows and units are columns, which is the place-value
+     reading. Deliberately not the Chutes-and-Ladders serpentine — reversing
+     every other row breaks the column alignment that is the whole point. */
+  const cols = p.cols ?? 0;
+  const strip = el(`<div class="${cols ? 'bgrid' : 'bstrip'}" style="--bcols:${cols || N}"></div>`);
+  const cell = (v) => {
     const b = el(`<button type="button" class="bsq" data-v="${v}" aria-label="square ${v}">${v}</button>`);
     if (v === p.from) b.classList.add('here');
-    strip.appendChild(b);
+    return b;
+  };
+  if (cols) {
+    for (let top = Math.ceil(N / cols) * cols; top > 0; top -= cols) {
+      for (let v = top - cols + 1; v <= Math.min(top, N); v++) strip.appendChild(cell(v));
+    }
+  } else {
+    strip.appendChild(el(`<span class="bend">Start</span>`));
+    for (let v = 1; v <= N; v++) strip.appendChild(cell(v));
+    strip.appendChild(el(`<span class="bend">End</span>`));
   }
-  strip.appendChild(el(`<span class="bend">End</span>`));
 
   const spin = el(`<p class="bspin">You are on <strong>${p.from === 0 ? 'Start' : p.from}</strong>.
     You spun <strong>${p.spin}</strong>. Tap the ${p.spin === 1 ? 'square' : `${p.spin} squares`} you move through, in order.</p>`);

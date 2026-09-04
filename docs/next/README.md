@@ -12,9 +12,9 @@ next person (or the next session) does not have to reconstruct the reasoning.
 
 | | |
 | --- | --- |
-| Activities | 45 — 31 books, 14 games, across K–5 |
-| Strands | 30 of 30 covered (five per grade) |
-| Pages | 99, statically generated |
+| Activities | 49 — 32 books, 17 games, across K–5 |
+| Strands | 31 of 31 covered (five per grade, six at grade 3) |
+| Pages | 125, statically generated |
 | Problem types | 9, shared by every activity |
 | Characters | 4, each with 3 expressions |
 | References | 36 citations, linked both ways to activities |
@@ -70,6 +70,7 @@ detail and acceptance criteria for the larger items.
 | 3 | [Print craft](03-print-craft.md) | Medium | nothing |
 | 4 | [Adaptive difficulty and spaced review](04-adaptive-and-spacing.md) | Large | accounts |
 | 5 | [Open questions](05-open-questions.md) | — | your decisions |
+| 6 | [The content waves](06-content-waves.md) | done | — |
 
 **If you only do one thing, do (1).** The research is reasonably clear that IM's
 lesson structure is worth more than another ten activities, and it is the largest

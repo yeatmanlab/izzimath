@@ -228,6 +228,10 @@ const mixedNumberLine = {
   printMaxPages: 1,   // only 14 distinct problems exist
   seconds: 0, timerAvailable: true,
   printInstruction: 'Mark each value on the 0 to 2 line.',
+  printInstructions: {
+    numberline: 'Mark each value on the 0 to 2 line.',
+    truefalse: 'Do the two names mark the same point? Circle T or F.',
+  },
   generate(seed, i, ch, r) {
     // MagPI's own 0-2 targets
     const pool = [
@@ -235,6 +239,42 @@ const mixedNumberLine = {
       [6, 4, '1 2/4'], [9, 6, '1 3/6'], [12, 8, '1 4/8'], [11, 6, '1 5/6'],
       [13, 7, '1 6/7'], [15, 8, '1 7/8'], [7, 4, '7/4'], [5, 4, '5/4'], [7, 6, '7/6'], [6, 5, '6/5'],
     ];
+
+    /* WWC 2021 Rec 4 asks for one thing this activity was not doing: 5/4 and
+       1 1/4 shown as the SAME point, in the curriculum's own framing, "this is
+       how a ruler is labelled". Asking it as a claim about one marked point does
+       that inside a single round — pairing consecutive rounds cannot work here,
+       because the ladder passes the RUNG as `i`, so a child holding a rung would
+       see one half of the pair over and over. Every fourth round asks it. */
+    const asMixed = (n, d) => {
+      const w = Math.floor(n / d), f = n - w * d;
+      return f === 0 ? String(w) : `${w} ${f}/${d}`;
+    };
+    if (i % 3 === 2) {
+      const twins = pool.filter(([n, d]) => n > d && n % d !== 0);
+      const [n, d] = r.pick(twins);
+      const same = r.chance(0.5);
+      // A false claim shifts the numerator by one, which is the error worth
+      // catching: it still LOOKS like the right family of number.
+      const other = same ? n : (n - d > 1 ? n - 1 : n + 1);
+      const claim = asMixed(other, d);
+      const target = n / d;
+      return {
+        type: 'truefalse',
+        prompt: `The line is marked at <strong>${n}/${d}</strong>. <strong>${claim}</strong> marks the same point. True or false?`,
+        visual: numberLine({ lo: 0, hi: 2, ticks: tickRange(0, 2, 1 / d), majors: [0, 1, 2],
+          labels: [[0, '0'], [1, '1'], [2, '2']], marker: target, markerLabel: `${n}/${d}` }),
+        visualWidth: 460,
+        answer: same,
+        printStem: `The line is marked at ${n}/${d}. Does ${claim} mark the same point?`,
+        printVisual: numberLine({ lo: 0, hi: 2, ticks: tickRange(0, 2, 1 / d), majors: [0, 1, 2],
+          labels: [[0, '0'], [1, '1'], [2, '2']], marker: target, markerLabel: `${n}/${d}`, print: true }),
+        hint: `How many ${d}ths are in one whole? Take that many out of ${n} and see what is left.`,
+        explain: same
+          ? `${n}/${d} is ${asMixed(n, d)} — ${Math.floor(n / d)} whole and ${n % d} of the ${d} pieces. Same number, two names, one point. A ruler is labelled both ways.`
+          : `${n}/${d} is ${asMixed(n, d)}, not ${claim}. Two names only mark the same point if they are the same number.`,
+      };
+    }
     /* Banded by distance to a whole number, which is the landmark on this line —
        11/12 sits almost on 1 and is easy; 7/6 and 6/5 are the awkward ones. The
        band is the level, the pick is the rng, so a held rung varies. */
