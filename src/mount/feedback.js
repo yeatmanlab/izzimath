@@ -6,13 +6,14 @@
 //   must never trap focus or dim the page — a menu that grabs the keyboard
 //   because the pointer drifted over it is hostile. The menu works with
 //   JavaScript switched off, because it is real markup revealed by :hover and
-//   :focus-within, and its two items are ordinary links to GitHub's issue form.
+//   :focus-within, and its two items are ordinary links to whichever route is
+//   live — see ROUTES in content/feedback.js.
 //
 //   The FORM is a dialog, and behaves like one: focus trap, Escape closes,
 //   focus goes back where it came from.
 //
-// Nothing is submitted from here. The form builds a prefilled GitHub URL and
-// opens it; the reader presses Send there. See content/feedback.js for why.
+// Nothing is submitted from here. The form prefills the live route's own form
+// and opens it; the reader presses Send there. See content/feedback.js for why.
 
 import { FEEDBACK, MAX_CHARS, ROUTES, kindById, issueUrl, formUrl, mailUrl }
   from '../../content/feedback.js';
@@ -176,8 +177,8 @@ if (root) {
 
   root.querySelectorAll('[data-fbk-kind]').forEach((el) => {
     el.addEventListener('click', (e) => {
-      // Without JavaScript these are plain links to the same form on GitHub, so
-      // the default is only prevented once there is something better to do.
+      // Without JavaScript these are plain links to the live route's own form,
+      // so the default is only prevented once there is something better to do.
       e.preventDefault();
       openForm(el.dataset.fbkKind);
     });
