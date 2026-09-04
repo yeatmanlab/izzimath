@@ -65,7 +65,7 @@ detail and acceptance criteria for the larger items.
 
 | | Document | Size | Blocked on |
 | --- | --- | --- | --- |
-| 1 | [Lesson structure and warm-up routines](01-lesson-structure.md) | Large | nothing |
+| 1 | [Lesson structure and warm-up routines](01-lesson-structure.md) | Medium — warm-up built | nothing |
 | 2 | [Staging, and the content deltas](02-staging-and-content.md) | Medium | nothing |
 | 3 | [Print craft](03-print-craft.md) | Medium | nothing |
 | 4 | [Adaptive difficulty and spaced review](04-adaptive-and-spacing.md) | Large | accounts |
@@ -73,8 +73,11 @@ detail and acceptance criteria for the larger items.
 | 6 | [The content waves](06-content-waves.md) | done | — |
 
 **If you only do one thing, do (1).** The research is reasonably clear that IM's
-lesson structure is worth more than another ten activities, and it is the largest
-coherent gap in the build.
+lesson structure is worth more than another ten activities, and it was the
+largest coherent gap in the build. The **warm-up** — the part IM leans on
+hardest — is now built: two of the ten routines, and the registry, ladder and
+renderer machinery the other eight need. What remains is the lesson synthesis,
+the cool-down, and the monitoring list.
 
 ---
 

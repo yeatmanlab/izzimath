@@ -1,7 +1,49 @@
 # 1. Lesson structure and warm-up routines
 
 **The largest gap in the build, and the one most likely to be worth more than
-more content.** Not started.
+more content.** The **warm-up is built** — two of the ten routines, and the
+machinery the other eight need. The lesson synthesis and the cool-down are not.
+
+State: **2 of 10 routines** built, from 2304 defensible quadruples and 2
+perturbation ladders. Those three numbers are checked against the code by
+`npm run verify`, so they cannot go stale here.
+
+## What is built (2026-09-04)
+
+- [`content/routines.js`](../../content/routines.js) — a `ROUTINES` registry.
+  A routine is a container, not a tenth problem type, and it is not in
+  `content/types.js`. Each entry is `{ name, ui, blurb, build(params, r) }`.
+- **Number Talk**, from a perturbation-ladder spec. Two ladders so far:
+  `make-ten` (`8+2, 8+3, 7+3, 7+4`) and `subtract-to-ten` (IM's own
+  `17−7, 17−8, 26−6, 26−8`). The generator emits the string, the per-step
+  working, and the closing comparison.
+- **Which One Doesn't Belong**, enumerated over every quadruple in which every
+  one of the four holds a property the other three do not. Enumerated rather
+  than searched at generation time, so the routine cannot be undefendable at any
+  seed — the first attempt searched, missed on some seeds, and fell through to a
+  quadruple two of whose items had no defence at all.
+- [`src/engine/routine.js`](../../src/engine/routine.js) — the third player,
+  beside `book.js` and `game.js`. Two uis, `reveal` and `grid`, in a registry
+  keyed by the routine's own `ui` field.
+- Attached to `adding-to-twenty` and `tens-and-ones` via
+  `warmUp: { routine, params }`. It runs before page 1, is **not scored**, and
+  is **skippable** — func.html asserts the skip lands on question 1.
+- On paper it goes on the **answer key only**, as a band addressed to the adult.
+  A Number Talk's own instruction is "in your head, no writing", and measured,
+  the child's sheet for both books has 0.37in of headroom left while the key has
+  2.5–4.2in.
+- Enforced by `check.mjs`: the arithmetic of every step recomputed
+  independently, the perturbation rule (within a pair exactly one operand
+  moves), the closing question must exist and must quote the two steps it
+  compares, every routine must answer its own closing question, and every WODB
+  defence re-derived from the numbers by the checker's own predicates.
+
+## What is left
+
+The lesson **synthesis** and the **cool-down**; the monitoring list; and eight
+more routines. **True or False and How Many Do You See need no new renderer** —
+`truefalse` and `flashMs` already exist, and a routine only needs a `ui` the
+registry knows.
 
 ## Why this first
 

@@ -18,21 +18,33 @@ large recommendations into work that can actually be picked up separately.
 
 ## 1. Lesson structure — the largest gap
 
-Still the thing most likely to be worth more than more content. Nothing here is
-started. See [`01-lesson-structure.md`](01-lesson-structure.md) for the detail.
+Started. The warm-up — the first of the four parts, and the one IM leans on
+hardest — is built and shipped; the other three parts are not. See
+[`01-lesson-structure.md`](01-lesson-structure.md) for the detail.
 
 - [ ] **IM lesson skeleton as the atomic unit** [1] — warm-up → activities →
-      synthesis → cool-down. A small, highly regular schema that maps onto a data
-      model. *Large.*
-- [ ] **The ten warm-up routines as parameterised templates** [2] — Number Talk,
-      Which One Doesn't Belong, True or False, How Many Do You See, Choral Count,
-      Estimation Exploration, and the rest. Seven can be generated from a
-      number-range spec. **Two are nearly free: the `truefalse` type and the
-      `flashMs` mechanic already exist.** *Large, but divisible.*
-- [ ] **Monitoring list + synthesis script on every open task** [4, 23] — IM never
+      synthesis → cool-down. The **warm-up** now exists as a real phase of the
+      book player, skippable and unscored (`src/engine/routine.js`). Activities
+      and their synthesis are what a book already is. What is still missing is
+      the **lesson synthesis** and the **cool-down** — the two parts that need a
+      shape a book does not have. *Medium now, was Large.*
+- [~] **The ten warm-up routines as parameterised templates** [2] — **two of ten
+      built**: Number Talk and Which One Doesn't Belong, in
+      [`content/routines.js`](../../content/routines.js), attached to
+      `adding-to-twenty` and `tens-and-ones`. Both are generators from a spec, not
+      written content, and the machinery they needed is now there: a routine
+      registry, the perturbation-ladder helper, and a ui field that picks the
+      renderer. The remaining eight are each an entry in `ROUTINES` plus, for
+      three of them, a renderer. **True or False and How Many Do You See are
+      still nearly free** — the `truefalse` type and the `flashMs` mechanic
+      already exist and neither needs a new ui. *Medium, divisible.*
+- [~] **Monitoring list + synthesis script on every open task** [4, 23] — IM never
       ships "show your thinking" without 3–4 strategies to watch for and a
-      pre-written question that surfaces the target one. For a product with no
-      teacher in the room this is the highest-value structure to steal. *Medium.*
+      pre-written question that surfaces the target one. The **synthesis script**
+      half is done for routines: every routine ships the answer to its own closing
+      question, and `check.mjs` fails a routine that closes with a question it
+      cannot answer. The **monitoring list** — the enumerated strategies to watch
+      for — is not built. *Medium.*
 - [x] **Fraction Face-Off's four-part lesson template** [32] — done, 2026-09-01.
       Warm-up word problem → explicit instruction → speed game → worksheet, stated
       once and used as the shape of every session in the plan. The

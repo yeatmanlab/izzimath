@@ -500,6 +500,45 @@ footer.foot a:hover { color: var(--txt) }
 .strat p { font-size: 14.5px; color: var(--txt2) }
 .strathint { margin-top: 20px }
 
+/* ---------- warm-up routines ---------- */
+.rt-head { max-width: 52ch; margin: 0 auto 22px; text-align: center }
+.rt-kind { font-family: var(--fdisp); font-size: 20px; font-weight: 700; color: var(--a1); margin: 0 0 6px }
+.rt-intro { font-size: 15px; color: var(--txt2); margin: 0 }
+.rt-target { display: flex; gap: 9px; align-items: baseline; justify-content: center; margin: 12px auto 0;
+  max-width: 44ch; font-size: 13.5px; color: var(--txt3); text-align: left }
+.rt-target span[aria-hidden] { color: var(--a2) }
+.rt-body { max-width: 46ch; margin: 0 auto }
+
+/* Number Talk: the string, with everything after the current step withheld. */
+.rt-steps { list-style: none; display: grid; gap: 7px; margin: 0 0 22px; padding: 0 }
+.rt-steps li { display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  border: 1px solid var(--line); border-radius: 11px; padding: 10px 15px; background: var(--glass) }
+.rt-steps li.now { border-color: var(--a2); background: color-mix(in srgb, var(--a2) 12%, transparent) }
+.rt-steps li.later { opacity: .45 }
+.rt-expr { font-family: var(--fdisp); font-size: 19px; font-weight: 700; color: var(--txt) }
+.rt-steps li.later .rt-expr { letter-spacing: .2em; color: var(--txt3) }
+.rt-ans { font-family: var(--fdisp); font-size: 19px; font-weight: 700; color: var(--ok) }
+
+/* Which One Doesn't Belong: a 2x2, and no cell is ever marked wrong. */
+.rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px }
+.rt-cell { aspect-ratio: 3 / 2; border: 2px solid var(--line2); border-radius: 14px; background: var(--glass);
+  font-family: var(--fdisp); font-size: clamp(26px, 7vw, 38px); font-weight: 700; color: var(--txt);
+  cursor: pointer; transition: transform .08s, border-color .15s }
+.rt-cell:hover { border-color: var(--a1) }
+.rt-cell:active { transform: scale(.98) }
+.rt-cell.picked { border-color: var(--a2); background: color-mix(in srgb, var(--a2) 16%, transparent) }
+
+.rt-panel { min-height: 76px; text-align: center }
+.rt-ask { font-size: 16.5px; color: var(--txt); margin: 0 0 8px }
+.rt-wait { font-size: 13.5px; color: var(--txt3); margin: 0 }
+.rt-hidden { font-size: 14px; color: var(--txt2); margin: 8px auto 0; max-width: 44ch }
+.rt-foot { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap }
+
+@media (max-width: 560px) {
+  .rt-steps li { padding: 9px 13px }
+  .rt-cell { aspect-ratio: 2 / 1.35 }
+}
+
 /* ---------- references ---------- */
 .reflist { display: grid; gap: 16px }
 .ref { border: 1px solid var(--line); background: var(--glass); border-radius: 14px; padding: 20px 22px; scroll-margin-top: 90px }

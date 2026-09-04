@@ -10,6 +10,9 @@ const S = STRANDS['1'];
 /* ------------------------------------------------------------ BOOK: adding to twenty */
 const addingToTwenty = {
   id: 'adding-to-twenty', title: 'Adding to Twenty', kind: 'book', grade: '1', strand: S[0],
+  /* IM opens with a routine, and the make-ten string is this book's own method
+     said out loud before any of it is written down. */
+  warmUp: { routine: 'number-talk', params: { ladder: 'make-ten', span: [6, 9] } },
   glyph: '+',
   skill: 'Addition and subtraction facts within 20, including the ones that cross ten.',
   trick: 'To cross ten, fill ten first. For 8 + 5, give the 8 two from the 5 to make 10, and 3 is left over — so 13.',
@@ -73,6 +76,10 @@ const addingToTwenty = {
 /* --------------------------------------------------------------- BOOK: tens and ones */
 const tensAndOnes = {
   id: 'tens-and-ones', title: 'Tens and Ones', kind: 'book', grade: '1', strand: S[2],
+  /* Every defence in this one is a place-value observation — a round ten, a
+     repeated digit, more ones than tens — which is exactly what the book is
+     about, argued rather than answered. */
+  warmUp: { routine: 'wodb', params: { max: 99 } },
   glyph: '⑽',
   skill: 'Place value to 100 — reading a number as tens and ones, and adding without regrouping.',
   trick: 'The left digit counts tens, the right digit counts ones. Add tens to tens and ones to ones, and keep each in its own column.',
@@ -109,7 +116,13 @@ const tensAndOnes = {
       return {
         type: 'choice', prompt: `In <strong>${n}</strong>, how many tens?`,
         choices: r.shuffle([tens, ones, tens + 1, Math.max(0, tens - 1)].filter((v, k, s2) => s2.indexOf(v) === k).slice(0, 4)).map(String),
-        answer: String(tens), printStem: `${n} has ____ tens and ____ ones.`,
+        /* The printed stem used to be `${n} has ____ tens and ____ ones.` — two
+           blanks against an answer of one digit, so the key printed "2" beside
+           a question asking for two numbers and a parent marking it had nothing
+           to check the second blank against. One blank, and the decomposition
+           goes on the key as working instead. */
+        answer: String(tens), printStem: `In ${n}, how many tens?`,
+        printKeyWorking: true,
         hint: 'The first digit tells you the tens.',
         explain: `${n} is ${tens} tens and ${ones} ones.`,
       };

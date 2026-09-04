@@ -602,11 +602,21 @@ L.push('');
   document.body.appendChild(bf);
   await new Promise((r) => { bf.onload = r; setTimeout(r, 8000); });
   const bd = bf.contentDocument, bw = bf.contentWindow;
-  const bc = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('book:' + n).padEnd(30) + (note ? '  ' + note : '  ok')); };
+  const bc = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('book:' + n).padEnd(30) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
   // the sleeps above are scoped to their own blocks
   const nap = (ms) => new Promise((r) => setTimeout(r, ms));
   try {
     await nap(500);
+    /* This book now opens with a Which One Doesn't Belong warm-up, so the book
+       itself is one screen further in. Getting there through the skip control is
+       deliberate: it is also the proof that a parent who came for practice can
+       reach page one, which is an acceptance criterion for the routine work. */
+    bc('a warm-up runs before page 1', !!bd.querySelector('[data-skipwarm]'),
+      bd.querySelector('.rt-kind')?.textContent || 'NO ROUTINE');
+    bd.querySelector('[data-skipwarm]')?.click();
+    await nap(200);
+    bc('skipping the warm-up lands on question 1', /Question 1/.test(bd.querySelector('.qnum')?.textContent || ''),
+      bd.querySelector('.qnum')?.textContent?.trim());
     const fwd = () => bd.querySelector('.sfoot.qnav [data-next], .sfoot.qnav [data-finish]');
 
     // one submit button, and it is the ONLY primary-weight thing on the page
@@ -750,6 +760,118 @@ L.push('');
     tc('harness itself', false, 'THREW ' + e.message);
   }
   tf.remove();
+}
+
+/* ---------------------------------------------------------- warm-up routines
+   A routine is client-rendered inside the book player, so a11y.mjs cannot see
+   it and check.mjs can only test the DATA. What has to be tested through a real
+   page is the thing the routine IS: a Number Talk that reveals the whole string
+   at once is a worksheet, and a Which One Doesn't Belong that marks a cell
+   correct is a multiple-choice question. Both of those are UI properties. */
+L.push('');
+{
+  const rc = (n, ok, note) => { checks++; L.push((ok ? '· ' : '✗ ') + ('routine:' + n).padEnd(38) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  const open = async (url) => {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:absolute;left:-99999px;top:0;width:1000px;height:1400px';
+    f.src = url;
+    document.body.appendChild(f);
+    await new Promise((r) => { f.onload = r; setTimeout(r, 8000); });
+    await nap(500);
+    return f;
+  };
+  const tall = (e) => (e ? e.getBoundingClientRect().height : 0);
+
+  try {
+    // ---- Number Talk
+    const f = await open('/books/adding-to-twenty/?seed=8817');
+    const d = f.contentDocument;
+    rc('a number talk opens the book', /Number Talk/.test(d.querySelector('.rt-kind')?.textContent || ''),
+      d.querySelector('.rt-kind')?.textContent);
+    rc('it names its target strategy', !!d.querySelector('.rt-target')?.textContent?.trim(),
+      d.querySelector('.rt-target')?.textContent?.trim());
+    const steps = () => [...d.querySelectorAll('.rt-steps li')];
+    rc('the string is four long', steps().length === 4, steps().length + ' steps');
+    /* The whole point of the routine: later expressions are WITHHELD. Showing
+       all four at once is the failure mode, and it is invisible to a data
+       check because the data has all four in it either way. */
+    rc('later steps are withheld', steps().filter((li) => li.classList.contains('later')).length === 3,
+      steps().map((li) => li.querySelector('.rt-expr').textContent).join(' | '));
+    rc('no answer is showing yet', d.querySelectorAll('.rt-ans').length === 0,
+      d.querySelectorAll('.rt-ans').length + ' answers visible');
+    // Not scored, so nothing has been earned yet. (The browser normalises the
+    // inline `width:0` to "0px", so compare the number, not the string.)
+    rc('the progress bar has not moved', parseFloat(d.querySelector('.prog i')?.style.width || '0') === 0,
+      'width ' + (d.querySelector('.prog i')?.style.width || '0'));
+
+    d.querySelector('[data-show]').click(); await nap(120);
+    rc('asking reveals one answer', d.querySelectorAll('.rt-ans').length === 1);
+    rc('and the working with it', !!d.querySelector('.rt-hidden')?.textContent?.trim(),
+      d.querySelector('.rt-hidden')?.textContent?.slice(0, 42));
+
+    // walk to the end of the string
+    for (let k = 0; k < 4; k++) {
+      const next = d.querySelector('[data-next]');
+      if (next) { next.click(); await nap(120); }
+      const show = d.querySelector('[data-show]');
+      if (show) { show.click(); await nap(120); }
+    }
+    const ask = d.querySelector('.rt-ask')?.textContent || '';
+    rc('the string closes with a comparison', /alike/.test(ask) && /different/.test(ask), ask.slice(0, 56));
+    const exprs = steps().map((li) => li.querySelector('.rt-expr').textContent.trim());
+    rc('and quotes two of the four in it', exprs.filter((e) => ask.includes(e)).length === 2,
+      exprs.filter((e) => ask.includes(e)).join(' and ') || 'quotes none of them');
+    rc('the synthesis is withheld until asked', !!d.querySelector('[data-syn]')?.hidden);
+    d.querySelector('[data-syn-show]').click(); await nap(120);
+    rc('and then given', d.querySelector('[data-syn]')?.hidden === false,
+      d.querySelector('[data-syn]')?.textContent?.slice(0, 44));
+    d.querySelector('[data-done]').click(); await nap(200);
+    rc('finishing it starts the book', /Question 1/.test(d.querySelector('.qnum')?.textContent || ''),
+      d.querySelector('.qnum')?.textContent?.trim());
+    f.remove();
+
+    // ---- Which One Doesn't Belong
+    const g = await open('/books/tens-and-ones/?seed=8817');
+    const gd = g.contentDocument;
+    const cells = () => [...gd.querySelectorAll('.rt-cell')];
+    rc('a wodb opens the other book', /Doesn/.test(gd.querySelector('.rt-kind')?.textContent || ''),
+      gd.querySelector('.rt-kind')?.textContent);
+    rc('four cells, all distinct', cells().length === 4
+      && new Set(cells().map((c) => c.textContent.trim())).size === 4,
+      cells().map((c) => c.textContent.trim()).join(', '));
+    rc('cells clear the 24px tap minimum', cells().every((c) => tall(c) >= 24),
+      Math.min(...cells().map(tall)).toFixed(0) + 'px smallest');
+
+    cells()[0].click(); await nap(120);
+    const said = gd.querySelector('.rt-panel')?.textContent || '';
+    rc('picking one gives its reason', /only/.test(said), said.slice(0, 60));
+    /* It must never be marked. Three other cells were just as defensible, so
+       "correct" is a lie and "wrong" is a worse one. */
+    rc('nothing is marked right or wrong', !/\b(correct|wrong|incorrect|not quite)\b/i.test(said)
+      && !gd.querySelector('.rt-cell.right, .rt-cell.wrong'), said.slice(0, 40));
+    rc('it says the others work too', /try another|so do the others/i.test(said),
+      said.match(/So do the others[^.]*\./i)?.[0] || 'did not say so');
+    for (const c of cells()) { c.click(); await nap(60); }
+    rc('after all four, it says all four work',
+      /all four/i.test(gd.querySelector('.rt-panel')?.textContent || ''),
+      (gd.querySelector('.rt-panel')?.textContent || '').slice(-52));
+    gd.querySelector('[data-syn-show]').click(); await nap(120);
+    rc('and answers whether someone else could be right',
+      /Yes/.test(gd.querySelector('.rt-panel')?.textContent || ''),
+      (gd.querySelector('.rt-panel')?.textContent || '').match(/Yes[^.]*\./)?.[0]?.slice(0, 44));
+    g.remove();
+
+    // ---- and a book without one is untouched
+    const h = await open('/books/halves-and-quarters/?seed=8817');
+    rc('a book with no warm-up starts at question 1',
+      /Question 1/.test(h.contentDocument.querySelector('.qnum')?.textContent || '')
+      && !h.contentDocument.querySelector('.rt-kind'),
+      h.contentDocument.querySelector('.qnum')?.textContent?.trim());
+    h.remove();
+  } catch (e) {
+    rc('harness itself', false, 'THREW ' + e.message);
+  }
 }
 
 L.push(''); L.push('CHECKS_RUN='+checks);

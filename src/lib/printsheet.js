@@ -7,6 +7,7 @@ import { answerText } from '../../content/types.js';
 import { rng, deriveSeed } from './rng.js';
 import { lineArt } from './sprites.js';
 import { fill } from '../../content/characters.js';
+import { warmUpFor } from '../../content/routines.js';
 
 /* Items per sheet by grade — younger children get fewer, larger problems with
    more room to write. Grounded in the printables research: density, not volume,
@@ -395,6 +396,26 @@ const TYPE_INSTRUCTION = {
    filling the space between them.
      mode  'practice' groups by problem type | 'review' interleaves eight items
      style 'plain' is black-on-white and cheapest | 'designed' is the nicer one */
+/* The warm-up, on the PARENT'S copy only.
+   Two reasons, and they agree. A Number Talk's own instruction is "in your head,
+   no writing", and Which One Doesn't Belong is a talking task — printing either
+   as something to fill in contradicts the routine. And measured: the child's
+   sheet for the two books that have one has 0.37in of headroom left, while the
+   answer key has between 2.5 and 4.2in. So it goes where there is room and where
+   it belongs, beside the other thing written for the adult in the room. */
+function warmUpBand(activity, seed) {
+  let w = null;
+  try { w = warmUpFor(activity, rng(deriveSeed(seed, 'warmup'))); } catch { w = null; }
+  if (!w) return '';
+  const body = w.steps
+    ? `<b>${w.steps.map((st) => esc(st.expr)).join('</b> &middot; <b>')}</b> &mdash; one at a time, in their
+       head, in that order. Then: ${stripTags(w.close.prompt)}`
+    : `<b>${(w.items ?? []).map((it) => esc(it.label)).join('</b> &middot; <b>')}</b> &mdash; which one does not
+       belong? Every one of them works, so the reason is the answer.`;
+  return `<div class="sh-adult warmband"><strong>Warm-up first &mdash; ${esc(w.name)}.</strong>
+    ${body}<br><em>${esc(w.close.synthesis)}</em></div>`;
+}
+
 export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = 'practice', style = 'designed', variant = null, pages = null }) {
   const review = mode === 'review';
   /* `pages` is the reader's choice, clamped to what this activity can honestly
@@ -632,6 +653,7 @@ function shell({ activity, seed, ch, key, siteUrl, style, variant, band = 'middl
       : `<div class="sh-name">Name <u></u><br>Date <u></u></div>`}
   </div>
   ${designed ? `<div class="sh-rule"><i></i><i></i><i></i><i></i></div>` : ''}
+  ${key && first ? warmUpBand(activity, seed) : ''}
   ${key || !first ? '' : trickBox(activity, ch, band)}
 
   <div class="sh-body">${blocks}${scratch}</div>

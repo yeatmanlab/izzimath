@@ -265,6 +265,11 @@
 
 /* one line of guidance for the adult, on the key only */
 .sh-adult { flex: none; font-size: 10px; color: #444; margin-top: 12px; padding: 8px 10px; border: 1px solid var(--hair); border-radius: 5px; line-height: 1.5 }
+/* The warm-up band on the key. Same weight as the grown-up note, because it is
+   addressed to the same reader, but at the top where it is read first. */
+.warmband { margin: 0 0 10px }
+.warmband b { font-family: 'Space Grotesk', sans-serif; white-space: nowrap }
+.warmband em { display: inline-block; margin-top: 3px; color: var(--soft) }
 .sh-adult strong { font-family: 'Space Grotesk', sans-serif; color: #111 }
 
 /* word-problem key: number plus the working */

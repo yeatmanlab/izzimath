@@ -3,6 +3,8 @@
 // nothing is timed — books are for learning, games are for fluency.
 
 import { renderProblem } from './render.js';
+import { renderRoutine } from './routine.js';
+import { warmUpFor } from '../../content/routines.js';
 import { rng, deriveSeed } from '../lib/rng.js';
 import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter, fill } from '../../content/characters.js';
@@ -23,6 +25,21 @@ export function mountBook(activity, root) {
   // the child with every control disabled except Back — they had finished and
   // the page just sat there, which reads as being stuck rather than done.
   let finished = false;
+  /* IM opens every lesson with a named warm-up routine before any of the work,
+     and the routine is the largest thing this build was missing. It runs first,
+     it is not scored, and it is SKIPPABLE — a parent who came for practice
+     should not have to sit through a Number Talk to reach page one. */
+  let warmUp = null;
+  try { warmUp = warmUpFor(activity, rng(deriveSeed(seed, 'warmup'))); } catch { warmUp = null; }
+  let inWarmUp = warmUp !== null;
+  /* A new seed is a new lesson, so its warm-up is new too and runs again. Doing
+     the same problems over on the SAME seed is not — the child has already done
+     that warm-up, and making them sit through it twice is how a warm-up starts
+     getting skipped on principle. */
+  const rebuildWarmUp = () => {
+    try { warmUp = warmUpFor(activity, rng(deriveSeed(seed, 'warmup'))); } catch { warmUp = null; }
+    inWarmUp = warmUp !== null;
+  };
   /* Pages the child got wrong and then came back and got right. This is the one
      signal the badge set most wants — correcting yourself is the behaviour worth
      reinforcing, and no score captures it. See docs/BADGES.md. */
@@ -59,6 +76,15 @@ export function mountBook(activity, root) {
 
   function paintBar() {
     const done = answered.filter((x) => x !== null).length;
+    if (inWarmUp) {
+      bar.innerHTML = `
+        <h2>${activity.title}</h2>
+        <span class="tag acc">Warm-up</span>
+        <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="0"><i style="width:0"></i></div>
+        <span class="seed">seed ${seed}</span>
+        <a class="btn sm" href="${base()}/print/${activity.id}/?seed=${seed}">Print this book</a>`;
+      return;
+    }
     bar.innerHTML = `
       <h2>${activity.title}</h2>
       <span class="tag${isReview(page) ? ' acc' : ''}">${isReview(page)
@@ -69,8 +95,23 @@ export function mountBook(activity, root) {
       <a class="btn sm" href="${base()}/print/${activity.id}/?seed=${seed}">Print this book</a>`;
   }
 
+  function paintWarmUp() {
+    paintBar();
+    host.innerHTML = '<div class="qnum">Before we start</div><div data-slot></div>';
+    const slot = host.querySelector('[data-slot]');
+    const start = () => { inWarmUp = false; paint(); };
+    // An unknown routine ui must not strand the reader on a blank screen.
+    if (!renderRoutine(slot, warmUp, start)) return start();
+    const skip = document.createElement('div');
+    skip.className = 'sfoot';
+    skip.innerHTML = '<button class="btn sm" data-skipwarm>Skip the warm-up</button>';
+    skip.querySelector('[data-skipwarm]').addEventListener('click', start);
+    host.appendChild(skip);
+  }
+
   function paint() {
     if (finished) return paintFinish();
+    if (inWarmUp) return paintWarmUp();
     paintBar();
     const p = problemFor(page);
     host.innerHTML = `<div class="qnum">${isReview(page)
@@ -233,7 +274,7 @@ export function mountBook(activity, root) {
       skipped.clear(); announce = null; finished = false; paint();
     };
     host.querySelector('[data-fresh]').addEventListener('click', () => {
-      seed = newSeed(); writeSeed(seed); restart();
+      seed = newSeed(); writeSeed(seed); rebuildWarmUp(); restart();
     });
     host.querySelector('[data-same]').addEventListener('click', restart);
     // Straight back to the first one they left, rather than making them find it.
@@ -244,7 +285,7 @@ export function mountBook(activity, root) {
 
   root.querySelector('[data-newseed]')?.addEventListener('click', () => {
     seed = newSeed(); page = 0; answered = new Array(total).fill(null);
-    skipped.clear(); announce = null; finished = false; paint();
+    skipped.clear(); announce = null; finished = false; rebuildWarmUp(); paint();
   });
   document.addEventListener('characterchange', (e) => { ch = getCharacter(e.detail.id); paint(); });
 

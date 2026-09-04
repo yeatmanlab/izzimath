@@ -142,11 +142,12 @@ node build.mjs && python3 -m http.server 8890 --directory dist
 content/
   activities/       one file per grade; each activity is metadata + a generator
   characters.js     the character packs
+  routines.js       the IM warm-up routines, as generators
   types.js          the nine problem types, and answer checking
   roam.js           assessment linkage and the score -> practice mapping
 src/
   lib/              seeded RNG, exact fractions, manipulatives, print sheets
-  engine/           screen renderers, book player, game player
+  engine/           screen renderers, book player, game player, warm-up player
   mount/            per-page entry points
   styles/           site.css and print.css
 scripts/            build templates, content checker, link checker

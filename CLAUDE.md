@@ -134,6 +134,7 @@ flash mechanic already exist.
 content/
   activities/       one file per grade; an activity is metadata + a generator
   characters.js     the character packs (palette, world nouns, voice)
+  routines.js       the IM warm-up routines, as generators
   types.js          the nine problem types, and answer checking
   wordproblems.js   word problems, tagged by CGI schema
   references.js     the citations, linked both ways to activities
@@ -141,7 +142,8 @@ content/
   roam.js           assessment linkage and the score → practice mapping
 src/
   lib/              seeded RNG, exact fractions, manipulatives, print sheets
-  engine/           screen renderers, book player, game player, celebrations
+  engine/           screen renderers, book player, game player, warm-up player,
+                    celebrations
   mount/            per-page entry points
   styles/           site.css and print.css
 scripts/            build templates, and the four checkers

@@ -5,6 +5,7 @@
 
 import fs from 'node:fs';
 import { activities, STRANDS } from '../content/activities/index.js';
+import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from '../content/routines.js';
 import { characters, getCharacter } from '../content/characters.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
@@ -942,6 +943,10 @@ console.log('\n=== documented counts ===');
     return m ? [...m[1].matchAll(/\['([^']+)'/g)].length : 0;
   })();
   const truth = {
+    routines: ROUTINE_IDS.length,
+    routineTotal: 10,          // IM ships ten; this one is the target, not the code
+    quads: WODB_QUAD_COUNT,
+    ladders: LADDER_COUNT,
     activities: activities.length,
     books: activities.filter((a) => a.kind === 'book').length,
     games: activities.filter((a) => a.kind === 'game').length,
@@ -956,6 +961,9 @@ console.log('\n=== documented counts ===');
     ['docs/DISCOVERY.md', /`(\d+) books`, `(\d+) games`, `(\d+) activities`, `(\d+)\s*\n?\s*badges`/, ['books', 'games', 'activities', 'badges']],
     ['CLAUDE.md', /responsive audit\*\* \((\d+) pages × \d+ widths/, ['auditPages']],
     ['tools/README.md', /responsive audit\. (\d+) pages ×/, ['auditPages']],
+    ['docs/next/01-lesson-structure.md',
+      /\*\*(\d+) of (\d+) routines\*\* built, from (\d+) defensible quadruples and (\d+)\s*\n?perturbation ladders/,
+      ['routines', 'routineTotal', 'quads', 'ladders']],
   ];
   let checkedClaims = 0;
   for (const [file, re, keys] of CLAIMS) {
@@ -1000,6 +1008,155 @@ console.log('\n=== fields swallowed by comments ===');
     });
   }
   console.log(`  ${lines} lines of activity source, no field lost inside a comment`);
+}
+
+/* ---------------------------------------------------------- warm-up routines
+   IM's warm-up is the one shape this build was missing, and two of its rules are
+   the whole difference between a routine and a warm-up worksheet: a string
+   changes exactly one thing at a time, and it CLOSES WITH A COMPARE QUESTION
+   rather than "any questions?". Both are asserted here.
+
+   The arithmetic and the Which-One-Doesn't-Belong defences are recomputed from
+   the numbers by this file's own predicates, not by calling back into
+   content/routines.js — asking a generator to confirm its own output is the
+   tautology this repo keeps catching itself in. A routine that grows a new
+   property will fail here until this list is taught it, which is the intended
+   direction: the check should not silently accept a claim it cannot verify. */
+/* A printed stem cannot ask for more numbers than its answer key supplies.
+   tens-and-ones asked "28 has ____ tens and ____ ones." and the key printed
+   "2" — one value against two blanks, so the second blank had nothing to check
+   it against, on every sheet that item ever appeared on. close-to-hundred and
+   standard-algorithm both have two-blank stems and answer both, which is why
+   the rule counts values rather than banning the second blank. */
+console.log('\n=== printed blanks the key can fill ===');
+{
+  let stems = 0, blanked = 0;
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (let i = 0; i < n; i++) {
+      const sd = deriveSeed(8817, `p${i}`);
+      let p;
+      try { p = a.generate(sd, i, getCharacter('kiwi'), rng(sd), 8817); } catch { continue; }
+      const stem = String(p.printStem ?? '');
+      if (!stem) continue;
+      stems++;
+      const blanks = (stem.match(/_{2,}/g) ?? []).length;
+      if (!blanks) continue;
+      blanked++;
+      // A non-numeric answer (True, "one half", "4 boxes of 6") is one value.
+      const values = (answerText(p).match(/-?\d+(?:\.\d+)?(?:\/\d+)?/g) ?? []).length || 1;
+      if (blanks > values) {
+        fail(a.id, `i=${i} printed stem has ${blanks} blanks but the key supplies ${
+          values} value${values === 1 ? '' : 's'}: "${stem}" -> "${answerText(p)}"`);
+      }
+    }
+  }
+  console.log(`  ${stems} printed stems, ${blanked} with blanks, every blank answerable from the key`);
+}
+
+console.log('\n=== warm-up routines ===');
+{
+  const CLAIMS = [
+    ['it is the only even one', (n) => n % 2 === 0],
+    ['it is the only odd one', (n) => n % 2 === 1],
+    ['it is the only one with no ones left over', (n) => n % 10 === 0],
+    ['it is the only one whose two digits are the same', (n) => ((n / 10) | 0) === n % 10],
+    ['it is the only one with more tens than ones', (n) => ((n / 10) | 0) > n % 10],
+    ['it is the only one with more ones than tens', (n) => ((n / 10) | 0) < n % 10],
+    ['it is the only one whose digits add up to ten', (n) => ((n / 10) | 0) + (n % 10) === 10],
+    ['it is the only one you can split into two equal piles of tens', (n) => n % 20 === 0],
+  ];
+  const claimTest = new Map(CLAIMS);
+
+  // The renderer decides which uis exist; a routine declaring one it does not
+  // implement would render a blank warm-up.
+  const uiSrc = fs.readFileSync(new URL('../src/engine/routine.js', import.meta.url), 'utf8');
+  const uiMatch = uiSrc.match(/const UIS = \{([^}]*)\}/);
+  const UIS = uiMatch ? [...uiMatch[1].matchAll(/(\w+)\s*:/g)].map((m) => m[1]) : [];
+  if (!UIS.length) fail('routines', 'could not read the ui registry out of src/engine/routine.js');
+  for (const id of ROUTINE_IDS) {
+    const r = ROUTINES[id];
+    for (const f of ['name', 'ui', 'blurb', 'build']) if (!r[f]) fail(`routine:${id}`, 'missing ' + f);
+    if (r.ui && !UIS.includes(r.ui)) fail(`routine:${id}`, `ui "${r.ui}" has no renderer (have: ${UIS.join(', ')})`);
+  }
+
+  const withWarmUp = activities.filter((a) => a.warmUp);
+  let built = 0, oracled = 0;
+  for (const a of withWarmUp) {
+    if (!ROUTINES[a.warmUp.routine]) {
+      fail(a.id, `warmUp names an unknown routine "${a.warmUp.routine}"`);
+      continue;
+    }
+    for (const seed of [8817, 1, 7, 99, 4242, 31337]) {
+      const sd = deriveSeed(seed, 'warmup');
+      // A routine is chrome-free maths: it must not vary by character, for the
+      // same reason a manipulative must not.
+      const perChar = CHARS.map((cid) => JSON.stringify(warmUpFor(a, rng(sd), getCharacter(cid))));
+      if (new Set(perChar).size !== 1) fail(a.id, `warm-up differs by character at seed ${seed}`);
+      // And it must be a function of the seed, or a printed warm-up and the
+      // screen would disagree.
+      if (JSON.stringify(warmUpFor(a, rng(sd))) !== perChar[0])
+        fail(a.id, `warm-up is not deterministic at seed ${seed}`);
+
+      const w = warmUpFor(a, rng(sd));
+      built++;
+      if (!w) { fail(a.id, `warm-up built nothing at seed ${seed}`); continue; }
+      for (const f of ['name', 'ui', 'intro', 'close']) if (!w[f]) fail(a.id, `warm-up missing ${f}`);
+      if (!w.close?.prompt) fail(a.id, 'warm-up does not close with a question');
+      if (!w.close?.synthesis) fail(a.id, 'warm-up closes with a question it cannot answer — no synthesis');
+
+      if (w.ui === 'reveal') {
+        if (w.steps?.length !== 4) fail(a.id, `string has ${w.steps?.length} steps, IM strings have 4`);
+        const ops = [];
+        for (const st of w.steps ?? []) {
+          if (!st.explain) fail(a.id, `step "${st.expr}" has no explanation`);
+          const m = String(st.expr).match(/^(\d+)\s*([+−-])\s*(\d+)$/);
+          if (!m) { fail(a.id, `step "${st.expr}" is not an expression this check can verify`); continue; }
+          const x = Number(m[1]), y = Number(m[3]);
+          const truth = m[2] === '+' ? x + y : x - y;
+          oracled++;
+          if (st.answer !== truth) fail(a.id, `step "${st.expr}" claims ${st.answer}, the arithmetic says ${truth}`);
+          ops.push([x, y]);
+        }
+        /* The perturbation ladder: the four come in two pairs, and inside a pair
+           exactly ONE operand moves. That is the rule that makes the closing
+           comparison answerable — if both numbers changed there is nothing to
+           compare. */
+        for (const [p, q] of [[0, 1], [2, 3]]) {
+          if (!ops[p] || !ops[q]) continue;
+          const same = (ops[p][0] === ops[q][0] ? 1 : 0) + (ops[p][1] === ops[q][1] ? 1 : 0);
+          if (same !== 1) fail(a.id, `steps ${p + 1} and ${q + 1} (${w.steps[p].expr} / ${w.steps[q].expr}) change ${
+            same === 2 ? 'nothing' : 'both numbers'} — a string changes exactly one thing`);
+        }
+        const [i, j] = w.close.compare ?? [];
+        if (!(Number.isInteger(i) && Number.isInteger(j) && i !== j && i >= 0 && j < w.steps.length))
+          fail(a.id, `close.compare ${JSON.stringify(w.close.compare)} does not name two of the four steps`);
+        else for (const k of [i, j]) {
+          if (!w.close.prompt.includes(w.steps[k].expr))
+            fail(a.id, `the closing question does not quote step ${k + 1} (${w.steps[k].expr}) that it compares`);
+        }
+      }
+
+      if (w.ui === 'grid') {
+        const items = w.items ?? [];
+        if (items.length !== 4) fail(a.id, `Which One Doesn't Belong has ${items.length} items, not 4`);
+        if (new Set(items.map((it) => it.label)).size !== items.length)
+          fail(a.id, 'two items in the grid are the same');
+        const nums = items.map((it) => Number(it.label));
+        items.forEach((it, k) => {
+          if (!it.why) { fail(a.id, `item ${it.label} has no defence — every one of the four must be defensible`); return; }
+          const test = claimTest.get(it.why);
+          if (!test) { fail(a.id, `defence "${it.why}" is one this check cannot verify — teach it the predicate`); return; }
+          oracled++;
+          const others = nums.filter((_, m) => m !== k);
+          if (!test(nums[k])) fail(a.id, `${it.label} is claimed to be "${it.why}" and is not`);
+          if (others.some(test)) fail(a.id, `"${it.why}" is claimed of ${it.label} but is true of another item too`);
+        });
+      }
+    }
+  }
+  console.log(`  ${ROUTINE_IDS.length} routines · ${withWarmUp.length} activities open with one · ${
+    built} warm-ups built across ${CHARS.length} characters · ${oracled} claims recomputed independently`);
 }
 
 console.log('\n=== character levels ===');
