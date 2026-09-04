@@ -8,7 +8,7 @@
 // Exercises every problem type end to end: does it render, is it interactive,
 // does its own stated answer verify, does it have a worked explanation, and does
 // it render on paper both as a sheet and as a key.
-const [S,A,C,R,RD,T,F,P,BG]=await Promise.all([
+const [S,A,C,R,RD,T,F,P,BG,FB]=await Promise.all([
   import('/assets/src/lib/sprites.js'),
   import('/assets/content/activities/index.js'),
   import('/assets/content/characters.js'),
@@ -18,6 +18,7 @@ const [S,A,C,R,RD,T,F,P,BG]=await Promise.all([
   import('/assets/src/lib/frac.js'),
   import('/assets/src/lib/printsheet.js'),
   import('/assets/content/badges.js'),
+  import('/assets/content/feedback.js'),
 ]);
 document.body.insertAdjacentHTML('afterbegin', S.SPRITES);
 document.documentElement.dataset.ch='kiwi';
@@ -911,6 +912,27 @@ L.push('');
     sc('it clears the 24px tap minimum', b.height >= 24, Math.round(b.height) + 'px tall');
     sc('the menu starts hidden', vis() === 'hidden', vis());
 
+    /* Reported from real use: the menu popped up when the pointer was merely
+       NEAR the button. The container is as tall as the menu it holds, so as a
+       hit-testable box it both opened on approach and swallowed clicks on the
+       page content underneath that invisible column. */
+    const bb = box(btn);
+    const above = d.elementFromPoint(bb.x + bb.width / 2, bb.y - 60);
+    sc('the space above it belongs to the page', !!above && !root.contains(above),
+      above ? above.tagName.toLowerCase() + '.' + String(above.className).split(' ')[0] : 'nothing there');
+    root.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+    await nap(60);
+    sc('hovering near it does not open it', vis() === 'hidden', vis());
+    btn.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+    await nap(60);
+    sc('hovering the button itself does', vis() === 'visible', vis());
+    /* And the pointer has to be able to travel from button to menu: a dead strip
+       between them closes the menu the moment you reach for it. */
+    sc('button and menu touch, no dead strip', box(menu).bottom >= bb.top - 0.5,
+      Math.round(bb.top - box(menu).bottom) + 'px between them');
+    root.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+    await nap(400);
+
     btn.click(); await nap(60);
     sc('tapping opens it', vis() === 'visible', vis());
     sc('and says so to a screen reader', btn.getAttribute('aria-expanded') === 'true',
@@ -973,6 +995,32 @@ L.push('');
         'body has the hash: ' + (u.searchParams.get('body') || '').includes('#2'));
     }
     sc('the dialog closed behind it', !d.querySelector('[data-fbk-text]'));
+
+    /* The routes that ask the reader for nothing. Copy is always there; share
+       only where the browser has it. */
+    d.querySelector('[data-fbk-open]').click(); await nap(60);
+    d.querySelector('[data-fbk-kind="feature"]').click(); await nap(150);
+    const t2 = d.querySelector('[data-fbk-text]');
+    sc('a copy button is always offered', !!d.querySelector('[data-fbk-copy]'));
+    sc('share is offered only if the browser has it',
+      !!d.querySelector('[data-fbk-share]').hidden === !w.navigator.share,
+      w.navigator.share ? 'browser has share, button shown' : 'no share in this browser, button hidden');
+    /* Derived, not a literal: this asserted the exact phrase "Copy it instead"
+       and went red the moment the wording was tightened. The point is that the
+       panel says it at all, so the expected text comes from the copy itself. */
+    sc('and the no-account way out is said in words',
+      d.querySelector('.fbk-panel').textContent.includes(FB.FEEDBACK.noAccount),
+      FB.FEEDBACK.noAccount);
+    t2.value = 'Something worth copying out of here';
+    t2.dispatchEvent(new Event('input', { bubbles: true }));
+    await nap(60);
+    let copied = null;
+    Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: (x) => { copied = x; return Promise.resolve(); } } });
+    d.querySelector('[data-fbk-copy]').click(); await nap(120);
+    sc('copying carries the text and the page', !!copied && copied.includes('Something worth copying')
+      && copied.includes('/books/adding-to-twenty/'), (copied || 'copied nothing').slice(0, 44).replace(/\n/g, ' / '));
+    d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await nap(60);
 
     // and it must never print
     sc('it is marked not to print', root.classList.contains('noprint'), root.className);

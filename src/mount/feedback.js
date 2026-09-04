@@ -14,7 +14,8 @@
 // Nothing is submitted from here. The form builds a prefilled GitHub URL and
 // opens it; the reader presses Send there. See content/feedback.js for why.
 
-import { FEEDBACK, MAX_CHARS, kindById, issueUrl } from '../../content/feedback.js';
+import { FEEDBACK, MAX_CHARS, ROUTES, kindById, issueUrl, formUrl, mailUrl, plainText }
+  from '../../content/feedback.js';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, [tabindex]:not([tabindex="-1"])';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -22,6 +23,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const root = document.querySelector('[data-feedback]');
 if (root) {
   const trigger = root.querySelector('[data-fbk-open]');
+  const menu = root.querySelector('[data-fbk-menu]');
   let dialog = null;
   let returnFocusTo = null;
   let hoverTimer = null;
@@ -53,7 +55,12 @@ if (root) {
      reports coarse pointers and synthesises hover on tap, so gating this keeps
      a tap from opening and immediately closing the menu. */
   if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    root.addEventListener('mouseenter', () => { clearTimeout(hoverTimer); shut(false); setOpen(true); });
+    /* On the BUTTON, not the container. The container is as tall as the menu it
+       holds, so listening there opened the menu whenever the pointer came near
+       the bottom-right corner of the page rather than onto the button itself. */
+    trigger?.addEventListener('mouseenter', () => { clearTimeout(hoverTimer); shut(false); setOpen(true); });
+    // Moving up into an open menu must not count as leaving.
+    menu?.addEventListener('mouseenter', () => clearTimeout(hoverTimer));
     // A short grace period, so the pointer can cross the gap from the button to
     // the menu without the menu vanishing under it.
     root.addEventListener('mouseleave', () => {
@@ -109,9 +116,16 @@ if (root) {
         <p class="fbk-priv">${esc(FEEDBACK.privacy)}<br><code>${esc(page)}</code></p>
         <p class="fbk-note" data-fbk-why>${esc(FEEDBACK.tooShort)}</p>
         <div class="fbk-foot">
-          <button type="submit" class="btn go" data-fbk-send>${esc(FEEDBACK.submit)}</button>
+          ${ROUTES.form.on ? `<a class="btn pri" data-fbk-form target="_blank" rel="noopener">${esc(ROUTES.form.label)}</a>` : ''}
+          ${ROUTES.email.on ? `<a class="btn" data-fbk-mail>${esc(ROUTES.email.label)}</a>` : ''}
+          ${ROUTES.github.on ? `<button type="submit" class="btn go" data-fbk-send>${esc(FEEDBACK.submit)}</button>` : ''}
         </div>
-        <p class="fbk-priv">${esc(FEEDBACK.needsAccount)}</p>
+        <div class="fbk-alt">
+          <button type="button" class="btn sm" data-fbk-copy>${esc(FEEDBACK.copy)}</button>
+          <button type="button" class="btn sm" data-fbk-share hidden>${esc(FEEDBACK.share)}</button>
+          <span class="fbk-said" data-fbk-said role="status"></span>
+        </div>
+        <p class="fbk-priv">${ROUTES.github.on ? esc(FEEDBACK.needsAccount) + ' ' : ''}${esc(FEEDBACK.noAccount)}</p>
       </form>`;
     document.body.appendChild(dialog);
     document.addEventListener('keydown', onKey);
@@ -128,17 +142,63 @@ if (root) {
        description of the button rather than only next to it. */
     const sync = () => {
       const ok = text.value.trim().length >= 10;
-      send.disabled = !ok;
+      if (send) send.disabled = !ok;
       why.hidden = ok;
       count.textContent = String(text.value.length);
+      // The alternative routes are links, so they are disabled by removing the
+      // href rather than by an attribute buttons understand.
+      const fu = ok ? formUrl(page) : null;
+      const mu = ok ? mailUrl(kindId, text.value, page) : null;
+      const setHref = (sel, url) => {
+        const el = dialog.querySelector(sel);
+        if (!el) return;
+        if (url) el.href = url; else el.removeAttribute('href');
+        el.setAttribute('aria-disabled', String(!url));
+      };
+      setHref('[data-fbk-form]', fu);
+      setHref('[data-fbk-mail]', mu);
     };
     why.id = 'fbk-why';
-    send.setAttribute('aria-describedby', 'fbk-why');
+    send?.setAttribute('aria-describedby', 'fbk-why');
     text.addEventListener('input', sync);
+
+    /* Copy and share cannot deliver anything on their own — they have no
+       destination — but they are the only routes that ask the reader for
+       nothing at all, so they are always present. */
+    const said = dialog.querySelector('[data-fbk-said]');
+    const copyBtn = dialog.querySelector('[data-fbk-copy]');
+    const shareBtn = dialog.querySelector('[data-fbk-share]');
+    const body = () => plainText(kindId, text.value, page);
+
+    copyBtn.addEventListener('click', async () => {
+      const t = body();
+      if (!t) { sync(); text.focus(); return; }
+      try {
+        await navigator.clipboard.writeText(t);
+        said.textContent = FEEDBACK.copied;
+      } catch {
+        // No clipboard permission, or an insecure context. Selecting the text is
+        // the honest fallback: the reader's own copy shortcut still works.
+        text.select();
+        said.textContent = FEEDBACK.copyFailed;
+      }
+    });
+
+    if (navigator.share) {
+      shareBtn.hidden = false;
+      shareBtn.addEventListener('click', async () => {
+        const t = body();
+        if (!t) { sync(); text.focus(); return; }
+        try { await navigator.share({ title: 'Izzi Math', text: t }); }
+        catch { /* dismissed the share sheet, which is not an error */ }
+      });
+    }
+
     sync();
 
     dialog.querySelector('form, .fbk-panel')?.addEventListener('submit', (e) => {
       e.preventDefault();
+      if (!ROUTES.github.on) return;
       const url = issueUrl(kindId, text.value, page);
       if (!url) { sync(); text.focus(); return; }
       window.open(url, '_blank', 'noopener,noreferrer');

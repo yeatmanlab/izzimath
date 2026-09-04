@@ -6,7 +6,8 @@
 import fs from 'node:fs';
 import { activities, STRANDS } from '../content/activities/index.js';
 import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from '../content/routines.js';
-import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, issueUrl, plainUrl } from '../content/feedback.js';
+import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, plainUrl, formUrl, mailUrl, plainText }
+  from '../content/feedback.js';
 import { characters, getCharacter } from '../content/characters.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
@@ -1169,7 +1170,40 @@ console.log('\n=== suggestion button ===');
     cases++;
     if (got !== null) fail('feedback', `${what} built a url instead of nothing: ${got}`);
   }
-  console.log(`  ${FEEDBACK.kinds.length} kinds · ${cases} url cases · labels, encoding and clipping checked`);
+  /* Two of the three routes are switched off until somebody supplies the one
+     thing only the site's owner can decide. An enabled route missing that thing
+     would render a button that goes nowhere. */
+  for (const [name, r] of Object.entries(ROUTES)) {
+    cases++;
+    if (!r.on) continue;
+    if (name === 'form') {
+      if (!r.url) fail('feedback', 'the form route is on but has no url');
+      else if (!/^https:\/\//.test(r.url)) fail('feedback', `the form url is not https: ${r.url}`);
+      if (!r.label) fail('feedback', 'the form route has no button label');
+    }
+    if (name === 'email') {
+      if (!r.address) fail('feedback', 'the email route is on but has no address');
+      else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.address)) fail('feedback', `not an address: ${r.address}`);
+      if (!r.label) fail('feedback', 'the email route has no button label');
+    }
+  }
+  if (!enabledRoutes().length) fail('feedback', 'every route is switched off — the button leads nowhere');
+  // A switched-off route must build nothing, or the form would show a dead link.
+  if (!ROUTES.form.on && formUrl('/x/') !== null) fail('feedback', 'the form route is off but still builds a url');
+  if (!ROUTES.email.on && mailUrl('bug', 'a long enough sentence', '/x/') !== null)
+    fail('feedback', 'the email route is off but still builds a url');
+  cases += 2;
+
+  /* Copy, share and the issue all carry the same text, so choosing a route
+     never costs the reader information. */
+  const pt = plainText('bug', 'the key printed over two pages', '/print/x/?seed=1');
+  cases++;
+  if (!pt?.includes('the key printed over two pages')) fail('feedback', 'the copyable text loses the suggestion');
+  if (!pt?.includes('/print/x/?seed=1')) fail('feedback', 'the copyable text loses the page');
+  if (plainText('bug', 'no', '/x/') !== null) fail('feedback', 'the copyable text accepts a two-letter report');
+
+  console.log(`  ${FEEDBACK.kinds.length} kinds · ${enabledRoutes().length} of ${
+    Object.keys(ROUTES).length} routes on (${enabledRoutes().join(', ')}) · ${cases} url cases checked`);
 }
 
 console.log('\n=== warm-up routines ===');

@@ -145,6 +145,12 @@ already exist, and a routine only needs a `ui` the registry knows.
   in public JavaScript. The cost is that it needs a GitHub account, which most
   parents will not have, and the button says so before anyone types a paragraph.
   If that ever needs fixing it needs infrastructure, not a cleverer client.
+  Getting a suggestion from a reader to the author needs one of exactly three
+  things and there is no fourth: an account on something, an address the site
+  publishes, or a third-party endpoint. Copy and share get the text out of the
+  page but cannot supply a destination. `ROUTES` in `content/feedback.js` holds
+  all three; two are off, and switching one on is that one edit — a hosted form
+  URL, or an address somebody has agreed to publish.
 
 ## Layout
 
