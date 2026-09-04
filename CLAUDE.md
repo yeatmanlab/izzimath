@@ -143,8 +143,7 @@ already exist, and a routine only needs a `ui` the registry knows.
   presses Send there. Anything else means a write token in public JavaScript.
   Getting a suggestion from a reader to the author needs one of exactly three
   things and there is no fourth: an account on something, an address the site
-  publishes, or a third-party endpoint. Copy and share get the text out of the
-  page but cannot supply a destination. `ROUTES` in `content/feedback.js` holds
+  publishes, or a third-party endpoint. `ROUTES` in `content/feedback.js` holds
   all three and **exactly one is live**: a Google Form that takes anonymous
   responses, prefilled with the whole message — kind, text and page — into its
   single paragraph field.

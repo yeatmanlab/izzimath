@@ -1106,7 +1106,7 @@ console.log('\n=== suggestion button ===');
   const tags = FEEDBACK.kinds.map((k) => k.tag);
   if (new Set(tags).size !== tags.length) fail('feedback', `two kinds share a label: ${tags.join(', ')}`);
   for (const k of FEEDBACK.kinds) {
-    for (const f of ['id', 'tag', 'label', 'hint', 'ask', 'placeholder', 'titlePrefix']) {
+    for (const f of ['id', 'tag', 'label', 'hint', 'ask', 'invite', 'placeholder', 'titlePrefix']) {
       if (!k[f]) fail(`feedback:${k.id}`, 'missing ' + f);
     }
     /* GitHub silently keeps a label that does not exist out of the created
@@ -1219,15 +1219,21 @@ console.log('\n=== suggestion button ===');
     fail('feedback', 'the email route is off but still builds a url');
   cases += 2;
 
-  /* Copy, share and the issue all carry the same text, so choosing a route
-     never costs the reader information. */
+  /* Every route sends the same block of text, which is why a one-question form
+     loses nothing: the kind and the page are inside it. */
   const pt = plainText('bug', 'the key printed over two pages', '/print/x/?seed=1');
   cases++;
-  if (!pt?.includes('the key printed over two pages')) fail('feedback', 'the copyable text loses the suggestion');
-  if (!pt?.includes('/print/x/?seed=1')) fail('feedback', 'the copyable text loses the page');
-  if (plainText('bug', 'no', '/x/') !== null) fail('feedback', 'the copyable text accepts a two-letter report');
+  if (!pt?.includes('the key printed over two pages')) fail('feedback', 'the message loses the suggestion');
+  if (!pt?.includes('/print/x/?seed=1')) fail('feedback', 'the message loses the page');
+  if (plainText('bug', 'no', '/x/') !== null) fail('feedback', 'the message accepts a two-letter report');
 
 
+  {
+    const invites = FEEDBACK.kinds.map((k) => k.invite);
+    cases++;
+    if (new Set(invites).size !== invites.length)
+      fail('feedback', 'two kinds share the same invitation line');
+  }
   /* Asked for directly: the widget must not mention GitHub to a reader. The
      footer's "Source" link is a different thing and stays — this is scoped to
      the suggestion copy and the markup the button renders. */

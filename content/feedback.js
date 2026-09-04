@@ -79,11 +79,6 @@ export const FEEDBACK = {
   noSignIn: 'Opens in a new tab. No account, no sign-in, nothing to install.',
   sending: 'Opens a short form with your words already in it. Press Send there.',
   // Shown in the form, where the alternatives are.
-  noAccount: 'Or copy it and send it however suits you.',
-  copy: 'Copy',
-  copied: 'Copied. Paste it wherever suits you.',
-  copyFailed: 'Could not copy — the text is selected, so ⌘C or Ctrl+C will do it.',
-  share: 'Share',
   kinds: [
     {
       id: 'feature',
@@ -91,6 +86,7 @@ export const FEEDBACK = {
       label: 'Suggest a feature',
       hint: 'A game, a worksheet, something that is missing.',
       ask: 'What would you like Izzi Math to do?',
+      invite: 'Give us suggestions for new features, games, or changes to improve Izzi Math',
       placeholder: 'A game where you build fractions from strips…',
       titlePrefix: 'Suggestion',
     },
@@ -100,11 +96,13 @@ export const FEEDBACK = {
       label: 'Report an issue',
       hint: 'Something looks wrong, prints wrong, or will not work.',
       ask: 'What went wrong?',
+      invite: 'Describe the issue that you noticed and feel free to suggest a fix',
       placeholder: 'The answer key for Tens and Ones printed over two pages…',
       titlePrefix: 'Issue',
     },
   ],
-  tooShort: 'A sentence or two, so we know what to change.',
+  // Each kind has its own `invite`, shown while the box is empty, so the line
+  // reads as an invitation rather than as a scolding about length.
   privacy: 'The page address below is included so we can find it. Nothing else about you is sent.',
 };
 
@@ -157,8 +155,8 @@ export function formUrl(kindId, text, page = '') {
   return `${r.url}${sep}${q}`;
 }
 
-/* The body a reader copies, shares or mails: the same text the issue would
-   carry, so no route loses information the others keep. */
+/* The whole message, as one block of text. Every route sends this, which is why
+   a one-question form loses nothing: the kind and the page are inside it. */
 export function plainText(kindId, text, page = '') {
   const kind = kindById(kindId);
   const body = String(text ?? '').trim();

@@ -14,7 +14,7 @@
 // Nothing is submitted from here. The form builds a prefilled GitHub URL and
 // opens it; the reader presses Send there. See content/feedback.js for why.
 
-import { FEEDBACK, MAX_CHARS, ROUTES, kindById, issueUrl, formUrl, mailUrl, plainText }
+import { FEEDBACK, MAX_CHARS, ROUTES, kindById, issueUrl, formUrl, mailUrl }
   from '../../content/feedback.js';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, [tabindex]:not([tabindex="-1"])';
@@ -113,19 +113,14 @@ if (root) {
         <textarea id="fbk-t" data-fbk-text rows="5" maxlength="${MAX_CHARS}"
           placeholder="${esc(kind.placeholder)}" required></textarea>
         <p class="fbk-count"><span data-fbk-count>0</span> / ${MAX_CHARS}</p>
+        <p class="fbk-note" data-fbk-why>${esc(kind.invite)}</p>
         <p class="fbk-priv">${esc(FEEDBACK.privacy)}<br><code>${esc(page)}</code></p>
-        <p class="fbk-note" data-fbk-why>${esc(FEEDBACK.tooShort)}</p>
         <div class="fbk-foot">
           ${ROUTES.form.on ? `<a class="btn go" data-fbk-form target="_blank" rel="noopener">${esc(kind.label)}</a>` : ''}
           ${ROUTES.email.on ? `<a class="btn go" data-fbk-mail>${esc(kind.label)}</a>` : ''}
           ${ROUTES.github.on ? `<button type="submit" class="btn go" data-fbk-send>${esc(kind.label)}</button>` : ''}
         </div>
-        <div class="fbk-alt">
-          <button type="button" class="btn sm" data-fbk-copy>${esc(FEEDBACK.copy)}</button>
-          <button type="button" class="btn sm" data-fbk-share hidden>${esc(FEEDBACK.share)}</button>
-          <span class="fbk-said" data-fbk-said role="status"></span>
-        </div>
-        <p class="fbk-priv">${esc(FEEDBACK.sending)} ${esc(FEEDBACK.noAccount)}</p>
+        <p class="fbk-priv">${esc(FEEDBACK.sending)}</p>
       </form>`;
     document.body.appendChild(dialog);
     document.addEventListener('keydown', onKey);
@@ -159,40 +154,11 @@ if (root) {
       setHref('[data-fbk-mail]', mu);
     };
     why.id = 'fbk-why';
-    send?.setAttribute('aria-describedby', 'fbk-why');
+    // Describe whichever control is actually the primary action: with the
+    // GitHub route off there is no submit button and this pointed at nothing.
+    dialog.querySelector('[data-fbk-form], [data-fbk-mail], [data-fbk-send]')
+      ?.setAttribute('aria-describedby', 'fbk-why');
     text.addEventListener('input', sync);
-
-    /* Copy and share cannot deliver anything on their own — they have no
-       destination — but they are the only routes that ask the reader for
-       nothing at all, so they are always present. */
-    const said = dialog.querySelector('[data-fbk-said]');
-    const copyBtn = dialog.querySelector('[data-fbk-copy]');
-    const shareBtn = dialog.querySelector('[data-fbk-share]');
-    const body = () => plainText(kindId, text.value, page);
-
-    copyBtn.addEventListener('click', async () => {
-      const t = body();
-      if (!t) { sync(); text.focus(); return; }
-      try {
-        await navigator.clipboard.writeText(t);
-        said.textContent = FEEDBACK.copied;
-      } catch {
-        // No clipboard permission, or an insecure context. Selecting the text is
-        // the honest fallback: the reader's own copy shortcut still works.
-        text.select();
-        said.textContent = FEEDBACK.copyFailed;
-      }
-    });
-
-    if (navigator.share) {
-      shareBtn.hidden = false;
-      shareBtn.addEventListener('click', async () => {
-        const t = body();
-        if (!t) { sync(); text.focus(); return; }
-        try { await navigator.share({ title: 'Izzi Math', text: t }); }
-        catch { /* dismissed the share sheet, which is not an error */ }
-      });
-    }
 
     sync();
 

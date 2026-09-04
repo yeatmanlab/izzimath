@@ -974,8 +974,13 @@ L.push('');
       && panel?.getAttribute('aria-modal') === 'true');
     sc('focus lands in the box', d.activeElement === text);
     sc('sending is blocked while empty', blocked() === true);
-    sc('and it says why', !d.querySelector('[data-fbk-why]')?.hidden,
+    sc('and the invitation is showing', !d.querySelector('[data-fbk-why]')?.hidden
+      && d.querySelector('[data-fbk-why]')?.textContent === FB.kindById('bug').invite,
       d.querySelector('[data-fbk-why]')?.textContent);
+    // and it describes whatever the primary action is
+    sc('the note describes the primary action',
+      prim().getAttribute('aria-describedby') === d.querySelector('[data-fbk-why]')?.id,
+      'aria-describedby=' + prim().getAttribute('aria-describedby'));
 
     text.value = 'The answer key for Tens and Ones printed over two pages #2';
     text.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1030,32 +1035,6 @@ L.push('');
       d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       await nap(60);
     }
-
-    /* The routes that ask the reader for nothing. Copy is always there; share
-       only where the browser has it. */
-    d.querySelector('[data-fbk-open]').click(); await nap(60);
-    d.querySelector('[data-fbk-kind="feature"]').click(); await nap(150);
-    const t2 = d.querySelector('[data-fbk-text]');
-    sc('a copy button is always offered', !!d.querySelector('[data-fbk-copy]'));
-    sc('share is offered only if the browser has it',
-      !!d.querySelector('[data-fbk-share]').hidden === !w.navigator.share,
-      w.navigator.share ? 'browser has share, button shown' : 'no share in this browser, button hidden');
-    /* Derived, not a literal: this asserted the exact phrase "Copy it instead"
-       and went red the moment the wording was tightened. The point is that the
-       panel says it at all, so the expected text comes from the copy itself. */
-    sc('and the no-account way out is said in words',
-      d.querySelector('.fbk-panel').textContent.includes(FB.FEEDBACK.noAccount),
-      FB.FEEDBACK.noAccount);
-    t2.value = 'Something worth copying out of here';
-    t2.dispatchEvent(new Event('input', { bubbles: true }));
-    await nap(60);
-    let copied = null;
-    Object.defineProperty(w.navigator, 'clipboard', { configurable: true, value: { writeText: (x) => { copied = x; return Promise.resolve(); } } });
-    d.querySelector('[data-fbk-copy]').click(); await nap(120);
-    sc('copying carries the text and the page', !!copied && copied.includes('Something worth copying')
-      && copied.includes('/books/adding-to-twenty/'), (copied || 'copied nothing').slice(0, 44).replace(/\n/g, ' / '));
-    d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    await nap(60);
 
     /* Asked for directly: no reader-facing mention of GitHub anywhere in the
        widget. a11y.mjs covers the static half; the dialog is built at runtime,

@@ -620,8 +620,6 @@ footer.foot a:hover { color: var(--txt) }
 /* One route, so one button: .btn.go centres itself at its own 320px cap. */
 .fbk-foot { display: flex; flex-direction: column; gap: 9px; margin-top: 16px }
 .fbk-foot .btn { justify-content: center; text-align: center }
-.fbk-alt { display: flex; align-items: center; gap: 9px; margin-top: 12px; flex-wrap: wrap }
-.fbk-said { font-size: 12px; color: var(--ok) }
 .fbk-foot .btn[aria-disabled="true"] { opacity: .5; pointer-events: none }
 .fbk-panel .btn.go[disabled] { opacity: .5; cursor: not-allowed }
 
