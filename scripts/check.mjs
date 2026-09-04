@@ -946,6 +946,34 @@ console.log('\n=== documented counts ===');
   console.log(`  ${checkedClaims} documented counts agree with the code across ${CLAIMS.length} files`);
 }
 
+/* An activity field swallowed by a trailing `//` comment is invisible: the file
+   still parses, the object is still valid, and the field is simply gone. It
+   happened to NINE activities here — a bulk edit that inserted
+   `printMaxPages: n,  // note` ate the newline before `seconds:`, so three
+   number-line games silently offered the timer their author had switched off.
+   Nothing caught it, because a missing optional field looks exactly like a
+   field that was never authored. This reads the SOURCE, which is the only place
+   the evidence survives. */
+console.log('\n=== fields swallowed by comments ===');
+{
+  const FIELDS = ['seconds', 'timerAvailable', 'printItems', 'printPages', 'printMaxPages',
+    'printDensity', 'printScratch', 'printInstruction', 'rounds', 'pages', 'adaptive', 'glyph'];
+  const re = new RegExp(`//[^\\n]*\\b(${FIELDS.join('|')})\\s*:`);
+  const files = ['content/activities/grade-k.js', 'content/activities/grade-1.js',
+    'content/activities/grade-2.js', 'content/activities/grade-3.js',
+    'content/activities/grade-4.js', 'content/activities/grade-5.js'];
+  let lines = 0;
+  for (const file of files) {
+    const text = fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8');
+    text.split('\n').forEach((ln, i) => {
+      lines++;
+      const m = ln.match(re);
+      if (m) fail(`${file}:${i + 1} has \`${m[1]}:\` inside a comment — a field was swallowed by the note beside it`);
+    });
+  }
+  console.log(`  ${lines} lines of activity source, no field lost inside a comment`);
+}
+
 console.log('\n=== character levels ===');
 {
   const sprites = SPRITES;

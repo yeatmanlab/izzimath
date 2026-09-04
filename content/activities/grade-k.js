@@ -187,7 +187,8 @@ const tenFrameFlash = {
   evidence: 'Conceptual subitizing depends on brief exposure. If the dots stay visible a child simply counts them one at a time, which trains counting rather than recognising quantity, so the pattern is hidden after a beat and tightens as the rounds go on. Worth being straight about the evidence here: the ten-frame is long-established classroom practice and sits inside a well-supported family of representations, but we found no trial isolating the ten-frame itself. The quantities are exact and always mapped to a numeral, which is the part that matters \u2014 training approximate dot-cloud comparison on its own does not transfer to symbolic maths.',
   strategy: { name: 'See it in groups', text: 'Do not count one at a time. A full row is five, so seven is “five and two”.' },
   rounds: 12, printItems: 7,
-  printMaxPages: 1,   // K/1 stay one page seconds: 60,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 60,
   printInstruction: 'How many dots in each frame? Write the number.',
   generate(seed, i, ch, r) {
     const n = i < 4 ? r.int(2, 5) : i < 8 ? r.int(3, 7) : r.int(4, 10);
@@ -231,7 +232,8 @@ const whichIsMore = {
   evidence: 'Comparing quantities is the foundation the rest of arithmetic sits on. Pairs are drawn by ratio rather than at random, because the difficulty of a comparison depends on how close the two numbers are — 9 against 1 is nearly automatic, 9 against 8 is not.',
   strategy: { name: 'Think of the line', text: 'Picture both numbers on a number line. The one further right is more.' },
   rounds: 14, printItems: 11,
-  printMaxPages: 1,   // K/1 stay one page seconds: 45,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 45,
   printInstruction: 'Write < or > between each pair.',
   generate(seed, i, ch, r) {
     // Ratio bands mirror MagPI's own bins, so the numerical distance effect is
@@ -275,7 +277,8 @@ const greatRace = {
   evidence: 'A linear number board is the single best-evidenced early-number activity there is: Siegler and Ramani (2009) found large gains in number line estimation from about an hour of play, and the same game on a circular board produced far less — the left-to-right layout is doing the work. The second detail matters as much: the child must name the squares they pass through, counting on from where their token is. Laski and Siegler (2014) found that counting on produced roughly double the gains of counting from one, so tapping "1, 2" is treated as the error it is and corrected.',
   strategy: { name: 'Count on', text: 'Start from the square you are on, not from one. On 3 and spinning 2? Say “four, five”.' },
   rounds: 12, printItems: 5,
-  printMaxPages: 1,   // K/1 stay one page seconds: 0, timerAvailable: false,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 0, timerAvailable: false,
   printInstruction: 'Write the squares you move through each time.',
   generate(seed, i, ch, r) {
     const N = 10;

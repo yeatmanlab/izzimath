@@ -215,7 +215,8 @@ const numberLineHop = {
   evidence: 'Linear number line practice is among the best-evidenced early number interventions there is — Siegler and Ramani’s work on linear board games showed gains in numerical magnitude that transferred to broader arithmetic. Ticks are provided at this stage so the child can count as well as estimate.',
   strategy: { name: 'Use the middle', text: 'Look at the middle label first. Is your number smaller than it, or bigger? That tells you which half to drop it in.' },
   rounds: 12, printItems: 6,
-  printMaxPages: 1,   // K/1 stay one page seconds: 0, timerAvailable: false,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 0, timerAvailable: false,
   printInstruction: 'Mark each number on the line.',
   generate(seed, i, ch, r) {
     /* MagPI 0-20 uses odd and landmark targets; mirror that spread.
@@ -258,7 +259,8 @@ const makeTenRace = {
   evidence: 'Automaticity on the pairs to ten frees working memory for everything built on top of them. This is short and repetitive on purpose: retrieval practice, not explanation, is what moves a fact from worked out to known.',
   strategy: { name: 'Fill the frame', text: 'Count the empty spaces in the ten-frame — that is the number you need.' },
   rounds: 14, printItems: 10,
-  printMaxPages: 1,   // K/1 stay one page seconds: 45,
+  printMaxPages: 1,   // K/1 stay one page
+  seconds: 45,
   printInstruction: 'Write the number that makes ten.',
   generate(seed, i, ch, r) {
     const a = r.int(1, 9);

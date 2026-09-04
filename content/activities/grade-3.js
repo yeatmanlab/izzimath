@@ -257,7 +257,8 @@ const arrayArchitect = {
   strategy: { name: 'Rows times columns', text: 'Count one row, then count how many rows. Turning the array does not change the total.' },
   rounds: 12, printItems: 10,
   printMaxPages: 1,   // its arrays vary in height, so a paginated page 1 cannot be
-                      // guaranteed to fit — see the note in printsheet.js seconds: 60,
+                      // guaranteed to fit — see the note in printsheet.js
+  seconds: 60,
   printInstruction: 'Write the total for each array.',
   printInstructions: {
     choice: 'Write how many squares.',
