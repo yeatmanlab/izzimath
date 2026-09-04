@@ -139,18 +139,23 @@ already exist, and a routine only needs a `ui` the registry knows.
 - **ROAM stays subtle.** It appears in user-visible text on exactly one opt-in
   page. The useful linkage lives in code comments on the difficulty bands.
 - **Nothing is posted from the browser, and there is no secret in the client.**
-  The suggestion button builds a prefilled GitHub new-issue URL and opens it;
-  the reader presses Send on GitHub. That is the only honest way to file an
-  issue from a static site with no backend — anything else means a write token
-  in public JavaScript. The cost is that it needs a GitHub account, which most
-  parents will not have, and the button says so before anyone types a paragraph.
-  If that ever needs fixing it needs infrastructure, not a cleverer client.
+  The suggestion button prefills somebody else's form and opens it; the reader
+  presses Send there. Anything else means a write token in public JavaScript.
   Getting a suggestion from a reader to the author needs one of exactly three
   things and there is no fourth: an account on something, an address the site
   publishes, or a third-party endpoint. Copy and share get the text out of the
   page but cannot supply a destination. `ROUTES` in `content/feedback.js` holds
-  all three; two are off, and switching one on is that one edit — a hosted form
-  URL, or an address somebody has agreed to publish.
+  all three and **exactly one is live**: a Google Form that takes anonymous
+  responses, prefilled with the whole message — kind, text and page — into its
+  single paragraph field.
+- **The suggestion button never says GitHub.** The GitHub route still exists in
+  `ROUTES`, switched off, because it filed straight into the tracker and that is
+  convenient for whoever does the work. It is off because it asks a parent to
+  sign up for a developer tool to report a typo. Two checks hold the line, and
+  they cover different halves: `a11y.mjs` reads the built pages for the static
+  button and its menu, and `func.html` reads the dialog, which is rendered at
+  runtime and invisible to the first. Neither alone is the check — turning the
+  route back on changes only the dialog.
 
 ## Layout
 

@@ -28,16 +28,34 @@ export const REPO = 'yeatmanlab/izzimath';
    owner can decide. Turning either on is the edit below and nothing else —
    scripts/check.mjs enforces that an enabled route carries what it needs. */
 export const ROUTES = {
-  // Lands in the issue tracker where the work actually happens. Needs a
-  // GitHub account, which most parents will not have.
-  github: { on: true },
+  /* Off, and staying off while a route that needs no account exists. It filed
+     into the issue tracker, which is convenient for whoever does the work and
+     an account requirement for everybody else — and the site should not ask a
+     parent to sign up for a developer tool to report a typo. The code is kept
+     because turning it back on is one flag, but no reader sees the word. */
+  github: { on: false },
 
-  // Any hosted form that accepts anonymous responses — a Google Form writing to
-  // a Sheet, for instance. Set `url` and this becomes the primary route, because
-  // it is the only one that asks the reader for nothing. If the form has a field
-  // for the page address, put its prefill parameter name in `pageField` and the
-  // page is filled in for them.
-  form: { on: false, url: '', pageField: '', label: 'Send without an account' },
+  /* Any hosted form that takes anonymous responses. This is the PRIMARY route,
+     because it is the only one that asks the reader for nothing at all.
+
+     `textField` receives the whole formatted message — kind, text and page —
+     which is why a one-question form is enough. `kindField` and `pageField` are
+     optional: add matching questions to the form and they arrive as their own
+     columns, which is worth doing if the responses ever need filtering or
+     sorting. Field names are the `entry.NNNNNN` parameters, readable from the
+     form's own public page.
+
+     Verified against this form: the field is a PARAGRAPH question, so the line
+     breaks survive; it takes responses without sign-in; and a prefilled link
+     arrives with data-is-prepopulated="true" and the text intact. */
+  form: {
+    on: true,
+    url: 'https://docs.google.com/forms/d/e/1FAIpQLScBnZX56VQl2Lf-yliWSiQySuQWJpRQTWaVfimikpYEIKdWTQ/viewform',
+    textField: 'entry.1188449626',
+    kindField: '',
+    pageField: '',
+    label: 'Send — no account needed',
+  },
 
   // No third party at all, at the cost of publishing an address to scrapers.
   // The mount assembles it at click time rather than leaving it in the HTML,
@@ -58,9 +76,10 @@ export const FEEDBACK = {
   menuLabel: 'Make a suggestion',
   lead: 'Tell us what would make this better.',
   // Said before anyone types, not after — see the note at the top of this file.
-  needsAccount: 'Opens GitHub, where you press Send. A free GitHub account is needed.',
+  noSignIn: 'Opens in a new tab. No account, no sign-in, nothing to install.',
+  sending: 'Opens a short form with your words already in it. Press Send there.',
   // Shown in the form, where the alternatives are.
-  noAccount: 'Do not have one? Copy the text instead and send it however suits you.',
+  noAccount: 'Or copy it and send it however suits you.',
   copy: 'Copy',
   copied: 'Copied. Paste it wherever suits you.',
   copyFailed: 'Could not copy — the text is selected, so ⌘C or Ctrl+C will do it.',
@@ -69,7 +88,7 @@ export const FEEDBACK = {
     {
       id: 'feature',
       tag: 'enhancement',
-      label: 'Suggest a new feature',
+      label: 'Suggest a feature',
       hint: 'A game, a worksheet, something that is missing.',
       ask: 'What would you like Izzi Math to do?',
       placeholder: 'A game where you build fractions from strips…',
@@ -85,7 +104,6 @@ export const FEEDBACK = {
       titlePrefix: 'Issue',
     },
   ],
-  submit: 'Open GitHub to send',
   tooShort: 'A sentence or two, so we know what to change.',
   privacy: 'The page address below is included so we can find it. Nothing else about you is sent.',
 };
@@ -121,15 +139,22 @@ export function issueUrl(kindId, text, page = '') {
   return `https://github.com/${REPO}/issues/new?${q}`;
 }
 
-/* A prefilled link to the hosted form, when one is configured. Google Forms and
-   most others take prefill values as query parameters, so the shape is the same
-   whichever service it is. */
-export function formUrl(page = '') {
+/* A prefilled link to the hosted form. Google Forms and most others take
+   prefill values as query parameters, so the shape is the same whichever
+   service it is: one parameter per field, `usp=pp_url` because that is what
+   Google's own prefill links carry. */
+export function formUrl(kindId, text, page = '') {
   const r = ROUTES.form;
   if (!r.on || !r.url) return null;
-  if (!r.pageField || !page) return r.url;
+  const body = plainText(kindId, text, page);
+  if (!body) return null;
+  const kind = kindById(kindId);
+  const q = new URLSearchParams({ usp: 'pp_url' });
+  if (r.textField) q.set(r.textField, body);
+  if (r.kindField) q.set(r.kindField, kind.label);
+  if (r.pageField && page) q.set(r.pageField, page);
   const sep = r.url.includes('?') ? '&' : '?';
-  return `${r.url}${sep}${encodeURIComponent(r.pageField)}=${encodeURIComponent(page)}`;
+  return `${r.url}${sep}${q}`;
 }
 
 /* The body a reader copies, shares or mails: the same text the issue would
@@ -151,8 +176,14 @@ export function mailUrl(kindId, text, page = '') {
   return `mailto:${r.address}?${q}`;
 }
 
-// Where a reader without JavaScript ends up: the same form, unfilled.
+/* Where a reader without JavaScript ends up: the live route's own form,
+   unfilled. It follows whichever route is on rather than naming one, so
+   switching routes cannot leave the no-script path pointing at a dead end. */
 export const plainUrl = (kindId) => {
   const kind = kindById(kindId);
-  return kind ? `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(kind.tag)}` : null;
+  if (!kind) return null;
+  if (ROUTES.form.on && ROUTES.form.url) return ROUTES.form.url;
+  if (ROUTES.github.on) return `https://github.com/${REPO}/issues/new?labels=${encodeURIComponent(kind.tag)}`;
+  if (ROUTES.email.on && ROUTES.email.address) return `mailto:${ROUTES.email.address}`;
+  return null;
 };

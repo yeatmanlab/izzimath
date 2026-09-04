@@ -1157,10 +1157,17 @@ console.log('\n=== suggestion button ===');
       if (huge.length > 4000) fail(`feedback:${k.id}`, `the clipped url is still ${huge.length} characters`);
     }
 
+    /* The no-JavaScript link has to land on whichever route is actually live.
+       It used to assert a GitHub label, so switching the live route to a form
+       made it fail for the right reason and the wrong assertion. */
     const plain = plainUrl(k.id);
     cases++;
-    if (!plain?.includes(`labels=${k.tag}`))
-      fail(`feedback:${k.id}`, 'the no-JavaScript link does not carry the label');
+    const live = ROUTES.form.on ? ROUTES.form.url
+      : ROUTES.github.on ? 'https://github.com/'
+      : ROUTES.email.on ? `mailto:${ROUTES.email.address}` : null;
+    if (!plain) fail(`feedback:${k.id}`, 'there is no link for a reader without JavaScript');
+    else if (live && !plain.startsWith(live))
+      fail(`feedback:${k.id}`, `the no-JavaScript link goes to ${plain}, not the live route`);
   }
 
   // Nothing usable comes out of nothing usable.
@@ -1189,7 +1196,25 @@ console.log('\n=== suggestion button ===');
   }
   if (!enabledRoutes().length) fail('feedback', 'every route is switched off — the button leads nowhere');
   // A switched-off route must build nothing, or the form would show a dead link.
-  if (!ROUTES.form.on && formUrl('/x/') !== null) fail('feedback', 'the form route is off but still builds a url');
+  if (!ROUTES.form.on && formUrl('bug', 'a long enough sentence', '/x/') !== null)
+    fail('feedback', 'the form route is off but still builds a url');
+  if (ROUTES.form.on) {
+    /* The whole message has to reach the form, not just part of it: this form
+       has ONE question, so the kind and the page live inside that field's text
+       and losing it would lose them. */
+    if (!ROUTES.form.textField) fail('feedback', 'the form route has no field to put the message in');
+    const fu = formUrl('bug', 'the key printed over two pages', '/print/x/?seed=1');
+    cases++;
+    if (!fu) fail('feedback', 'the form route is on but built no url');
+    else {
+      const got = new URL(fu).searchParams.get(ROUTES.form.textField) ?? '';
+      if (!got.includes('the key printed over two pages')) fail('feedback', 'the form url loses the suggestion');
+      if (!got.includes('/print/x/?seed=1')) fail('feedback', 'the form url loses the page');
+      if (!got.includes('Issue')) fail('feedback', 'the form url loses which kind it was');
+      if (fu.length > 4000) fail('feedback', `the form url is ${fu.length} characters`);
+      if (formUrl('bug', 'no', '/x/') !== null) fail('feedback', 'the form route accepts a two-letter report');
+    }
+  }
   if (!ROUTES.email.on && mailUrl('bug', 'a long enough sentence', '/x/') !== null)
     fail('feedback', 'the email route is off but still builds a url');
   cases += 2;
@@ -1202,6 +1227,21 @@ console.log('\n=== suggestion button ===');
   if (!pt?.includes('/print/x/?seed=1')) fail('feedback', 'the copyable text loses the page');
   if (plainText('bug', 'no', '/x/') !== null) fail('feedback', 'the copyable text accepts a two-letter report');
 
+
+  /* Asked for directly: the widget must not mention GitHub to a reader. The
+     footer's "Source" link is a different thing and stays — this is scoped to
+     the suggestion copy and the markup the button renders. */
+  {
+    cases++;
+    const copyText = JSON.stringify(FEEDBACK).toLowerCase();
+    if (copyText.includes('github')) fail('feedback', 'the suggestion copy still says GitHub to the reader');
+    /* The rendered markup is checked in scripts/a11y.mjs instead, against the
+       built pages. Reading the mount's source for stray literals does not work:
+       the template strings nest, so a span between an inner and an outer
+       backtick is code rather than copy and the first attempt flagged
+       `ROUTES.github.on` doing its job. The artifact is the honest place to
+       look — it is what a reader sees. */
+  }
   console.log(`  ${FEEDBACK.kinds.length} kinds · ${enabledRoutes().length} of ${
     Object.keys(ROUTES).length} routes on (${enabledRoutes().join(', ')}) · ${cases} url cases checked`);
 }

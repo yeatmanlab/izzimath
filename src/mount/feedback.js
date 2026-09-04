@@ -116,16 +116,16 @@ if (root) {
         <p class="fbk-priv">${esc(FEEDBACK.privacy)}<br><code>${esc(page)}</code></p>
         <p class="fbk-note" data-fbk-why>${esc(FEEDBACK.tooShort)}</p>
         <div class="fbk-foot">
-          ${ROUTES.form.on ? `<a class="btn pri" data-fbk-form target="_blank" rel="noopener">${esc(ROUTES.form.label)}</a>` : ''}
-          ${ROUTES.email.on ? `<a class="btn" data-fbk-mail>${esc(ROUTES.email.label)}</a>` : ''}
-          ${ROUTES.github.on ? `<button type="submit" class="btn go" data-fbk-send>${esc(FEEDBACK.submit)}</button>` : ''}
+          ${ROUTES.form.on ? `<a class="btn go" data-fbk-form target="_blank" rel="noopener">${esc(kind.label)}</a>` : ''}
+          ${ROUTES.email.on ? `<a class="btn go" data-fbk-mail>${esc(kind.label)}</a>` : ''}
+          ${ROUTES.github.on ? `<button type="submit" class="btn go" data-fbk-send>${esc(kind.label)}</button>` : ''}
         </div>
         <div class="fbk-alt">
           <button type="button" class="btn sm" data-fbk-copy>${esc(FEEDBACK.copy)}</button>
           <button type="button" class="btn sm" data-fbk-share hidden>${esc(FEEDBACK.share)}</button>
           <span class="fbk-said" data-fbk-said role="status"></span>
         </div>
-        <p class="fbk-priv">${ROUTES.github.on ? esc(FEEDBACK.needsAccount) + ' ' : ''}${esc(FEEDBACK.noAccount)}</p>
+        <p class="fbk-priv">${esc(FEEDBACK.sending)} ${esc(FEEDBACK.noAccount)}</p>
       </form>`;
     document.body.appendChild(dialog);
     document.addEventListener('keydown', onKey);
@@ -147,7 +147,7 @@ if (root) {
       count.textContent = String(text.value.length);
       // The alternative routes are links, so they are disabled by removing the
       // href rather than by an attribute buttons understand.
-      const fu = ok ? formUrl(page) : null;
+      const fu = ok ? formUrl(kindId, text.value, page) : null;
       const mu = ok ? mailUrl(kindId, text.value, page) : null;
       const setHref = (sel, url) => {
         const el = dialog.querySelector(sel);

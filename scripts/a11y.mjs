@@ -129,6 +129,38 @@ for (const f of files) {
     : `  ${built.size} page shapes, all listed in the responsive audit`);
 }
 
+/* The suggestion widget must not mention GitHub to a reader — asked for
+   directly, and worth a check because the route seam still has the code and it
+   would be easy to switch back on without noticing the copy. Scoped to the
+   widget's own markup: the footer's "Source" link is a different thing and
+   stays. Checked against the BUILT pages, because the mount's template strings
+   nest and reading them for stray literals flags code as copy.
+
+   This sees the STATIC half only — the pinned button and its menu, including
+   the link a reader without JavaScript follows. The dialog is rendered by the
+   mount at runtime and is checked in tools/func.html instead; switching the
+   GitHub route back on changes only the dialog, so this guard alone would not
+   notice and it is not the whole check. */
+{
+  let checked = 0, offenders = [];
+  for (const f of files) {
+    const html = fs.readFileSync(f, 'utf8');
+    const i = html.indexOf('data-feedback');
+    if (i < 0) continue;
+    checked++;
+    // from the widget's opening div to the end of its container
+    const block = html.slice(html.lastIndexOf('<div', i), html.indexOf('</div>', html.indexOf('</button>', i)) + 6);
+    if (/github/i.test(block)) offenders.push(path.relative(OUT, f));
+  }
+  for (const o of offenders.slice(0, 4)) {
+    console.log(`  fail  the suggestion widget says GitHub to the reader on ${o}`);
+    errors++;
+  }
+  console.log(offenders.length
+    ? `  ${checked} pages carry the suggestion widget, ${offenders.length} of them mention GitHub`
+    : `  ${checked} pages carry the suggestion widget, none mention GitHub`);
+}
+
 console.log(`\n=== accessibility ===`);
 console.log(`${files.length} pages checked · ${errors} errors · ${warns} warnings`);
 if (errors) { console.log('A11Y CHECK FAILED\n'); process.exit(1); }

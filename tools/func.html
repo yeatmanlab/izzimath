@@ -941,10 +941,13 @@ L.push('');
     sc('it offers both kinds', items.length === 2, items.map((a) => a.textContent.trim().split('\n')[0]).join(' / '));
     /* Without JavaScript these are the whole feature, so they have to be real
        links to the right place rather than buttons dressed as links. */
-    sc('both work without javascript', items.every((a) => /github\.com\/[^/]+\/[^/]+\/issues\/new\?labels=/.test(a.href || '')),
-      // `|| ''` on both: an item that is not a link has no href, and reading
-      // .split of undefined threw and took every check after this one with it.
-      items.map((a) => (a.href || 'no href — not a link').split('?').pop()).join(' | '));
+    /* Without JavaScript these two links are the whole feature, so each has to
+       be a real link to whatever route is live. It used to assert a github.com
+       URL, which went red the moment the live route became a form — the
+       expected value now comes from the same function the markup used. */
+    sc('both work without javascript',
+      items.every((a) => a.href && a.href === FB.plainUrl(a.dataset.fbkKind)),
+      items.map((a) => (a.href ? a.href.replace(/^https?:\/\//, '').slice(0, 30) + '…' : 'no href — not a link')).join(' | '));
 
     /* The dismissal bug worth a check of its own: Escape closed the menu and put
        focus back on the trigger, which is inside the widget, so :focus-within
@@ -962,20 +965,22 @@ L.push('');
     await nap(150);
     const panel = d.querySelector('.fbk-panel');
     const text = d.querySelector('[data-fbk-text]');
-    const send = d.querySelector('[data-fbk-send]');
+    // Whichever route is live owns the primary action, and it may be a link
+    // rather than a button — so "blocked" means no href, not `disabled`.
+    const prim = () => d.querySelector('[data-fbk-form], [data-fbk-mail], [data-fbk-send]');
+    const blocked = () => { const el = prim(); return el.tagName === 'A' ? !el.hasAttribute('href') : el.disabled; };
     sc('choosing one opens a text box', !!text && !!panel);
     sc('it is a real dialog', panel?.getAttribute('role') === 'dialog'
       && panel?.getAttribute('aria-modal') === 'true');
     sc('focus lands in the box', d.activeElement === text);
-    sc('sending is blocked while empty', send.disabled === true);
-    sc('and it says why', !d.querySelector('[data-fbk-why]')?.hidden
-      && send.getAttribute('aria-describedby') === d.querySelector('[data-fbk-why]')?.id,
+    sc('sending is blocked while empty', blocked() === true);
+    sc('and it says why', !d.querySelector('[data-fbk-why]')?.hidden,
       d.querySelector('[data-fbk-why]')?.textContent);
 
     text.value = 'The answer key for Tens and Ones printed over two pages #2';
     text.dispatchEvent(new Event('input', { bubbles: true }));
     await nap(60);
-    sc('typing enables sending', send.disabled === false);
+    sc('typing enables sending', blocked() === false);
     sc('and counts the characters', d.querySelector('[data-fbk-count]')?.textContent === String(text.value.length),
       d.querySelector('[data-fbk-count]')?.textContent + ' characters');
     /* The page address is shown before anyone sends, because it is going to be
@@ -983,18 +988,48 @@ L.push('');
     sc('the page address is shown first', /adding-to-twenty/.test(panel.textContent),
       (panel.textContent.match(/\/books\/[^\s]*/) || ['not shown'])[0]);
 
-    panel.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    await nap(120);
-    sc('sending opens a prefilled github issue', !!opened && opened.startsWith('https://github.com/'),
-      (opened || 'nothing opened').slice(0, 52));
-    if (opened) {
-      const u = new URL(opened);
-      sc('with the label for the kind chosen', u.searchParams.get('labels') === 'bug',
-        'labels=' + u.searchParams.get('labels'));
-      sc('and the typed text intact', (u.searchParams.get('body') || '').includes('#2'),
-        'body has the hash: ' + (u.searchParams.get('body') || '').includes('#2'));
+    if (FB.ROUTES.github.on) {
+      panel.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await nap(120);
+      sc('submitting opens a prefilled issue', !!opened && opened.startsWith('https://github.com/'),
+        (opened || 'nothing opened').slice(0, 52));
+      if (opened) {
+        const u = new URL(opened);
+        sc('with the label for the kind chosen', u.searchParams.get('labels') === 'bug',
+          'labels=' + u.searchParams.get('labels'));
+        sc('and the typed text intact', (u.searchParams.get('body') || '').includes('#2'));
+      }
     }
-    sc('the dialog closed behind it', !d.querySelector('[data-fbk-text]'));
+    d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await nap(80);
+    sc('the dialog closes and gives focus back', !d.querySelector('[data-fbk-text]'));
+
+    /* The no-account route, when one is configured: it has to be the loud one,
+       and its link has to carry the whole message rather than a bare form URL. */
+    if (FB.ROUTES.form.on) {
+      d.querySelector('[data-fbk-open]').click(); await nap(60);
+      d.querySelector('[data-fbk-kind="bug"]').click(); await nap(150);
+      const tf = d.querySelector('[data-fbk-text]');
+      const fbtn = d.querySelector('[data-fbk-form]');
+      sc('a no-account route is offered first', !!fbtn
+        && [...d.querySelectorAll('.fbk-foot .btn')][0] === fbtn, fbtn?.textContent.trim());
+      sc('it is the loudest button', fbtn?.classList.contains('go'), fbtn?.className);
+      sc('and is dead until there is something to send', !fbtn.hasAttribute('href')
+        && fbtn.getAttribute('aria-disabled') === 'true');
+      tf.value = 'The squares are too small to tap on my phone';
+      tf.dispatchEvent(new Event('input', { bubbles: true }));
+      await nap(60);
+      sc('typing arms it', fbtn.hasAttribute('href') && fbtn.getAttribute('aria-disabled') === 'false');
+      const fu = new URL(fbtn.href);
+      const field = FB.ROUTES.form.textField;
+      const got = fu.searchParams.get(field) || '';
+      sc('the whole message goes into the form field', got.includes('too small to tap')
+        && got.includes('/books/adding-to-twenty/') && /Issue/.test(got),
+        field + ' = ' + got.slice(0, 34).replace(/\n/g, ' / '));
+      sc('it opens in a new tab', fbtn.target === '_blank' && /noopener/.test(fbtn.rel), fbtn.target + ' ' + fbtn.rel);
+      d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await nap(60);
+    }
 
     /* The routes that ask the reader for nothing. Copy is always there; share
        only where the browser has it. */
@@ -1019,6 +1054,24 @@ L.push('');
     d.querySelector('[data-fbk-copy]').click(); await nap(120);
     sc('copying carries the text and the page', !!copied && copied.includes('Something worth copying')
       && copied.includes('/books/adding-to-twenty/'), (copied || 'copied nothing').slice(0, 44).replace(/\n/g, ' / '));
+    d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await nap(60);
+
+    /* Asked for directly: no reader-facing mention of GitHub anywhere in the
+       widget. a11y.mjs covers the static half; the dialog is built at runtime,
+       so this is the only place the rendered form can be read. */
+    d.querySelector('[data-fbk-open]').click(); await nap(60);
+    d.querySelector('[data-fbk-kind="feature"]').click(); await nap(150);
+    const shown = d.querySelector('.fbk-panel').textContent
+      + ' ' + [...d.querySelectorAll('.fbk-panel [href]')].map((a) => a.getAttribute('href')).join(' ');
+    /* A window AROUND the match. `[^.]*github[^.]*` sliced to 46 characters
+       reported the panel's opening words instead of the offending phrase,
+       because the greedy prefix ran back to the start of the text. */
+    const hit = shown.search(/github/i);
+    sc('the form never mentions GitHub', hit < 0,
+      hit < 0 ? 'nothing about it' : '…' + shown.slice(Math.max(0, hit - 22), hit + 24).trim() + '…');
+    sc('and the button is named after the kind', /Suggest a feature/.test(d.querySelector('[data-fbk-form], [data-fbk-send], [data-fbk-mail]')?.textContent || ''),
+      d.querySelector('[data-fbk-form], [data-fbk-send], [data-fbk-mail]')?.textContent.trim());
     d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await nap(60);
 

@@ -68,7 +68,7 @@ function suggestButton() {
     ${FEEDBACK.kinds.map((k) => `<a class="fbk-item" href="${esc(plainUrl(k.id))}"
       data-fbk-kind="${esc(k.id)}" target="_blank" rel="noopener">
       <b>${esc(k.label)}</b><small>${esc(k.hint)}</small></a>`).join('')}
-    <p class="fbk-foot-note">${esc(FEEDBACK.needsAccount)}</p>
+    <p class="fbk-foot-note">${esc(FEEDBACK.noSignIn)}</p>
   </div>
   <button class="fbk-btn" type="button" data-fbk-open aria-expanded="false">
     <span class="fbk-ic" aria-hidden="true">✎</span><span>${esc(FEEDBACK.button)}</span>
