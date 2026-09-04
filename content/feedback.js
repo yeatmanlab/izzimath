@@ -86,7 +86,7 @@ export const FEEDBACK = {
       hint: 'A game, a worksheet, something that is missing.',
       ask: 'What would you like Izzi Math to do?',
       invite: 'Give us suggestions for new features, games, or changes to improve Izzi Math',
-      placeholder: 'A game where you build fractions from strips…',
+      placeholder: 'A game where you…',
       titlePrefix: 'Suggestion',
     },
     {
@@ -96,7 +96,7 @@ export const FEEDBACK = {
       hint: 'Something looks wrong, prints wrong, or will not work.',
       ask: 'What went wrong?',
       invite: 'Describe the issue that you noticed and feel free to suggest a fix',
-      placeholder: 'The answer key for Tens and Ones printed over two pages…',
+      placeholder: 'On this page I didn’t understand…',
       titlePrefix: 'Issue',
     },
   ],
