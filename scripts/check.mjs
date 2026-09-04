@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import { activities, STRANDS } from '../content/activities/index.js';
 import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from '../content/routines.js';
+import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, issueUrl, plainUrl } from '../content/feedback.js';
 import { characters, getCharacter } from '../content/characters.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
@@ -1086,6 +1087,89 @@ console.log('\n=== printed blanks the key can fill ===');
     }
   }
   console.log(`  ${stems} printed stems, ${blanked} with blanks, every blank answerable from the key`);
+}
+
+/* ------------------------------------------------------- suggestion button
+   issueUrl is a pure string -> string, which is why it lives in content/ and
+   not in the mount: it can be tested here without a browser. The encoding
+   assertions are the ones that matter. The whole body travels in a query
+   string, so a single unescaped `#` in somebody's suggestion would truncate
+   everything after it and file half a sentence. */
+console.log('\n=== suggestion button ===');
+{
+  const SAMPLE = 'The answer key printed over two pages #2 & it broke my "flow"\nsecond line';
+  const PAGE = '/print/tens-and-ones/?seed=8817';
+  let cases = 0;
+
+  if (KIND_IDS.length < 2) fail('feedback', 'fewer than two kinds of suggestion');
+  const tags = FEEDBACK.kinds.map((k) => k.tag);
+  if (new Set(tags).size !== tags.length) fail('feedback', `two kinds share a label: ${tags.join(', ')}`);
+  for (const k of FEEDBACK.kinds) {
+    for (const f of ['id', 'tag', 'label', 'hint', 'ask', 'placeholder', 'titlePrefix']) {
+      if (!k[f]) fail(`feedback:${k.id}`, 'missing ' + f);
+    }
+    /* GitHub silently keeps a label that does not exist out of the created
+       issue, so the tag has to be one this repository actually has. These two
+       are the defaults GitHub creates in every repo. */
+    if (!['enhancement', 'bug'].includes(k.tag))
+      fail(`feedback:${k.id}`, `label "${k.tag}" is not one of the labels this repo is known to have`);
+  }
+
+  for (const k of FEEDBACK.kinds) {
+    const url = issueUrl(k.id, SAMPLE, PAGE);
+    cases++;
+    if (!url) { fail(`feedback:${k.id}`, 'built no url from a valid suggestion'); continue; }
+    let u;
+    try { u = new URL(url); } catch { fail(`feedback:${k.id}`, `built an unparseable url: ${url}`); continue; }
+    if (u.origin + u.pathname !== `https://github.com/${REPO}/issues/new`)
+      fail(`feedback:${k.id}`, `points at ${u.origin + u.pathname}, not this repo's new-issue form`);
+    if (u.searchParams.get('labels') !== k.tag)
+      fail(`feedback:${k.id}`, `labels=${u.searchParams.get('labels')}, expected ${k.tag}`);
+
+    const body = u.searchParams.get('body') ?? '';
+    // Round-tripped, so the text arrives as it was typed — hash, quote, newline.
+    if (!body.includes(SAMPLE)) fail(`feedback:${k.id}`, 'the typed text does not survive the round trip');
+    if (!body.includes(PAGE)) fail(`feedback:${k.id}`, 'the page address is not in the body');
+    const title = u.searchParams.get('title') ?? '';
+    if (!title.startsWith(k.titlePrefix)) fail(`feedback:${k.id}`, `title "${title}" is not prefixed`);
+    if (title.length > 90) fail(`feedback:${k.id}`, `title is ${title.length} characters, too long for a list`);
+    if (/[\n\r]/.test(title)) fail(`feedback:${k.id}`, 'title spans more than one line');
+
+    /* The raw query string must carry nothing that would end it early or split a
+       parameter. A literal # truncates; a literal & starts a new parameter. */
+    const raw = url.slice(url.indexOf('?') + 1);
+    cases++;
+    for (const [name, ch] of [['hash', '#'], ['space', ' '], ['newline', '\n'], ['quote', '"']]) {
+      if (raw.includes(ch)) fail(`feedback:${k.id}`, `an unescaped ${name} reached the query string`);
+    }
+    const pairs = raw.split('&');
+    if (pairs.length !== 3) fail(`feedback:${k.id}`, `${pairs.length} query parameters, expected 3 — an & leaked`);
+
+    // A suggestion that will not fit has to be clipped, not sent and rejected.
+    const huge = issueUrl(k.id, 'y'.repeat(MAX_CHARS * 6), PAGE);
+    cases++;
+    if (!huge) fail(`feedback:${k.id}`, 'a long suggestion built nothing at all');
+    else {
+      const hb = new URL(huge).searchParams.get('body') ?? '';
+      if (hb.length > MAX_CHARS + PAGE.length + 40)
+        fail(`feedback:${k.id}`, `a long suggestion was not clipped: ${hb.length} characters of body`);
+      if (huge.length > 4000) fail(`feedback:${k.id}`, `the clipped url is still ${huge.length} characters`);
+    }
+
+    const plain = plainUrl(k.id);
+    cases++;
+    if (!plain?.includes(`labels=${k.tag}`))
+      fail(`feedback:${k.id}`, 'the no-JavaScript link does not carry the label');
+  }
+
+  // Nothing usable comes out of nothing usable.
+  for (const [what, got] of [['an empty suggestion', issueUrl('feature', '   ', '/')],
+    ['a two-word suggestion', issueUrl('bug', 'it broke', '/')],
+    ['an unknown kind', issueUrl('not-a-kind', 'a long enough sentence to pass', '/')]]) {
+    cases++;
+    if (got !== null) fail('feedback', `${what} built a url instead of nothing: ${got}`);
+  }
+  console.log(`  ${FEEDBACK.kinds.length} kinds · ${cases} url cases · labels, encoding and clipping checked`);
 }
 
 console.log('\n=== warm-up routines ===');

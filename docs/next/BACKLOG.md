@@ -14,6 +14,16 @@ The checkbox count below is higher than 22 because it is task-level rather than
 recommendation-level: it includes finishing the 17 partials, and splits a few
 large recommendations into work that can actually be picked up separately.
 
+**This is not the content list, and the two get confused.** The *content waves* —
+the plan for new activities and games — are **finished**: waves 1 to 5 shipped,
+49 activities, nothing left in it. That list and what it contained is recorded in
+[`06-content-waves.md`](06-content-waves.md). What is below is the research pass,
+and it is mostly Illustrative Mathematics' **structural apparatus** rather than
+content: lesson shape, staging, print craft, task formats. So "25 items open" is
+not 25 gaps in the maths — it is scaffolding around content that already works.
+Section 3 is largely gated on stored state and cannot move until accounts exist.
+`[~]` means part-built.
+
 ---
 
 ## 1. Lesson structure — the largest gap

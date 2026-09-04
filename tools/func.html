@@ -874,6 +874,114 @@ L.push('');
   }
 }
 
+/* --------------------------------------------------------- suggestion button
+   The button is static markup, so a11y.mjs sees it, but everything that makes
+   it work is not: hover, tap, the dismissal, and the url that finally gets
+   opened. window.open is replaced inside the frame so the last one can be
+   asserted without navigating anywhere. */
+L.push('');
+{
+  const sc = (n, ok, note) => { checks++; L.push((ok ? '· ' : '✗ ') + ('suggest:' + n).padEnd(38) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:absolute;left:-99999px;top:0;width:900px;height:1000px';
+    f.src = '/books/adding-to-twenty/?seed=8817';
+    document.body.appendChild(f);
+    await new Promise((r) => { f.onload = r; setTimeout(r, 8000); });
+    await nap(500);
+    const d = f.contentDocument, w = f.contentWindow;
+    let opened = null;
+    w.open = (url) => { opened = url; return null; };
+
+    const root = d.querySelector('[data-feedback]');
+    const btn = d.querySelector('[data-fbk-open]');
+    const menu = d.querySelector('[data-fbk-menu]');
+    const vis = () => w.getComputedStyle(menu).visibility;
+    const box = (el) => el.getBoundingClientRect();
+
+    sc('the button is on an activity page', !!btn, btn?.textContent.trim());
+    sc('it is pinned, not in the flow', w.getComputedStyle(root).position === 'fixed',
+      w.getComputedStyle(root).position);
+    // Lower right, and inside the viewport at this width.
+    const b = box(btn);
+    sc('pinned to the lower right', b.right > w.innerWidth * 0.6 && b.bottom > w.innerHeight * 0.6
+      && b.right <= w.innerWidth && b.bottom <= w.innerHeight,
+      `right ${Math.round(w.innerWidth - b.right)}px, bottom ${Math.round(w.innerHeight - b.bottom)}px from the edge`);
+    sc('it clears the 24px tap minimum', b.height >= 24, Math.round(b.height) + 'px tall');
+    sc('the menu starts hidden', vis() === 'hidden', vis());
+
+    btn.click(); await nap(60);
+    sc('tapping opens it', vis() === 'visible', vis());
+    sc('and says so to a screen reader', btn.getAttribute('aria-expanded') === 'true',
+      'aria-expanded=' + btn.getAttribute('aria-expanded'));
+    const items = [...d.querySelectorAll('[data-fbk-kind]')];
+    sc('it offers both kinds', items.length === 2, items.map((a) => a.textContent.trim().split('\n')[0]).join(' / '));
+    /* Without JavaScript these are the whole feature, so they have to be real
+       links to the right place rather than buttons dressed as links. */
+    sc('both work without javascript', items.every((a) => /github\.com\/[^/]+\/[^/]+\/issues\/new\?labels=/.test(a.href || '')),
+      // `|| ''` on both: an item that is not a link has no href, and reading
+      // .split of undefined threw and took every check after this one with it.
+      items.map((a) => (a.href || 'no href — not a link').split('?').pop()).join(' | '));
+
+    /* The dismissal bug worth a check of its own: Escape closed the menu and put
+       focus back on the trigger, which is inside the widget, so :focus-within
+       re-opened it immediately and Escape looked broken. */
+    d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await nap(80);
+    sc('Escape dismisses it', vis() === 'hidden', vis());
+    sc('and does not let focus re-open it', vis() === 'hidden' && d.activeElement === btn,
+      'focus on ' + (d.activeElement === btn ? 'the trigger' : d.activeElement.tagName) + ', menu ' + vis());
+    btn.click(); await nap(60);
+    sc('tapping again brings it back', vis() === 'visible', vis());
+
+    // ---- the form
+    d.querySelector('[data-fbk-kind="bug"]').click();
+    await nap(150);
+    const panel = d.querySelector('.fbk-panel');
+    const text = d.querySelector('[data-fbk-text]');
+    const send = d.querySelector('[data-fbk-send]');
+    sc('choosing one opens a text box', !!text && !!panel);
+    sc('it is a real dialog', panel?.getAttribute('role') === 'dialog'
+      && panel?.getAttribute('aria-modal') === 'true');
+    sc('focus lands in the box', d.activeElement === text);
+    sc('sending is blocked while empty', send.disabled === true);
+    sc('and it says why', !d.querySelector('[data-fbk-why]')?.hidden
+      && send.getAttribute('aria-describedby') === d.querySelector('[data-fbk-why]')?.id,
+      d.querySelector('[data-fbk-why]')?.textContent);
+
+    text.value = 'The answer key for Tens and Ones printed over two pages #2';
+    text.dispatchEvent(new Event('input', { bubbles: true }));
+    await nap(60);
+    sc('typing enables sending', send.disabled === false);
+    sc('and counts the characters', d.querySelector('[data-fbk-count]')?.textContent === String(text.value.length),
+      d.querySelector('[data-fbk-count]')?.textContent + ' characters');
+    /* The page address is shown before anyone sends, because it is going to be
+       included and a reader should not discover that on GitHub. */
+    sc('the page address is shown first', /adding-to-twenty/.test(panel.textContent),
+      (panel.textContent.match(/\/books\/[^\s]*/) || ['not shown'])[0]);
+
+    panel.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await nap(120);
+    sc('sending opens a prefilled github issue', !!opened && opened.startsWith('https://github.com/'),
+      (opened || 'nothing opened').slice(0, 52));
+    if (opened) {
+      const u = new URL(opened);
+      sc('with the label for the kind chosen', u.searchParams.get('labels') === 'bug',
+        'labels=' + u.searchParams.get('labels'));
+      sc('and the typed text intact', (u.searchParams.get('body') || '').includes('#2'),
+        'body has the hash: ' + (u.searchParams.get('body') || '').includes('#2'));
+    }
+    sc('the dialog closed behind it', !d.querySelector('[data-fbk-text]'));
+
+    // and it must never print
+    sc('it is marked not to print', root.classList.contains('noprint'), root.className);
+    f.remove();
+  } catch (e) {
+    sc('harness itself', false, 'THREW ' + e.message);
+  }
+}
+
 L.push(''); L.push('CHECKS_RUN='+checks);
 document.getElementById('out').textContent=L.join('\n');
 window.__DONE__=true;

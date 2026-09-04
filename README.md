@@ -143,6 +143,7 @@ content/
   activities/       one file per grade; each activity is metadata + a generator
   characters.js     the character packs
   routines.js       the IM warm-up routines, as generators
+  feedback.js       the suggestion button's copy, and the GitHub issue URL
   types.js          the nine problem types, and answer checking
   roam.js           assessment linkage and the score -> practice mapping
 src/

@@ -138,6 +138,13 @@ already exist, and a routine only needs a `ui` the registry knows.
   so; keep it that way.
 - **ROAM stays subtle.** It appears in user-visible text on exactly one opt-in
   page. The useful linkage lives in code comments on the difficulty bands.
+- **Nothing is posted from the browser, and there is no secret in the client.**
+  The suggestion button builds a prefilled GitHub new-issue URL and opens it;
+  the reader presses Send on GitHub. That is the only honest way to file an
+  issue from a static site with no backend — anything else means a write token
+  in public JavaScript. The cost is that it needs a GitHub account, which most
+  parents will not have, and the button says so before anyone types a paragraph.
+  If that ever needs fixing it needs infrastructure, not a cleverer client.
 
 ## Layout
 
@@ -146,6 +153,7 @@ content/
   activities/       one file per grade; an activity is metadata + a generator
   characters.js     the character packs (palette, world nouns, voice)
   routines.js       the IM warm-up routines, as generators
+  feedback.js       the suggestion button's copy, and the GitHub issue URL
   types.js          the nine problem types, and answer checking
   wordproblems.js   word problems, tagged by CGI schema
   references.js     the citations, linked both ways to activities

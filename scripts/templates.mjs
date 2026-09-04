@@ -4,6 +4,7 @@
 import { SPRITES, avatar } from '../src/lib/sprites.js';
 import { characters, characterList } from '../content/characters.js';
 import { tasks, roamLabel, ROAM_URL } from '../content/roam.js';
+import { FEEDBACK, plainUrl } from '../content/feedback.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -46,11 +47,33 @@ ${crumbs ? breadcrumbs(b, crumbs) : ''}
 ${body}
 </main>
 ${footer(b)}
+${suggestButton()}
 <script type="module" src="${b}/assets/src/lib/theme.js"></script>
 <script type="module" src="${b}/assets/src/mount/profile.js"></script>
+<script type="module" src="${b}/assets/src/mount/feedback.js"></script>
 ${scripts.map((s) => `<script type="module" src="${b}${s}"></script>`).join('\n')}
 </body>
 </html>`;
+}
+
+/* ------------------------------------------------------- suggestion button
+   Pinned bottom right on every page. The menu is real markup revealed by
+   :hover and :focus-within, and its two items are ordinary links to GitHub's
+   issue form — so it works with JavaScript off, and src/mount/feedback.js
+   upgrades it to tap-to-open and a prefilled form. */
+function suggestButton() {
+  return `<div class="fbk noprint" data-feedback>
+  <div class="fbk-menu" data-fbk-menu role="group" aria-label="${esc(FEEDBACK.menuLabel)}">
+    <p class="fbk-lead">${esc(FEEDBACK.lead)}</p>
+    ${FEEDBACK.kinds.map((k) => `<a class="fbk-item" href="${esc(plainUrl(k.id))}"
+      data-fbk-kind="${esc(k.id)}" target="_blank" rel="noopener">
+      <b>${esc(k.label)}</b><small>${esc(k.hint)}</small></a>`).join('')}
+    <p class="fbk-foot-note">${esc(FEEDBACK.needsAccount)}</p>
+  </div>
+  <button class="fbk-btn" type="button" data-fbk-open aria-expanded="false">
+    <span class="fbk-ic" aria-hidden="true">✎</span><span>${esc(FEEDBACK.button)}</span>
+  </button>
+</div>`;
 }
 
 /* ---------------------------------------------------------------------- nav */
