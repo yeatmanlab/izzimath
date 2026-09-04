@@ -61,6 +61,13 @@ harness rather than hoping the default reproduces it.
 Read each harness's **own** verdict line (`no failures` / `N FAILURES`) rather
 than grepping for a marker you assume it uses.
 
+And make a check's summary line agree with its own failures. Three checks here
+printed a cheerful count — "no field lost inside a comment", "none repeating
+themselves", "3 files agree" — on the same run as the `FAIL` lines proving
+otherwise, because the summary was written as a constant. If the summary can
+only say the good news, it is not a summary. Two helpers in `func.html` had the
+same shape and printed `ok` beside a failing `✗`.
+
 And render the thing and look at it. Contrast, overlap and a figure that is
 present in the markup but 7px tall on the page all pass every DOM assertion.
 `halves-and-quarters` printed a true/false question with 520 characters of SVG
