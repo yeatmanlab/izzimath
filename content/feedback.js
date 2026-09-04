@@ -54,13 +54,12 @@ export const ROUTES = {
     textField: 'entry.1188449626',
     kindField: '',
     pageField: '',
-    label: 'Send — no account needed',
   },
 
   // No third party at all, at the cost of publishing an address to scrapers.
   // The mount assembles it at click time rather than leaving it in the HTML,
   // which is mild obfuscation and not real protection — decide accordingly.
-  email: { on: false, address: '', label: 'Send by email' },
+  email: { on: false, address: '' },
 };
 
 export const enabledRoutes = () => Object.entries(ROUTES).filter(([, r]) => r.on).map(([k]) => k);
@@ -76,8 +75,8 @@ export const FEEDBACK = {
   menuLabel: 'Make a suggestion',
   lead: 'Tell us what would make this better.',
   // Said before anyone types, not after — see the note at the top of this file.
-  noSignIn: 'Opens in a new tab. No account, no sign-in, nothing to install.',
-  sending: 'Opens a short form with your words already in it. Press Send there.',
+  noSignIn: 'No account, no sign-in, nothing to install.',
+  sending: 'Opens a short form with your words already in it. Press Submit there.',
   // Shown in the form, where the alternatives are.
   kinds: [
     {
@@ -103,7 +102,7 @@ export const FEEDBACK = {
   ],
   // Each kind has its own `invite`, shown while the box is empty, so the line
   // reads as an invitation rather than as a scolding about length.
-  privacy: 'The page address below is included so we can find it. Nothing else about you is sent.',
+  privacy: 'The page address below goes with it, so we can find what you mean. That is all that is sent.',
 };
 
 export const kindById = (id) => FEEDBACK.kinds.find((k) => k.id === id) ?? null;

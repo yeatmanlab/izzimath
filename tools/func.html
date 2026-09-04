@@ -937,6 +937,9 @@ L.push('');
     sc('tapping opens it', vis() === 'visible', vis());
     sc('and says so to a screen reader', btn.getAttribute('aria-expanded') === 'true',
       'aria-expanded=' + btn.getAttribute('aria-expanded'));
+    // aria-expanded on its own does not say expanded WHAT.
+    sc('and names what it expands', btn.getAttribute('aria-controls') === menu.id && !!menu.id,
+      'aria-controls=' + btn.getAttribute('aria-controls'));
     const items = [...d.querySelectorAll('[data-fbk-kind]')];
     sc('it offers both kinds', items.length === 2, items.map((a) => a.textContent.trim().split('\n')[0]).join(' / '));
     /* Without JavaScript these are the whole feature, so they have to be real
@@ -1035,6 +1038,24 @@ L.push('');
       d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       await nap(60);
     }
+
+    /* Opening a second one must replace the first, not stack on it: the loser
+       used to stay in the document with a live keydown listener and a duplicate
+       set of ids, so `for` and `aria-labelledby` pointed at the stale panel. */
+    d.querySelector('[data-fbk-open]').click(); await nap(60);
+    d.querySelector('[data-fbk-kind="feature"]').click(); await nap(150);
+    sc('the menu closes behind the dialog',
+      w.getComputedStyle(menu).visibility === 'hidden', w.getComputedStyle(menu).visibility);
+    d.querySelector('[data-fbk-kind="bug"]').click(); await nap(150);
+    sc('a second choice replaces the dialog', d.querySelectorAll('.fbk-panel').length === 1,
+      d.querySelectorAll('.fbk-panel').length + ' dialogs in the document');
+    sc('so no id is duplicated', ['fbk-h', 'fbk-t', 'fbk-why']
+      .every((i) => d.querySelectorAll('#' + i).length === 1),
+      ['fbk-h', 'fbk-t', 'fbk-why'].map((i) => i + '=' + d.querySelectorAll('#' + i).length).join(' '));
+    sc('and the heading is the kind just chosen', /Report an issue/.test(d.querySelector('.fbk-panel h2')?.textContent || ''),
+      d.querySelector('.fbk-panel h2')?.textContent);
+    d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await nap(80);
 
     /* Asked for directly: no reader-facing mention of GitHub anywhere in the
        widget. a11y.mjs covers the static half; the dialog is built at runtime,

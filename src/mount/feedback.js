@@ -100,6 +100,16 @@ if (root) {
   function openForm(kindId) {
     const kind = kindById(kindId);
     if (!kind) return;
+    /* Two things this has to do before building anything.
+       A second choice used to append a SECOND dialog and overwrite the
+       reference to the first, which then stayed in the document forever with a
+       live keydown listener and a duplicate set of ids — so `for="fbk-t"` and
+       `aria-labelledby="fbk-h"` resolved to the stale panel. Not reachable by
+       pointer, because the backdrop covers the menu, nor by Tab, because of the
+       focus trap; reachable by anything that does not respect either.
+       And the menu stayed open underneath, dimmed but present. */
+    if (dialog) closeDialog({ restore: false });
+    setOpen(false);
     const active = document.activeElement;
     returnFocusTo = active && active !== document.body && active.isConnected ? active : trigger;
     const page = location.pathname + location.search;
@@ -117,7 +127,7 @@ if (root) {
         <p class="fbk-note" data-fbk-why>${esc(kind.invite)}</p>
         <p class="fbk-priv">${esc(FEEDBACK.privacy)}<br><code>${esc(page)}</code></p>
         <div class="fbk-foot">
-          ${ROUTES.form.on ? `<a class="btn go" data-fbk-form target="_blank" rel="noopener">${esc(kind.label)}</a>` : ''}
+          ${ROUTES.form.on ? `<a class="btn go" data-fbk-form target="_blank" rel="noopener noreferrer">${esc(kind.label)}</a>` : ''}
           ${ROUTES.email.on ? `<a class="btn go" data-fbk-mail>${esc(kind.label)}</a>` : ''}
           ${ROUTES.github.on ? `<button type="submit" class="btn go" data-fbk-send>${esc(kind.label)}</button>` : ''}
         </div>

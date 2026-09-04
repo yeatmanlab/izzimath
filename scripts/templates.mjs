@@ -63,14 +63,14 @@ ${scripts.map((s) => `<script type="module" src="${b}${s}"></script>`).join('\n'
    upgrades it to tap-to-open and a prefilled form. */
 function suggestButton() {
   return `<div class="fbk noprint" data-feedback>
-  <div class="fbk-menu" data-fbk-menu role="group" aria-label="${esc(FEEDBACK.menuLabel)}">
+  <div class="fbk-menu" id="fbk-menu" data-fbk-menu role="group" aria-label="${esc(FEEDBACK.menuLabel)}">
     <p class="fbk-lead">${esc(FEEDBACK.lead)}</p>
     ${FEEDBACK.kinds.map((k) => `<a class="fbk-item" href="${esc(plainUrl(k.id))}"
-      data-fbk-kind="${esc(k.id)}" target="_blank" rel="noopener">
+      data-fbk-kind="${esc(k.id)}" target="_blank" rel="noopener noreferrer">
       <b>${esc(k.label)}</b><small>${esc(k.hint)}</small></a>`).join('')}
     <p class="fbk-foot-note">${esc(FEEDBACK.noSignIn)}</p>
   </div>
-  <button class="fbk-btn" type="button" data-fbk-open aria-expanded="false">
+  <button class="fbk-btn" type="button" data-fbk-open aria-expanded="false" aria-controls="fbk-menu">
     <span class="fbk-ic" aria-hidden="true">✎</span><span>${esc(FEEDBACK.button)}</span>
   </button>
 </div>`;

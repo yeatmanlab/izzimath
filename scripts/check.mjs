@@ -1186,12 +1186,10 @@ console.log('\n=== suggestion button ===');
     if (name === 'form') {
       if (!r.url) fail('feedback', 'the form route is on but has no url');
       else if (!/^https:\/\//.test(r.url)) fail('feedback', `the form url is not https: ${r.url}`);
-      if (!r.label) fail('feedback', 'the form route has no button label');
     }
     if (name === 'email') {
       if (!r.address) fail('feedback', 'the email route is on but has no address');
       else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.address)) fail('feedback', `not an address: ${r.address}`);
-      if (!r.label) fail('feedback', 'the email route has no button label');
     }
   }
   if (!enabledRoutes().length) fail('feedback', 'every route is switched off — the button leads nowhere');
@@ -1228,6 +1226,20 @@ console.log('\n=== suggestion button ===');
   if (plainText('bug', 'no', '/x/') !== null) fail('feedback', 'the message accepts a two-letter report');
 
 
+  /* The privacy line says the message and the page are all that is sent, so
+     every link that leaves the site has to carry noreferrer as well as
+     noopener — without it the full page URL goes to the form's host in a
+     Referer header, which makes the line untrue. */
+  {
+    cases++;
+    const mount = fs.readFileSync(new URL('../src/mount/feedback.js', import.meta.url), 'utf8');
+    const tpl = fs.readFileSync(new URL('../scripts/templates.mjs', import.meta.url), 'utf8');
+    for (const [where, src] of [['the dialog', mount], ['the menu', tpl]]) {
+      for (const m of src.matchAll(/target="_blank"[^>]*/g)) {
+        if (!/noreferrer/.test(m[0])) fail('feedback', `a link out of ${where} has no noreferrer: ${m[0].slice(0, 46)}`);
+      }
+    }
+  }
   {
     const invites = FEEDBACK.kinds.map((k) => k.invite);
     cases++;
