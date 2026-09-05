@@ -1104,6 +1104,10 @@ console.log('\n=== typed fields say they are not credentials ===');
 
 console.log('\n=== figures tell the truth ===');
 {
+  /* Extended after a sweep found how much this could NOT see: twenty-one label
+     shapes went unread, so twenty-one kinds of figure could contradict their
+     answer unnoticed — which is exactly the bug this check exists for. These
+     are the ones whose numbers are unambiguous. */
   const READERS = [
     /^(\d+) hundreds (\d+) tens (\d+) ones$/,
     /^ten frame showing (\d+)$/,
@@ -1112,6 +1116,12 @@ console.log('\n=== figures tell the truth ===');
     /^number bond (\d+) and (\d+) make (\d+)$/,
     /^(\d+) by (\d+) array$/,
     /^(\d+) of (\d+) shaded$/,
+    /^angle of (\d+) degrees$/,
+    /^prism (\d+) by (\d+) by (\d+)$/,
+    /^bar (\d+) units long$/,
+    /^grid with point at (\d+), (\d+)$/,
+    /^clock showing (\d+):\d+$/,
+    /^(\d+) out of (\d+)$/,
   ];
   const asserted = (svg) => {
     const m = String(svg ?? '').match(/aria-label="([^"]*)"/);
@@ -1189,6 +1199,66 @@ console.log('\n=== figures tell the truth ===');
   }
   console.log(`  ${figures} figures read back from their own labels · ${numbers} drawn quantities · ${
     supers} superlative questions${seen.size ? ` · ${seen.size} PROBLEMS` : ' · all sound'}`);
+}
+
+/* ------------------------------------------------ one right option, exactly one
+   The tied-tallest-bar defect, generalised: a question with more than one right
+   answer marks a child wrong for reasoning correctly. It happens two ways and
+   both have now happened here — a superlative over tied data (above), and a
+   distractor that is simply equal to the answer. standard-algorithm offered
+   `${a * t} and ${a}` beside `${a * t} and ${a * o}`, which are the same string
+   whenever the ones digit is 1, so the correct pair appeared twice on about one
+   page in twelve.
+
+   Where the stem is a computable expression the truth is recomputed here rather
+   than taken from the problem, so a wrong answer key cannot hide behind its own
+   distractors. */
+console.log('\n=== choice questions have exactly one right option ===');
+{
+  let asked = 0, oracled = 0;
+  const seen = new Set();
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (const cid of CHARS) {
+      for (let i = 0; i < n; i++) {
+        for (const s0 of [8817, 1, 7, 4242, 31337]) {
+          const sd = deriveSeed(s0, `p${i}`);
+          let p;
+          try { p = a.generate(sd, i, getCharacter(cid), rng(sd), s0); } catch { continue; }
+          if (p.type !== 'choice' || !Array.isArray(p.choices)) continue;
+          asked++;
+          const once = (k, msg) => { if (seen.has(k)) return; seen.add(k); fail(a.id, msg); };
+          const hits = p.choices.filter((c) => String(c) === String(p.answer)).length;
+          if (hits !== 1) {
+            once(`${a.id}:ans:${i}`, `i=${i} the answer "${p.answer}" is offered ${
+              hits} times among ${p.choices.length}: ${p.choices.join(' / ')}`);
+          }
+          const dupes = p.choices.filter((c, k) => p.choices.indexOf(c) !== k);
+          if (dupes.length) {
+            once(`${a.id}:dup:${i}`, `i=${i} offers "${dupes[0]}" more than once: ${p.choices.join(' / ')}`);
+          }
+          const stem = String(p.printStem ?? p.prompt ?? '').replace(/<[^>]*>/g, '');
+          const m = stem.match(/(\d+)\s*([+−\-*×÷/])\s*(\d+)\s*=\s*\??/);
+          if (!m) continue;
+          const x = Number(m[1]), y = Number(m[3]);
+          const truth = { '+': x + y, '-': x - y, '−': x - y, '*': x * y, '×': x * y,
+            '/': y ? x / y : NaN, '÷': y ? x / y : NaN }[m[2]];
+          if (!Number.isFinite(truth)) continue;
+          oracled++;
+          if (Number(p.answer) !== truth) {
+            once(`${a.id}:key:${i}`, `i=${i} "${stem.trim()}" is ${truth} but the answer says ${p.answer}`);
+          }
+          const alsoTrue = p.choices.filter((c) => Number(c) === truth).length;
+          if (alsoTrue !== 1) {
+            once(`${a.id}:two:${i}`, `i=${i} "${stem.trim()}" is ${truth} and ${
+              alsoTrue} options equal it: ${p.choices.join(' / ')}`);
+          }
+        }
+      }
+    }
+  }
+  console.log(`  ${asked} choice questions · ${oracled} stems recomputed independently${
+    seen.size ? ` · ${seen.size} with more than one right option` : ' · one right option everywhere'}`);
 }
 
 console.log('\n=== printed blanks the key can fill ===');

@@ -373,7 +373,14 @@ const clocksAndRulers = {
         const mAng = half ? 180 : 0;
         const pt = (a, len) => [50 + len * Math.sin(a * Math.PI / 180), 50 - len * Math.cos(a * Math.PI / 180)];
         const [hx, hy] = pt(ang, 24), [mx, my] = pt(mAng, 34);
-        let t = `<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="clock">
+        /* The label was the word "clock", which told a screen reader nothing and
+           left the hands unverifiable — the same defect barChart had when its
+           label was "bar chart", and that is what let a tied tallest bar ship.
+           It states the time the hands are drawn at, which does mean a
+           screen-reader user is told the answer on the read-the-clock items.
+           That is the trade the repo already makes for numberBond, and an
+           unanswerable question is worse than a leaky one. */
+        let t = `<svg viewBox="0 0 100 100" width="112" height="112" role="img" aria-label="clock showing ${h}:${half ? '30' : '00'}">
           <circle cx="50" cy="50" r="45" fill="none" stroke="${st}" stroke-width="3"/>`;
         for (let k = 0; k < 12; k++) {
           const [x1, y1] = pt(k * 30, 38), [x2, y2] = pt(k * 30, 43);

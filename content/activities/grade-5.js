@@ -389,12 +389,21 @@ const standardAlgorithm = {
     return {
       type: 'choice',
       prompt: `For <strong>${a} × ${b}</strong>, which pair of partial products do you add?`,
-      choices: r.shuffle([
-        `${a * t} and ${a * o}`,
-        `${a * t} and ${a}`,
-        `${a + t} and ${a + o}`,
-        `${a * Math.floor(b / 10)} and ${a * o}`,
-      ]),
+      /* Distractors filtered against the answer, not assumed distinct from it.
+         `${a * t} and ${a}` IS the answer whenever the ones digit of b is 1 —
+         b of 21, 31 or 41, about one page in twelve — so the correct pair was
+         offered twice and the question had two right answers. */
+      choices: (() => {
+        const right = `${a * t} and ${a * o}`;
+        const wrong = [
+          `${a * t} and ${a}`,                        // forgot to multiply the ones
+          `${a + t} and ${a + o}`,                    // added instead of multiplying
+          `${a * Math.floor(b / 10)} and ${a * o}`,   // dropped the place value
+          `${a * t} and ${a * o + a}`,                // one group too many
+          `${a * t + a * o} and ${a * o}`,            // added the pair, then kept one
+        ].filter((c, k, list) => c !== right && list.indexOf(c) === k);
+        return r.shuffle([right, ...r.sample(wrong, 3)]);
+      })(),
       answer: `${a * t} and ${a * o}`,
       printStem: `${a} × ${b}: partial products are ____ and ____`,
       hint: `Split ${b} into ${t} and ${o}, then multiply ${a} by each.`,
