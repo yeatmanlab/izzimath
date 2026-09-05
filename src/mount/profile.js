@@ -31,7 +31,7 @@ import { getCharacter } from '../../content/characters.js';
 import { createStore, localDriver } from '../lib/profile.js';
 import { TIERS } from '../lib/ladder.js';
 import { evaluate as evaluateBadges, badgeById, BADGE_COUNT, BADGES } from '../../content/badges.js';
-import { levelFor, nextLevel } from '../../content/levels.js';
+import { levelFor, nextLevel, levelGap, levelReached, MAX_LEVEL } from '../../content/levels.js';
 import { badgeSvg, shelfHtml, badgeStrip } from '../lib/badgeart.js';
 import { celebrate } from '../engine/celebrate.js';
 import { activities } from '../../content/activities/index.js';
@@ -163,8 +163,23 @@ function shelf(me, badges) {
   const got = BADGES.filter((b) => held.has(b.id)).map((b) => b.id);
   const near = BADGES.filter((b) => !held.has(b.id))
     .sort((a, b) => a.rank - b.rank).slice(0, 4).map((b) => b.id);
+  /* Where the character has got to, and what the next level costs. The panel
+     showed a badge count and nothing about levelling, so the number of badges a
+     level needs was written down in docs/BADGES.md and nowhere a child could
+     see it. Only for a real character: "Just math" has nobody to dress up. */
+  const ch = getCharacter(currentCharacter());
+  const named = ch.id === 'none' ? null : ch.name;
+  const reached = named ? levelReached(got.length, named) : null;
+  const gap = named ? levelGap(got.length, named) : null;
+  const lvline = named
+    // Not escaped, and this file has no esc(): both strings are built from the
+    // fixed level names in content/levels.js and the character's own name.
+    ? `<p class="bdlv">${reached ? `<b>${reached}</b> ` : ''}${
+        gap ? gap.says : 'Every level earned.'}</p>`
+    : '';
   return `<div class="bdshelf">
     <p class="bdshelf-h">${me.name}'s badges <span>${got.length} of ${BADGE_COUNT}</span></p>
+    ${lvline}
     ${got.length
       ? badgeStrip(got, held)
       : `<p class="bdnone">None yet. Each one says something ${me.name} did.</p>`}
@@ -453,7 +468,13 @@ async function checkBadges(id) {
   repaint();
   /* The level is derived from the badge count, never stored — same rule as the
      badges themselves, so it cannot drift out of step with them. */
-  if (fresh.length) announceBadges(fresh, after > before ? levelFor(held.length + fresh.length) : null);
+  if (fresh.length) {
+    const total = held.length + fresh.length;
+    const ch = getCharacter(currentCharacter());
+    announceBadges(fresh,
+      after > before ? levelFor(total) : null,
+      levelGap(total, ch.id === 'none' ? null : ch.name));
+  }
   return fresh;
 }
 
@@ -472,7 +493,7 @@ async function paintLevel() {
 /* One short flourish, then it is gone. The rule is in celebrate.js: a reward
    layer that outshines the maths is the failure mode. So this is a card, the
    character's own particle burst, and no sound. */
-function announceBadges(ids, levelUp = null) {
+function announceBadges(ids, levelUp = null, gapNow = null) {
   const ch = getCharacter(currentCharacter());
   const card = document.createElement('div');
   card.className = 'bdpop noprint';
@@ -508,7 +529,13 @@ function announceBadges(ids, levelUp = null) {
     + (levelUp && ch.id !== 'none'
       ? `<p class="bdpop-lv"><b>Level ${levelUp.n} &middot; ${levelUp.name}</b>
           <span>${levelUp.says.replace('{name}', ch.name)}</span></p>`
-      : '');
+      /* No level this time, so say how near the next one is. Mutually exclusive
+         with the line above on purpose: the card was already measured at 708px
+         of an 844px phone with three badges and a level-up line, and a fourth
+         line would put the reward layer over the maths. */
+      : (gapNow && ch.id !== 'none'
+        ? `<p class="bdpop-lv"><span>${gapNow.says}</span></p>`
+        : ''));
   document.body.appendChild(card);
   celebrate(card.querySelector('.bdpop-medal'), ch);
   const go = () => card.remove();

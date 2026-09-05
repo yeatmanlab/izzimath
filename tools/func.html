@@ -431,10 +431,20 @@ L.push('');
       await sleep(600);
       const held = await w.__izziProfile.store.listBadges(me.id);
       t('accomplishment earns badges', held.length >= 3, held.length + ' earned');
+
       t('records which character was there', held.every((b) => !!b.earnedWith));
       const pop = d.querySelector('.bdpop');
       t('the character celebrates', !!pop && !!pop.querySelector('.celebrate'));
       const lvSaid = (pop?.querySelector('.bdpop-lv')?.textContent || '').replace(/\s+/g, ' ').trim();
+      /* Asked for: how many badges a level needs was in docs/BADGES.md and
+         nowhere a child could see it. Read off the SAME captured card as
+         lvSaid — reading it later found nothing, because the card is dismissed
+         by then. Either a level-up line or the distance to the next one; never
+         neither, and never both. */
+      t('the badge card places the next level', /more badges? and Kiwi is|Level \d/.test(lvSaid),
+        lvSaid || 'no line at all');
+      t('and only one of the two lines', (pop?.querySelectorAll('.bdpop-lv').length ?? 0) === 1,
+        (pop?.querySelectorAll('.bdpop-lv').length ?? 0) + ' level lines on the card');
       /* The celebration must not bury the maths. Three cards plus "and N more"
          plus a level line measured 708px on an 844px phone — 84% of the screen.
          SHOWN scales with the viewport now; this stops it drifting back. */
@@ -478,11 +488,19 @@ L.push('');
         const none = d.querySelector('.chbtn[data-ch="none"] svg');
         return none && none.querySelectorAll('use.gear').length === 0;
       })());
+
+
       t('the level-up was announced on the badge card', lvSaid,
         lvSaid || '(no level line seen)');
 
       // the shelf and the store agree, and the count reaches the header
       d.querySelector('[data-me]').click(); await sleep(350);
+      const shelfLv = d.querySelector('.bdlv');
+      t('and the score panel says it too', !!shelfLv?.textContent.trim(),
+        shelfLv ? shelfLv.textContent.replace(/\s+/g, ' ').trim().slice(0, 62) : 'nothing in the panel');
+      t('naming the character, not the child', /Kiwi/.test(shelfLv?.textContent || '')
+        && !/\byou\b/i.test(shelfLv?.textContent || ''),
+        (shelfLv?.textContent || '').slice(0, 40));
       const box = d.querySelector('.mepanel');
       const strip = d.querySelector('.bdstrip');
       const all = d.querySelector('.bdall');

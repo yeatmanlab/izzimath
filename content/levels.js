@@ -33,3 +33,35 @@ export const levelFor = (badges = 0) =>
 export const nextLevel = (badges = 0) => LEVELS.find((l) => l.at > badges) ?? null;
 
 export const MAX_LEVEL = LEVELS[LEVELS.length - 1].n;
+
+/* How far to the next level, said the same way everywhere it appears.
+
+   Two rules from docs/BADGES.md hold here as well. The title belongs to the
+   CHARACTER — "two more badges and Kiwi is an Adventurer", never "you are". And
+   no praise words: the sentence states a count and what it buys, which is a
+   fact, and the encouragement is that the number is small rather than that
+   somebody says well done.
+
+   Returns null at the top, because there is nothing left to be. */
+export function levelGap(badges = 0, name = null) {
+  const next = nextLevel(badges);
+  if (!next) return null;
+  const need = next.at - badges;
+  const article = /^[AEIOU]/.test(next.name) ? 'an' : 'a';
+  const who = name || 'your character';
+  return {
+    next,
+    need,
+    says: need === 1
+      ? `One more badge and ${who} is ${article} ${next.name}.`
+      : `${need} more badges and ${who} is ${article} ${next.name}.`,
+  };
+}
+
+/* At the top of the ladder there is no gap to report, so the shelf says what
+   was reached instead of what is left. */
+export const levelReached = (badges = 0, name = null) => {
+  const l = levelFor(badges);
+  if (!l.name) return null;
+  return `${name || 'Your character'} is ${/^[AEIOU]/.test(l.name) ? 'an' : 'a'} ${l.name}.`;
+};

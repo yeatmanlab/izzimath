@@ -134,3 +134,22 @@ Two implementation notes worth keeping, both found the hard way:
   is amber and Kiwi's face is tan, so a band in the accent nearly vanished. Real
   gear is not the colour of the animal wearing it. The crown is the exception,
   because it is the award rather than equipment.
+
+## Saying how far the next level is
+
+The thresholds used to live only in this file, which meant a child could earn
+badges without ever learning that eight of them buys goggles. `levelGap()` in
+[`content/levels.js`](../content/levels.js) builds one sentence — "2 more badges
+and Kiwi is an Adventurer" — and it appears in both places a badge count is
+visible: on the card as each badge arrives, and in the score panel.
+
+Two rules from the top of this file still apply. The title belongs to the
+CHARACTER, so it is never "you are an Adventurer". And no praise words: the
+sentence states a count and what it buys, and the encouragement is that the
+number is small rather than that somebody says well done.
+
+On the card the gap line and the level-up line are mutually exclusive. Three
+badges plus "and N more" plus a level line already measured 708px of an 844px
+phone, and a fourth line puts the reward layer over the maths — which is the one
+thing `celebrate.js` exists to prevent. `func.html` asserts exactly one of the
+two is present.

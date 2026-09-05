@@ -44,6 +44,9 @@ html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#6B2318; --ok:#8FE388
 /* The shelf beside the scores. `bdnext` and the disclosure exist so a new
    profile is not met by 24 empty circles; see shelf() in src/mount/profile.js. */
 .bdnone { color: var(--txt2); font-size: 14px; margin: 2px 0 14px }
+/* Where the character has got to, and what the next level costs. */
+.bdlv { font-size: 12.5px; color: var(--txt2); margin: 0 0 12px; line-height: 1.5 }
+.bdlv b { color: var(--a2) }
 .bdnext {
   font: 600 11px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
   color: var(--txt3); margin: 16px 0 8px;
