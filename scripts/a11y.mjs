@@ -129,12 +129,14 @@ for (const f of files) {
     : `  ${built.size} page shapes, all listed in the responsive audit`);
 }
 
-/* The suggestion widget must not mention GitHub to a reader — asked for
-   directly, and worth a check because the route seam still has the code and it
-   would be easy to switch back on without noticing the copy. Scoped to the
-   widget's own markup: the footer's "Source" link is a different thing and
-   stays. Checked against the BUILT pages, because the mount's template strings
-   nest and reading them for stray literals flags code as copy.
+/* GitHub is offered as a third route now, so the rule is not "never mention it"
+   but "mention it exactly when the route is on". The static half of the widget —
+   the pinned button and its menu — must stay quiet either way: those two links
+   go to whichever route is primary, and naming a developer tool at the door is
+   what turns a parent away before they read the options. Scoped to the widget's
+   own markup: the footer's "Source" link is a different thing and stays.
+   Checked against the BUILT pages, because the mount's template strings nest
+   and reading them for stray literals flags code as copy.
 
    This sees the STATIC half only — the pinned button and its menu, including
    the link a reader without JavaScript follows. The dialog is rendered by the
@@ -153,12 +155,12 @@ for (const f of files) {
     if (/github/i.test(block)) offenders.push(path.relative(OUT, f));
   }
   for (const o of offenders.slice(0, 4)) {
-    console.log(`  fail  the suggestion widget says GitHub to the reader on ${o}`);
+    console.log(`  fail  the pinned button or its menu says GitHub to the reader on ${o}`);
     errors++;
   }
   console.log(offenders.length
-    ? `  ${checked} pages carry the suggestion widget, ${offenders.length} of them mention GitHub`
-    : `  ${checked} pages carry the suggestion widget, none mention GitHub`);
+    ? `  ${checked} pages carry the suggestion widget, ${offenders.length} name GitHub at the door`
+    : `  ${checked} pages carry the suggestion widget, none name GitHub at the door`);
 }
 
 console.log(`\n=== accessibility ===`);

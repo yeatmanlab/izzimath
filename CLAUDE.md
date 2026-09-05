@@ -147,14 +147,24 @@ already exist, and a routine only needs a `ui` the registry knows.
   all three and **exactly one is live**: a Google Form that takes anonymous
   responses, prefilled with the whole message — kind, text and page — into its
   single paragraph field.
-- **The suggestion button never says GitHub.** The GitHub route still exists in
-  `ROUTES`, switched off, because it filed straight into the tracker and that is
-  convenient for whoever does the work. It is off because it asks a parent to
-  sign up for a developer tool to report a typo. Two checks hold the line, and
-  they cover different halves: `a11y.mjs` reads the built pages for the static
-  button and its menu, and `func.html` reads the dialog, which is rendered at
-  runtime and invisible to the first. Neither alone is the check — turning the
-  route back on changes only the dialog.
+- **The suggestion button never names GitHub at the door.** GitHub is offered,
+  but as the narrow right-hand third of one split control: two thirds to the
+  route that needs no account, one third to GitHub with its mark and a small
+  caption. An account is a cost, so it must not look like the default way
+  through. The pinned button and its menu stay quiet about it either way —
+  naming a developer tool at the door turns a parent away before they read the
+  options. Two checks hold this, covering different halves: `a11y.mjs` reads the
+  built pages for the static button and menu, and `func.html` reads the dialog,
+  which is rendered at runtime and invisible to the first.
+- **A report carries what a screenshot would have shown, in text.** The page
+  address, which contains the **seed** — and since the seed is the state, it
+  regenerates the exact problem the reporter was looking at — plus which
+  question was on screen, the character, and the window size. There is no
+  screenshot and there cannot usefully be one: no web API photographs your own
+  page, `getDisplayMedia` needs a permission prompt per use and is unsupported
+  in Safari on iPad, a Google Form cannot be prefilled with a file, and a form
+  with a file question requires the respondent to sign in to Google — which
+  would undo the one thing the no-account route exists for.
 
 ## Layout
 

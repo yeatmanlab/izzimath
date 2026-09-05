@@ -21,6 +21,32 @@ import { FEEDBACK, MAX_CHARS, ROUTES, kindById, issueUrl, formUrl, mailUrl }
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, [tabindex]:not([tabindex="-1"])';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+/* What a screenshot would have shown that the URL does not: which question was
+   on screen, which character, how wide the window was. Gathered from the DOM
+   here, so content/feedback.js stays a pure string builder.
+
+   The seed is already in the page address, and because the seed is the state it
+   regenerates the exact problem the reporter was looking at — which is why a
+   report of "Mon and Wed are the same height" needed no image to reproduce. */
+/* GitHub's mark, inlined. Used to label a link that goes to GitHub, which is
+   the use it exists for. One path, so it does not earn a place in sprites.js
+   alongside the characters. */
+const GH_MARK = `<svg class="ghmark" viewBox="0 0 16 16" aria-hidden="true" width="20" height="20"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.07-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.995 7.995 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>`;
+
+function context() {
+  const out = [];
+  const q = document.querySelector('.qnum, .sbar .tag')?.textContent?.trim();
+  if (q) out.push(`On screen: ${q}`);
+  const title = document.querySelector('.stage h2, main h1')?.textContent?.trim();
+  if (title) out.push(`Activity: ${title}`);
+  const ch = document.documentElement.dataset.ch;
+  if (ch && ch !== 'none') out.push(`Character: ${ch}`);
+  const lv = document.documentElement.dataset.lv;
+  if (lv) out.push(`Level: ${lv}`);
+  out.push(`Window: ${window.innerWidth} x ${window.innerHeight}`);
+  return out;
+}
+
 const root = document.querySelector('[data-feedback]');
 if (root) {
   const trigger = root.querySelector('[data-fbk-open]');
@@ -113,6 +139,7 @@ if (root) {
     const active = document.activeElement;
     returnFocusTo = active && active !== document.body && active.isConnected ? active : trigger;
     const page = location.pathname + location.search;
+    const extra = context();
 
     dialog = document.createElement('div');
     dialog.className = 'fbk-wrap noprint';
@@ -126,11 +153,16 @@ if (root) {
           placeholder="${esc(kind.placeholder)}" required></textarea>
         <p class="fbk-count"><span data-fbk-count>0</span> / ${MAX_CHARS}</p>
         <p class="fbk-note" data-fbk-why>${esc(kind.invite)}</p>
-        <p class="fbk-priv">${esc(FEEDBACK.privacy)}<br><code>${esc(page)}</code></p>
+        <p class="fbk-priv">${esc(FEEDBACK.privacy)}<br><code>${esc(page)}</code>${
+          extra.length ? `<br><code>${esc(extra.join(' · '))}</code>` : ''}</p>
         <div class="fbk-foot">
-          ${ROUTES.form.on ? `<a class="btn go" data-fbk-form target="_blank" rel="noopener noreferrer">${esc(kind.label)}</a>` : ''}
-          ${ROUTES.email.on ? `<a class="btn go" data-fbk-mail>${esc(kind.label)}</a>` : ''}
-          ${ROUTES.github.on ? `<button type="submit" class="btn go" data-fbk-send>${esc(kind.label)}</button>` : ''}
+          <div class="fbk-split">
+            ${ROUTES.form.on ? `<a class="fbk-main" data-fbk-form target="_blank" rel="noopener noreferrer">${esc(kind.label)}</a>` : ''}
+            ${ROUTES.email.on ? `<a class="fbk-main" data-fbk-mail>${esc(kind.label)}</a>` : ''}
+            ${ROUTES.github.on ? `<button type="submit" class="fbk-gh" data-fbk-send
+              aria-label="${esc(ROUTES.github.label ?? 'Submit via GitHub')}">
+              <span class="fbk-gh-cap">submit via github</span>${GH_MARK}</button>` : ''}
+          </div>
         </div>
         <p class="fbk-priv">${esc(FEEDBACK.sending)}</p>
       </form>`;
@@ -154,8 +186,8 @@ if (root) {
       count.textContent = String(text.value.length);
       // The alternative routes are links, so they are disabled by removing the
       // href rather than by an attribute buttons understand.
-      const fu = ok ? formUrl(kindId, text.value, page) : null;
-      const mu = ok ? mailUrl(kindId, text.value, page) : null;
+      const fu = ok ? formUrl(kindId, text.value, page, extra) : null;
+      const mu = ok ? mailUrl(kindId, text.value, page, extra) : null;
       const setHref = (sel, url) => {
         const el = dialog.querySelector(sel);
         if (!el) return;
@@ -177,7 +209,7 @@ if (root) {
     dialog.querySelector('form, .fbk-panel')?.addEventListener('submit', (e) => {
       e.preventDefault();
       if (!ROUTES.github.on) return;
-      const url = issueUrl(kindId, text.value, page);
+      const url = issueUrl(kindId, text.value, page, extra);
       if (!url) { sync(); text.focus(); return; }
       window.open(url, '_blank', 'noopener,noreferrer');
       closeDialog();

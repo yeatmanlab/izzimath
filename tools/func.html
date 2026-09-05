@@ -1067,9 +1067,8 @@ L.push('');
       d.querySelector('[data-fbk-kind="bug"]').click(); await nap(150);
       const tf = d.querySelector('[data-fbk-text]');
       const fbtn = d.querySelector('[data-fbk-form]');
-      sc('a no-account route is offered first', !!fbtn
-        && [...d.querySelectorAll('.fbk-foot .btn')][0] === fbtn, fbtn?.textContent.trim());
-      sc('it is the loudest button', fbtn?.classList.contains('go'), fbtn?.className);
+      sc('the no-account route is the left, wide half', !!fbtn && fbtn.classList.contains('fbk-main'),
+        fbtn?.textContent.trim());
       sc('and is dead until there is something to send', !fbtn.hasAttribute('href')
         && fbtn.getAttribute('aria-disabled') === 'true');
       tf.value = 'The squares are too small to tap on my phone';
@@ -1082,6 +1081,15 @@ L.push('');
       sc('the whole message goes into the form field', got.includes('too small to tap')
         && got.includes('/books/adding-to-twenty/') && /Issue/.test(got),
         field + ' = ' + got.slice(0, 34).replace(/\n/g, ' / '));
+      /* There is no screenshot and there cannot usefully be one, so the report
+         has to carry what a screenshot would have shown: the seed (inside the
+         page address, and the seed IS the state), which question was on screen,
+         and how wide the window was. Removing the capture failed nothing until
+         this existed. */
+      sc('and so does the context a screenshot would have shown',
+        /Window: \d+ x \d+/.test(got) && /On screen: /.test(got) && /seed=\d+/.test(got),
+        (got.match(/On screen:[^\n]*/) || ['no context at all'])[0]
+          + ' | ' + (got.match(/Window:[^\n]*/) || ['no window size'])[0]);
       sc('it opens in a new tab', fbtn.target === '_blank' && /noopener/.test(fbtn.rel), fbtn.target + ' ' + fbtn.rel);
       d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       await nap(60);
@@ -1116,8 +1124,28 @@ L.push('');
        reported the panel's opening words instead of the offending phrase,
        because the greedy prefix ran back to the start of the text. */
     const hit = shown.search(/github/i);
-    sc('the form never mentions GitHub', hit < 0,
+    /* GitHub is a THIRD way now, sharing one control with the route that needs
+       no account: two thirds of the width to the send, one third to GitHub. So
+       the rule is no longer "never mention it" — it is that the word appears
+       exactly when the route is on, and that it stays the narrower, quieter
+       half, because an account is a cost and should not look like the default. */
+    sc(FB.ROUTES.github.on ? 'the form offers GitHub as well' : 'the form never mentions GitHub',
+      FB.ROUTES.github.on ? hit >= 0 && !!d.querySelector('[data-fbk-send]') : hit < 0,
       hit < 0 ? 'nothing about it' : '…' + shown.slice(Math.max(0, hit - 22), hit + 24).trim() + '…');
+    if (FB.ROUTES.github.on) {
+      const main = d.querySelector('.fbk-main'), gh = d.querySelector('.fbk-gh');
+      const wm = main?.getBoundingClientRect().width ?? 0, wg = gh?.getBoundingClientRect().width ?? 0;
+      sc('GitHub is the right-hand third', wm > 0 && wg > 0
+        && main.getBoundingClientRect().left < gh.getBoundingClientRect().left
+        && Math.abs(wm / (wm + wg) - 2 / 3) < 0.06,
+        `${Math.round(wm)}px + ${Math.round(wg)}px = ${Math.round((wm / (wm + wg)) * 100)}% / ${Math.round((wg / (wm + wg)) * 100)}%`);
+      sc('it carries the mark and a caption', !!gh?.querySelector('svg')
+        && /submit via github/i.test(gh.textContent), gh?.textContent.trim());
+      sc('and is named for a screen reader', /github/i.test(gh?.getAttribute('aria-label') || ''),
+        gh?.getAttribute('aria-label'));
+      sc('the two halves are one control', main.parentElement === gh.parentElement
+        && main.parentElement.classList.contains('fbk-split'), main.parentElement.className);
+    }
     sc('and the button is named after the kind', /Suggest a feature/.test(d.querySelector('[data-fbk-form], [data-fbk-send], [data-fbk-mail]')?.textContent || ''),
       d.querySelector('[data-fbk-form], [data-fbk-send], [data-fbk-mail]')?.textContent.trim());
     d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

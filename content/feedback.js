@@ -28,12 +28,11 @@ export const REPO = 'yeatmanlab/izzimath';
    owner can decide. Turning either on is the edit below and nothing else —
    scripts/check.mjs enforces that an enabled route carries what it needs. */
 export const ROUTES = {
-  /* Off, and staying off while a route that needs no account exists. It filed
-     into the issue tracker, which is convenient for whoever does the work and
-     an account requirement for everybody else — and the site should not ask a
-     parent to sign up for a developer tool to report a typo. The code is kept
-     because turning it back on is one flag, but no reader sees the word. */
-  github: { on: false },
+  /* On, as a THIRD option rather than the first. It files straight into the
+     tracker where the work happens, which is worth having for the parents who
+     do have an account; it is not the primary route, because it asks everybody
+     else to sign up for a developer tool to report a typo. */
+  github: { on: true, label: 'Submit GitHub issue' },
 
   /* Any hosted form that takes anonymous responses. This is the PRIMARY route,
      because it is the only one that asks the reader for nothing at all.
@@ -102,7 +101,7 @@ export const FEEDBACK = {
   ],
   // Each kind has its own `invite`, shown while the box is empty, so the line
   // reads as an invitation rather than as a scolding about length.
-  privacy: 'The page address below goes with it, so we can find what you mean. That is all that is sent.',
+  privacy: 'This goes with it, so we can find what you mean and see the same thing you did. That is all that is sent.',
 };
 
 export const kindById = (id) => FEEDBACK.kinds.find((k) => k.id === id) ?? null;
@@ -120,14 +119,15 @@ function titleFor(kind, text) {
 
 /* Pure, and deliberately not in the mount: a URL builder that takes a string and
    returns a string can be tested in Node, and scripts/check.mjs does. */
-export function issueUrl(kindId, text, page = '') {
+export function issueUrl(kindId, text, page = '', extra = []) {
   const kind = kindById(kindId);
   if (!kind) return null;
   const body = String(text ?? '').trim();
   if (body.length < 10) return null;          // the form blocks this too
   const clipped = body.length > MAX_CHARS ? body.slice(0, MAX_CHARS - 1) + '…' : body;
   const where = String(page ?? '').trim();
-  const full = where ? `${clipped}\n\n---\nPage: ${where}` : clipped;
+  const lines = [where ? `Page: ${where}` : null, ...(extra ?? []).filter(Boolean)].filter(Boolean);
+  const full = lines.length ? `${clipped}\n\n---\n${lines.join('\n')}` : clipped;
   const q = new URLSearchParams({
     labels: kind.tag,
     title: titleFor(kind, clipped),
@@ -140,10 +140,10 @@ export function issueUrl(kindId, text, page = '') {
    prefill values as query parameters, so the shape is the same whichever
    service it is: one parameter per field, `usp=pp_url` because that is what
    Google's own prefill links carry. */
-export function formUrl(kindId, text, page = '') {
+export function formUrl(kindId, text, page = '', extra = []) {
   const r = ROUTES.form;
   if (!r.on || !r.url) return null;
-  const body = plainText(kindId, text, page);
+  const body = plainText(kindId, text, page, extra);
   if (!body) return null;
   const kind = kindById(kindId);
   const q = new URLSearchParams({ usp: 'pp_url' });
@@ -155,18 +155,28 @@ export function formUrl(kindId, text, page = '') {
 }
 
 /* The whole message, as one block of text. Every route sends this, which is why
-   a one-question form loses nothing: the kind and the page are inside it. */
-export function plainText(kindId, text, page = '') {
+   a one-question form loses nothing: the kind, the page and the context are all
+   inside it.
+
+   `extra` is what a screenshot would have shown and the URL does not — which
+   question was on screen, which character, how wide the window was. The seed is
+   already in `page`, and because the seed IS the state, it reproduces the exact
+   problem the reporter was looking at. That is the whole reason an image is not
+   needed: "Mon and Wed are the same height" plus
+   `/books/measure-and-chart/?seed=8817` regenerates that chart precisely.
+   The mount gathers `extra` from the DOM; this stays pure so it can be tested. */
+export function plainText(kindId, text, page = '', extra = []) {
   const kind = kindById(kindId);
   const body = String(text ?? '').trim();
   if (!kind || body.length < 10) return null;
   const clipped = body.length > MAX_CHARS ? body.slice(0, MAX_CHARS - 1) + '\u2026' : body;
-  return `${kind.titlePrefix} — Izzi Math\n\n${clipped}${page ? `\n\nPage: ${page}` : ''}`;
+  const lines = [page ? `Page: ${page}` : null, ...(extra ?? []).filter(Boolean)].filter(Boolean);
+  return `${kind.titlePrefix} — Izzi Math\n\n${clipped}${lines.length ? `\n\n${lines.join('\n')}` : ''}`;
 }
 
-export function mailUrl(kindId, text, page = '') {
+export function mailUrl(kindId, text, page = '', extra = []) {
   const r = ROUTES.email;
-  const body = plainText(kindId, text, page);
+  const body = plainText(kindId, text, page, extra);
   if (!r.on || !r.address || !body) return null;
   const kind = kindById(kindId);
   const q = new URLSearchParams({ subject: `Izzi Math — ${kind.titlePrefix}`, body });

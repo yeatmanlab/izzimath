@@ -618,12 +618,36 @@ footer.foot a:hover { color: var(--txt) }
 .fbk-panel textarea:focus { outline: 2px solid var(--a2); outline-offset: 1px }
 .fbk-count { font-size: 11.5px; color: var(--txt3); margin: 5px 0 0; text-align: right }
 .fbk-priv { font-size: 11.5px; color: var(--txt3); margin: 10px 0 0; line-height: 1.5 }
-.fbk-priv code { font-size: 11px; color: var(--txt2); word-break: break-all }
+/* `anywhere` rather than `break-all`: a long URL still breaks, but "Measure and
+   Chart" stops coming out as "Measure and C / hart" in a narrow panel. */
+.fbk-priv code { font-size: 11px; color: var(--txt2); overflow-wrap: anywhere }
 .fbk-note { font-size: 12.5px; color: var(--a2); margin: 10px 0 0 }
-/* One route, so one button: .btn.go centres itself at its own 320px cap. */
-.fbk-foot { display: flex; flex-direction: column; gap: 9px; margin-top: 16px }
-.fbk-foot .btn { justify-content: center; text-align: center }
-.fbk-foot .btn[aria-disabled="true"] { opacity: .5; pointer-events: none }
+/* One control, divided. The send is the wide half and takes the gradient; the
+   GitHub half is a narrow segment on the right, quieter, with its own caption —
+   an account is a cost, so it should not look like the default way through. */
+.fbk-foot { display: flex; justify-content: center; margin-top: 16px }
+.fbk-split { display: flex; align-items: stretch; width: 100%; max-width: 400px;
+  border-radius: 14px; overflow: hidden; box-shadow: 0 2px 0 rgba(0,0,0,.25) }
+.fbk-main { flex: 2 1 0; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 15px 18px; border: 0; cursor: pointer; text-decoration: none;
+  font-family: var(--fdisp); font-size: 16px; font-weight: 700;
+  color: var(--onsp); background: var(--sp) }
+.fbk-main:hover { filter: brightness(1.06) }
+.fbk-main[aria-disabled="true"] { opacity: .5; pointer-events: none }
+/* Two thirds to the send, one third to GitHub — a fixed ratio rather than
+   content width, so the divide sits in the same place whatever the label. */
+.fbk-gh { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 15px; cursor: pointer; color: var(--txt2);
+  border: 1px solid var(--line2); border-left: 0; background: var(--glass2) }
+.fbk-gh:hover { color: var(--txt); background: var(--glass) }
+.fbk-gh-cap { font-family: var(--fdisp); font-size: 9.5px; letter-spacing: .06em; text-transform: lowercase; line-height: 1.1 }
+.fbk-gh .ghmark { display: block }
+
+@media (max-width: 460px) {
+  .fbk-main { font-size: 14.5px; padding: 13px 12px }
+  .fbk-gh { padding: 7px 11px }
+  .fbk-gh-cap { font-size: 9px }
+}
 .fbk-panel .btn.go[disabled] { opacity: .5; cursor: not-allowed }
 
 @media (max-width: 560px) {
