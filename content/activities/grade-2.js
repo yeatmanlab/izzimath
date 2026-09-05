@@ -177,10 +177,14 @@ const placeValuePalace = {
       const n = h * 100 + t * 10 + o;
       return {
         type: 'input', prompt: 'What number is this?',
-        visual: baseTen(h > 3 ? 1 : h, t, o), visualWidth: 300,
+        /* All h hundreds, not one. This was `h > 3 ? 1 : h` — a cap to stop
+           nine flats running off a 300px figure — so the picture showed
+           1 hundred 0 tens 3 ones while the answer was 903. baseTen wraps the
+           flats into rows now, so the whole number is drawn and still fits. */
+        visual: baseTen(h, t, o), visualWidth: 320,
         answer: String(n), placeholder: '?',
         printStem: 'What number is this?',
-        printVisual: baseTen(h > 3 ? 1 : h, t, o, { print: true, scale: .7 }),
+        printVisual: baseTen(h, t, o, { print: true, scale: .62 }),
         hint: 'Hundreds first, then tens, then ones.',
         explain: `${h} hundreds, ${t} tens, ${o} ones is ${n}.`,
       };
@@ -540,7 +544,13 @@ const measureAndChart = {
   generate(seed, i, ch, r) {
     const DAYS = ['Mon', 'Tue', 'Wed', 'Thu'];
     const step = i % 4 === 3 ? 2 : 1;          // a scaled axis on every fourth page
-    const vals = DAYS.map(() => r.int(1, 9) * step);
+    /* DISTINCT values, four drawn without replacement. Four independent draws
+       from 1-9 tie about a third of the time, and mode 1 asks which day had the
+       most and answered `vals.indexOf(Math.max(...vals))` — the FIRST tallest.
+       A child looking at Mon 9 and Wed 9, picking Wed, was told to have another
+       look. Distinct values also stop mode 2 asking how many more one day had
+       than another when the answer is none. */
+    const vals = r.intsUnique(1, 9, 4).map((v) => v * step);
     const bars = DAYS.map((d, k) => ({ label: d, v: vals[k] }));
     const mode = i % 4;
     if (mode === 0) {

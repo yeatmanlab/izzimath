@@ -3,6 +3,7 @@
 // nothing is timed — books are for learning, games are for fluency.
 
 import { renderProblem } from './render.js';
+import { answerText } from '../../content/types.js';
 import { renderRoutine } from './routine.js';
 import { warmUpFor } from '../../content/routines.js';
 import { rng, deriveSeed } from '../lib/rng.js';
@@ -194,7 +195,8 @@ export function mountBook(activity, root) {
       <button class="btn" ${page === 0 ? 'disabled' : ''} data-prev>← Back</button>
       ${p.hint && !done ? '<button class="btn" data-hint>Give me a hint</button>' : ''}
       ${done && !answered[page].ok ? '<button class="btn" data-retry>Try again</button>' : ''}
-      ${done && !answered[page].ok ? '<button class="btn" data-skip>Show me and move on</button>' : ''}
+      ${done && !answered[page].ok && !host.querySelector('[data-showbox]')
+        ? '<button class="btn" data-reveal>Show me the answer</button>' : ''}
       ${page >= total - 1
         ? `<button class="btn${done ? ' pri' : ''}" data-finish>I\u2019m finished \u2192</button>`
         : `<button class="btn${done ? ' pri' : ''}" data-next>${done ? 'Next' : 'Skip'} \u2192</button>`}`;
@@ -216,10 +218,24 @@ export function mountBook(activity, root) {
       host.querySelector('[data-slot]').appendChild(h);
     });
     foot.querySelector('[data-finish]')?.addEventListener('click', () => { finished = true; paint(); });
-    foot.querySelector('[data-skip]')?.addEventListener('click', () => {
-      // On the last page there is nowhere to move on TO, so moving on means
-      // finishing rather than doing nothing at all.
-      if (page < total - 1) { page++; paint(); } else { finished = true; paint(); }
+    /* This said "Show me and move on" and did only the moving on: the handler
+       was `page++; paint()`, so a stuck child pressed the one button offering
+       to explain and the question vanished unexplained. It shows the answer
+       now, plainly and in words, and leaves the way forward to Next — because
+       revealing something and immediately navigating away from it is the same
+       bug wearing a better label. */
+    foot.querySelector('[data-reveal]')?.addEventListener('click', () => {
+      if (host.querySelector('[data-showbox]')) return;
+      const box = document.createElement('div');
+      box.dataset.showbox = '1';
+      box.style.marginTop = '18px';
+      box.setAttribute('role', 'status');
+      // Not escaped, matching the feedback block above: several explains carry
+      // <strong> and this file has no esc() to call anyway.
+      box.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>The answer is
+        <strong>${answerText(p)}</strong>.${p.explain ? ` ${p.explain}` : ''}</span></p>`;
+      host.querySelector('[data-slot]').appendChild(box);
+      nav();   // the button has done its job and should not offer again
     });
   }
 

@@ -48,9 +48,18 @@ function renderChoice(host, p, cb) {
 
 /* ------------------------------------------------------------------- input */
 function renderInput(host, p, cb) {
+  /* An answer box is not a login box, and on an iPad it was being offered
+     passwords, cards and addresses. A text field with NO name is one a browser
+     and a password manager cannot classify, so they offer everything: hence an
+     explicit name that is obviously not a credential, `autocomplete="off"`,
+     and the opt-out attributes the common password managers document.
+     `type` stays text on purpose — answers include 3:30 and 1 2/4, which
+     type="number" silently refuses. */
   const row = el(`<div class="ansrow">
-    <input class="ans" type="text" inputmode="${p.accept === 'fraction' ? 'text' : 'decimal'}"
-      autocomplete="off" autocapitalize="off" spellcheck="false"
+    <input class="ans" type="text" name="izzi-answer"
+      inputmode="${p.accept === 'fraction' || p.accept === 'time' ? 'text' : 'decimal'}"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other"
       aria-label="Your answer" placeholder="${esc(p.placeholder || '?')}">
     <button class="btn go" type="button">Check my answer</button>
   </div>`);

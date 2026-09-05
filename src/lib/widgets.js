@@ -161,32 +161,48 @@ export function tapeDiagram(cells, { print = false, total = null, width = 320, h
 }
 
 /* ---------------- base-ten blocks (place value) ---------------- */
-export function baseTen(hundreds, tens, ones, { print = false, scale = 1 } = {}) {
+/* Hundreds WRAP, and that is the whole reason this takes a perRow.
+   Nine flats in one line is 684 units against a 300px figure, so the caller
+   capped the count instead — `baseTen(h > 3 ? 1 : h, ...)` drew one flat for
+   nine hundreds, and a child reading 1 hundred 0 tens 3 ones typed 103 against
+   an answer of 903 and was told they were wrong. A figure may be small; it may
+   not be false. So the flats stack in rows and the whole number is drawn. */
+export function baseTen(hundreds, tens, ones, { print = false, scale = 1, perRow = 5 } = {}) {
   const u = 7 * scale, gap = 3 * scale;
   const stroke = print ? '#111' : 'var(--line2)';
   const fill = print ? 'none' : 'rgba(255,255,255,.07)';
+  const flat = u * 10, rowH = flat + gap * 2;
   const parts = [];
-  let x = 0;
+  const hRows = Math.max(1, Math.ceil(hundreds / perRow));
   for (let i = 0; i < hundreds; i++) {
-    let g = `<g transform="translate(${x},0)">`;
+    const gx = (i % perRow) * (flat + gap * 2);
+    const gy = Math.floor(i / perRow) * rowH;
+    let g = `<g transform="translate(${gx},${gy})">`;
     for (let r = 0; r < 10; r++) for (let c = 0; c < 10; c++)
       g += `<rect x="${c * u}" y="${r * u}" width="${u}" height="${u}" fill="${fill}" stroke="${stroke}" stroke-width=".5"/>`;
-    g += `<rect x="0" y="0" width="${u * 10}" height="${u * 10}" fill="none" stroke="${stroke}" stroke-width="1.6"/></g>`;
-    parts.push(g); x += u * 10 + gap * 2;
+    g += `<rect x="0" y="0" width="${flat}" height="${flat}" fill="none" stroke="${stroke}" stroke-width="1.6"/></g>`;
+    parts.push(g);
   }
+  // Tens and ones sit on the LAST row of flats, so the figure reads left to
+  // right in place order however many hundreds there are.
+  const baseY = hundreds ? (hRows - 1) * rowH : 0;
+  let x = hundreds ? (Math.min(hundreds, perRow) === perRow && hundreds % perRow === 0
+    ? perRow * (flat + gap * 2)
+    : (hundreds % perRow || perRow) * (flat + gap * 2)) : 0;
   for (let i = 0; i < tens; i++) {
-    let g = `<g transform="translate(${x},0)">`;
+    let g = `<g transform="translate(${x},${baseY})">`;
     for (let r = 0; r < 10; r++) g += `<rect x="0" y="${r * u}" width="${u}" height="${u}" fill="${fill}" stroke="${stroke}" stroke-width=".5"/>`;
-    g += `<rect x="0" y="0" width="${u}" height="${u * 10}" fill="none" stroke="${stroke}" stroke-width="1.6"/></g>`;
+    g += `<rect x="0" y="0" width="${u}" height="${flat}" fill="none" stroke="${stroke}" stroke-width="1.6"/></g>`;
     parts.push(g); x += u + gap;
   }
   x += gap * 2;
   for (let i = 0; i < ones; i++) {
-    parts.push(`<rect x="${x}" y="${(u * 10) - u}" width="${u}" height="${u}" fill="${fill}" stroke="${stroke}" stroke-width="1.4"/>`);
+    parts.push(`<rect x="${x}" y="${baseY + flat - u}" width="${u}" height="${u}" fill="${fill}" stroke="${stroke}" stroke-width="1.4"/>`);
     x += u + gap;
   }
-  const W = Math.max(x, u * 10), H = u * 10;
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${Math.min(H, 110)}" role="img" aria-label="${hundreds} hundreds ${tens} tens ${ones} ones">${parts.join('')}</svg>`;
+  const W = Math.max(x, Math.min(hundreds, perRow) * (flat + gap * 2), flat);
+  const H = baseY + flat;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${Math.min(H, 150)}" role="img" aria-label="${hundreds} hundreds ${tens} tens ${ones} ones">${parts.join('')}</svg>`;
 }
 
 /* ---------------- dot pattern (subitizing) ---------------- */
@@ -238,7 +254,12 @@ export function barChart(bars, { print = false, max = null, step = 1, width = 30
   const st = print ? '#111' : 'var(--line2)';
   const tc = print ? '#333' : 'var(--txt2)';
   const y = (v) => height - padB - (v / top) * (height - padB - 8);
-  let out = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="bar chart">`;
+  /* The label carries the DATA. "bar chart" told a screen reader nothing, and
+     it left the numbers in the figure unreadable by anything — including the
+     checker, which is how "Which day had the most?" shipped with two bars at
+     nine and one of them marked wrong. */
+  const said = bars.map((b) => `${b.label} ${b.v}`).join(', ');
+  let out = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="bar chart: ${esc(said)}">`;
   // gridlines at each step, so a value can be read off rather than guessed
   for (let v = 0; v <= top; v += step) {
     out += `<line x1="${padL}" y1="${y(v).toFixed(1)}" x2="${width - 4}" y2="${y(v).toFixed(1)}" stroke="${print ? '#bbb' : 'rgba(255,255,255,.10)'}" stroke-width="1"/>`;

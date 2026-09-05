@@ -50,7 +50,13 @@ const longMultiplication = {
     const tens = Math.floor(a / 10) * 10, ones = a % 10;
     return {
       type: 'input', prompt: `<strong>${a} × ${b} =</strong>`,
-      visual: stage === 'm1' ? array2d(b, Math.min(a, 12), { fit: 150 }) : null, visualWidth: 200,
+      /* The TRUE array, with the tens columns shaded so the picture shows the
+         split the hint describes. It was `array2d(b, Math.min(a, 12))`, which
+         drew a 2 by 12 rectangle for 15 x 2 — a figure with the wrong number of
+         squares in it. Given room (fit 300 in a 320px figure) 29 columns still
+         come out at 8px, which is small but countable and, more to the point,
+         right. */
+      visual: stage === 'm1' ? array2d(b, a, { fit: 300, shadeCols: tens }) : null, visualWidth: 320,
       answer: String(a * b), placeholder: '?', printStem: `${a} × ${b} =`,
       hint: `Split ${a} into ${tens} and ${ones}. Then ${tens} × ${b} and ${ones} × ${b}.`,
       explain: `${tens} × ${b} = ${tens * b}, ${ones} × ${b} = ${ones * b}. Add them: ${a * b}.`,

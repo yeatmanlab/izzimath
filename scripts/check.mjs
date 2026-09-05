@@ -1064,6 +1064,133 @@ console.log('\n=== fields swallowed by comments ===');
    it against, on every sheet that item ever appeared on. close-to-hundred and
    standard-algorithm both have two-blank stems and answer both, which is why
    the rule counts values rather than banning the second blank. */
+/* ------------------------------------------------- does the figure tell the truth
+   A figure that contradicts its own answer is the worst defect this content can
+   have, because the child who reads the picture correctly is told they are
+   wrong. It happened twice, both times because someone capped a figure to stop
+   it running off the page: `baseTen(h > 3 ? 1 : h, t, o)` drew one flat for nine
+   hundreds, so a second grader read 1 hundred 0 tens 3 ones, typed 103, and was
+   marked wrong against 903. And `array2d(b, Math.min(a, 12))` drew a 2 by 12
+   rectangle for 15 x 2.
+
+   Both were invisible to every existing check, and grepping for the pattern
+   missed the second one because it sat behind a ternary. So this reads the
+   figure's own aria-label — the numbers a screen reader is told are on the page —
+   and requires each of them to appear somewhere in the problem's words. A
+   quantity drawn but never mentioned is a picture of a different question. */
+/* An answer box was being offered passwords, credit cards and addresses on an
+   iPad. A text field a browser cannot classify is one it offers everything for,
+   so every field the site renders has to say what it is not. Read out of the
+   source, because these are attributes rather than behaviour and nothing else
+   would notice them going missing. */
+console.log('\n=== typed fields say they are not credentials ===');
+{
+  const WANT = ['autocomplete="off"', 'data-1p-ignore', 'data-lpignore', 'name='];
+  const files = ['src/engine/render.js', 'src/mount/feedback.js'];
+  let fields = 0;
+  for (const f of files) {
+    const src = fs.readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+    for (const m of src.matchAll(/<(input|textarea)\b[^>]*/g)) {
+      const tag = m[0];
+      // radios, checkboxes and the print toggles carry no typed text
+      if (/type="(radio|checkbox)"/.test(tag)) continue;
+      fields++;
+      const missing = WANT.filter((w) => !tag.includes(w));
+      if (missing.length) fail('fields', `${f} has a typed field missing ${missing.join(', ')}: ${tag.slice(0, 54)}…`);
+    }
+  }
+  console.log(`  ${fields} typed fields, each naming itself and opting out of autofill`);
+}
+
+console.log('\n=== figures tell the truth ===');
+{
+  const READERS = [
+    /^(\d+) hundreds (\d+) tens (\d+) ones$/,
+    /^ten frame showing (\d+)$/,
+    /^two ten frames showing (\d+) dots altogether$/,
+    /^(\d+) dots$/,
+    /^number bond (\d+) and (\d+) make (\d+)$/,
+    /^(\d+) by (\d+) array$/,
+    /^(\d+) of (\d+) shaded$/,
+  ];
+  const asserted = (svg) => {
+    const m = String(svg ?? '').match(/aria-label="([^"]*)"/);
+    if (!m) return null;
+    for (const re of READERS) {
+      const g = m[1].match(re);
+      if (g) return { nums: g.slice(1).map(Number), label: m[1] };
+    }
+    return null;
+  };
+  /* A superlative has to have ONE answer. "Which day had the most?" drew four
+     bars from 1-9 independently, tied about a third of the time, and answered
+     `indexOf(Math.max(...))` — the first tallest — so a child reading the other
+     tallest bar was told to look again. Readable now that barChart puts its data
+     in its own label. */
+  const SUPERLATIVE = /\b(the most|the fewest|the least|the tallest|the shortest|the greatest|the smallest|the biggest)\b/i;
+  const superlatives = (p) => {
+    const m = String(p.visual ?? '').match(/aria-label="bar chart: ([^"]*)"/);
+    if (!m) return null;
+    const words = `${p.prompt ?? ''} ${p.printStem ?? ''}`;
+    if (!SUPERLATIVE.test(words)) return null;
+    const pairs = m[1].split(', ').map((x) => { const i = x.lastIndexOf(' '); return [x.slice(0, i), Number(x.slice(i + 1))]; });
+    const wantLeast = /\b(the fewest|the least|the shortest|the smallest)\b/i.test(words);
+    const target = wantLeast ? Math.min(...pairs.map((q) => q[1])) : Math.max(...pairs.map((q) => q[1]));
+    const holders = pairs.filter((q) => q[1] === target).map((q) => q[0]);
+    return { holders, target, pairs };
+  };
+
+  let figures = 0, numbers = 0, supers = 0;
+  const seen = new Set();
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (const cid of CHARS) {
+      for (let i = 0; i < n; i++) {
+        for (const sd0 of [8817, 1, 7, 4242, 31337]) {
+          const sd = deriveSeed(sd0, `p${i}`);
+          let p;
+          try { p = a.generate(sd, i, getCharacter(cid), rng(sd), sd0); } catch { continue; }
+          const words = [answerText(p), p.prompt, p.printStem, p.explain, p.hint]
+            .filter(Boolean).map(String).join(' | ');
+          const sup = superlatives(p);
+          if (sup) {
+            supers++;
+            const k = `sup:${a.id}:${i}:${sup.pairs.map((q) => q[1]).join('-')}`;
+            if (!seen.has(k)) {
+              if (sup.holders.length > 1) {
+                seen.add(k);
+                fail(a.id, `i=${i} "${String(p.prompt).replace(/<[^>]*>/g, '')}" has ${
+                  sup.holders.length} right answers — ${sup.holders.join(' and ')} are ${
+                  sup.holders.length === 2 ? 'both' : 'all'} ${sup.target} — and marks ${answerText(p)} as the only one`);
+              } else if (!sup.holders.includes(answerText(p))) {
+                seen.add(k);
+                fail(a.id, `i=${i} the answer is ${answerText(p)} but the ${sup.target} bar is ${sup.holders[0]}`);
+              }
+            }
+          }
+          for (const key of ['visual', 'printVisual']) {
+            const d = asserted(p[key]);
+            if (!d) continue;
+            figures++;
+            for (const v of d.nums) {
+              // Zero asserts an ABSENCE: "no tens" needs no mention in the words.
+              if (v === 0) continue;
+              numbers++;
+              if (new RegExp(`(^|[^\\d])${v}([^\\d]|$)`).test(words)) continue;
+              const k = `${a.id}:${key}:${i}:${v}`;
+              if (seen.has(k)) continue;
+              seen.add(k);
+              fail(a.id, `i=${i} the ${key} says "${d.label}" but ${v} appears nowhere in the question, hint, answer or explanation — answer is ${answerText(p)}`);
+            }
+          }
+        }
+      }
+    }
+  }
+  console.log(`  ${figures} figures read back from their own labels · ${numbers} drawn quantities · ${
+    supers} superlative questions${seen.size ? ` · ${seen.size} PROBLEMS` : ' · all sound'}`);
+}
+
 console.log('\n=== printed blanks the key can fill ===');
 {
   let stems = 0, blanked = 0;

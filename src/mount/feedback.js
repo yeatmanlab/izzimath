@@ -121,7 +121,8 @@ if (root) {
         <button type="button" class="fbk-x" data-fbk-close aria-label="Close">&times;</button>
         <h2 id="fbk-h">${esc(kind.label)}</h2>
         <label class="fbk-ask" for="fbk-t">${esc(kind.ask)}</label>
-        <textarea id="fbk-t" data-fbk-text rows="5" maxlength="${MAX_CHARS}"
+        <textarea id="fbk-t" name="izzi-suggestion" data-fbk-text rows="5" maxlength="${MAX_CHARS}"
+          autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other"
           placeholder="${esc(kind.placeholder)}" required></textarea>
         <p class="fbk-count"><span data-fbk-count>0</span> / ${MAX_CHARS}</p>
         <p class="fbk-note" data-fbk-why>${esc(kind.invite)}</p>

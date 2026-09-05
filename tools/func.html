@@ -631,6 +631,36 @@ L.push('');
       bd.querySelectorAll('.sfoot.qnav .btn.pri').length === 0);
     bc('the way past says Skip, not Next', /Skip/.test(fwd().textContent), fwd().textContent.trim());
 
+    /* "Show me and move on" did only the moving on — its handler was
+       `page++; paint()`, so the one button offering to explain made the
+       question disappear unexplained. It has to SHOW something, name the
+       answer, and not navigate away from what it just revealed. */
+    {
+      const inp = bd.querySelector('.sbody input');
+      if (!inp) bc('a wrong answer offers to show the answer', false, 'no input on this page to drive');
+      else {
+        inp.value = '1';
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        bd.querySelector('.btn.go')?.click();
+        await nap(220);
+        const rev = bd.querySelector('[data-reveal]');
+        bc('a wrong answer offers to show the answer', !!rev, rev?.textContent.trim() || 'no such button');
+        const wasOn = bd.querySelector('.qnum')?.textContent.trim();
+        rev?.click();
+        await nap(220);
+        const box = bd.querySelector('[data-showbox]');
+        bc('and pressing it shows one', !!box?.textContent.trim(),
+          (box?.textContent || 'NOTHING WAS SHOWN').replace(/\s+/g, ' ').trim().slice(0, 50));
+        bc('it names the answer, not just the method', /answer is/i.test(box?.textContent || ''));
+        bc('and does not move on from what it revealed',
+          bd.querySelector('.qnum')?.textContent.trim() === wasOn,
+          'still on ' + bd.querySelector('.qnum')?.textContent.trim());
+        bc('the button retires once used', !bd.querySelector('[data-reveal]'));
+        bd.querySelector('[data-retry]')?.click();
+        await nap(160);
+      }
+    }
+
     /* `hidden` must actually hide: .fb sets display:inline-flex, which beats the
        browser's own [hidden]{display:none}, so the answer box's hidden "Type an
        answer first" rendered as a small empty capsule under every question. */
