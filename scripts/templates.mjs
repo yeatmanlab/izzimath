@@ -161,6 +161,65 @@ export function activityCard(b, a) {
   </div></a>`;
 }
 
+/* ------------------------------------------------------- the look-inside card
+   Not activityCard: these three introduce the three CORE FEATURES of a grade
+   rather than sampling activities, so each carries a note about its whole
+   category — how many books the grade has, that every book has a printable —
+   and the note is what makes the section an introduction rather than three
+   examples. Kept separate so the hundred-odd ordinary cards are untouched.
+
+   `role` fixes what the card IS. The printable card deliberately points at the
+   SAME activity as the workbook card, because "play it, then print the very
+   same page" is the site's pitch and showing it beats claiming it. */
+export function lookCard(b, a, { role, note }) {
+  const href = role === 'printable'
+    ? `${b}/print/${a.id}/`
+    : `${b}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/`;
+  const ROLE = {
+    workbook: { kicker: 'Workbook', glyph: '◈' },
+    game: { kicker: 'Game', glyph: '◉' },
+    printable: { kicker: 'Printable', glyph: '▤' },
+  }[role];
+  return `<a class="card lookcard" href="${href}" data-role="${esc(role)}">
+  <div class="thumb"><span class="big" aria-hidden="true">${esc(ROLE.glyph)}</span></div>
+  <div class="cbody">
+    <p class="lookkick">${ROLE.kicker}</p>
+    <h3>${esc(a.title)}${role === 'printable' ? ', printed' : ''}</h3>
+    <p class="looknote">${esc(note)}</p>
+    <div class="meta">
+      <span class="tag">${esc(gradeName(a.grade).replace(' grade', ''))}</span>
+      ${role === 'printable'
+        ? '<span class="tag ok">Answer key</span>'
+        : `<span class="tag ok">Prints too</span>`}
+    </div>
+  </div></a>`;
+}
+
+/* One column per role: its own small grade picker, then the six cards for that
+   role with one shown. Three columns means three pickers, which is the point —
+   the three start on DIFFERENT grades so a visitor sees breadth at a glance and
+   can move any one of them without disturbing the others.
+
+   Real links, so with JavaScript off each number still goes to that grade's
+   shelf; the mount takes the click and swaps the card instead. Each number
+   carries its own grade wording, so the build stays the only thing that knows
+   how to name a grade. */
+export function lookColumn(b, role, grades, cardFor, chosen) {
+  return `<div class="lookcol" data-wheel="${esc(role)}">
+    <div class="wheel-row" role="tablist" aria-label="Grade for the ${esc(role)}">
+      ${grades.map((g) => `<a class="wheel-g" role="tab" href="${b}/grades/${g}/"
+        data-g="${esc(g)}" id="wheel-${esc(role)}-${esc(g)}"
+        aria-controls="look-${esc(role)}-${esc(g)}"
+        aria-selected="${g === chosen ? 'true' : 'false'}"
+        tabindex="${g === chosen ? '0' : '-1'}"
+        ><span class="vh">${esc(gradeName(g))}</span><span aria-hidden="true">${esc(g)}</span></a>`).join('')}
+    </div>
+    ${grades.map((g) => `<div class="lookpanel" id="look-${esc(role)}-${esc(g)}" role="tabpanel"
+      aria-labelledby="wheel-${esc(role)}-${esc(g)}"${g === chosen ? '' : ' hidden'}>${cardFor(g)}</div>`).join('')}
+  </div>`;
+}
+
+
 export function roamBadges(a) {
   if (!a.roam?.length) return '';
   return a.roam.map((l) => `<span class="tag meas">${esc(roamLabel(l))}</span>`).join(' ');

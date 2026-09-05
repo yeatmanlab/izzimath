@@ -1159,6 +1159,90 @@ L.push('');
   }
 }
 
+/* ------------------------------------------------------ the look-inside pickers
+   Three grade pickers on the home page, one per card, each switching its own
+   column and starting on a different grade. All client-rendered, so a11y.mjs
+   cannot see any of it — and the whole point of the section is that the grade
+   on the card is TRUE, which is exactly what the old hard-coded "Start here"
+   got wrong. */
+L.push('');
+{
+  const lc = (n, ok, note) => { checks++; L.push((ok ? '· ' : '✗ ') + ('look:' + n).padEnd(40) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:absolute;left:-99999px;top:0;width:1100px;height:1800px';
+    f.src = '/';
+    document.body.appendChild(f);
+    await new Promise((r) => { f.onload = r; setTimeout(r, 8000); });
+    await nap(500);
+    const d = f.contentDocument;
+    const cols = [...d.querySelectorAll('[data-wheel]')];
+    lc('one picker per card', cols.length === 3, cols.length + ' pickers');
+    lc('in the order game, workbook, printable',
+      cols.map((c) => c.dataset.wheel).join(',') === 'game,workbook,printable',
+      cols.map((c) => c.dataset.wheel).join(', '));
+
+    const sel = (c) => c.querySelector('[role="tab"][aria-selected="true"]')?.dataset.g;
+    const shown = (c) => [...c.querySelectorAll('.lookpanel')].filter((p) => !p.hidden);
+    const gradeTag = (c) => shown(c)[0]?.querySelector('.meta .tag')?.textContent.trim();
+
+    lc('each shows exactly one card', cols.every((c) => shown(c).length === 1),
+      cols.map((c) => shown(c).length).join(','));
+    lc('they start on different grades', new Set(cols.map(sel)).size === 3,
+      cols.map((c) => c.dataset.wheel + '=' + sel(c)).join(', '));
+    /* The grade on the card has to match the number that is lit. This is the
+       assertion the old section could not have passed: it showed two
+       third-grade activities under "Grade is the only question we ask". */
+    lc('the grade on the card matches the number lit',
+      cols.every((c) => (gradeTag(c) || '').toLowerCase().startsWith(sel(c) === 'K' ? 'kinder' : sel(c))),
+      cols.map((c) => sel(c) + '→' + gradeTag(c)).join(', '));
+
+    /* Switching one column must not disturb the others — compared on the
+       VISIBLE CARD, not on aria-selected. The first version of this check read
+       the attribute, which a leaking picker never touches: a mutation that made
+       one picker swap all three columns' cards passed it, because only the
+       clicked column's attributes moved. The card on screen is the thing a
+       child sees. */
+    const before = cols.map((c) => [sel(c), gradeTag(c)]);
+    cols[0].querySelector('[data-g="5"]').click();
+    await nap(120);
+    lc('clicking a number switches that card', sel(cols[0]) === '5' && gradeTag(cols[0]) === '5th',
+      sel(cols[0]) + ' → ' + gradeTag(cols[0]));
+    lc('and leaves the other two cards alone',
+      gradeTag(cols[1]) === before[1][1] && gradeTag(cols[2]) === before[2][1]
+      && sel(cols[1]) === before[1][0] && sel(cols[2]) === before[2][0],
+      cols.slice(1).map((c) => `${c.dataset.wheel} shows ${gradeTag(c)} with ${sel(c)} lit`).join(', '));
+    lc('and every column still agrees with its own number',
+      cols.every((c) => (gradeTag(c) || '').toLowerCase().startsWith(sel(c) === 'K' ? 'kinder' : sel(c))),
+      cols.map((c) => sel(c) + '→' + gradeTag(c)).join(', '));
+    lc('still exactly one card in that column', shown(cols[0]).length === 1,
+      shown(cols[0]).length + ' visible');
+
+    // one tab stop per picker, arrows move within it
+    const tabs0 = [...cols[0].querySelectorAll('[role="tab"]')];
+    lc('one tab stop per picker, not six',
+      tabs0.filter((t) => t.tabIndex === 0).length === 1,
+      tabs0.filter((t) => t.tabIndex === 0).length + ' focusable');
+    tabs0.find((t) => t.tabIndex === 0).dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    await nap(120);
+    lc('Home jumps to the first grade', sel(cols[0]) === 'K', sel(cols[0]));
+
+    // and the numbers are tappable
+    const small = Math.min(...tabs0.map((t) => Math.min(t.getBoundingClientRect().width, t.getBoundingClientRect().height)));
+    lc('the numbers clear the 24px tap minimum', small >= 24, small.toFixed(0) + 'px smallest side');
+
+    /* Without JavaScript every number is a link to that grade's shelf, which is
+       the only thing that still works if the mount never runs. */
+    lc('each number is a real link to its grade',
+      tabs0.every((t) => new URL(t.href).pathname.endsWith(`/grades/${t.dataset.g}/`)),
+      tabs0.map((t) => new URL(t.href).pathname.split('/').filter(Boolean).pop()).join(','));
+    f.remove();
+  } catch (e) {
+    lc('harness itself', false, 'THREW ' + e.message);
+  }
+}
+
 L.push(''); L.push('CHECKS_RUN='+checks);
 document.getElementById('out').textContent=L.join('\n');
 window.__DONE__=true;

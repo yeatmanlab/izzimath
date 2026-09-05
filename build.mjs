@@ -4,8 +4,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { page, activityCard, tourDoor, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
+import { page, activityCard, lookCard, lookColumn, tourDoor, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet, ssddSheet, maxPagesFor } from './src/lib/printsheet.js';
+import { rng } from './src/lib/rng.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
 import { activities, byGrade, strandsFor, STRANDS } from './content/activities/index.js';
@@ -102,15 +103,50 @@ if (!process.env.CI && fs.existsSync('tools')) copyDir('tools', path.join(OUT, '
 
 /* --------------------------------------------------------------------- home */
 {
-  const featured = ['fraction-number-line', 'ten-frame-flash', 'times-table-tower']
-    .map((id) => activities.find((a) => a.id === id)).filter(Boolean);
-  const pick = featured.length ? featured : activities.slice(0, 3);
+  /* The look-inside columns. Three roles, six grades each — eighteen cards
+     inlined, a few KB, so switching grade is an attribute change and not a
+     request.
+
+     Each role starts on a DIFFERENT grade, so the section shows breadth rather
+     than three cards from one year. Picked with the project's own seeded rng
+     from a fixed seed: varied without being a hand-written list, and stable
+     across builds so the audit and the checks see the same page twice.
+
+     DERIVED, never hand-picked ids. The old version named three activity ids in
+     this file — chosen when the catalogue was thirty — so it drifted, and it
+     showed two third-grade activities directly under "Grade is the only
+     question we ask". */
+  const lookRng = rng(20260905);
+  const lookGrades = (() => {
+    const shuffled = lookRng.shuffle(GRADES);
+    return { game: shuffled[0], workbook: shuffled[1], printable: shuffled[2] };
+  })();
+  const firstOf = (g, kind) => byGrade(g).find((a) => a.kind === kind);
+  const countOf = (g, kind) => byGrade(g).filter((a) => a.kind === kind).length;
+  const lookCardFor = (role) => (g) => {
+    const gn = gradeName(g);
+    if (role === 'game') {
+      const a = firstOf(g, 'game'); const n = countOf(g, 'game');
+      return lookCard(b, a, { role,
+        note: `Short rounds to get quicker at something already met. ${
+          n === 1 ? 'The one game' : `One of ${n} games`} in ${gn}, each for a different skill.` });
+    }
+    const a = firstOf(g, 'book'); const n = countOf(g, 'book');
+    if (role === 'workbook') {
+      return lookCard(b, a, { role,
+        note: `Practice problems with a hint and a worked answer for every one. ${
+          n === 1 ? 'The one workbook' : `One of ${n} workbooks`} in ${gn}.` });
+    }
+    return lookCard(b, a, { role,
+      note: `A fresh sheet and an answer key, on paper. Every book and game in ${gn} has one.` });
+  };
+
   write('index.html', page({
     base: b, active: '', title: 'Math that glows on screen and on paper',
     desc: 'Free interactive math workbooks and games for kindergarten through 5th grade. Every activity also prints. No account needed.',
     // Only the index pages carry the walkthrough, so the other 100+ pages' JS is
     // unchanged and no activity page gains a help affordance.
-    scripts: ['/assets/src/mount/tour.js'],
+    scripts: ['/assets/src/mount/tour.js', '/assets/src/mount/wheel.js'],
     body: `
 <section class="wrap hero">
   <div class="pill">◆ Every book prints</div>
@@ -136,9 +172,13 @@ if (!process.env.CI && fs.existsSync('tools')) copyDir('tools', path.join(OUT, '
 </section>
 
 <section class="wrap sec">
-  <h2>Start here</h2>
-  <p class="sub">Three that show what the rest are like.</p>
-  <div class="cards">${pick.map((a) => activityCard(b, a)).join('')}</div>
+  <h2>A look inside</h2>
+  <p class="sub">A game, a workbook, and the very same pages on paper to print and practice.
+    Each grade consists of a collection of these activities for fun math practice.</p>
+  <div class="cards lookrow">
+    ${['game', 'workbook', 'printable'].map((role) =>
+      lookColumn(b, role, GRADES, lookCardFor(role), lookGrades[role])).join('')}
+  </div>
 </section>
 
 <section class="wrap sec">
