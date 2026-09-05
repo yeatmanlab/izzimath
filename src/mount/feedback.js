@@ -37,8 +37,11 @@ function context() {
   const out = [];
   const q = document.querySelector('.qnum, .sbar .tag')?.textContent?.trim();
   if (q) out.push(`On screen: ${q}`);
+  /* Called "Activity:" whatever the page was, so a report from /grades/ said
+     "Activity: All grades". The activity pages are the ones with a .stage. */
+  const onActivity = !!document.querySelector('.stage');
   const title = document.querySelector('.stage h2, main h1')?.textContent?.trim();
-  if (title) out.push(`Activity: ${title}`);
+  if (title) out.push(`${onActivity ? 'Activity' : 'Page'}: ${title}`);
   const ch = document.documentElement.dataset.ch;
   if (ch && ch !== 'none') out.push(`Character: ${ch}`);
   const lv = document.documentElement.dataset.lv;
@@ -144,7 +147,7 @@ if (root) {
     dialog = document.createElement('div');
     dialog.className = 'fbk-wrap noprint';
     dialog.innerHTML = `<div class="fbk-bg" data-fbk-close></div>
-      <form class="fbk-panel" role="dialog" aria-modal="true" aria-labelledby="fbk-h" novalidate>
+      <div class="fbk-panel" role="dialog" aria-modal="true" aria-labelledby="fbk-h">
         <button type="button" class="fbk-x" data-fbk-close aria-label="Close">&times;</button>
         <h2 id="fbk-h">${esc(kind.label)}</h2>
         <label class="fbk-ask" for="fbk-t">${esc(kind.ask)}</label>
@@ -159,13 +162,13 @@ if (root) {
           <div class="fbk-split">
             ${ROUTES.form.on ? `<a class="fbk-main" data-fbk-form target="_blank" rel="noopener noreferrer">${esc(kind.label)}</a>` : ''}
             ${ROUTES.email.on ? `<a class="fbk-main" data-fbk-mail>${esc(kind.label)}</a>` : ''}
-            ${ROUTES.github.on ? `<button type="submit" class="fbk-gh" data-fbk-send
+            ${ROUTES.github.on ? `<button type="button" class="fbk-gh" data-fbk-send
               aria-label="${esc(ROUTES.github.label ?? 'Submit via GitHub')}">
               <span class="fbk-gh-cap">submit via github</span>${GH_MARK}</button>` : ''}
           </div>
         </div>
         <p class="fbk-priv">${esc(FEEDBACK.sending)}</p>
-      </form>`;
+      </div>`;
     document.body.appendChild(dialog);
     document.addEventListener('keydown', onKey);
     dialog.querySelectorAll('[data-fbk-close]').forEach((el) =>
@@ -206,8 +209,14 @@ if (root) {
 
     sync();
 
-    dialog.querySelector('form, .fbk-panel')?.addEventListener('submit', (e) => {
-      e.preventDefault();
+    /* A click, not a form submit. Nothing here submits to anything — the URL is
+       built and opened — so the panel does not need to be a <form>, and being
+       one is a signal iOS uses when deciding to offer AutoFill. Whether that is
+       the whole cause of the passwords-and-cards bar is unverified: it cannot be
+       reproduced in a headless browser, and Safari's own AutoFill row is largely
+       outside a page's control. This removes a real signal; it may not be
+       enough. */
+    dialog.querySelector('[data-fbk-send]')?.addEventListener('click', () => {
       if (!ROUTES.github.on) return;
       const url = issueUrl(kindId, text.value, page, extra);
       if (!url) { sync(); text.focus(); return; }

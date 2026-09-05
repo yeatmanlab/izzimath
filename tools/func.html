@@ -1045,9 +1045,12 @@ L.push('');
       (panel.textContent.match(/\/books\/[^\s]*/) || ['not shown'])[0]);
 
     if (FB.ROUTES.github.on) {
-      panel.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      /* A click, not a form submit: the panel stopped being a <form>, because
+         nothing here submits anywhere and being one is a signal iOS uses when
+         deciding to offer passwords and credit cards on a suggestion box. */
+      d.querySelector('[data-fbk-send]').click();
       await nap(120);
-      sc('submitting opens a prefilled issue', !!opened && opened.startsWith('https://github.com/'),
+      sc('the GitHub half opens a prefilled issue', !!opened && opened.startsWith('https://github.com/'),
         (opened || 'nothing opened').slice(0, 52));
       if (opened) {
         const u = new URL(opened);
@@ -1124,6 +1127,9 @@ L.push('');
        reported the panel's opening words instead of the offending phrase,
        because the greedy prefix ran back to the start of the text. */
     const hit = shown.search(/github/i);
+    sc('and the panel is not a form at all', !d.querySelector('.fbk-panel form, form.fbk-panel')
+      && d.querySelector('.fbk-panel')?.tagName === 'DIV',
+      d.querySelector('.fbk-panel')?.tagName?.toLowerCase() || 'no panel');
     /* GitHub is a THIRD way now, sharing one control with the route that needs
        no account: two thirds of the width to the send, one third to GitHub. So
        the rule is no longer "never mention it" — it is that the word appears
@@ -1150,6 +1156,26 @@ L.push('');
       d.querySelector('[data-fbk-form], [data-fbk-send], [data-fbk-mail]')?.textContent.trim());
     d.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await nap(60);
+
+    /* The context said "Activity: All grades" on /grades/, which is not an
+       activity — spotted in a photo of a real report. Off an activity page the
+       title is a page title and has to be labelled as one. */
+    {
+      const g = document.createElement('iframe');
+      g.style.cssText = 'position:absolute;left:-99999px;top:0;width:900px;height:1000px';
+      g.src = '/grades/';
+      document.body.appendChild(g);
+      await new Promise((r) => { g.onload = r; setTimeout(r, 8000); });
+      await nap(400);
+      const gd = g.contentDocument;
+      gd.querySelector('[data-fbk-open]').click(); await nap(60);
+      gd.querySelector('[data-fbk-kind="feature"]').click(); await nap(160);
+      const ctx = gd.querySelector('.fbk-priv code:last-of-type')?.textContent || '';
+      sc('off an activity page nothing is called an Activity', !/Activity:/.test(ctx),
+        ctx.slice(0, 56) || 'no context line');
+      sc('and the page is still named', /Page: /.test(ctx), (ctx.match(/Page: [^·]*/) || ['not named'])[0].trim());
+      g.remove();
+    }
 
     // and it must never print
     sc('it is marked not to print', root.classList.contains('noprint'), root.className);
@@ -1234,6 +1260,13 @@ L.push('');
 
     /* Without JavaScript every number is a link to that grade's shelf, which is
        the only thing that still works if the mount never runs. */
+    /* These cards stopped being activityCards and quietly lost the mark that
+       tells a child they have already done one. Every other card on the site
+       carries it, so the home page silently became the exception. */
+    lc('the cards can still be marked as done',
+      [...cols].every((c) => shown(c)[0]?.querySelector('.lookcard[data-activity] [data-marks]')),
+      cols.map((c) => shown(c)[0]?.querySelector('.lookcard')?.dataset.activity || 'no id').join(', '));
+
     lc('each number is a real link to its grade',
       tabs0.every((t) => new URL(t.href).pathname.endsWith(`/grades/${t.dataset.g}/`)),
       tabs0.map((t) => new URL(t.href).pathname.split('/').filter(Boolean).pop()).join(','));

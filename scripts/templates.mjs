@@ -180,11 +180,14 @@ export function lookCard(b, a, { role, note }) {
     game: { kicker: 'Game', glyph: '◉' },
     printable: { kicker: 'Printable', glyph: '▤' },
   }[role];
-  return `<a class="card lookcard" href="${href}" data-role="${esc(role)}">
+  /* data-activity and the marks slot, same as activityCard: these stopped being
+     activityCards and quietly lost the mark that tells a child they have already
+     done this one. Every other card on the site carries it. */
+  return `<a class="card lookcard" href="${href}" data-role="${esc(role)}" data-activity="${esc(a.id)}">
   <div class="thumb"><span class="big" aria-hidden="true">${esc(ROLE.glyph)}</span></div>
   <div class="cbody">
     <p class="lookkick">${ROLE.kicker}</p>
-    <h3>${esc(a.title)}${role === 'printable' ? ', printed' : ''}</h3>
+    <h3>${esc(a.title)}${role === 'printable' ? ', printed' : ''}<span class="cmarks" data-marks></span></h3>
     <p class="looknote">${esc(note)}</p>
     <div class="meta">
       <span class="tag">${esc(gradeName(a.grade).replace(' grade', ''))}</span>
