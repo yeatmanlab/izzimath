@@ -183,9 +183,8 @@ export function mountBook(activity, root) {
      So while a question is unanswered, the submit button is the only primary
      action and the way past it says "Skip". Once answered, that button becomes
      the primary "Next". Moving on without answering is still allowed: a child
-     who is stuck should be able to leave a question, and "Show me and move on"
-     already exists for a wrong one. It just no longer looks like the way to
-     submit. */
+     who is stuck should be able to leave a question, and "Show me the answer"
+     exists for a wrong one. It just no longer looks like the way to submit. */
   function nav() {
     const p = problemFor(page);
     const done = answered[page] !== null;
