@@ -365,7 +365,24 @@
    The one thing that matters most across ages, and the easiest to get wrong:
    how big the numbers are and how much room there is to answer. */
 .little .sh-head b { font-size: 21px }
-.little .sh-id svg { width: 50px; height: 50px }
+/* 42, measured, not 50. At 50 the art was the tallest thing in the header —
+   the title and its small line come to 40.9px — so .sh-head was 60px for a
+   named character and 52px for "Just math", and the designed sheet came out
+   0.174in taller with a character on it than without. adding-to-twenty landed
+   at 10.118in of a 10.10in page for all four characters and 9.944in for none:
+   a sheet that fitted when it was measured and spilled onto a second page as
+   soon as a child picked someone, which is the "page and a bit" this project
+   forbids.
+
+   Swept in the harness's own rig rather than reasoned about:
+     50px -> 10.118in (over)   48 -> 10.098 (fits by 0.002in, far too fine)
+     46px -> 10.077in          44 -> 10.056
+     42px -> 10.035in          40 -> 10.035 (no further gain)
+   42 is where the header stops being art-driven — head 52px, the same as the
+   no-character sheet — so it is the smallest change that fixes the cause, and
+   anything below it buys nothing. Still the largest of the three bands, which
+   is the point: the youngest children get the biggest character. */
+.little .sh-id svg { width: 42px; height: 42px }
 .little .sh-grid.d1 { font-size: 21px; gap: 20px 26px }
 .little .sh-grid.d1 .pr .ansline { min-width: 3em; height: 1.9em }
 .big .sh-head b { font-size: 17.5px }

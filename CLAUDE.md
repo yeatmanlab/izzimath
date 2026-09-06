@@ -148,7 +148,13 @@ already exist, and a routine only needs a `ui` the registry knows.
   grey on a mono printer.
 - **A printable's length is a decision, not an accident.** A sheet may be two
   pages; it may never be a page and a bit. `printItems` and `printPages` were set
-  by measuring real layout, not estimated. Kindergarten and grade 1 are always
+  by measuring real layout, not estimated. **Measure with a character selected,
+  not with Just math** — the designed sheet puts the character's line art in its
+  header, so it is taller with someone chosen than without. `adding-to-twenty`
+  measured 9.94in for Just math and 10.12in for all four characters: a sheet that
+  fitted when it was tuned and spilled onto a second page the moment a child
+  picked someone. The header is now governed by its text rather than the art, so
+  the gap is much smaller, but it is not zero. Kindergarten and grade 1 are always
   one page, because a young child should be able to finish the sheet — a parent
   who wants a week of grade 1 practice gets the **practice pack** (several
   finishable sheets on different seeds), not one long one.

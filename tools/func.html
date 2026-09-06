@@ -770,15 +770,27 @@ L.push('');
     tc('it opens a modal dialog', panel()?.getAttribute('role') === 'dialog'
       && panel()?.getAttribute('aria-modal') === 'true');
     /* Derived, not 4. This asserted a literal count and broke the day a fourth
-       character shipped — the tour builds its faces from Object.keys(characters),
-       so the number is not the harness's to know. Mirrors that expression rather
-       than characterList, because the two are ordered differently. */
-    const wantFaces = Object.keys(C.characters).length;
+       character shipped — the number is not the harness's to know. The tour now
+       builds from characterList, same as the nav picker, so this follows it. */
+    const wantFaces = C.characterList.length;
     tc('step 1 offers one class of target',
       td.querySelectorAll('.tface').length === wantFaces
       && td.querySelectorAll('.tpanel button:not(.tclose):not(.tface)').length === 0,
       td.querySelectorAll('.tface').length + '/' + wantFaces + ' faces, ' +
       td.querySelectorAll('.tpanel button:not(.tclose):not(.tface)').length + ' other buttons');
+
+    /* And in the same ORDER as the nav picker, which means not leading with
+       "Just math". The tour used Object.keys(characters), where `none` is
+       declared first, so the first button — and the one that took focus — was
+       the single option that barely changes anything, directly under copy
+       promising the whole page will change. */
+    const tourOrder = [...td.querySelectorAll('.tface')].map((b) => b.dataset.tch);
+    tc('the faces are in the picker\u2019s order, so it does not lead with Just math',
+      tourOrder.join(',') === C.characterList.join(',') && tourOrder[0] !== 'none',
+      tourOrder.join(' '));
+    tc('and the focused face is a character, not Just math',
+      td.activeElement?.dataset?.tch !== 'none',
+      td.activeElement?.dataset?.tch || '(nothing focused)');
     /* No Next until something has been pressed. That IS the mechanic: the
        consequence is the instruction, so an unearned Next skips the lesson. */
     tc('no Next before anything is pressed', !td.querySelector('[data-tnext]'));

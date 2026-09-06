@@ -23,7 +23,7 @@
        failure. The accessible answer and the only working answer agree. */
 
 import { TOUR } from '../../content/tour.js';
-import { characters, getCharacter } from '../../content/characters.js';
+import { characters, characterList, getCharacter } from '../../content/characters.js';
 import { activities } from '../../content/activities/index.js';
 import { plans } from '../../content/plans.js';
 import { BADGE_COUNT } from '../../content/badges.js';
@@ -116,7 +116,12 @@ function paintStep1(said) {
     <p class="tstep">${TOUR.step1.n}</p>
     <h2 class="task">${esc(TOUR.step1.ask)}</h2>
     <div class="tfaces">
-      ${Object.keys(characters).map((id) => `
+      ${/* characterList, NOT Object.keys(characters) — the object declares `none`
+           first, so the tour led with "Just math", the one button that barely
+           changes anything, directly under copy promising the whole page will
+           change. It was also the button that got focus. characterList puts
+           "Just math" last, and is what the nav picker builds from, so the two
+           now agree on order. */ characterList.map((id) => `
         <button class="tface${id === cur && said ? ' on' : ''}" data-tch="${id}"
           aria-label="${esc(characters[id].name)}">
           ${avatar(id, 'tav')}<span>${esc(characters[id].name)}</span>
