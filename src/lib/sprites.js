@@ -62,6 +62,31 @@ const BODIES = {
   <path d="M22.6 33.8c-1.4 5.6-1 10.6 1.4 14.6" stroke="#B14A22" stroke-width="3.6" fill="none" stroke-linecap="round" opacity=".9"/>
   <path d="M41.4 33.8c1.4 5.6 1 10.6-1.4 14.6" stroke="#B14A22" stroke-width="3.6" fill="none" stroke-linecap="round" opacity=".9"/>
   <path d="M32 39.6c2.4 0 4 1.5 4 3.1s-1.8 2.9-4 2.9-4-1.3-4-2.9 1.6-3.1 4-3.1z" fill="#2B1508"/>`,
+
+  /* Ash. Grey like a koala rather than palette-coloured, same as the other three
+     — the bodies are hard-coded because they never change, and only the gear
+     tracks the accent.
+
+     The head is the canonical ellipse (cx 32, cy 33.5, rx 21, ry 18) because the
+     four gear layers are positioned against it: crown clear above, goggles on
+     the forehead, band at the brow, scarf at the chin. Drift from it and a
+     levelled-up character wears its crown through its ear.
+
+     The nose is deliberately smaller than a real koala's. The icon chosen has
+     Ash asleep, so the shut eyes have to carry the character, and a nose sized
+     to life swallowed them. The one sage note is the cheek blush, which is the
+     only place the body touches the Eucalyptus palette. */
+  ash: `
+  <circle cx="10.6" cy="16.6" r="10.2" fill="#7C8B99"/>
+  <circle cx="53.4" cy="16.6" r="10.2" fill="#7C8B99"/>
+  <circle cx="12" cy="18" r="6.2" fill="#C7D3DE"/>
+  <circle cx="52" cy="18" r="6.2" fill="#C7D3DE"/>
+  <ellipse cx="32" cy="33.5" rx="21" ry="18" fill="#A3B2C0"/>
+  <path d="M32 15.6c11.2 0 18 5.4 18 12.4H14c0-7 6.8-12.4 18-12.4z" fill="#B9C6D3"/>
+  <ellipse cx="15.6" cy="36.4" rx="4.2" ry="2.7" fill="#8FD9A8" opacity=".32"/>
+  <ellipse cx="48.4" cy="36.4" rx="4.2" ry="2.7" fill="#8FD9A8" opacity=".32"/>
+  <ellipse cx="32" cy="40.2" rx="12.2" ry="8.8" fill="#DEE6EE"/>
+  <path d="M27.8 31.4c0-2.5 1.9-3.7 4.2-3.7s4.2 1.2 4.2 3.7v2.1c0 3.3-1.9 5.6-4.2 5.6s-4.2-2.3-4.2-5.6z" fill="#2B3239"/>`,
 };
 
 /* ------------------------------------------------------------------- faces */
@@ -77,6 +102,16 @@ const eyeUp = (cx, cy, r, ink) =>
 const eyeArc = (cx, cy, w, ink, sw) =>
   `<path d="M${cx - w} ${cy + 1} q${w} ${-w * 0.95} ${w * 2} 0" stroke="${ink}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`;
 
+/* Shut, and staying shut. Ash rests with its eyes closed, which makes the eye a
+   mark that has to survive being scaled down rather than a passing expression.
+
+   These are FILLED crescents, not stroked arcs, and that is the whole point: the
+   nav renders 64 units into 24px, so a 2-unit stroke lands at 0.75px and washes
+   out to nothing — the icon becomes a grey blob with a nose. A filled shape
+   keeps its mass. Measured at 24, 30 and 56px before the thickness was fixed. */
+const shutEye = (cx, cy, ink, w = 5.4, bow = 1.6, t = 3.4) =>
+  `<path d="M${cx - w} ${cy} q${w} ${bow + t} ${w * 2} 0 q${-w} ${-t} ${-w * 2} 0z" fill="${ink}"/>` +
+  `<path d="M${cx - w - 0.4} ${cy - 1.6} q${w + 0.4} ${-3.4} ${(w + 0.4) * 2} 0" stroke="#7C8B99" stroke-width="1.7" fill="none" stroke-linecap="round"/>`;
 const FACES = {
   kiwi: {
     idle:
@@ -119,6 +154,36 @@ const FACES = {
       eyeUp(22.8, 30.4, 4.7, '#2B1508') + eyeUp(41.2, 30.4, 4.7, '#2B1508') +
       `<path d="M28 47.8h8" stroke="#2B1508" stroke-width="1.8" stroke-linecap="round"/>`,
   },
+  /* The one expression set here that runs backwards: `think` is the ONLY face
+     with open eyes, because Ash wakes up to think and dozes off again. That
+     falls out of the icon choice rather than being decoration — if resting and
+     pleased are both shut, the open-eyed face has to be the third one. */
+  ash: {
+    idle:
+      shutEye(19.4, 29.8, '#2B3239') + shutEye(44.6, 29.8, '#2B3239') +
+      `<path d="M28.4 44.6c1.5 1.7 2.8 2.4 3.6 2.4s2.1-.7 3.6-2.4" stroke="#5A6774" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+    /* Cute is not the default outcome of "eyes shut" — shut plus flat reads
+       asleep, which is the idle face. Happy needed three changes: an arc that
+       bows hard upward into a squeeze, cheeks warmed over the body's own blush,
+       and a mouth that OPENS with a lighter inner. That last one is what Kiwi's
+       and Georgie's happy faces already do and Ash's first pass did not.
+
+       Note it uses eyeArc — the same thin arched stroke the other three use —
+       and NOT the filled shutEye above. A filled shape carrying the mass idle
+       needs reads as a bar, or eyeliner, once it is bowed upward. Which is fine,
+       because the two faces have different jobs: idle is the nav icon and has to
+       survive 64 units scaled into 24px, while happy only ever appears large in
+       answer feedback. Only one of them is fighting for pixels. */
+    happy:
+      eyeArc(19.4, 28.4, 5.2, '#2B3239', 3) + eyeArc(44.6, 28.4, 5.2, '#2B3239', 3) +
+      `<ellipse cx="15.2" cy="36.6" rx="5.4" ry="3.4" fill="#F2A0AE" opacity=".55"/>` +
+      `<ellipse cx="48.8" cy="36.6" rx="5.4" ry="3.4" fill="#F2A0AE" opacity=".55"/>` +
+      `<path d="M24.4 42.4c2.4 7.2 12.8 7.2 15.2 0z" fill="#333E48"/>` +
+      `<path d="M28.2 46.8h7.6c-.6 3.6-7 3.6-7.6 0z" fill="#F2A0AE"/>`,
+    think:
+      eyeUp(19.4, 29.8, 4.4, '#2B3239') + eyeUp(44.6, 29.8, 4.4, '#2B3239') +
+      `<path d="M29 45.2h6" stroke="#6C7A88" stroke-width="1.8" stroke-linecap="round"/>`,
+  },
 };
 
 /* the no-character mark: a plain geometric glyph, with light state variants */
@@ -160,11 +225,22 @@ const LINE_ART = {
     <circle cx="22.8" cy="30.4" r="4.3" fill="#111"/><circle cx="41.2" cy="30.4" r="4.3" fill="#111"/>
     <path d="M32 39.6c2.4 0 4 1.5 4 3.1s-1.8 2.9-4 2.9-4-1.3-4-2.9 1.6-3.1 4-3.1z" fill="#111"/>
     <path d="M27.8 47.6c1.2 2.9 3 3.4 4.2 1.5 1.2 1.9 3 1.4 4.2-1.5" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round"/>`,
+  /* Ears as arcs that STOP at the head rather than closed circles laid over it:
+     two full circles plus their inner circles crossing the head outline read as
+     a pair of spectacles on paper. Checked on white at 64 and 40px. */
+  ash: `<path d="M19.2 10.4a10.2 10.2 0 1 0-6.9 15.7" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M44.8 10.4a10.2 10.2 0 1 1 6.9 15.7" fill="none" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="32" cy="33.5" rx="21" ry="18" fill="none" stroke="#111" stroke-width="2.6"/>
+    <ellipse cx="32" cy="40.2" rx="12.2" ry="8.8" fill="none" stroke="#111" stroke-width="2"/>
+    <path d="M27.8 31.4c0-2.5 1.9-3.7 4.2-3.7s4.2 1.2 4.2 3.7v2.1c0 3.3-1.9 5.6-4.2 5.6s-4.2-2.3-4.2-5.6z" fill="#111"/>
+    <path d="M13 30q6.4 5 12.8 0q-6.4 -3.4 -12.8 0z" fill="#111"/>
+    <path d="M38.2 30q6.4 5 12.8 0q-6.4 -3.4 -12.8 0z" fill="#111"/>
+    <path d="M28.4 44.6c1.5 1.7 2.8 2.4 3.6 2.4s2.1-.7 3.6-2.4" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>`,
   none: `<circle cx="32" cy="32" r="21" fill="none" stroke="#111" stroke-width="2" stroke-dasharray="5 5"/>
     <path d="M32 22v20M22 32h20" stroke="#111" stroke-width="2.4" stroke-linecap="round"/>`,
 };
 
-export const CHARACTERS = ['kiwi', 'georgie', 'flame', 'none'];
+export const CHARACTERS = ['kiwi', 'georgie', 'flame', 'ash', 'none'];
 export const EXPRESSIONS = ['idle', 'happy', 'think'];
 
 /* ------------------------------------------------------------------- gear
@@ -234,7 +310,7 @@ function symbol(id, inner) {
 }
 
 const parts = [];
-for (const ch of ['kiwi', 'georgie', 'flame']) {
+for (const ch of CHARACTERS.filter((c) => c !== 'none')) {
   for (const ex of EXPRESSIONS) {
     parts.push(symbol(`av-${ch}${ex === 'idle' ? '' : '-' + ex}`, BODIES[ch] + FACES[ch][ex]));
   }

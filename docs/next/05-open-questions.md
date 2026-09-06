@@ -17,7 +17,7 @@ Decisions that need you, not code. Nothing here is blocked on engineering.
 
 ### 1. Character art
 
-The three characters are **hand-coded SVG and should be redrawn by an
+The four characters are **hand-coded SVG and should be redrawn by an
 illustrator.** They are good enough to prove the theming system and to brief
 from, and not good enough to launch on.
 

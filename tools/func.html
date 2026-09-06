@@ -489,6 +489,31 @@ L.push('');
         return none && none.querySelectorAll('use.gear').length === 0;
       })());
 
+      /* Driven off characterList rather than naming characters, because the
+         picker is BUILT from characterList — the two assertions above name kiwi
+         and none, which covered half the picker when there were four and would
+         cover less of it with every character added. Ash was the fourth. */
+      t('every character has a picker button with a drawn avatar', (() => {
+        const bad = C.characterList.filter((id) => {
+          const u = d.querySelector('.chbtn[data-ch="' + id + '"] svg use');
+          return !u || !/#av-/.test(u.getAttribute('href') || '');
+        });
+        return bad.length === 0;
+      })(), C.characterList.length + ' buttons: ' + C.characterList.join(' '));
+      t('every character but Just math wears all four gear layers',
+        C.characterList.filter((id) => id !== 'none').every((id) =>
+          d.querySelectorAll('.chbtn[data-ch="' + id + '"] svg use.gear').length === 4));
+      let themed = [];
+      for (const id of C.characterList) {
+        d.querySelector('.chbtn[data-ch="' + id + '"]')?.click();
+        await sleep(90);
+        if (d.documentElement.dataset.ch !== id) themed.push(id);
+        else if (!getComputedStyle(d.documentElement).getPropertyValue('--a1').trim()) themed.push(id + '(no --a1)');
+      }
+      t('picking each character themes the page and gives it an accent',
+        themed.length === 0, themed.length ? 'broken: ' + themed.join(',') : C.characterList.length + ' checked');
+      d.querySelector('.chbtn[data-ch="kiwi"]').click(); await sleep(140);
+
 
       t('the level-up was announced on the badge card', lvSaid,
         lvSaid || '(no level line seen)');
@@ -744,10 +769,15 @@ L.push('');
     const panel = () => td.querySelector('.tpanel');
     tc('it opens a modal dialog', panel()?.getAttribute('role') === 'dialog'
       && panel()?.getAttribute('aria-modal') === 'true');
+    /* Derived, not 4. This asserted a literal count and broke the day a fourth
+       character shipped — the tour builds its faces from Object.keys(characters),
+       so the number is not the harness's to know. Mirrors that expression rather
+       than characterList, because the two are ordered differently. */
+    const wantFaces = Object.keys(C.characters).length;
     tc('step 1 offers one class of target',
-      td.querySelectorAll('.tface').length === 4
+      td.querySelectorAll('.tface').length === wantFaces
       && td.querySelectorAll('.tpanel button:not(.tclose):not(.tface)').length === 0,
-      td.querySelectorAll('.tface').length + ' faces, ' +
+      td.querySelectorAll('.tface').length + '/' + wantFaces + ' faces, ' +
       td.querySelectorAll('.tpanel button:not(.tclose):not(.tface)').length + ' other buttons');
     /* No Next until something has been pressed. That IS the mechanic: the
        consequence is the instruction, so an unearned Next skips the lesson. */

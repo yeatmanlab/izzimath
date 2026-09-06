@@ -9,7 +9,7 @@ prints. Built for parents at home. Live at https://izzimath.com/
 npm run verify
 ```
 
-Content validation (~2,000 generated problems across all four characters),
+Content validation (~3,000 generated problems across all five characters),
 internal links and anchors, and accessibility. **All three pass today**, so any
 failure is from the current change. `node scripts/extlinks.mjs` checks external
 links too but hits the network, so it is not in the build.
@@ -23,7 +23,7 @@ the build: a **responsive audit** (29 pages × 5 widths, checking overflow,
 tap-target size and text size), a **problem-type test** (all nine types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
-client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (1,568
+client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (1,960
 cases — every activity × character × style × mode × sheet/key — failing anything
 taller or wider than one page of Letter, or whose last page is under 80% full).
 All three end with `CHECKS_RUN=<n>` — **if that is missing or zero the harness did
@@ -104,6 +104,13 @@ already exist, and a routine only needs a `ui` the registry knows.
   number line markers stay plain for everyone. Perceptually rich objects hurt
   children who know them well, so a themed counter would penalise exactly the
   child most attached to the character. `scripts/check.mjs` enforces this.
+- **A character re-skins and nothing else.** Palette, world nouns, voice, sprite.
+  The one field that touches gameplay is `timers`, and it sets a DEFAULT — the
+  child's own "Race the clock" toggle never consults the character, and only an
+  activity's `timerAvailable: false` removes a clock outright. Adding one touches
+  eleven files and the failure mode is a blank rather than an error, so
+  [`docs/ADDING-A-CHARACTER.md`](docs/ADDING-A-CHARACTER.md) lists them and
+  `check.mjs` has a pack-completeness section that fails on a half-finished one.
 - **Every problem needs a worked explanation.** Bare right/wrong feedback is worth
   about a tenth of elaborated feedback, and the gap is widest in maths. The
   checker fails the build without one.
@@ -209,6 +216,7 @@ build.mjs           static site generator — plain Node, no dependencies
 docs/
   next/BACKLOG.md   what is left to build  ← start here
   next/06-content-waves.md  where the catalogue past the original 30 came from
+  ADDING-A-CHARACTER.md  every place a character has to be added, and the traps
   GAME-DESIGN.md    why the games look the way they do, with sources
   EVIDENCE.md       what the content is based on, with citations
   SPEC.md           the full research output, verbatim (reference, not the build)

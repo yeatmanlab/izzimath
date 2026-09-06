@@ -137,7 +137,7 @@ shape holds. Both are cheap and they are the two IM leans on most.
 - A routine is data plus a generator, not hand-written content
 - The routine type drives the UI, not a flag inside one renderer
 - Every string closes with a compare question
-- `npm run verify` still passes, including determinism across all four characters
+- `npm run verify` still passes, including determinism across all five characters
 - The warm-up is skippable — a parent who wants only practice can get to it
 
 ## Sources

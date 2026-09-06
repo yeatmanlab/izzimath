@@ -176,7 +176,7 @@ Add an object to the right `content/activities/grade-*.js` file:
 ```
 
 `node scripts/check.mjs` then validates it: schema, generator determinism across all
-four characters, that the answer passes its own checker and appears in its own choice
+five characters, that the answer passes its own checker and appears in its own choice
 list, that print sheets and answer keys render, and that every assessment subscale is
 still covered. It checks about 1,500 generated problems in a second or two, and it has
 caught every content bug so far.

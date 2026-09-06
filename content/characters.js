@@ -109,9 +109,52 @@ export const characters = {
     affinity: 'place-value',
     timers: 'optional',
   },
+
+  ash: {
+    id: 'ash',
+    name: 'Ash',
+    species: 'Koala',
+    actor: 'Ash',
+    verb: { consume: 'eats', consumeBase: 'eat' },
+    tagline: '“Mm. That’s the one.”',
+    blurb: 'Dozes in the fork of a gum tree, wakes for the good leaves, and counts them in bundles.',
+    /* Eucalyptus. The one open hue range: Kiwi holds amber at 39 degrees,
+       Georgie pink at 333 and Flame red at 2, and the checker wants 20 clear of
+       each, which leaves 60 to 313. Sage at 140 is a hundred degrees off the
+       nearest. Unlike Flame it keeps the near-black gradient label, so it also
+       differs from the other dark-accent character structurally. */
+    palette: { a1: '#8FD9A8', a2: '#2FB6A0', a3: '#1B7F72', ok: '#FFD166' },
+    printAccent: '#12615A',
+    /* Flame is already arboreal — treetops, branches, berries, baskets. A koala
+       in a canopy picking things into baskets would be Flame in different fur,
+       so Ash gets leaves and bundles, and counts whole trees rather than
+       branches. */
+    world: { place: 'the gum grove', places: 'gum groves', feature: 'tree fork', features: 'tree forks' },
+    collectible: { one: 'gum leaf', many: 'gum leaves' },
+    container: { one: 'bundle', many: 'bundles' },
+    unit: { one: 'tree', many: 'trees' },
+    /* Drowsy and CONTENTED, never reluctant. A koala sleeps twenty hours a day,
+       which is the joke; a mascot who would rather not be here is not, and the
+       line between those two is entirely in this copy. Distinct from Kiwi, who
+       is unhurried rather than half-asleep — Kiwi says "no rush", so Ash never
+       does. */
+    voice: {
+      correct: ['Mm. That’s the one.', 'Yes — that one’s good.', 'Good. Back to resting.'],
+      close: ['Nearly — have another look.', 'Almost. One more.'],
+      wrong: ['Not that leaf. Try another.', 'Mm — not that one.'],
+      done: ['All done. Time for a proper nap.'],
+    },
+    motif: 'leaves',
+    // Patterns was the open affinity: Kiwi has geometry, Georgie the number
+    // line, Flame place value. Declared for the record — no code reads it.
+    affinity: 'patterns',
+    // Sleepy means no clock. This is the ONLY field that changes gameplay:
+    // src/engine/game.js starts a timer on `ch.timers === true` and nothing else.
+    timers: false,
+  },
 };
 
-export const characterList = ['kiwi', 'georgie', 'flame', 'none'];
+export const characterList = ['kiwi', 'georgie', 'flame', 'ash', 'none'];
 export const defaultCharacter = 'none';
 
 export function getCharacter(id) {

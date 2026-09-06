@@ -109,6 +109,42 @@ deliberately *not* the brighter crimson Flame uses. Two warm characters need two
 distinguishable reds; earthy-versus-ember is the split, and it matches how the two
 animals are actually coloured.
 
+### Ash, added later
+
+**Ash** the koala is the fourth, added 2026-09-06. The table above is left as the
+record of the founding trio; this is what a later addition had to argue for.
+
+|             | **Ash** koala                                                    |
+| ----------- | ---------------------------------------------------------------- |
+| Palette     | Eucalyptus — sage, teal, deep teal                               |
+| World       | The gum grove, tree forks                                        |
+| Collectible | Gum leaves, in bundles                                           |
+| Voice       | Drowsy, contented — "Mm. That's the one."                        |
+| Motif       | Leaves, drifting down                                            |
+| Pace        | Clock off by default, same as Kiwi                               |
+
+Two constraints shaped it, and both came from the three already there:
+
+- **Flame had already taken the trees** — treetops, branches, berries, baskets. A
+  koala picking things in a canopy is Flame in different fur, so Ash counts gum
+  leaves into bundles, and counts whole trees rather than branches.
+- **The palette had one gap left.** Kiwi holds amber at 39 degrees, Georgie pink at
+  333, Flame red at 2, and `scripts/check.mjs` fails any primary accent within 20
+  degrees of another. That leaves 60 to 313. Sage at 140 is a hundred degrees clear
+  of the nearest, and unlike Flame it keeps the near-black gradient label, so the
+  two dark-accent characters are not built the same way either.
+
+The niche is drowsy contentment, which is the one thing to get right in the copy:
+Kiwi is *unhurried* and says "no rush", so Ash never does — Ash is half asleep and
+pleased about it. A mascot who would rather not be here is a different character
+and a worse one.
+
+**On pace:** `timers: false` sets the DEFAULT only. `src/engine/game.js` reads
+`ch.timers === true` to decide the opening state and re-reads it only before the
+first round; the child's own toggle — "Race the clock" — is always there and never
+consults the character. Only an activity's `timerAvailable: false` removes a clock
+outright.
+
 ### Where the choice is stored
 
 `localStorage` is the primary home, so it survives across visits with no account, and
@@ -137,7 +173,7 @@ So the division of labour is:
 | Voice and encouragement copy | Anything inside a ten-frame or array |
 | Level and chapter names | The maths, ever |
 
-`scripts/check.mjs` enforces this: it renders every problem under all four characters
+`scripts/check.mjs` enforces this: it renders every problem under all five characters
 and fails if a manipulative differs.
 
 ### Print constraint

@@ -12,6 +12,7 @@ const MOTIF = {
   kiwi:    { glyph: '◆', n: 7,  spin: -140 },  // scales
   georgie: { glyph: '●', n: 8,  spin: 0 },     // bouncing balls
   flame:   { glyph: '▲', n: 8,  spin: 200 },   // embers
+  ash:     { glyph: '❧', n: 6,  spin: -60 },   // gum leaves, drifting down
   none:    { glyph: '+', n: 6,  spin: 90 },
 };
 

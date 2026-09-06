@@ -127,7 +127,7 @@ perceptually rich objects *help* children with low knowledge of the object and *
 children who know it well — so precisely the children most attached to Georgie are the
 ones tennis-ball counters would hurt most. A character now owns the palette, the voice
 and the word-problem nouns, and never the countable units. `scripts/check.mjs` renders
-every problem under all four characters and fails if a manipulative differs.
+every problem under all five characters and fails if a manipulative differs.
 
 ## A frozen set of representations
 

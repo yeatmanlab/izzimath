@@ -4,7 +4,7 @@
 // ?seed= link produces identical math whichever character is on.
 
 const KEY = 'izzimath.character';
-const VALID = ['none', 'kiwi', 'georgie', 'flame'];
+const VALID = ['none', 'kiwi', 'georgie', 'flame', 'ash'];
 
 export function currentCharacter() {
   const q = new URLSearchParams(location.search).get('ch');

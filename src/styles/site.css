@@ -16,8 +16,8 @@
   --wrap: 1180px;
   --sp: linear-gradient(100deg, var(--a1), var(--a2) 55%, var(--a3));
   /* The colour of TEXT that sits ON --sp: the logo mark, primary buttons and
-     grade badges all put a label on that gradient. Near-black works for three of
-     the four characters because their accents are light. A character with dark
+     grade badges all put a label on that gradient. Near-black works for four of
+     the five characters because their accents are light. A character with dark
      accents overrides this and --sp together. */
   --onsp: #05060E;
   --fdisp: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
@@ -27,6 +27,7 @@
 html[data-ch="none"]    { --a1:#22E0F0; --a2:#7C5CFF; --a3:#FF4D9D; --ok:#B6FF3D; --gA:rgba(124,92,255,.55); --gB:rgba(34,224,240,.32); --grid1:rgba(124,92,255,.07); --grid2:rgba(34,224,240,.06) }
 html[data-ch="kiwi"]    { --a1:#FFC24D; --a2:#FF7A45; --a3:#C1440E; --ok:#7CE8B0; --gA:rgba(255,122,69,.45); --gB:rgba(193,68,14,.30);  --grid1:rgba(255,122,69,.07); --grid2:rgba(193,68,14,.07) }
 html[data-ch="georgie"] { --a1:#FF4D9D; --a2:#A855F7; --a3:#22E0F0; --ok:#B6FF3D; --gA:rgba(255,77,157,.50); --gB:rgba(168,85,247,.32); --grid1:rgba(255,77,157,.08); --grid2:rgba(168,85,247,.06) }
+html[data-ch="ash"]     { --a1:#8FD9A8; --a2:#2FB6A0; --a3:#1B7F72; --ok:#FFD166; --gA:rgba(47,182,160,.48);  --gB:rgba(27,127,114,.30); --grid1:rgba(47,182,160,.07); --grid2:rgba(27,127,114,.07) }
 /* Flame is a red panda and was wearing Kiwi's colours: a1 #FFD166 against Kiwi's
    #FFC24D, a2 #FF6B35 against #FF7A45 — 2 and 12 degrees of hue apart, which is
    no difference at all. Now properly red, 37 degrees off Kiwi and 29 off
@@ -69,6 +70,7 @@ html[data-ch="flame"]   { --a1:#F2504A; --a2:#D02B22; --a3:#6B2318; --ok:#8FE388
 :root { --bi-a1: #0A0D1C; --bi-a2: #FFF8F2; --bi-a3: #0A0D1C; --bi-ok: #0A0D1C }
 html[data-ch="kiwi"]  { --bi-a2: #0A0D1C; --bi-a3: #FFF8F2 }
 html[data-ch="flame"] { --bi-a3: #FFF8F2 }
+html[data-ch="ash"]   { --bi-a2: #0A0D1C; --bi-a3: #FFF8F2 }
 
 * { box-sizing: border-box; margin: 0; padding: 0 }
 html { scroll-behavior: smooth }

@@ -8,7 +8,7 @@ import { activities, STRANDS } from '../content/activities/index.js';
 import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from '../content/routines.js';
 import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, plainUrl, formUrl, mailUrl, plainText }
   from '../content/feedback.js';
-import { characters, getCharacter } from '../content/characters.js';
+import { characters, characterList, getCharacter } from '../content/characters.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
 import { rng, deriveSeed } from '../src/lib/rng.js';
@@ -24,7 +24,7 @@ import { CREATURES, COLOURWAYS, AVATAR_COUNT, avatarSpec, avatarLabel, namesFor,
 import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatarart.js';
 import { BADGES, BADGE_COUNT, CATEGORIES, badgeById, evaluate as evaluateBadges } from '../content/badges.js';
 import { LEVELS, levelFor } from '../content/levels.js';
-import { SPRITES } from '../src/lib/sprites.js';
+import { SPRITES, EXPRESSIONS, spriteId } from '../src/lib/sprites.js';
 import { badgeSvg, shelfHtml } from '../src/lib/badgeart.js';
 import { createStore, nullDriver, localDriver, mergeProgress, MERGE, blankProgress } from '../src/lib/profile.js';
 
@@ -33,7 +33,7 @@ const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
 const warn = (...m) => { warns++; console.log('  warn ', ...m); };
 
 const GRADES = ['K', '1', '2', '3', '4', '5'];
-const CHARS = ['none', 'kiwi', 'georgie', 'flame'];
+const CHARS = ['none', 'kiwi', 'georgie', 'flame', 'ash'];
 
 console.log(`\n=== schema ===`);
 const ids = new Set();
@@ -153,6 +153,72 @@ console.log('\n=== character palettes ===');
       console.log(`  ${id.padEnd(8)} label on gradient ${worst.toFixed(2)}:1 (${onsp} on ${stops.length} stops)`);
   }
   console.log(`  ${Object.keys(characters).length} palettes agree with the CSS · primary accents all distinguishable`);
+}
+
+/* ------------------------------------------------- is the pack actually whole
+   Adding a character touches eleven files and nothing checked that you finished.
+   The failure mode is not a build error, it is a blank: miss the sprite build
+   loop and every avatar renders empty; miss `VALID` in theme.js and both `?ch=`
+   and the saved preference fall silently back to "Just math"; miss MOTIF and the
+   flourish degrades to the no-character plus sign. All three look like nothing
+   happening rather than like a bug.
+
+   And one of them is a real crash. `book.js` reads `ch.voice.done[0]` and
+   `ch.voice.correct[page % len]` with no guard, so a pack missing a voice array
+   throws on the last page of a book — for that character only, which is exactly
+   the kind of thing that ships.
+
+   Source-read for theme.js and celebrate.js because both hold the list in a
+   module-private const that cannot be imported. */
+console.log('\n=== character packs are complete ===');
+{
+  const NEED = ['id', 'name', 'species', 'actor', 'tagline', 'blurb', 'palette', 'world',
+    'collectible', 'container', 'unit', 'voice', 'motif'];
+  const SHAPES = {
+    palette: ['a1', 'a2', 'a3', 'ok'],
+    verb: ['consume', 'consumeBase'],
+    world: ['place', 'places', 'feature', 'features'],
+    collectible: ['one', 'many'],
+    container: ['one', 'many'],
+    unit: ['one', 'many'],
+  };
+  const VOICE = ['correct', 'close', 'wrong', 'done'];
+  const themeSrc = fs.readFileSync(new URL('../src/lib/theme.js', import.meta.url), 'utf8');
+  const celebSrc = fs.readFileSync(new URL('../src/engine/celebrate.js', import.meta.url), 'utf8');
+  const valid = (themeSrc.match(/const VALID = \[([^\]]*)\]/) || [, ''])[1];
+  let packs = 0;
+
+  for (const id of characterList) {
+    const ch = characters[id];
+    if (!ch) { fail(`pack:${id}`, 'is in characterList but has no entry in characters'); continue; }
+    packs++;
+    if (ch.id !== id) fail(`pack:${id}`, `its own id says "${ch.id}"`);
+    for (const f of NEED) if (!ch[f]) fail(`pack:${id}`, `missing ${f}`);
+    for (const [f, keys] of Object.entries(SHAPES)) {
+      if (!ch[f]) continue;
+      for (const k of keys) if (!ch[f][k]) fail(`pack:${id}`, `${f}.${k} is missing`);
+    }
+    // book.js and game.js index these unguarded, so empty is a crash not a gap
+    for (const v of VOICE) {
+      const line = ch.voice?.[v];
+      if (!Array.isArray(line) || !line.length) {
+        fail(`pack:${id}`, `voice.${v} is not a non-empty array — book.js indexes it with no guard`);
+      }
+    }
+    // every sprite the renderers can ask for
+    for (const ex of EXPRESSIONS) {
+      const sid = spriteId(id, ex);
+      if (!SPRITES.includes(`id="${sid}"`)) fail(`pack:${id}`, `no ${sid} sprite — the avatar renders empty, silently`);
+    }
+    if (!SPRITES.includes(`id="ln-${id}"`)) fail(`pack:${id}`, `no ln-${id} line art — prints blank`);
+    if (!valid.includes(`'${id}'`)) fail(`pack:${id}`, `not in VALID in src/lib/theme.js — ?ch=${id} and the saved choice both fall back to "none"`);
+    if (!new RegExp(`\\b${id}:\\s*\\{`).test(celebSrc)) fail(`pack:${id}`, 'no MOTIF entry in src/engine/celebrate.js — the flourish falls back to the plain glyph');
+    if (!CHARS.includes(id)) fail(`pack:${id}`, 'not in CHARS in this file, so no generator test covers it');
+  }
+  const orphan = Object.keys(characters).filter((id) => !characterList.includes(id));
+  for (const id of orphan) fail(`pack:${id}`, 'exists but is not in characterList, so the picker never offers it');
+  console.log(`  ${packs} packs complete · fields, voice lines, ${
+    packs * (EXPRESSIONS.length + 1)} sprites, theme VALID, celebrate MOTIF and CHARS all agree`);
 }
 
 /* ----------------------------------------------------------------- avatars */
@@ -809,7 +875,7 @@ console.log(`\n=== manipulatives must not vary by character ===`);
       }
     }
   }
-  if (!varied) console.log('  ok    every manipulative is identical across all 4 characters');
+  if (!varied) console.log(`  ok    every manipulative is identical across all ${CHARS.length} characters`);
 }
 
 console.log(`\n=== print sheets (sheet + answer key, all characters) ===`);
