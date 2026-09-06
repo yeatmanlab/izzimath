@@ -9,6 +9,8 @@ import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from 
 import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, plainUrl, formUrl, mailUrl, plainText }
   from '../content/feedback.js';
 import { characters, characterList, getCharacter } from '../content/characters.js';
+import { standings, playerStandings, CUP, CUP_CHARACTERS } from '../content/leaderboard.js';
+import { CHAR_MERGE } from '../src/lib/profile.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
 import { rng, deriveSeed } from '../src/lib/rng.js';
@@ -153,6 +155,126 @@ console.log('\n=== character palettes ===');
       console.log(`  ${id.padEnd(8)} label on gradient ${worst.toFixed(2)}:1 (${onsp} on ${stops.length} stops)`);
   }
   console.log(`  ${Object.keys(characters).length} palettes agree with the CSS · primary accents all distinguishable`);
+}
+
+/* ------------------------------------------------------------- the character cup
+   This feature sits one wrong field away from breaking the site's most
+   load-bearing commitment. docs/SPEC.md §4.1 item 8 and docs/EVIDENCE.md twice:
+   "Nothing is ever compared between children. No leaderboards, no percentiles,
+   no public scores." A cup that ranks the four CHARACTERS is fine — nobody's
+   child is on it. A cup that ranks children would reverse a documented,
+   evidence-backed exclusion, and the difference between the two is a single id.
+
+   So the first check here is behavioural rather than stylistic: feed standings()
+   rows that look like profiles and assert that nothing but a character can come
+   out. */
+console.log('\n=== the character cup ===');
+{
+  const rows = [
+    { id: 'ash', badges: 4, right: 30, plays: 3 },
+    { id: 'kiwi', badges: 9, right: 12, plays: 1 },
+    { id: 'none', badges: 99, right: 99, plays: 99 },        // not a character
+    { id: 'p7k3mq', badges: 99, right: 99, plays: 99 },      // a profile id
+    { id: 'Pip', badges: 99 },                               // a child's chosen name
+  ];
+  const table = standings(rows);
+  const ids = table.map((r) => r.id);
+  for (const bad of ['none', 'p7k3mq', 'Pip']) {
+    if (ids.includes(bad)) fail('cup', `"${bad}" reached the standings — the cup must only ever rank characters`);
+  }
+  if (ids.length !== CUP_CHARACTERS.length) {
+    fail('cup', `${ids.length} rows for ${CUP_CHARACTERS.length} characters`);
+  }
+  // and the counts from the junk rows must not have leaked into anyone's total
+  const leaked = table.filter((r) => r.badges > 90 || r.right > 90);
+  for (const r of leaked) fail('cup', `${r.name} absorbed a total from a row that was not a character`);
+
+  /* The comparator has to be TOTAL, so two characters level on every number do
+     not swap places between renders. Asserted as: an untouched device orders
+     alphabetically. That is the only visible consequence of the last tiebreak,
+     and testing it any other way is vacuous — standings() builds its rows from a
+     Map keyed in characterList order, so feeding the input in a different order
+     cannot change the output whether the tiebreak is there or not. My first
+     version of this check did exactly that and passed with the tiebreak deleted. */
+  const fresh = standings([]).map((r) => r.name);
+  const alpha = [...fresh].sort((x, y) => x.localeCompare(y));
+  if (fresh.join(',') !== alpha.join(',')) {
+    fail('cup', `four characters level at zero came out ${fresh.join(', ')} — expected ${alpha.join(', ')}, so the last tiebreak is missing`);
+  }
+
+  /* Ties share a place and the next one skips: 1, 1, 3. Printing 1, 1, 2 would
+     tell a child the third row is second. */
+  const tie = standings([
+    { id: 'ash', badges: 5, right: 5, plays: 1 },
+    { id: 'kiwi', badges: 5, right: 5, plays: 1 },
+    { id: 'flame', badges: 1 },
+  ]);
+  const places = tie.map((r) => r.rank);
+  if (places[0] !== 1 || places[1] !== 1 || places[2] !== 3) {
+    fail('cup', `a two-way tie ranked ${places.join(', ')} — expected 1, 1, 3`);
+  }
+  if (!tie[0].tied || !tie[1].tied) fail('cup', 'the tied rows are not marked as tied');
+  if (tie[2].tied) fail('cup', 'an untied row is marked as tied');
+
+  /* The level shown beside a character has to be the level its badge count
+     earns, or the cup and the Scores panel disagree about the same number. */
+  for (const r of standings([{ id: 'ash', badges: 15 }, { id: 'kiwi', badges: 2 }])) {
+    if (r.level.n !== levelFor(r.badges).n) {
+      fail('cup', `${r.name} shows level ${r.level.n} for ${r.badges} badges, levelFor says ${levelFor(r.badges).n}`);
+    }
+  }
+
+  /* The bar is scaled against the LEADER. Against the total, four evenly matched
+     characters each get a quarter-width bar and the chart carries no
+     information; this asserts the leader fills the row. */
+  const bars = standings([{ id: 'ash', badges: 10 }, { id: 'kiwi', badges: 5 }]);
+  if (Math.abs(bars[0].share - 1) > 1e-9) fail('cup', `the leader's bar is ${bars[0].share}, not 1`);
+  if (Math.abs(bars[1].share - 0.5) > 1e-9) fail('cup', `half the leader's badges gave a bar of ${bars[1].share}`);
+  if (standings([]).some((r) => r.share !== 0)) fail('cup', 'an empty device produced a non-zero bar');
+
+  /* Every field recordCharacter writes needs a merge rule, for the same reason
+     MERGE exists: once two devices write the same character total, "just
+     overwrite" loses whichever one wrote second. A field with no rule is a field
+     a future sync will silently drop. */
+  const src = fs.readFileSync(new URL('../src/lib/profile.js', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('async recordCharacter'), src.indexOf('/* The only way progress changes'));
+  const written = [...body.matchAll(/next\.(\w+)\s*=/g)].map((m) => m[1])
+    .filter((f) => !['character'].includes(f));
+  for (const f of new Set(written)) {
+    if (!(f in CHAR_MERGE)) fail('cup', `recordCharacter writes "${f}" and CHAR_MERGE has no rule for it`);
+  }
+  /* The players' view ranks on EFFORT, and the whole argument for showing
+     children at all depends on that. Badges would make it a skill board — 8 of
+     the 24 are skill gates, the five Climbing ones being reached depth and the
+     three Streaks ones consecutive right answers. So: more badges must NOT beat
+     more activities, and there must be no place number to be told you are. */
+  {
+    const two = playerStandings([
+      { id: 'a', name: 'Pip', avatar: 1, activities: 4, sheets: 0, badges: 0 },
+      { id: 'b', name: 'Bo', avatar: 2, activities: 3, sheets: 0, badges: 23 },
+    ]);
+    if (two[0].id !== 'a') {
+      fail('cup', 'a player with more badges outranked one with more activities — the players view is ranking skill');
+    }
+    if (two.some((r) => 'rank' in r)) {
+      fail('cup', 'the players view carries a rank field; children must not be given places');
+    }
+    const src = fs.readFileSync(new URL('../src/mount/leaderboard.js', import.meta.url), 'utf8');
+    const playerFn = src.slice(src.indexOf('function playerRow'), src.indexOf('function toggle'));
+    if (/cupplace|ordinal\(/.test(playerFn)) {
+      fail('cup', 'playerRow renders a place — the character view numbers rows, the players view must not');
+    }
+    if (!/avatarSvg/.test(playerFn)) fail('cup', 'playerRow shows no avatar, which is the whole point of that view');
+  }
+
+  /* The page's static lead is served before the toggle is read, so it has to
+     describe BOTH views. It used to claim "nobody is ranked here but Kiwi,
+     Georgie, Flame and Ash", which the players view made false. */
+  if (!/friends|characters/i.test(CUP.lead) || !/device|player|who/i.test(CUP.lead)) {
+    fail('cup', `the page lead does not cover both views: "${CUP.lead}"`);
+  }
+
+  console.log(`  ${CUP_CHARACTERS.length} characters ranked, ${Object.keys(CHAR_MERGE).length} merge rules · ties share a place · players ordered on effort with no places`);
 }
 
 /* ------------------------------------------------- is the pack actually whole

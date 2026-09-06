@@ -1318,6 +1318,53 @@ L.push('');
   }
 }
 
+/* ---------------------------------------------------------- the character cup
+   Client-rendered, so scripts/check.mjs cannot see it — same reason the profile
+   panel is tested here. The two views have different rules and the difference is
+   the whole safety argument: characters get places, children never do. */
+{
+  const cb = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('cup:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  try {
+    const d = document.createElement('div');
+    d.setAttribute('data-cup', '');
+    document.body.appendChild(d);
+    const LB = await import('/assets/src/mount/leaderboard.js');
+    const rows = [{ id: 'ash', badges: 9, right: 40, plays: 4 }, { id: 'kiwi', badges: 3, right: 90, plays: 9 }];
+    const players = [
+      { id: 'a', name: 'Pip', avatar: 4, activities: 6, sheets: 1, badges: 0 },
+      { id: 'b', name: 'Bo', avatar: 9, activities: 2, sheets: 0, badges: 21 },
+    ];
+
+    LB.renderCup(d, { rows, players, view: 'characters' });
+    cb('character view numbers every row', d.querySelectorAll('.cuprow .cupplace').length === 4,
+      d.querySelectorAll('.cuprow').length + ' rows, ' + d.querySelectorAll('.cupplace').length + ' places');
+    cb('the leader is marked', !!d.querySelector('.cuprow.lead'));
+    cb('each row carries its own accent',
+      new Set([...d.querySelectorAll('.cuprow')].map((r) => r.style.getPropertyValue('--acc'))).size === 4);
+    cb('the bar is hidden from a screen reader',
+      [...d.querySelectorAll('.cupbar')].every((b) => b.getAttribute('aria-hidden') === 'true'));
+    cb('every row states its standing in text',
+      [...d.querySelectorAll('.cuprow')].every((r) => /badge/.test(r.querySelector('.sr')?.textContent || '')));
+
+    LB.renderCup(d, { rows, players, view: 'players', activeId: 'b' });
+    cb('players view gives NOBODY a place', d.querySelectorAll('.cuprow .cupplace').length === 0,
+      d.querySelectorAll('.cupplace').length + ' places found');
+    cb('players ordered on effort, not badges',
+      (d.querySelector('.cuprow .cupname')?.textContent || '') === 'Pip',
+      'first row: ' + (d.querySelector('.cuprow .cupname')?.textContent || '(none)'));
+    cb('the reader can see which one is theirs', !!d.querySelector('.cuprow.mine .cupmine'));
+    cb('players show an avatar', !!d.querySelector('.cuprow.plr svg'));
+
+    const tabs = [...d.querySelectorAll('.cuptab')];
+    cb('there are two views to choose from', tabs.length === 2, tabs.map((t) => t.textContent.trim()).join(' / '));
+    cb('exactly one view reads as pressed',
+      tabs.filter((t) => t.getAttribute('aria-pressed') === 'true').length === 1);
+    d.remove();
+  } catch (e) {
+    cb('harness itself', false, 'THREW ' + e.message);
+  }
+}
+
 L.push(''); L.push('CHECKS_RUN='+checks);
 document.getElementById('out').textContent=L.join('\n');
 window.__DONE__=true;

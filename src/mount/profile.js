@@ -184,6 +184,7 @@ function shelf(me, badges) {
       ? badgeStrip(got, held)
       : `<p class="bdnone">None yet. Each one says something ${me.name} did.</p>`}
     ${near.length ? `<p class="bdnext">Close by</p>${badgeStrip(near, held)}` : ''}
+    <p class="bdcup"><a href="${base()}/cup/">See the character cup &rarr;</a></p>
     <details class="bdall"><summary>See all ${BADGE_COUNT} badges</summary>
       ${shelfHtml(got)}</details>
   </div>`;
@@ -448,8 +449,60 @@ export async function noteProgress(activityId, event) {
   const id = await store.getActiveId();
   if (!id) return null;
   const rec = await store.record(id, activityId, event);
+  /* The same event, tallied against whoever is on screen, for the character cup.
+     Here rather than inside store.record() because the store has no idea which
+     character is showing — that is a rendering concern and lives in theme.js.
+     This is the one funnel every engine goes through, so it is the one place
+     this has to be added. */
+  await store.recordCharacter(id, currentCharacter(), event);
   await checkBadges(id);
   return rec;
+}
+
+/* Every character total on this device, summed across every profile on it — the
+   input the cup needs. Badges come from `earnedWith`, which existed already;
+   right answers and plays from the tally documents, which did not.
+
+   Reads every profile, which is fine for the handful a family has and is exactly
+   the query a backend would replace with N counters it already keeps summed. */
+export async function cupRows() {
+  const profiles = await store.listProfiles();
+  const rows = new Map();
+  const bump = (chId, patch) => {
+    if (!chId || chId === 'none') return;
+    const r = rows.get(chId) ?? { id: chId, badges: 0, right: 0, plays: 0, printed: 0, fixes: 0 };
+    for (const [k, v] of Object.entries(patch)) r[k] += v;
+    rows.set(chId, r);
+  };
+  for (const p of profiles) {
+    for (const b of await store.listBadges(p.id)) bump(b.earnedWith, { badges: 1 });
+    for (const t of await store.characterTallies(p.id)) {
+      bump(t.character, { right: t.right || 0, plays: t.plays || 0,
+        printed: t.printed || 0, fixes: t.fixes || 0 });
+    }
+  }
+  return [...rows.values()];
+}
+
+/* The players' view of the cup: one row per profile on this device, measured in
+   EFFORT and nothing else. `activities` counts progress records that were
+   actually played, not every record, so opening a book and leaving does not
+   count. Badges come along for display but are deliberately not the ranking key
+   — see the note above playerStandings() for why ranking children on badges
+   would make it a skill board. */
+export async function cupPlayers() {
+  const out = [];
+  for (const p of await store.listProfiles()) {
+    const prog = await store.allProgress(p.id);
+    const badges = await store.listBadges(p.id);
+    out.push({
+      id: p.id, name: p.name, avatar: p.avatar,
+      activities: prog.filter((r) => (r.plays || 0) > 0).length,
+      sheets: prog.reduce((n, r) => n + (r.printed || 0), 0),
+      badges: badges.length,
+    });
+  }
+  return out;
 }
 
 /* Badges are derived, so this recomputes the whole set from the records and only
@@ -588,7 +641,17 @@ async function paintMarks() {
   }
 }
 
-const repaint = () => { paintButton(); paintMarks(); };
+/* `izzi:progress` is what anything outside this module listens for. The
+   character cup is on its own page and has to redraw when a badge lands, and
+   theme.js already set the precedent of announcing a change on `document`
+   rather than exporting a subscribe(). Fired here rather than in noteProgress
+   so a profile switch counts as a change too — the cup sums every profile on
+   the device, so switching does not alter it, but creating or deleting one
+   does, and all three routes end up calling repaint. */
+const repaint = () => {
+  paintButton(); paintMarks();
+  document.dispatchEvent(new CustomEvent('izzi:progress'));
+};
 
-window.__izziProfile = { noteProgress, offerToKeepScore, store, repaint };
+window.__izziProfile = { noteProgress, offerToKeepScore, store, repaint, cupRows, cupPlayers };
 repaint();

@@ -66,6 +66,29 @@ const ACTIVE_KEY = 'meta/active';
 const P = (id) => `profiles/${id}`;
 const PROG = (id, activityId) => `profiles/${id}/progress/${activityId}`;
 const BADGE = (id, badgeId) => `profiles/${id}/badges/${badgeId}`;
+const CHAR = (id, chId) => `profiles/${id}/characters/${chId}`;
+
+/* Per-character tallies, which exist for exactly one reason: the character cup
+   (content/leaderboard.js) ranks the CHARACTERS against each other, and nothing
+   else in this store knows which character was on screen. Badges carry
+   `earnedWith`, so badge counts were already attributable; right answers and
+   plays were not.
+
+   A separate document per character rather than a nested object on each
+   progress record, because that is the shape a backend aggregates: N counters
+   summed across profiles, with no per-child row anywhere in the result. It also
+   keeps the merge rules flat, which is the whole reason MERGE is a flat map.
+
+   Every field is a running total, so every rule is 'sum'. Note that sums are NOT
+   idempotent under retry — a backend doing this needs a write-idempotency key
+   per event, which Firestore's atomic increment does not give you by itself. */
+export const CHAR_MERGE = {
+  plays: 'sum',
+  right: 'sum',
+  printed: 'sum',
+  fixes: 'sum',
+  lastAt: 'latest',
+};
 
 /* A badge document keeps only what cannot be recomputed: when it was earned and
    which character was there. Whether it is earned at all is derived from the
@@ -254,6 +277,31 @@ export function createStore(driver = localDriver()) {
         });
       }
       return fresh;
+    },
+
+    /* Every character this profile has put time into. Missing means zero, so a
+       profile that predates these documents reads as all zeros rather than
+       throwing — which matters because the cup shipped after the store did. */
+    async characterTallies(id) {
+      if (!id) return [];
+      const list = await driver.list(`profiles/${id}/characters`);
+      return list.filter((c) => c?.character);
+    },
+
+    /* Same contract as record(): an event describing what happened, never a
+       value to overwrite with. `none` is not a character and is not counted —
+       "Just math" cannot win a cup it is not on. */
+    async recordCharacter(id, chId, event = {}) {
+      if (!id || !chId || chId === 'none') return null;
+      const cur = (await driver.get(CHAR(id, chId)))
+        ?? { v: PROFILE_V, character: chId, plays: 0, right: 0, printed: 0, fixes: 0, lastAt: null };
+      const next = { ...cur, character: chId, lastAt: nowIso() };
+      if (event.played) next.plays = (next.plays || 0) + 1;
+      if (event.printed) next.printed = (next.printed || 0) + 1;
+      if (Number.isFinite(event.right)) next.right = (next.right || 0) + event.right;
+      if (Number.isFinite(event.fixes)) next.fixes = (next.fixes || 0) + event.fixes;
+      await driver.set(CHAR(id, chId), next);
+      return next;
     },
 
     /* The only way progress changes. `event` is what happened, never a new value

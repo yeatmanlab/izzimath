@@ -22,7 +22,7 @@ engine, live in [`tools/`](tools/README.md). The build copies them to
 `dist/_tools/` for local runs and **deliberately does not in CI**
 (`build.mjs` guards on `!process.env.CI`), so `izzimath.com/_tools/` is a 404 on
 purpose — run them against a local `dist`, which is also the only place they can
-measure a build you are still changing: a **responsive audit** (29 pages × 5 widths, checking overflow,
+measure a build you are still changing: a **responsive audit** (30 pages × 5 widths, checking overflow,
 tap-target size and text size), a **problem-type test** (all nine types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is

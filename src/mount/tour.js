@@ -27,6 +27,7 @@ import { characters, characterList, getCharacter } from '../../content/character
 import { activities } from '../../content/activities/index.js';
 import { plans } from '../../content/plans.js';
 import { BADGE_COUNT } from '../../content/badges.js';
+import { CUP_CHARACTERS } from '../../content/leaderboard.js';
 import { setCharacter, currentCharacter } from '../lib/theme.js';
 import { rng, deriveSeed } from '../lib/rng.js';
 import { base } from '../lib/url.js';
@@ -172,6 +173,7 @@ const counts = (line) => line
   .replace('{games}', activities.filter((a) => a.kind === 'game').length)
   .replace('{total}', activities.length)
   .replace('{badges}', BADGE_COUNT)
+  .replace('{characters}', CUP_CHARACTERS.length)
   // plans[0] carries `grade` and `title`; my first draft guessed at gradeLabel
   // and topic, which do not exist and would have printed "undefined".
   .replace('{plans}', plans.length === 1

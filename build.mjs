@@ -13,6 +13,7 @@ import { activities, byGrade, strandsFor, STRANDS } from './content/activities/i
 import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, isSiteScope, STRENGTH, KINDS } from './content/references.js';
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
+import { CUP } from './content/leaderboard.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
 const BASE = (process.env.BASE ?? '').replace(/\/$/, '');
@@ -677,6 +678,34 @@ write('ssdd/index.html', page({
   </section>`,
 }));
 
+/* --------------------------------------------------------------- the cup
+   The one comparison the site permits: the four characters against each other,
+   never the children. The reasoning, and the three documents that forbid the
+   other kind, are at the top of content/leaderboard.js.
+
+   Rendered client-side, because the numbers live in the browser — there is no
+   backend, so a build-time render would bake in zeros. The static body says what
+   the page IS so it is not blank without JavaScript. */
+{
+  const cupChars = characterList.filter((id) => id !== 'none');
+  write('cup/index.html', page({
+    base: b, active: '', title: CUP.title,
+    desc: 'Which Izzi Math character has been played with most on this device. Counts the characters, never the children.',
+    crumbs: [{ label: 'Home', href: '/' }, { label: CUP.title }],
+    scripts: ['/assets/src/mount/leaderboard.js'],
+    body: `<section class="wrap sec" style="padding-top:24px">
+      <h1 style="font-size:30px">${esc(CUP.title)}</h1>
+      <p class="sub">${esc(CUP.lead)}</p>
+      <div class="cup" data-cup>
+        <p class="cupnote">${esc(CUP.local)}</p>
+        <p class="sub">Loading the ${cupChars.length} friends&hellip;</p>
+      </div>
+      <p class="sub" style="margin-top:26px">Nothing on this page is sent anywhere, and no child appears on it.
+      If you want to know what a badge is, the <a href="${b}/guide/">one-page guide</a> lists all of them.</p>
+    </section>`,
+  }));
+}
+
 /* ------------------------------------------------------------------- the guide
    "Everything on Izzi Math, on one page." Where the walkthrough ends and, more
    importantly, the parent's own destination — readable in silence in about thirty
@@ -706,6 +735,8 @@ write('ssdd/index.html', page({
     ['By skill', `${b}/skills/`, 'If you already know the sticking point, this is the faster way in.'],
     ['How to help', `${b}/parents/`, 'How long, how often, and what to say when they are stuck.'],
     ['Keeping score', `${b}/`, 'Optional and never asked for twice: pick a creature, a name and a secret snack, and scores stay in this browser. No account, and nothing is sent anywhere.'],
+    ['The character cup', `${b}/cup/`,
+      `Which of the ${characterList.length - 1} friends has been out the most, counted in badges. It ranks the characters and never the children — there is no child on it, and nothing is sent anywhere.`],
   ];
   write('guide/index.html', page({
     base: b, active: '', title: 'Everything on Izzi Math, on one page',

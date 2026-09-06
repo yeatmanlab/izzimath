@@ -86,6 +86,12 @@ export const TOUR = {
          hand-typed "a plan" becomes wrong the moment there are three. */
       ['Plans', '/plans/',
         'What to do and in what order, three times a week. {plans}'],
+      /* The cup ranks the CHARACTERS and never the children — see the header of
+         content/leaderboard.js for the three documents that forbid the other
+         kind. Worth a row here because the Scores button is the only other way
+         in, and a child who has not made a profile never opens that. */
+      ['The character cup', '/cup/',
+        'Which of the {characters} friends has been out the most, counted in badges. It ranks the friends, never the children — nobody else is on it.'],
       ['How to help', '/parents/',
         'For a grown-up: how long a session should be, how often, and what to say when someone is stuck.'],
     ],

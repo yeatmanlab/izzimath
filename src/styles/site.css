@@ -715,6 +715,106 @@ footer.foot a:hover { color: var(--txt) }
   .fbk-panel { padding: 20px 16px }
 }
 
+/* ---------- the character cup ---------- */
+/* Each row is tinted with its OWN character's accent through --acc, set inline
+   from characters.js, rather than reading --a1: --a1 is whichever character the
+   reader has selected, so every bar came out the same colour and the chart said
+   nothing about whose row it was.
+
+   Built to scale past four. The list scrolls at a height of about six rows, so
+   four fit with nothing to scroll and twenty do not stretch the page; the place
+   column is a fixed 2ch so a tenth row does not shunt the avatars sideways. */
+.cup { margin-top: 22px }
+/* The two views. A segmented control rather than a checkbox, because the choice
+   is between two things rather than on/off, and the reader should be able to see
+   what the other one is called before pressing it. */
+.cuptabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 16px;
+  border: 1px solid var(--line); border-radius: 99px; background: var(--glass) }
+.cuptab {
+  border: 0; background: none; cursor: pointer; color: var(--txt2);
+  font: 600 12.5px/1 var(--fdisp); letter-spacing: .02em;
+  padding: 9px 15px; border-radius: 99px; min-height: 24px;
+}
+.cuptab:hover { color: var(--txt) }
+.cuptab.on { background: var(--sp); color: var(--onsp) }
+/* A player row has no place column, so the grid loses its first track. That is
+   the visible difference between a gallery and a ranking, and it is the point. */
+.cuprow.plr { grid-template-columns: 44px 1fr auto }
+.cuprow.plr.mine { border-color: color-mix(in srgb, var(--a1) 55%, transparent);
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--a1) 12%, transparent), transparent 46%) }
+.cuplv.plr { color: var(--txt3); border-color: var(--line) }
+.cupmine {
+  font: 600 10px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--onsp); background: var(--sp); border-radius: 99px; padding: 4px 8px;
+}
+/* Player rows are not per-character, so they have no --acc of their own; the bar
+   uses the reader's own selected accent instead of a colour that would imply the
+   row belonged to a character. */
+.cuprow.plr .cupbar i { background: linear-gradient(90deg, color-mix(in srgb, var(--a2) 70%, transparent), var(--a1)) }
+.cupnote { font-size: 13px; color: var(--txt3); line-height: 1.6; margin-bottom: 14px; max-width: 62ch }
+.cuplist {
+  list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;
+  max-height: 27rem; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.cuprow {
+  display: grid; grid-template-columns: 2ch 44px 1fr auto; align-items: center; gap: 14px;
+  border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px 12px 13px;
+  background: var(--glass);
+  /* the character's own colour, at a tenth, so the row reads as theirs before
+     the name is read */
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--acc) 12%, transparent), transparent 46%);
+}
+.cuprow.lead { border-color: color-mix(in srgb, var(--acc) 55%, transparent) }
+.cupplace { font: 600 15px/1 var(--fdisp); color: var(--txt3); text-align: right; font-variant-numeric: tabular-nums }
+.cuprow.lead .cupplace { color: var(--acc) }
+.cupav { display: block }
+.cupface { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.06); display: block }
+.cupbody { min-width: 0; display: block }
+.cuptop { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px }
+.cupname { font-family: var(--fdisp); font-size: 16px; font-weight: 600; color: var(--txt) }
+.cuplv {
+  font: 600 10px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--acc); border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  border-radius: 99px; padding: 4px 8px;
+}
+.cuplv.none { color: var(--txt3); border-color: var(--line) }
+/* A zero-badge character still shows a hairline of track, so the row does not
+   look like a rendering failure. */
+.cupbar { display: block; height: 8px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden }
+.cupbar i {
+  display: block; height: 100%; border-radius: 99px; min-width: 3px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 70%, transparent), var(--acc));
+}
+.cupnum { text-align: right; line-height: 1.15 }
+.cupnum b { display: block; font-family: var(--fdisp); font-size: 21px; font-weight: 700; color: var(--txt); font-variant-numeric: tabular-nums }
+.cupnum small { font-size: 10.5px; color: var(--txt3); letter-spacing: .06em; text-transform: uppercase }
+.cupempty { border: 1px dashed var(--line2); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px }
+.cupempty p { font-size: 14px; color: var(--txt2); line-height: 1.65 }
+.cupempty p + p { margin-top: 6px; color: var(--txt3); font-size: 13px }
+.cupsum { margin-top: 14px; font-size: 13.5px; color: var(--txt2) }
+/* The route in from the Scores panel, which is the only entry a child who has
+   not read the tour will ever find. */
+.bdcup { margin: 14px 0 0; font-size: 13.5px }
+.bdcup a { color: var(--a1); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--a1) 40%, transparent) }
+.bdcup a:hover { border-bottom-color: var(--a1) }
+.cuphow { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 18px }
+.cuphow h2 {
+  font: 600 11px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--txt3); margin-bottom: 10px;
+}
+.cuphow ul { margin: 0; padding-left: 18px }
+.cuphow li { font-size: 13.5px; color: var(--txt2); line-height: 1.7 }
+
+@media (max-width: 560px) {
+  .cuprow { grid-template-columns: 2ch 36px 1fr auto; gap: 10px; padding: 10px 12px 10px 10px }
+  .cuprow.plr { grid-template-columns: 36px 1fr auto }
+  .cupface { width: 36px; height: 36px }
+  .cupname { font-size: 15px }
+  .cupnum b { font-size: 18px }
+  .cuplist { max-height: none }   /* a phone scrolls the page, not a box inside it */
+}
+
 /* ---------- references ---------- */
 .reflist { display: grid; gap: 16px }
 .ref { border: 1px solid var(--line); background: var(--glass); border-radius: 14px; padding: 20px 22px; scroll-margin-top: 90px }
