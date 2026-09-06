@@ -9,7 +9,7 @@ import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from 
 import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, plainUrl, formUrl, mailUrl, plainText }
   from '../content/feedback.js';
 import { characters, characterList, getCharacter } from '../content/characters.js';
-import { standings, playerStandings, CUP, CUP_CHARACTERS } from '../content/leaderboard.js';
+import { standings, playerStandings, playerRowFrom, CUP, CUP_CHARACTERS } from '../content/leaderboard.js';
 import { CHAR_MERGE } from '../src/lib/profile.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
@@ -265,6 +265,41 @@ console.log('\n=== the character cup ===');
       fail('cup', 'playerRow renders a place — the character view numbers rows, the players view must not');
     }
     if (!/avatarSvg/.test(playerFn)) fail('cup', 'playerRow shows no avatar, which is the whole point of that view');
+  }
+
+  /* Driven through a REAL store, because the arithmetic was wrong in the mount
+     and every existing test missed it. store.allProgress() returns an object
+     keyed by activityId, not an array; the mount called .filter() on it, threw,
+     and the caller's try/catch turned that into an empty players view on every
+     real device. The harness had called the renderer with synthetic rows and
+     never gone through the store, so it stayed green. */
+  {
+    const mem = () => { const m = {}; return {
+      async writable() { return true; }, async get(k) { return m[k] ?? null; },
+      async set(k, d) { m[k] = d; return d; }, async remove(k) { delete m[k]; },
+      async list(pre) { return Object.entries(m).filter(([k]) => k.startsWith(pre + '/')).map(([, v]) => v); } }; };
+    const st = createStore(mem());
+    const me = await st.createProfile({ avatar: 3, name: 'Pip', food: 'pizza' });
+    await st.record(me.id, 'tens-and-ones', { played: true, right: 4 });
+    await st.record(me.id, 'tens-and-ones', { played: true, right: 3 });
+    await st.record(me.id, 'counting-crew', { played: true, right: 2 });
+    await st.record(me.id, 'great-race', { printed: true });          // printed, never played
+    /* A BOOK, recorded the way books actually record: once at the finish screen,
+       with no `played` flag. This is the case the first version of the metric
+       missed entirely — plays stays 0 for every book ever finished, and books
+       are 32 of the 49 activities. */
+    await st.record(me.id, 'shape-sorter', { finished: true, pagesDone: 8, right: 6 });
+    const row = playerRowFrom(me, await st.allProgress(me.id), 2);
+    if (row.activities !== 3) {
+      fail('cup', `two games and a finished book make three activities, playerRowFrom counted ${row.activities} — a book records no "played" flag, and printing alone must not count`);
+    }
+    if (row.sheets !== 1) fail('cup', `one sheet was printed and playerRowFrom counted ${row.sheets}`);
+    if (row.name !== 'Pip' || row.badges !== 2) fail('cup', 'playerRowFrom lost the profile name or badge count');
+    // and the whole path has to survive the shapes it will really be handed
+    for (const junk of [undefined, null, {}]) {
+      const r = playerRowFrom({ id: 'x', name: 'x', avatar: 0 }, junk, 0);
+      if (r.activities !== 0 || r.sheets !== 0) fail('cup', `playerRowFrom mishandled ${JSON.stringify(junk)}`);
+    }
   }
 
   /* The page's static lead is served before the toggle is read, so it has to

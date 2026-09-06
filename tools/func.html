@@ -1346,6 +1346,18 @@ L.push('');
     cb('every row states its standing in text',
       [...d.querySelectorAll('.cuprow')].every((r) => /badge/.test(r.querySelector('.sr')?.textContent || '')));
 
+    /* Three pill states, not two. A character holding one badge is at level 0,
+       because the first level needs three — so the pill read NOT STARTED beside
+       a badge count of 1, which is simply false. */
+    LB.renderCup(d, { rows: [{ id: 'ash', badges: 1 }, { id: 'kiwi', badges: 9 }], players, view: 'characters' });
+    const pill = (name) => [...d.querySelectorAll('.cuprow')]
+      .find((r) => r.querySelector('.cupname')?.textContent === name)?.querySelector('.cuplv')?.textContent?.trim();
+    cb('a character with badges but no level shows the gap', /to Explorer/.test(pill('Ash') || ''), 'Ash: ' + pill('Ash'));
+    cb('a character with a level shows the level', /Adventurer/.test(pill('Kiwi') || ''), 'Kiwi: ' + pill('Kiwi'));
+    cb('only a character at zero reads as not started',
+      (pill('Flame') || '') === 'not started' && !/not started/.test(pill('Ash') || ''),
+      'Flame: ' + pill('Flame'));
+
     LB.renderCup(d, { rows, players, view: 'players', activeId: 'b' });
     cb('players view gives NOBODY a place', d.querySelectorAll('.cuprow .cupplace').length === 0,
       d.querySelectorAll('.cupplace').length + ' places found');

@@ -37,6 +37,7 @@ import { celebrate } from '../engine/celebrate.js';
 import { activities } from '../../content/activities/index.js';
 import { base } from '../lib/url.js';
 import { currentCharacter, setCharacter } from '../lib/theme.js';
+import { playerRowFrom } from '../../content/leaderboard.js';
 
 const store = createStore(localDriver());
 const byId = new Map(activities.map((a) => [a.id, a]));
@@ -495,12 +496,7 @@ export async function cupPlayers() {
   for (const p of await store.listProfiles()) {
     const prog = await store.allProgress(p.id);
     const badges = await store.listBadges(p.id);
-    out.push({
-      id: p.id, name: p.name, avatar: p.avatar,
-      activities: prog.filter((r) => (r.plays || 0) > 0).length,
-      sheets: prog.reduce((n, r) => n + (r.printed || 0), 0),
-      badges: badges.length,
-    });
+    out.push(playerRowFrom(p, prog, badges.length));
   }
   return out;
 }

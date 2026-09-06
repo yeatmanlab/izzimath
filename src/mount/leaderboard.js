@@ -25,6 +25,7 @@ import { CUP, PLAYERS, standings, playerStandings, cupTotals } from '../../conte
 import { avatar } from '../lib/sprites.js';
 import { avatarSvg } from '../lib/avatarart.js';
 import { avatarLabel } from '../../content/avatars.js';
+import { levelGap } from '../../content/levels.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -52,16 +53,23 @@ export function cupSummary(totals) {
 function characterRow(r, leader) {
   /* The bar is aria-hidden and the numbers are in the text, so a screen reader
      gets the standing without being read a decorative width. */
+  /* Three states, not two. "not started" for a character with no badges is
+     right; for one holding a badge it is simply false — the first level needs
+     three, so levelFor(1).n is 0 and the pill said NOT STARTED beside a badge
+     count of 1. In between, the pill says what the next level costs, which is
+     the same sentence the Scores panel already uses. */
   const lv = r.level?.n > 0 ? r.level.name : null;
+  const gap = !lv && r.badges > 0 ? levelGap(r.badges) : null;
+  const pill = lv ?? (gap ? `${gap.need} to ${gap.next.name}` : 'not started');
   const said = `${ordinal(r.rank)}${r.tied ? ' equal' : ''}: ${r.name}, ${
-    lv ? `${lv}, ` : ''}${plural(r.badges, 'badge', 'badges')}`;
+    lv ? `${lv}, ` : gap ? `${gap.need} more for ${gap.next.name}, ` : ''}${plural(r.badges, 'badge', 'badges')}`;
   return `<li class="cuprow${r.rank === 1 && leader ? ' lead' : ''}" style="--acc:${esc(r.accent)}">
     <span class="cupplace" aria-hidden="true">${r.tied ? '=' : ''}${r.rank}</span>
     <span class="cupav" aria-hidden="true">${avatar(r.id, 'cupface')}</span>
     <span class="cupbody">
       <span class="cuptop">
         <b class="cupname">${esc(r.name)}</b>
-        ${lv ? `<span class="cuplv">${esc(lv)}</span>` : '<span class="cuplv none">not started</span>'}
+        <span class="cuplv${lv ? '' : ' none'}">${esc(pill)}</span>
       </span>
       <span class="cupbar" aria-hidden="true"><i style="width:${(r.share * 100).toFixed(1)}%"></i></span>
     </span>

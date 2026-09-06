@@ -157,6 +157,34 @@ export function playerStandings(players = []) {
   return rows;
 }
 
+/* One player row from what the store actually hands back. Pure, and it exists
+   because the arithmetic was wrong in the mount and nothing could see it:
+   store.allProgress() returns an OBJECT KEYED BY activityId, not an array, so
+   `prog.filter(...)` threw, the caller's try/catch swallowed it, and the players
+   view rendered empty on every real device. The harness missed it because it
+   called the renderer with synthetic rows and never went through the store.
+
+   So the shape is pinned here, in a function scripts/check.mjs can drive with a
+   real store. `activities` counts records that were actually PLAYED, not every
+   record, so opening a book and leaving does not count as doing it. */
+export function playerRowFrom(profile, progressByActivity = {}, badgeCount = 0) {
+  const records = Object.values(progressByActivity ?? {});
+  return {
+    id: profile.id,
+    name: profile.name ?? '',
+    avatar: Number.isFinite(profile.avatar) ? profile.avatar : 0,
+    /* "Did it" means ANY engagement signal, not plays > 0. The engines do not
+       agree on what they send: a game sends `played: true`, so plays increments;
+       a book records once at its finish screen and sends `finished`, `pagesDone`,
+       `right` and `fixes` with NO `played`, so plays stays zero forever. Counting
+       plays alone therefore counted games only — and 32 of the 49 activities are
+       books, so a child who had worked through ten of them showed nothing. */
+    activities: records.filter((r) => (r?.plays || 0) > 0 || r?.finished || (r?.pagesDone || 0) > 0).length,
+    sheets: records.reduce((n, r) => n + (r?.printed || 0), 0),
+    badges: badgeCount,
+  };
+}
+
 export const PLAYERS = {
   label: 'By player',
   charLabel: 'By friend',
