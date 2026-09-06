@@ -8,11 +8,19 @@
 //
 // Respects prefers-reduced-motion: the flourish is skipped entirely.
 
+/* Every glyph here is from the Geometric Shapes block, and that is a
+   requirement rather than a coincidence: Inter ships none of them, so each one
+   falls back to a system font, and the geometric shapes are the ones every
+   system has. Ash first used ❧ (U+2767, a rotated floral heart) for leaves and
+   it fell back to something that renders as a small bird — beside ◆ ● ▲ it
+   looked like a mistake. ▼ is in the same block as the others, always resolves,
+   and reads as drifting down, which is what the motif is. Rendered beside the
+   other four at 28px before choosing. */
 const MOTIF = {
   kiwi:    { glyph: '◆', n: 7,  spin: -140 },  // scales
   georgie: { glyph: '●', n: 8,  spin: 0 },     // bouncing balls
   flame:   { glyph: '▲', n: 8,  spin: 200 },   // embers
-  ash:     { glyph: '❧', n: 6,  spin: -60 },   // gum leaves, drifting down
+  ash:     { glyph: '▼', n: 6,  spin: -60 },   // gum leaves, drifting down
   none:    { glyph: '+', n: 6,  spin: 90 },
 };
 

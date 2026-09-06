@@ -57,7 +57,54 @@ function measure(){
     const fs=parseFloat(w.getComputedStyle(el).fontSize);
     if(fs&&fs<11&&el.textContent.trim().length>3&&!el.closest('.sheet')) smallText.push(fs+'px '+el.tagName.toLowerCase());
   }
-  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3)};
+  /* The pinned suggestion button is position:fixed above the content, so it can
+     win a hit-test against whatever it happens to sit over. That is fine for a
+     big card and not fine for an answer: as a 162x40 pill it made the CORRECT
+     option unclickable on a grade-1 book and on decade-duel — elementFromPoint
+     at the option's centre returned the button, so a child tapping the right
+     answer got "Make a suggestion".
+     Nothing else here could see it. Overflow, tap size and text size are all
+     properties of one element; this is a relationship between two, and it needs
+     elementFromPoint rather than a rect. Severity is the ratio: a control whose
+     centre is blocked AND which is no bigger than the button has nowhere else to
+     be tapped, which is what [no room left] marks.
+
+     I tried gating this on "is there any scroll left to free it" so the
+     transient overlaps would go quiet, and took it out again: I could not make
+     the gated version fail under the bug it was written for, and a check that
+     cannot fail is worse than no check. So it reports every hit and you triage.
+
+     KNOWN AND ACCEPTED as of 2026-09-06: the printables index reports its
+     "Print" link at three widths. That page is 4233px tall and the link sits at
+     y 851 of a 900px viewport, so scrolling a few pixels frees it — true of any
+     pinned control. Two others were real and are fixed: footer links on short
+     pages (footer.foot now reserves 88px) and the answer options on books and
+     games, where the pill was wide enough to cover a whole option and the button
+     now collapses to a 44px circle below 560px. */
+  const covered=[];
+  const fab=d.querySelector('.fbk-btn');
+  if(fab){
+    const fr=fab.getBoundingClientRect(), fa=fr.width*fr.height;
+    for(const el of d.querySelectorAll('a[href],button,input,select,textarea')){
+      if(el.closest('.fbk'))continue;
+      const r=el.getBoundingClientRect();
+      if(!r.width||!r.height)continue;
+      const cx=r.left+r.width/2, cy=r.top+r.height/2;
+      if(cy<0||cy>w.innerHeight||cx<0||cx>w.innerWidth)continue;
+      /* Cheap rect test BEFORE elementFromPoint. Hit-testing forces a layout on
+         every call, and running it over every control on 20 pages x 5 widths
+         took this harness from 55 seconds to over four minutes. Only the handful
+         of controls whose centre is inside the button's box can possibly be
+         covered, so only those are worth asking about. */
+      if(cx<fr.left||cx>fr.right||cy<fr.top||cy>fr.bottom)continue;
+      const top=d.elementFromPoint(cx,cy);
+      if(top&&top.closest('.fbk')&&!el.contains(top)&&top!==el){
+        const label=(el.textContent||el.value||el.tagName).replace(/\s+/g,' ').trim().slice(0,18)||el.tagName;
+        covered.push(label+(r.width*r.height<=fa?' [no room left]':''));
+      }
+    }
+  }
+  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3),covered:[...new Set(covered)].slice(0,4)};
 }
 (async()=>{
   for(const [w,wn] of WIDTHS){
@@ -73,6 +120,7 @@ function measure(){
       if(m.wide.length)p.push('wide: '+m.wide.join(' '));
       if(m.tiny.length)p.push('small tap: '+m.tiny.join(' '));
       if(m.smallText.length)p.push('small text: '+m.smallText.join(' '));
+      if(m.covered.length)p.push('under the pinned button: '+m.covered.join(', '));
       L.push((p.length?'  ✗ ':'  · ')+name.padEnd(26)+(p.join(' | ')||'ok'));
     }
   }

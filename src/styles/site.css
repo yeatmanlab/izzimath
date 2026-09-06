@@ -492,7 +492,16 @@ table.tbl td { color: var(--txt2) }
 table.tbl td strong { color: var(--txt) }
 
 /* ---------- footer ---------- */
-footer.foot { position: relative; z-index: 1; margin-top: 70px; border-top: 1px solid var(--line); padding: 26px 0 34px }
+/* The bottom padding is the suggestion button's clearance, not taste. The
+   comment on .fbk claimed it was "clear of the footer links it would otherwise
+   sit on top of at the bottom of a short page", and the responsive audit
+   disproved it: on /404/ and the plans index the pinned pill covered a footer
+   link's centre, and a footer link is smaller than the button so there was no
+   other part of it to press. The button occupies the bottom 16-56px, so 88px of
+   padding puts every footer link above it. Long pages can still scroll content
+   under the button mid-scroll, which is true of any pinned control; what this
+   fixes is content that had nowhere else to go. */
+footer.foot { position: relative; z-index: 1; margin-top: 70px; border-top: 1px solid var(--line); padding: 26px 0 88px }
 footer.foot .fin { display: flex; gap: 26px; flex-wrap: wrap; font-size: 13px; color: var(--txt3) }
 footer.foot a { color: var(--txt2); text-decoration: none }
 footer.foot a:hover { color: var(--txt) }
@@ -685,9 +694,24 @@ footer.foot a:hover { color: var(--txt) }
 }
 .fbk-panel .btn.go[disabled] { opacity: .5; cursor: not-allowed }
 
+/* Below 560 the button collapses to a circle, and this is a correctness fix
+   rather than a cosmetic one. As a 162x40 pill it reached far enough across the
+   content column to win a hit-test against the answer row: measured with
+   elementFromPoint, the correct option was unclickable on a grade-1 book at
+   529px and on decade-duel at 390px — a child tapping the right answer got
+   "Make a suggestion" instead. A 44px circle sits clear of the centred option
+   row at every width tested. 44 is comfortably over the 24px tap-target floor.
+
+   The label is CLIPPED, not display:none, so the button keeps its accessible
+   name — the icon beside it is aria-hidden and would leave nothing behind. Same
+   technique as .chbtn .chname in the nav. */
 @media (max-width: 560px) {
   .fbk { right: 10px; bottom: 10px }
-  .fbk-btn { font-size: 12.5px; padding: 8px 13px }
+  .fbk-btn { width: 44px; height: 44px; min-height: 44px; padding: 0; gap: 0; justify-content: center; border-radius: 50% }
+  .fbk-btn > span:not(.fbk-ic) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .fbk-ic { font-size: 18px }
   .fbk-panel { padding: 20px 16px }
 }
 
