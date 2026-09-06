@@ -1151,6 +1151,25 @@ console.log('\n=== figures tell the truth ===');
   };
 
   let figures = 0, numbers = 0, supers = 0;
+  /* A figure that IS the question, read the way a screen reader gets it. Three
+     ways it can go wrong, and two of the three had shipped:
+
+       silent   — `aria-hidden`, so the question is not there at all. Every one
+                  of fold-and-sort's twelve pages was unanswerable.
+       leaking  — the label IS the answer. shape-sorter announced "circle"
+                  beside four options including circle, on four of eight pages.
+       ambiguous— two items with the same words and the same label but different
+                  answers, which means the label does not carry enough to decide.
+                  Found the kite: both its diagonals run corner to corner and
+                  only one is a fold line.
+
+     Ambiguity is the one worth explaining. It is not a style rule — it is the
+     only mechanical way to ask "is this answerable?" without a human reading
+     every label, because if identical output has two answers then no reader,
+     sighted or not, could have told them apart. */
+  let labelled = 0, mute = [], leak = new Set(), amb = new Set();
+  const byLabel = new Map();
+  const bare = (x) => String(x ?? '').replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const seen = new Set();
   for (const a of activities) {
     const n = a.pages ?? a.rounds ?? 10;
@@ -1178,7 +1197,23 @@ console.log('\n=== figures tell the truth ===');
               }
             }
           }
-          for (const key of ['visual', 'printVisual']) {
+          for (const key of ['visual', 'printVisual', 'prompt']) {
+            const svg = String(p[key] ?? '');
+            if (/<svg/.test(svg)) {
+              if (/<svg[^>]*aria-hidden="true"/.test(svg)) {
+                mute.push(`${a.id}|i=${i} ${key}`);
+              } else {
+                const lab = svg.match(/aria-label="([^"]*)"/)?.[1];
+                if (lab) {
+                  labelled++;
+                  const ans = String(answerText(p));
+                  if (lab.trim().toLowerCase() === ans.trim().toLowerCase()) leak.add(`${a.id}|${lab}`);
+                  const k = `${a.id}|${key}|${bare(p.prompt)}|${bare(p.printStem)}|${lab}`;
+                  if (!byLabel.has(k)) byLabel.set(k, { ans, i });
+                  else if (byLabel.get(k).ans !== ans) amb.add(`${k}|${byLabel.get(k).ans}|${ans}`);
+                }
+              }
+            }
             const d = asserted(p[key]);
             if (!d) continue;
             figures++;
@@ -1197,8 +1232,20 @@ console.log('\n=== figures tell the truth ===');
       }
     }
   }
+  for (const m of [...new Set(mute)]) {
+    const [id, where] = m.split('|');
+    fail(id, `${where} is aria-hidden, so the question is not there at all for a screen reader`);
+  }
+  for (const l of leak) { const [id, lab] = l.split('|'); fail(id, `a figure's label is exactly its own answer: "${lab}"`); }
+  for (const x of amb) {
+    const [id, key, prompt, , lab, a1, a2] = x.split('|');
+    fail(id, `two ${key} figures read identically and answer differently — "${String(prompt).slice(0, 52)}" with label "${
+      String(lab).slice(0, 64)}" is both ${a1} and ${a2}, so the label cannot be enough to decide`);
+  }
   console.log(`  ${figures} figures read back from their own labels · ${numbers} drawn quantities · ${
     supers} superlative questions${seen.size ? ` · ${seen.size} PROBLEMS` : ' · all sound'}`);
+  console.log(`  ${labelled} labelled figures a screen reader can read · ${mute.length} silent · ${
+    leak.size} naming their own answer · ${amb.size} ambiguous`);
 }
 
 /* ------------------------------------------------ one right option, exactly one

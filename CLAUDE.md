@@ -107,6 +107,24 @@ already exist, and a routine only needs a `ui` the registry knows.
 - **Every problem needs a worked explanation.** Bare right/wrong feedback is worth
   about a tenth of elaborated feedback, and the gap is widest in maths. The
   checker fails the build without one.
+- **A figure states its attributes, never its conclusion.** Where the picture IS
+  the question — geometry, mostly — the label has to carry enough to answer from
+  and must not simply announce the answer. "corners of 27, 45 and 108 degrees",
+  not "an obtuse triangle"; "a round shape with no corners", not "circle". Both
+  ends of that had shipped: `shape-sorter` labelled its figure `circle` beside
+  four options including circle, and `fold-and-sort` marked every figure
+  `aria-hidden`, so all twelve of its pages were unanswerable with a screen
+  reader. Sometimes the attributes settle the answer — a trapezoid with two equal
+  slanted sides does fold down the middle — and that is **accepted**: a child who
+  gets there from "90 degrees is a square corner" has done the learning. What is
+  not accepted is a silent figure or a label that is its own answer.
+
+  Descriptions are derived from the same coordinates the picture is drawn from,
+  like the answers are, and three checks in `scripts/check.mjs` hold it: silent,
+  leaking, and **ambiguous** — two items whose words and label are identical but
+  whose answers differ. That last one is the only mechanical way to ask "is this
+  answerable?", and it earned its place immediately: the kite's two diagonals
+  both run corner to corner and only one is a fold line.
 - **Games sit downstream of books.** A game never introduces a concept, always
   names its strategy first, and never starts a clock unprompted. A game must also
   say what it IS: `goal` is the task in the child's words, `strategy` is how to do

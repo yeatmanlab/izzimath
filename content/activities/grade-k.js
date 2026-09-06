@@ -124,8 +124,27 @@ const SHAPES = {
   rectangle: '<rect x="6" y="20" width="68" height="40" rx="3"/>',
   hexagon: '<path d="M40 8 L67 24 L67 56 L40 72 L13 56 L13 24 Z"/>',
 };
-const shapeSvg = (name, w = 92, print = false) =>
-  `<svg viewBox="0 0 80 80" width="${w}" height="${w}" role="img" aria-label="${name}">
+/* What the figure ANNOUNCES, and it is not always the name. "What shape is this?"
+   was labelled `aria-label="circle"` beside four options including circle, so
+   four of the eight pages read the answer out to a screen reader before the
+   child had a chance at it. The naming question gets the shape's ATTRIBUTES
+   instead — the same thing a sighted child reads off the picture, and the
+   reasoning K.G.A.2 is asking for. The counting question already names the shape
+   in its own prompt, so there the name is all the label needs to add, and saying
+   "four straight sides" would give that one away instead.
+
+   fold-and-sort at grade 4 had the opposite bug: silent figures, and the
+   question lived entirely in the picture. Both are fixed the same way — state
+   the attributes, never the conclusion. */
+const SHAPE_DESC = {
+  circle: 'a round shape with no corners',
+  square: 'a shape with four straight sides, all the same length, and four square corners',
+  triangle: 'a shape with three straight sides',
+  rectangle: 'a shape with four straight sides and four square corners, two long ones and two short ones',
+  hexagon: 'a shape with six straight sides',
+};
+const shapeSvg = (name, w = 92, print = false, describe = false) =>
+  `<svg viewBox="0 0 80 80" width="${w}" height="${w}" role="img" aria-label="${describe ? SHAPE_DESC[name] : name}">
     <g fill="none" stroke="${print ? '#111' : 'var(--a1)'}" stroke-width="${print ? 2.4 : 3.5}" stroke-linejoin="round">${SHAPES[name]}</g></svg>`;
 
 const shapeSorter = {
@@ -150,10 +169,10 @@ const shapeSorter = {
     const sides = { circle: 0, square: 4, triangle: 3, rectangle: 4, hexagon: 6 }[name];
     if (i % 2 === 0) {
       return {
-        type: 'choice', prompt: 'What shape is this?', visual: shapeSvg(name), visualWidth: 120,
+        type: 'choice', prompt: 'What shape is this?', visual: shapeSvg(name, 92, false, true), visualWidth: 120,
         choices: r.shuffle(r.sample(names.filter((n) => n !== name), 3).concat([name])),
         answer: name, printStem: 'Name this shape.',
-        printVisual: shapeSvg(name, 74, true),
+        printVisual: shapeSvg(name, 74, true, true),
         hint: 'Count the straight sides.',
         explain: `A ${name}${sides ? ` has ${sides} sides` : ' has no straight sides'}.`,
       };

@@ -424,14 +424,86 @@ const rotPt = ([x, y], deg) => {
   const t = deg * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
   return [40 + (x - 40) * c - (y - 40) * s, 40 + (x - 40) * s + (y - 40) * c];
 };
+/* ------------------------------------------------------- describing a figure
+   These figures ARE the question — unlike a ten-frame or a bar chart, nothing in
+   the prompt carries what is being asked. So the figure was `aria-hidden` and
+   every one of the twelve pages was unanswerable with a screen reader.
+
+   The rule here is: state the ATTRIBUTES, never the conclusion. "corners of 27,
+   45 and 108 degrees", not "an obtuse triangle". Sometimes the attributes settle
+   the answer — a trapezoid with two equal slanted sides does fold down the
+   middle — and that is accepted: a child who gets there from "90 degrees is a
+   square corner" has done the learning the item exists for. What is not accepted
+   is a figure that says nothing, or one that names the answer outright (which is
+   the opposite bug, and shape-sorter at grade K had it).
+
+   Every description is DERIVED from the same coordinates the picture is drawn
+   from, like the answers are, so a label cannot drift from the shape. */
+const len = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+// which side of the fold line a point falls on; 0 means it is on the line
+const sgn = ([px, py], [[x1, y1], [x2, y2]]) => Math.sign((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1));
+const onLine = (p, [[x1, y1], [x2, y2]]) =>
+  Math.abs((x2 - x1) * (p[1] - y1) - (y2 - y1) * (p[0] - x1)) / Math.hypot(x2 - x1, y2 - y1) < 1;
+
+/* Where the dashed line runs, in the shape's OWN frame rather than the screen's
+   — the shapes are rotated, so "down the middle" would be a lie for all but one
+   of the nine angles.
+
+   Two cases were found by testing every fold for ambiguity rather than by
+   reading the code, and both would have shipped: the kite's two diagonals both
+   run corner to corner and only one is a fold line, so a corner has to be
+   described by the sides that meet there; and a line through a triangle's apex
+   puts that vertex ON the line, so neither edge beside it counts as crossed and
+   the whole description fell through to a useless fallback. */
+function foldDesc(P, line) {
+  const edges = P.map((p, k) => [p, P[(k + 1) % P.length]]);
+  const all = edges.map(([a, b]) => len(a, b));
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const near = (x, y) => Math.abs(x - y) < 1;
+  const equalSided = (k) => near(len(P[(k - 1 + P.length) % P.length], P[k]), len(P[k], P[(k + 1) % P.length]));
+
+  const onIt = P.map((_, k) => k).filter((k) => onLine(P[k], line));
+  if (onIt.length >= 2) {
+    const eq = onIt.filter(equalSided).length;
+    return `drawn from one corner to the opposite corner, through ${
+      eq === onIt.length ? 'two corners where the sides meeting there are equal in length'
+        : eq === 0 ? 'two corners where the sides meeting there are different lengths'
+          : 'one corner with equal sides and one with sides of different lengths'}`;
+  }
+  const crossed = edges.filter(([a, b]) => sgn(a, line) * sgn(b, line) < 0);
+  if (onIt.length === 1 && crossed.length === 1) {
+    const [a, b] = crossed[0];
+    return `drawn from one corner, where the sides meeting there are ${
+      equalSided(onIt[0]) ? 'equal in length' : 'different lengths'}, to ${
+      onLine([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], line) ? 'the middle of' : 'a point on'} the opposite side`;
+  }
+  if (crossed.length !== 2) return 'drawn across the shape';
+  const [la, lb] = crossed.map(([a, b]) => len(a, b));
+  if (near(la, lb)) {
+    if (near(la, hi) && near(la, lo)) return 'drawn through the middle, joining two opposite sides';
+    if (near(la, hi)) return 'drawn through the middle, joining the two longest sides';
+    if (near(la, lo)) return 'drawn through the middle, joining the two shortest sides';
+    return 'drawn through the middle, joining the two middle-length sides';
+  }
+  return `drawn through the middle, joining ${near(Math.min(la, lb), lo) ? 'the shortest side' : 'a shorter side'} to ${
+    near(Math.max(la, lb), hi) ? 'the longest side' : 'a longer side'}`;
+}
+
+const foldLabel = (sh, line) => `a ${sh.name} with ${sh.desc}, and a dashed line ${foldDesc(sh.P, line)}`;
+/* For the two corner questions. The measures are the attributes; comparing them
+   to 90 is the item. A sighted child reads the same thing off the picture, less
+   precisely, which is the trade a description always makes. */
+const angleLabel = (sh) => `a ${sh.name} with corners of ${
+  interior(sh.P).map((x) => Math.round(x)).join(', ')} degrees`;
+
 /* Off-axis on purpose: a child who has only seen upright shapes reads "vertical"
    as "symmetric". Rotating the shape AND its candidate line together preserves
    the relationship, so the answer is unchanged and the shortcut stops working. */
-const figure = (P, line, deg, print) => {
+const figure = (P, line, deg, print, label) => {
   const pts = P.map((p) => rotPt(p, deg)).map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
   const ink = print ? '#111' : 'var(--a1)';
   const l = line ? line.map((p) => rotPt(p, deg)) : null;
-  return `<svg viewBox="0 0 80 80" width="${print ? 108 : 132}" height="${print ? 108 : 132}" role="img" aria-hidden="true">
+  return `<svg viewBox="0 0 80 80" width="${print ? 108 : 132}" height="${print ? 108 : 132}" role="img" aria-label="${label}">
     <polygon points="${pts}" fill="none" stroke="${ink}" stroke-width="${print ? 2.2 : 3}" stroke-linejoin="round"/>
     ${l ? `<line x1="${l[0][0].toFixed(1)}" y1="${l[0][1].toFixed(1)}" x2="${l[1][0].toFixed(1)}" y2="${l[1][1].toFixed(1)}"
       stroke="${ink}" stroke-width="${print ? 1.4 : 2}" stroke-dasharray="5 4" opacity=".85"/>` : ''}
@@ -439,27 +511,42 @@ const figure = (P, line, deg, print) => {
 };
 
 const SH = {
-  square:   { P: [[15, 15], [65, 15], [65, 65], [15, 65]], name: 'square' },
-  rect:     { P: [[10, 22], [70, 22], [70, 58], [10, 58]], name: 'rectangle' },
-  rhombus:  { P: [[40, 14], [76, 40], [40, 66], [4, 40]], name: 'rhombus' },
-  parallel: { P: [[12, 55], [45, 20], [75, 20], [42, 55]], name: 'parallelogram' },
-  isoTri:   { P: [[40, 8], [68, 70], [12, 70]], name: 'triangle' },
-  scalene:  { P: [[14, 64], [70, 58], [36, 16]], name: 'triangle' },
-  rightTri: { P: [[14, 66], [66, 66], [14, 20]], name: 'triangle' },
-  obtuse:   { P: [[8, 58], [74, 58], [30, 40]], name: 'triangle' },
-  acuteTri: { P: [[40, 14], [63, 62], [17, 62]], name: 'triangle' },
-  isoTrap:  { P: [[22, 20], [58, 20], [72, 62], [8, 62]], name: 'trapezoid' },
+  square:   { P: [[15, 15], [65, 15], [65, 65], [15, 65]], name: 'square',
+    desc: 'four equal sides and four square corners' },
+  rect:     { P: [[10, 22], [70, 22], [70, 58], [10, 58]], name: 'rectangle',
+    desc: 'two long sides, two short sides and four square corners' },
+  rhombus:  { P: [[40, 14], [76, 40], [40, 66], [4, 40]], name: 'rhombus',
+    desc: 'four equal sides and no square corners' },
+  parallel: { P: [[12, 55], [45, 20], [75, 20], [42, 55]], name: 'parallelogram',
+    desc: 'two pairs of parallel sides, leaning over, with no square corners' },
+  isoTri:   { P: [[40, 8], [68, 70], [12, 70]], name: 'triangle',
+    desc: 'two equal sides and a shorter third side' },
+  scalene:  { P: [[14, 64], [70, 58], [36, 16]], name: 'triangle',
+    desc: 'all three sides different lengths' },
+  rightTri: { P: [[14, 66], [66, 66], [14, 20]], name: 'triangle',
+    desc: 'one square corner, with the two sides beside it different lengths' },
+  obtuse:   { P: [[8, 58], [74, 58], [30, 40]], name: 'triangle',
+    desc: 'all three sides different lengths and one corner wider than a square corner' },
+  acuteTri: { P: [[40, 14], [63, 62], [17, 62]], name: 'triangle',
+    desc: 'two equal sides and every corner narrower than a square corner' },
+  isoTrap:  { P: [[22, 20], [58, 20], [72, 62], [8, 62]], name: 'trapezoid',
+    desc: 'a short side parallel to a long side, and two equal slanted sides' },
   /* Added because a pool of five triangles cannot fill ten slots: collect()
      wanders the index space hunting a distinct item and lands back on the same
      questions. Each was measured through the helpers before being written down.
      Two candidates were thrown out by that: a 94-degree "obtuse" triangle, which
      is obtuse to a protractor and a right angle to a nine-year-old, and a "right
      trapezoid" whose coordinates made a square. */
-  rightTri2: { P: [[20, 20], [20, 68], [64, 68]], name: 'triangle' },
-  obtuse2:   { P: [[10, 30], [70, 30], [50, 50]], name: 'triangle' },
-  acute2:    { P: [[16, 64], [64, 64], [34, 18]], name: 'triangle' },
-  rightTrap: { P: [[14, 22], [54, 22], [70, 62], [14, 62]], name: 'trapezoid' },
-  kite:      { P: [[40, 8], [66, 38], [40, 72], [14, 38]], name: 'kite' },
+  rightTri2: { P: [[20, 20], [20, 68], [64, 68]], name: 'triangle',
+    desc: 'one square corner, with the two sides beside it different lengths' },
+  obtuse2:   { P: [[10, 30], [70, 30], [50, 50]], name: 'triangle',
+    desc: 'all three sides different lengths and one corner wider than a square corner' },
+  acute2:    { P: [[16, 64], [64, 64], [34, 18]], name: 'triangle',
+    desc: 'all three sides different lengths and every corner narrower than a square corner' },
+  rightTrap: { P: [[14, 22], [54, 22], [70, 62], [14, 62]], name: 'trapezoid',
+    desc: 'two square corners along one side and one slanted side' },
+  kite:      { P: [[40, 8], [66, 38], [40, 72], [14, 38]], name: 'kite',
+    desc: 'two short equal sides next to each other and two longer equal sides next to each other' },
 };
 const VERT = [[40, 2], [40, 78]], HORZ = [[2, 40], [78, 40]];
 const ROTS = [18, 35, 52, 74, 108, 143, 200, 250, 310];
@@ -559,9 +646,9 @@ const foldAndSort = {
       const folds = foldsOnto(sh.P, line);
       return {
         type: 'truefalse',
-        prompt: `Would this ${sh.name} fold along the dashed line so the two halves land exactly on top of each other?${figure(sh.P, line, deg, false)}`,
+        prompt: `Would this ${sh.name} fold along the dashed line so the two halves land exactly on top of each other?${figure(sh.P, line, deg, false, foldLabel(sh, line))}`,
         printStem: `Would this ${sh.name} fold exactly in half along the dashed line?`,
-        printVisual: figure(sh.P, line, deg, true),
+        printVisual: figure(sh.P, line, deg, true, foldLabel(sh, line)),
         answer: folds,
         hint: `Imagine folding along the dashed line. Do the corners land on corners?`,
         explain: folds
@@ -580,13 +667,13 @@ const foldAndSort = {
       const cls = big > 90.6 ? 'Obtuse' : big > 89.4 ? 'Right' : 'Acute';
       return {
         type: 'choice',
-        prompt: `What kind of triangle is this?${figure(sh.P, null, deg, false)}`,
+        prompt: `What kind of triangle is this?${figure(sh.P, null, deg, false, angleLabel(sh))}`,
         /* printProblem never renders p.choices, so on paper a choice item is a
            blank box unless the options are written into the stem. Without this the
            sheet asked "What kind of triangle is this?" and gave nothing to pick
            from. */
         printStem: `What kind of triangle is this?  (acute / right / obtuse)`,
-        printVisual: figure(sh.P, null, deg, true),
+        printVisual: figure(sh.P, null, deg, true, angleLabel(sh)),
         choices: ['Acute', 'Right', 'Obtuse'],
         answer: cls,
         hint: `Look at the biggest corner. Is it smaller than a square corner, exactly a square corner, or bigger?`,
@@ -611,9 +698,9 @@ const foldAndSort = {
     const biggest = Math.round(Math.max(...angles));
     return {
       type: 'truefalse',
-      prompt: `This ${sh.name} has at least one right angle.${figure(sh.P, null, deg, false)}`,
+      prompt: `This ${sh.name} has at least one right angle.${figure(sh.P, null, deg, false, angleLabel(sh))}`,
       printStem: `This ${sh.name} has at least one right angle.`,
-      printVisual: figure(sh.P, null, deg, true),
+      printVisual: figure(sh.P, null, deg, true, angleLabel(sh)),
       answer: has,
       hint: `A right angle is a square corner. Turning the shape does not change its corners.`,
       explain: has
