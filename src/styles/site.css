@@ -552,6 +552,18 @@ table.tbl td strong { color: var(--txt) }
    fixes is content that had nowhere else to go. */
 footer.foot { position: relative; z-index: 1; margin-top: 70px; border-top: 1px solid var(--line); padding: 26px 0 88px }
 footer.foot .fin { display: flex; gap: 26px; flex-wrap: wrap; font-size: 13px; color: var(--txt3) }
+/* AND HORIZONTAL ROOM FOR THE PINNED BUTTON, which the 88px of bottom padding
+   on footer.foot does not buy. That padding protects the case where a reader has
+   scrolled to the end of a long page: the links end up above the button. It does
+   nothing on a SHORT page, where the whole footer sits high in the viewport at
+   scroll 0 and the links land at the button's own y whatever is below them.
+   /learn/ is the shortest page on the site — two cards — and at 1024px its last
+   two footer links, "All printables" and "Short lessons", were completely
+   covered: pressing either opened the suggestion menu instead.
+   Same reservation as the printables action column, and a longhand rather than a
+   shorthand so `.wrap`'s left gutter survives — which is the mistake `.sec` and
+   `.hero` were both making. */
+@media (min-width: 561px) { footer.foot .fin { padding-right: 198px } }
 footer.foot a { color: var(--txt2); text-decoration: none }
 footer.foot a:hover { color: var(--txt) }
 

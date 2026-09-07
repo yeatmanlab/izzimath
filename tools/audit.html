@@ -52,6 +52,42 @@ document.body.appendChild(frame);
 const relLum=(c)=>{const m=(c||'').match(/[\d.]+/g); if(!m||m.length<3)return null;
   const f=m.slice(0,3).map(Number).map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);});
   return 0.2126*f[0]+0.7152*f[1]+0.0722*f[2];};
+/* COMPOSITE THE BACKGROUND STACK, ALPHA AND ALL. Taking the first
+   non-transparent ancestor background and reading its rgb is wrong, and wrong in
+   the worst direction: `var(--glass)` is rgba(255,255,255,.035), a 3.5% white
+   wash over a near-black panel, and dropping the alpha reads it as pure WHITE.
+   That turned every figure sitting on a card into a false positive — the clock
+   numerals were reported at 2.59:1 on the day they had just been fixed to
+   7.80:1, on seven pages at once. Blend front to back until opaque. */
+const bgAt=(el,w)=>{
+  let r=0,g=0,b=0,acc=0;
+  for(let p=el;p;p=p.parentElement){
+    const m=(w.getComputedStyle(p).backgroundColor||'').match(/[\d.]+/g);
+    if(!m||m.length<3)continue;
+    const a=m.length>3?+m[3]:1;
+    if(a<=0)continue;
+    const k=a*(1-acc);
+    r+=+m[0]*k; g+=+m[1]*k; b+=+m[2]*k; acc+=k;
+    if(acc>=0.999)break;
+  }
+  if(acc<0.02)return null;              // nothing to measure against
+  return `rgb(${r/acc},${g/acc},${b/acc})`;
+};
+/* A <text> drawn on top of a FILLED SVG SHAPE is out of this check's reach: the
+   coin's value sits on the coin's own face, which is an SVG fill and not a CSS
+   background, so measuring it against the card behind is meaningless. Detected
+   precisely rather than by skipping any svg with a fill — the clock's centre pin
+   is filled too, and it does not sit under the numerals. */
+const onShape=(t)=>{
+  const tb=t.getBoundingClientRect();
+  for(const sh of t.ownerSVGElement?.querySelectorAll('circle,rect,ellipse,polygon,path')||[]){
+    const f=sh.getAttribute('fill');
+    if(!f||f==='none')continue;
+    const b=sh.getBoundingClientRect();
+    if(b.left<=tb.left&&b.right>=tb.right&&b.top<=tb.top&&b.bottom>=tb.bottom)return true;
+  }
+  return false;
+};
 
 function measure(){
   const d=frame.contentDocument,w=frame.contentWindow;
@@ -98,27 +134,22 @@ function measure(){
   }
   const dimSvg=[];
   if(svgPass){
-    let pageBg=null;
     for(const t of d.querySelectorAll('svg text')){
       const r=t.getBoundingClientRect(); if(!r.width||!r.height)continue;
+      if(onShape(t))continue;
       const cs=w.getComputedStyle(t);
-      const key=cs.fill+'|'+cs.fontSize+'|'+cs.fontWeight;
+      const bg=bgAt(t.parentElement,w);
+      /* Keyed on the BACKGROUND too. The cache used to key on fill and size
+         alone, so the first verdict for a colour was reused on every later page
+         whatever it sat on. */
+      const key=cs.fill+'|'+cs.fontSize+'|'+cs.fontWeight+'|'+bg;
       if(svgSeen.has(key)){ const v=svgSeen.get(key); if(v)dimSvg.push(v); continue; }
-      if(pageBg===null){
-        // Once per page: the panels these figures sit in share one background.
-        let bgc=null;
-        for(let p=t.parentElement;p;p=p.parentElement){
-          const c=w.getComputedStyle(p).backgroundColor;
-          if(c&&c!=='rgba(0, 0, 0, 0)'){bgc=c;break;}
-        }
-        pageBg=relLum(bgc||w.getComputedStyle(d.body).backgroundColor);
-      }
-      const fg=relLum(cs.fill);
-      if(fg==null||pageBg==null){ svgSeen.set(key,null); continue; }
-      const ratio=(Math.max(fg,pageBg)+0.05)/(Math.min(fg,pageBg)+0.05);
+      const fg=relLum(cs.fill), bl=relLum(bg);
+      if(fg==null||bl==null){ svgSeen.set(key,null); continue; }
+      const ratio=(Math.max(fg,bl)+0.05)/(Math.min(fg,bl)+0.05);
       const px=parseFloat(cs.fontSize)||0;
       const need=(px>=24||(px>=18.66&&(parseInt(cs.fontWeight)||400)>=700))?3:4.5;
-      const hit=ratio<need? Math.round(px)+'px '+cs.fill+' '+ratio.toFixed(2)+':1 (needs '+need+')' : null;
+      const hit=ratio<need? Math.round(px)+'px '+cs.fill+' on '+bg+' '+ratio.toFixed(2)+':1 (needs '+need+')' : null;
       svgSeen.set(key,hit);
       if(hit)dimSvg.push(hit);
     }
