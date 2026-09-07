@@ -22,7 +22,7 @@ engine, live in [`tools/`](tools/README.md). The build copies them to
 `dist/_tools/` for local runs and **deliberately does not in CI**
 (`build.mjs` guards on `!process.env.CI`), so `izzimath.com/_tools/` is a 404 on
 purpose — run them against a local `dist`, which is also the only place they can
-measure a build you are still changing: a **responsive audit** (39 pages × 5 widths, checking overflow,
+measure a build you are still changing: a **responsive audit** (41 pages × 5 widths, checking overflow,
 tap-target size, text size and SVG text contrast), a **problem-type test** (all ten types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
@@ -152,9 +152,12 @@ already exist, and a routine only needs a `ui` the registry knows.
   whose answers differ. That last one is the only mechanical way to ask "is this
   answerable?", and it earned its place immediately: the kite's two diagonals
   both run corner to corner and only one is a fold line.
-- **A lesson animates, and the chosen friend speaks it.** The animated lessons
-  at `/learn/` are the one place on this site that does not print, so each one
-  earns the screen twice over. **At least one step animates**, and the movement
+- **A lesson animates, and the chosen friend speaks it.** The four animated
+  lessons at `/learn/` are the one place on this site that does not print, so
+  each one earns the screen twice over. The player dispatches on a declared
+  `lesson.kind` — clock, coins, bar, array — and what a stage owes it is small:
+  build its DOM once, paint a step, say what its counter reads. Adding a fifth
+  is a stage, not a branch. **At least one step animates**, and the movement
   has to carry something a still picture cannot: the clock sweeps because the
   fix for the hour-hand misconception is watching the short hand creep, and the
   coin lesson lays ten pennies down one at a time because the fix for "the
@@ -169,6 +172,15 @@ already exist, and a routine only needs a `ui` the registry knows.
   animated step and one whose aside re-attributes itself; `tools/func.html`
   checks the frame, because it is rendered at runtime and `a11y.mjs` cannot see
   it. The reasoning is in the header of `content/lessons.js`.
+
+  What every stage has in common is the part worth keeping: **the picture and the
+  counter beside it are drawn from one state.** A counter reading 30 minutes
+  beside a hand pointing at the 9, or "two quarters" beside a bar cut into
+  eighths, teaches the opposite of the lesson. Each stage's claim is asserted in
+  `tools/func.html` — the shaded bar never moves while the amount holds, every
+  turn of an array keeps the total, and the turn moves the *same* svg element
+  rather than redrawing it, which is the entire difference between the animation
+  and a still picture.
 
   A sweep is also the one place the player runs a frame loop, and the reason is
   the counter rather than the movement: hands on a CSS transition with a

@@ -55,7 +55,7 @@ your change, and reports a clean pass for code it never loaded.
 
 Then open, or drive headless:
 
-- `http://localhost:8890/_tools/audit.html` — responsive audit. 39 pages ×
+- `http://localhost:8890/_tools/audit.html` — responsive audit. 41 pages ×
   5 widths (360, 390, 768, 1024, 1440). Flags unscrolled horizontal overflow,
   tap targets under 24px (inline links in prose are exempt, per WCAG 2.5.8),
   body text under 11px, a control sitting under the pinned suggestion button,

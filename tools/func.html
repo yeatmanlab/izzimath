@@ -381,6 +381,81 @@ L.push('');
       shown.length === 2 && Math.abs(Math.max(...shown) / Math.min(...shown) - 1.184) < 0.03,
       'ratio ' + (Math.max(...shown) / Math.min(...shown)).toFixed(3) + ' (real 1.184)');
     host2.remove();
+
+    /* ----------------------------------------------- the fractions lesson
+       ITS WHOLE CLAIM IS THAT THE SHADED PART DOES NOT MOVE, so that is what
+       gets asserted: every step showing the same amount must hand the element
+       an IDENTICAL transform. Not "close to" — identical, because the argument
+       is that it is the same element untouched, and a transform that differed
+       by a rounding error would be a shaded part that twitched. */
+    const host3 = document.createElement('div');
+    document.body.appendChild(host3);
+    const api3 = LB.renderLesson(host3, 'fractions');
+    const fsteps = LESSONS.fractions.steps;
+    const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+    const amount = (sh) => { const k = gcd(sh.num, sh.den) || 1; return `${sh.num / k}/${sh.den / k}`; };
+    const seen = new Map();
+    let twitched = 0, cutsGrew = 0, lastCuts = -1;
+    for (let k = 0; k < fsteps.length; k++) {
+      api3.goto(k); api3.settle();
+      const t = host3.querySelector('.lsn-shade').style.transform;
+      const a = amount(fsteps[k].show);
+      if (seen.has(a) && seen.get(a) !== t) twitched++;
+      seen.set(a, t);
+      const cuts = [...host3.querySelectorAll('.lsn-cut')].filter((c) => c.style.opacity === '1').length;
+      if (fsteps[k].show.den > (fsteps[k - 1]?.show.den ?? 0) && cuts > lastCuts) cutsGrew++;
+      lastCuts = cuts;
+    }
+    ls('the shaded part never moves while the amount holds', twitched === 0,
+      seen.size + ' distinct amounts, ' + twitched + ' twitches');
+    ls('and the cuts multiply as the denominator grows', cutsGrew >= 2, cutsGrew + ' steps added cuts');
+
+    // The trap: same shaded COUNT, smaller shaded amount.
+    const trap = fsteps.findIndex((st, i) => i > 0 && st.show.num === 1 && st.show.den === 8);
+    if (trap > 0) {
+      api3.goto(trap - 1); api3.settle();
+      const before = parseFloat(host3.querySelector('.lsn-shade').style.transform.match(/[\d.]+/)[0]);
+      api3.goto(trap); api3.settle();
+      const after = parseFloat(host3.querySelector('.lsn-shade').style.transform.match(/[\d.]+/)[0]);
+      ls('one eighth is drawn SMALLER than one half', after < before,
+        before.toFixed(3) + ' -> ' + after.toFixed(3));
+      const cells = api3.cells(fsteps[trap].show).map((c) => String(c.value));
+      ls('and the counter says so in words', cells.some((v) => /eighth/.test(v)), cells.join(' | '));
+    }
+    host3.remove();
+
+    /* ------------------------------------------------- the arrays lesson
+       ITS CLAIM IS THAT TURNING CHANGES NOTHING, so the total must survive
+       every turn while the rows and the row length swap. Checked through the
+       stage's own cells, which is what the child reads. */
+    const host4 = document.createElement('div');
+    document.body.appendChild(host4);
+    const api4 = LB.renderLesson(host4, 'arrays');
+    const asteps = LESSONS.arrays.steps;
+    let held = 0, swapped = 0, turns = 0;
+    for (let k = 1; k < asteps.length; k++) {
+      if (!asteps[k].sweep) continue;
+      turns++;
+      const a = api4.cells(asteps[k - 1].show).map((c) => c.value);
+      const b = api4.cells(asteps[k].show).map((c) => c.value);
+      if (a[2] === b[2]) held++;
+      if (a[0] === b[1] && a[1] === b[0]) swapped++;
+    }
+    ls('every turn keeps the total', turns > 0 && held === turns, held + '/' + turns);
+    ls('and swaps the rows with the row length', turns > 0 && swapped === turns, swapped + '/' + turns);
+
+    // The same squares, turned — not a fresh array drawn the other way up.
+    const turnStep = asteps.findIndex((st) => st.sweep);
+    api4.goto(turnStep - 1); api4.settle();
+    const sq1 = host4.querySelectorAll('.lsn-array rect').length;
+    const el1 = host4.querySelector('.lsn-array svg');
+    api4.goto(turnStep); api4.settle();
+    ls('the turn moves the same squares rather than redrawing them',
+      host4.querySelector('.lsn-array svg') === el1 && host4.querySelectorAll('.lsn-array rect').length === sq1,
+      sq1 + ' squares, same element: ' + (host4.querySelector('.lsn-array svg') === el1));
+    ls('and it is an odd quarter turn, which is the only kind that transposes',
+      asteps.filter((st) => st.sweep).every((st) => ((st.show.turn / 90) % 2) !== 0));
+    host4.remove();
   } catch (e) {
     ls('harness itself', false, 'THREW ' + e.message);
   }

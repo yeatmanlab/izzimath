@@ -303,6 +303,7 @@ const carryAndBorrow = {
 const arraysAndEqualGroups = {
   id: 'arrays-and-equal-groups', title: 'Arrays and Equal Groups', kind: 'book', grade: '2', strand: S[4],
   glyph: '▦',
+  lesson: 'arrays',
   skill: 'Seeing repeated addition as rows and columns — the groundwork for multiplication.',
   trick: 'Count one row, then count how many rows. Rows that are all the same size can be multiplied instead of added up.',
   blurb: 'Count the rows, count the columns, find the total.',

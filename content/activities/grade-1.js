@@ -149,6 +149,7 @@ const tensAndOnes = {
 const halvesAndQuarters = {
   id: 'halves-and-quarters', title: 'Halves and Quarters', kind: 'book', grade: '1', strand: S[4],
   glyph: '◑',
+  lesson: 'fractions',
   skill: 'Splitting shapes into equal parts, and naming a half and a quarter.',
   trick: 'Equal parts have to match. Two matching pieces are halves. Four matching pieces are quarters.',
   blurb: 'Split the shape fairly. Is that a half or a quarter?',

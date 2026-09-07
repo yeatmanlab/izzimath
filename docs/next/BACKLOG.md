@@ -197,64 +197,49 @@ See [`03-print-craft.md`](03-print-craft.md).
 - [ ] **Instruction-first for K–2, explore-first only for 3–5** [104] — partial;
       not enforced anywhere. *Small.*
 
-- [ ] **Two more animated lessons, and a registry for them** — proposed
-      2026-09-07 after a pass over all 54 activities. The gate is the one
-      `content/lessons.js` sets for itself: movement has to be the explanation,
-      not decoration, so most activities do not qualify. Ranked by whether that
-      is true, then by reach, then by renderer cost:
+- [x] **Two more animated lessons, and a registry for them** — done,
+      2026-09-07. `/learn/fractions/` and `/learn/arrays/`, linked from thirteen
+      more activities, taking the lesson set from two to four and lesson-linked
+      activities from six to nineteen.
 
-      1. **"The same amount, cut differently"** — equivalent fractions. Seven
-         activities would link to it, across grades 1, 3, 4 and 5:
-         `halves-and-quarters`, `fraction-number-line`, `equivalent-fractions`,
-         `same-size-pieces`, `decimal-drop`, `fraction-foundry`,
-         `mixed-number-line`. The misconception is the whole-number bias — that
-         a bigger denominator means a bigger fraction — and a still page can
-         only put two bars side by side and ask the child to trust they are the
-         same length. Re-cutting ONE bar while the shaded part does not move is
-         the argument. `fractionBar()` exists; the approach is `clockStage()`'s,
-         which strips the moving part out of the widget and animates only that.
-         *Medium.*
-      2. **"An array can be turned"** — commutativity. Six activities, grades
-         2–4: `arrays-and-equal-groups`, `array-architect`, `times-table-tower`,
-         `area-and-perimeter`, `fact-family-forge`, `times-as-many`. The purest
-         movement case on the site, and `array-architect`'s own trick already
-         says it — "the shape can be turned" is something a still picture cannot
-         demonstrate, because you have to count both arrays and believe the
-         result. `array2d()` exists and the animation is one
-         `transform: rotate(90deg)`, the same technique as the clock hand.
-         *Small.*
+      **The fractions lesson** re-cuts ONE bar. The shaded rectangle is the same
+      element throughout, scaled — `scaleX(0.5)` for one half, two quarters and
+      four eighths, so it is handed an identical transform three steps running
+      and provably does not move while the cuts multiply around it. Then the
+      trap: the cuts multiply again with only one piece shaded, and the amount
+      visibly shrinks from 0.5 to 0.125 while the bottom number grows. That is
+      the whole-number bias shown rather than denied, and it is the argument a
+      printed page cannot make — on paper the child has to trust that two bars
+      side by side have matching shaded lengths.
 
-      Whichever goes first pays a one-time tax: `src/mount/lesson.js` is
-      `if (isClock) paintClock() else paintCoins()`, so lesson three forces a
-      registry. The array lesson's renderer is a single transform, so doing it
-      first de-risks that cheaply — but if only one gets built, fractions is
-      worth more. Both would also give a GAME a lesson link for the first time
-      (`decimal-drop` and `mixed-number-line` under the first, `array-architect`
-      and `fact-family-forge` under the second); all six of today's lesson
-      links are on books.
+      **The arrays lesson** turns the same array a quarter turn. Rows and row
+      length swap in the counter while the total does not, and the harness checks
+      it is the SAME svg element rather than a fresh array drawn the other way
+      up — which is the entire difference between this and a still picture. Only
+      odd quarter turns transpose, so each array starts at zero and turns once;
+      half a turn is the array upside down and teaches nothing.
 
-      **Held: "ten ones become one ten".** Widest reach of any candidate at
-      eleven activities across grades 1, 2, 3 and 5, and a strong movement case
-      — it is the classic manipulative motion. But ten discrete blocks merging
-      into a rod is a real object transition rather than a transform on one
-      element, much the most expensive of the five considered, and `baseTen()`
-      already appears inside the books where that teaching happens. Revisit once
-      the registry exists.
+      The one-time tax was paid: `src/mount/lesson.js` was
+      `if (isClock) paintClock() else paintCoins()` under a comment claiming a
+      third lesson would be data rather than code. It dispatches on a declared
+      `lesson.kind` now, across four stages. `kind` is declared rather than
+      sniffed — the old test was `!!show.h`, which would have been falsely true
+      for anything else that grew an `h`, and silently wrong rather than loud.
 
-      **Rejected: rounding, factors, the standard algorithm,
-      `four-ways-to-subtract`, `coordinate-quest`, and a number-line lesson.**
-      Read their tricks — "five or more rounds up", "work up in pairs and stop
-      when they repeat", "look at the columns before you start". Those are rules
-      and decisions, not motions, and a still page states them perfectly well.
-      The number-line one is tempting on reach, touching all six grades, but a
-      still line with the anchors marked does nearly all the work.
+      Both new lessons keep the two rules: at least one animated step, and every
+      caption spoken by the chosen friend. Twenty-two checks in `tools/func.html`
+      cover them, including one per lesson for its actual thesis — the shaded
+      part never moves while the amount holds, and every turn keeps the total —
+      and both were mutation-tested by scaling the bar off the wrong denominator
+      and by making a turn change the array underneath it.
 
-      One caveat on the evidence: no fresh literature pass was done for these
-      two the way the time and money research was. The misconceptions are well
-      documented; the specific claim that MOVEMENT fixes them is an inference
-      from the same mechanism as time's, not a cited finding.
-
----
+      Held still: **"ten ones become one ten"**, the regrouping lesson. Widest
+      reach of the five candidates at eleven activities, and a strong movement
+      case, but ten discrete blocks merging into a rod is a real object
+      transition rather than a transform on one element — much the most
+      expensive of them — and `baseTen()` already appears inside the books where
+      that teaching happens. The registry it needed now exists, so the remaining
+      cost is the renderer alone.
 
 ## Not applicable
 

@@ -11,6 +11,7 @@ const S = STRANDS['5'];
 const fractionFoundry = {
   id: 'fraction-foundry', title: 'Fraction Foundry', kind: 'book', grade: '5', strand: S[1],
   glyph: '⅝',
+  lesson: 'fractions',
   skill: 'Adding, subtracting, multiplying and dividing fractions with unlike denominators.',
   trick: 'Adding needs the same denominator. Multiplying does not. Check which one you are doing before you start.',
   blurb: 'Common denominators, then the four operations.',
@@ -217,6 +218,7 @@ const volumeAndSpace = {
 const mixedNumberLine = {
   id: 'mixed-number-line', title: 'Mixed Number Line', kind: 'game', grade: '5', strand: S[1],
   glyph: '1½',
+  lesson: 'fractions',
   skill: 'Placing mixed numbers and improper fractions on a 0–2 line.',
   goal: 'Drag the number to where it belongs between 0 and 2. Close counts.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md

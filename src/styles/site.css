@@ -865,6 +865,18 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-aside { font-size: 13.5px; color: var(--txt2); line-height: 1.6; margin-top: 7px }
 .lsn-aside[hidden] { display: none }
 
+/* The fractions bar. One element, scaled — see paintBar in src/mount/lesson.js. */
+.lsn-bar { width: 100%; max-width: 340px; margin: 0 auto }
+.lsn-bar svg { display: block; overflow: visible }
+
+/* The array. A TRANSFORM DOES NOT CHANGE THE LAYOUT BOX, so a 3-by-8 array
+   turned a quarter turn would spill out of the 240-by-90 space it reserved.
+   The wrapper is square and big enough for the longest array either way up, so
+   the turn happens inside it and nothing below moves. */
+.lsn-arraywrap { height: 240px; display: grid; place-items: center }
+.lsn-array { transform-origin: center; line-height: 0 }
+.lsn-array svg { display: block }
+
 /* The sweep readout. Three cells, tabular numerals so the count does not jiggle
    as digits change width, and every label at 11px — the floor the responsive
    audit holds. `min-height` so the row appearing and disappearing between steps

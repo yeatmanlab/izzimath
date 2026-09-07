@@ -12,6 +12,7 @@ const S = STRANDS['3'];
 const timesTableTower = {
   id: 'times-table-tower', title: 'Times Table Tower', kind: 'book', grade: '3', strand: S[0],
   glyph: '×',
+  lesson: 'arrays',
   skill: 'Multiplication facts to 10 × 10, and the division facts that go with them.',
   trick: 'Every hard fact is an easy fact in a costume. ×4 is double, then double again. ×6 is ×3, then double. ×9 is ×10 take away one group.',
   blurb: 'Build the tower one times table at a time.',
@@ -65,6 +66,7 @@ const timesTableTower = {
 const fractionNumberLine = {
   id: 'fraction-number-line', title: 'Fraction Number Line', kind: 'book', grade: '3', strand: S[1],
   glyph: '¾',
+  lesson: 'fractions',
   skill: 'Placing a fraction on a number line, and seeing which fractions are equal.',
   trick: 'The bottom number says how many equal jumps fit between 0 and 1. Make jumps that size, then take the top number of them.',
   printScratch: true,
@@ -175,6 +177,7 @@ const fractionNumberLine = {
 const areaAndPerimeter = {
   id: 'area-and-perimeter', title: 'Area and Perimeter', kind: 'book', grade: '3', strand: S[2],
   glyph: '▭',
+  lesson: 'arrays',
   skill: 'Finding the area and the perimeter of a rectangle, and telling them apart.',
   trick: 'Perimeter is the walk around the edge, so add. Area is the tiles inside, so multiply.',
   printScratch: true,
@@ -210,6 +213,7 @@ const areaAndPerimeter = {
 const factFamilyForge = {
   id: 'fact-family-forge', title: 'Fact Family Forge', kind: 'game', grade: '3', strand: S[0],
   glyph: '⟷',
+  lesson: 'arrays',
   skill: 'Linking multiplication and division as the same fact seen two ways.',
   goal: 'One number is missing from the fact. Work out which one it is.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
@@ -248,6 +252,7 @@ const factFamilyForge = {
 const arrayArchitect = {
   id: 'array-architect', title: 'Array Architect', kind: 'game', grade: '3', strand: S[0],
   glyph: '▩',
+  lesson: 'arrays',
   skill: 'Recognising a product from its shape, and knowing that order does not change it.',
   goal: 'Work out how many squares are in the array, without counting them one by one.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md

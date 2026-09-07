@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { page, activityCard, lookCard, lookColumn, tourDoor, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet, ssddSheet, maxPagesFor } from './src/lib/printsheet.js';
-import { clockFace, coin } from './src/lib/widgets.js';
+import { clockFace, coin, fractionBar, array2d } from './src/lib/widgets.js';
 import { rng } from './src/lib/rng.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
@@ -718,10 +718,17 @@ write('ssdd/index.html', page({
    line src/mount/lesson.js uses, rather than a second copy that could disagree.
    The coins are drawn at their real mint diameters, which is the lesson's point. */
 function lessonFigure(id) {
-  const c = LESSONS[id]?.card;
+  const l = LESSONS[id];
+  const c = l?.card;
   if (!c) return '';
-  if (c.h) return clockFace(c.h, c.m ?? 0, { size: 92 });
-  return `<span class="lsncoins">${c.coins.map((k) => coin(k, { size: 44 })).join('')}</span>`;
+  /* Switched on the lesson's declared `kind`, the same field the player
+     dispatches on, rather than on which key the card happens to carry. The
+     first version tested `c.h` and would have handed a fraction bar to
+     whichever branch came first. */
+  if (l.kind === 'coins') return `<span class="lsncoins">${c.coins.map((k) => coin(k, { size: 44 })).join('')}</span>`;
+  if (l.kind === 'bar') return `<span class="lsncardbar">${fractionBar(c.num, c.den, { width: 210, height: 38 })}</span>`;
+  if (l.kind === 'array') return `<span class="lsncardarr">${array2d(c.rows, c.cols, { cell: 11, gap: 2 })}</span>`;
+  return clockFace(c.h, c.m ?? 0, { size: 92 });
 }
 
 const lessonUsers = (id) => activities

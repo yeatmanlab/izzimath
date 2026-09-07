@@ -68,6 +68,7 @@ const longMultiplication = {
 const equivalentFractions = {
   id: 'equivalent-fractions', title: 'Equivalent Fractions', kind: 'book', grade: '4', strand: S[1],
   glyph: '≡',
+  lesson: 'fractions',
   skill: 'Recognising and generating equal fractions, and simplifying to lowest terms.',
   trick: 'Multiply or divide the top and the bottom by the same number. Doing it to only one of them changes the fraction.',
   blurb: 'Same amount, different name. 2/4 is 1/2.',
@@ -221,6 +222,7 @@ const barsSvg = (nums, den, print = false) => {
 const sameSizePieces = {
   id: 'same-size-pieces', title: 'Same Size Pieces', kind: 'book', grade: '4', strand: S[1],
   glyph: '⅗',
+  lesson: 'fractions',
   skill: 'Adding, subtracting and multiplying fractions that share a denominator, and decomposing one into a sum.',
   trick: 'Count the pieces, not the numbers. Three eighths and four eighths are seven eighths, because they are the same size of piece. The bottom number says what the piece IS, so it does not change when you count more of them.',
   printScratch: true,
@@ -810,6 +812,7 @@ const divisionDescent = {
 const decimalDrop = {
   id: 'decimal-drop', title: 'Decimal Drop', kind: 'game', grade: '4', strand: S[1],
   glyph: '·',
+  lesson: 'fractions',
   skill: 'Placing a decimal between 0 and 1, and matching it to its fraction.',
   goal: 'Drag the decimal to where it belongs between 0 and 1. Close counts.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
@@ -949,6 +952,7 @@ const factorForest = {
 const timesAsMany = {
   id: 'times-as-many', title: 'Times As Many', kind: 'book', grade: '4', strand: S[4],
   glyph: '⨯',
+  lesson: 'arrays',
   skill: 'Multiplicative comparison — reading "four times as many" as multiplication rather than addition.',
   trick: '“Times as many” means multiply, not add. Draw one bar for the smaller amount, then repeat that bar.',
   blurb: 'Three times as many is not three more. Here is the difference.',

@@ -1,7 +1,17 @@
 /* The animated lesson player.
  *
- * One renderer for every lesson in content/lessons.js, driven by each step's
- * `show` block. Adding a third lesson should be data, not code.
+ * A STAGE PER LESSON KIND, chosen from `lesson.kind`. This started as
+ * `if (isClock) paintClock() else paintCoins()` with a comment claiming a third
+ * lesson would be data rather than code, which was aspirational rather than
+ * true: the third and fourth lessons needed a bar that re-cuts and an array
+ * that turns, and neither is a clock with different numbers. So the branch is a
+ * registry now, and what a stage owes the player is small — build its DOM once,
+ * paint a step, and say what its counter should read.
+ *
+ * WHAT EVERY STAGE HAS IN COMMON is the thing worth keeping: the picture and the
+ * counter beside it are drawn from ONE state, so they cannot disagree. A counter
+ * reading 30 minutes beside a hand pointing at the 9, or "two quarters" beside a
+ * bar cut into eighths, teaches the opposite of the lesson.
  *
  * HOW THE MOVEMENT WORKS, AND WHY IT IS NOT A LOOP
  * The clock is drawn ONCE and only its two hands are re-pointed, with a CSS
@@ -24,7 +34,7 @@
  */
 
 import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT } from '../../content/lessons.js';
-import { clockFace, clockDigital, coin, COINS, coinsValue, money } from '../lib/widgets.js';
+import { clockFace, clockDigital, coin, COINS, coinsValue, money, array2d } from '../lib/widgets.js';
 import { currentCharacter } from '../lib/theme.js';
 import { characters, getCharacter, fill } from '../../content/characters.js';
 
@@ -54,6 +64,54 @@ function clockStage() {
      already being told what to look at. */
   wrap.querySelector('svg')?.setAttribute('aria-hidden', 'true');
   return wrap;
+}
+
+/* ------------------------------------------------------------------ the bar
+   ONE BAR, BUILT ONCE, and that is the entire argument of the fractions lesson.
+   Re-rendering it per step would replace the shaded rectangle with a new one of
+   the same width, which looks identical and proves nothing. Keeping the SAME
+   element and only scaling it means the child can see that it did not move.
+
+   Every divider the lesson will ever need is drawn up front — seven of them, at
+   the eighths — and each is shown or hidden by whether the current denominator
+   has a cut there. Divider k belongs to denominator d when k is a multiple of
+   8/d: at halves only the middle one, at quarters the even ones, at eighths all
+   seven. Fading them in and out is a CSS transition, so no frame loop and
+   nothing to drift. */
+const BAR_MAX = 8;
+const BAR_W = 320, BAR_H = 74;
+
+function barStage() {
+  const wrap = document.createElement('div');
+  wrap.className = 'lsn-bar';
+  const seg = BAR_W / BAR_MAX;
+  let cuts = '';
+  for (let k = 1; k < BAR_MAX; k++) {
+    cuts += `<line class="lsn-cut" data-cut="${k}" x1="${(k * seg).toFixed(2)}" y1="0"`
+      + ` x2="${(k * seg).toFixed(2)}" y2="${BAR_H}" stroke="var(--line2)" stroke-width="2"/>`;
+  }
+  wrap.innerHTML = `<svg viewBox="0 0 ${BAR_W} ${BAR_H}" width="100%" height="${BAR_H}" aria-hidden="true">
+    <rect x="0" y="0" width="${BAR_W}" height="${BAR_H}" fill="rgba(255,255,255,.04)"/>
+    <rect class="lsn-shade" x="0" y="0" width="${BAR_W}" height="${BAR_H}" fill="var(--a2)"/>
+    ${cuts}
+    <rect x="0" y="0" width="${BAR_W}" height="${BAR_H}" fill="none" stroke="var(--line2)" stroke-width="2.5"/>
+  </svg>`;
+  return wrap;
+}
+
+/* Words for the amount, so the counter can say "one half" three times over
+   while the pieces and the shaded count both change underneath it. Reduced
+   first, because that is the point being made. */
+const NUM_WORDS = ['nought', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+const DEN_WORDS = { 1: ['whole', 'wholes'], 2: ['half', 'halves'], 3: ['third', 'thirds'],
+  4: ['quarter', 'quarters'], 8: ['eighth', 'eighths'] };
+function fracWords(num, den) {
+  const g = (a, b) => (b ? g(b, a % b) : a);
+  const k = g(num, den) || 1;
+  const n = num / k, d = den / k;
+  const names = DEN_WORDS[d];
+  if (!names || !NUM_WORDS[n]) return `${n}/${d}`;
+  return `${NUM_WORDS[n]} ${n === 1 ? names[0] : names[1]}`;
 }
 
 export function renderLesson(host, id) {
@@ -101,9 +159,16 @@ export function renderLesson(host, id) {
     </div>`;
 
   const stage = host.querySelector('[data-stage]');
-  const isClock = !!lesson.steps[0]?.show?.h;
+  /* `kind` is declared on the lesson rather than sniffed from the first step's
+     `show`. The old version tested `!!show.h` — true for a clock, falsely true
+     for anything else that ever grew an `h`, and silently wrong rather than
+     loud. */
+  const kind = lesson.kind || 'clock';
+  const isClock = kind === 'clock';
   const clock = isClock ? clockStage() : null;
   if (clock) stage.appendChild(clock);
+  const bar = kind === 'bar' ? barStage() : null;
+  if (bar) stage.appendChild(bar);
 
   /* Both hands come from ONE number: minutes elapsed since the first step,
      accumulated forward. Deriving them independently is what broke the first
@@ -353,6 +418,74 @@ export function renderLesson(host, id) {
     extra.textContent = on ? fill(step.aside, ch) : '';
   }
 
+  /* ------------------------------------------------------------- the bar
+     The shaded part is SCALED, never redrawn: `scaleX(num/den)` from a left
+     origin. For one half, two quarters and four eighths that is 0.5 every time,
+     so the element is handed the identical transform three steps running and
+     does not budge — which is exactly what the child is being asked to notice.
+     In the last two steps it goes 0.5 to 0.125 and visibly shrinks, which is
+     the misconception being shown rather than argued with. */
+  function paintBar(show, { sweep = false } = {}) {
+    const ms = sweep && !reduced() ? 900 : 0;
+    const shade = bar.querySelector('.lsn-shade');
+    shade.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+    shade.style.transformOrigin = 'left center';
+    shade.style.transform = `scaleX(${(show.num / show.den).toFixed(4)})`;
+    for (const cut of bar.querySelectorAll('.lsn-cut')) {
+      const k = Number(cut.dataset.cut);
+      const on = show.den > 1 && k % (BAR_MAX / show.den) === 0;
+      cut.style.transition = ms ? `opacity ${ms}ms ease` : 'none';
+      cut.style.opacity = on ? '1' : '0';
+    }
+  }
+
+  const barCells = (show) => [
+    { label: LESSON_COUNT.pieces, value: show.den },
+    { label: LESSON_COUNT.shaded, value: show.num },
+    { label: LESSON_COUNT.howMuch, value: fracWords(show.num, show.den) },
+  ];
+
+  /* ----------------------------------------------------------- the array
+     Rebuilt when the array changes, TURNED when only the turn changes — and the
+     difference matters: a turn has to be the same squares moving, or the lesson
+     is back to asking the child to trust two pictures. Each array starts at
+     zero and turns once, because only odd quarter turns transpose; half a turn
+     is the same array upside down and teaches nothing. */
+  let arrayKey = null;
+  function paintArray(show, { sweep = false } = {}) {
+    const key = `${show.rows}x${show.cols}`;
+    if (key !== arrayKey) {
+      arrayKey = key;
+      stage.innerHTML = `<div class="lsn-arraywrap"><div class="lsn-array">${
+        array2d(show.rows, show.cols, { cell: 26, gap: 4 })}</div></div>`;
+      stage.querySelector('svg')?.setAttribute('aria-hidden', 'true');
+    }
+    const el = stage.querySelector('.lsn-array');
+    const ms = sweep && !reduced() ? 900 : 0;
+    el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+    el.style.transform = `rotate(${show.turn || 0}deg)`;
+  }
+
+  // A quarter turn swaps what reads as a row and what reads as a column; the
+  // total is the one number that cannot change, which is the whole point.
+  const arrayCells = (show) => {
+    const turned = ((show.turn || 0) / 90) % 2 !== 0;
+    return [
+      { label: LESSON_COUNT.rows, value: turned ? show.cols : show.rows },
+      { label: LESSON_COUNT.each, value: turned ? show.rows : show.cols },
+      { label: LESSON_COUNT.all, value: show.rows * show.cols },
+    ];
+  };
+
+  // Generic renderer for whatever cells a stage hands back.
+  function paintCells(cells) {
+    const cell = (c) => `<span class="lsn-cell"><small>${esc(c.label)}</small>`
+      + `<b>${esc(c.value)}${c.sub ? `<i>${esc(c.sub)}</i>` : ''}</b></span>`;
+    host.querySelector('[data-read]').innerHTML = cells.map(cell).join('');
+    host.querySelector('[data-readsay]').textContent =
+      cells.map((c) => `${c.label}: ${c.value}${c.sub ? ' ' + c.sub : ''}`).join(', ');
+  }
+
   function paint() {
     const step = lesson.steps[at];
     host.querySelector('[data-count]').textContent = `Step ${at + 1} of ${lesson.steps.length}`;
@@ -363,7 +496,12 @@ export function renderLesson(host, id) {
        the previous state would be the opposite of that. */
     paintWho(step);
     const sweep = !!step.sweep && dir > 0;
-    if (isClock) paintClock(step.show, { sweep }); else paintCoins(step.show, { sweep });
+    const read = host.querySelector('[data-read]');
+    read.hidden = !step.count;
+    if (kind === 'clock') paintClock(step.show, { sweep });
+    else if (kind === 'coins') paintCoins(step.show, { sweep });
+    else if (kind === 'bar') { paintBar(step.show, { sweep }); if (step.count) paintCells(barCells(step.show)); }
+    else if (kind === 'array') { paintArray(step.show, { sweep }); if (step.count) paintCells(arrayCells(step.show)); }
     host.querySelector('[data-back]').disabled = at === 0;
     const next = host.querySelector('[data-next]');
     const last = at === lesson.steps.length - 1;
@@ -401,9 +539,18 @@ export function renderLesson(host, id) {
     settle() {
       stopSweep();
       const st = lesson.steps[at];
-      if (isClock) paintClock(st.show, { sweep: false });
-      else paintCoins(st.show, { sweep: false });
+      if (kind === 'clock') paintClock(st.show, { sweep: false });
+      else if (kind === 'coins') paintCoins(st.show, { sweep: false });
+      else if (kind === 'bar') { paintBar(st.show, { sweep: false }); if (st.count) paintCells(barCells(st.show)); }
+      else if (kind === 'array') { paintArray(st.show, { sweep: false }); if (st.count) paintCells(arrayCells(st.show)); }
     },
+    // For assertions: what a stage's counter would read for a given state.
+    cells(show) {
+      if (kind === 'bar') return barCells(show);
+      if (kind === 'array') return arrayCells(show);
+      return null;
+    },
+    get kind() { return kind; },
     // The arithmetic, for assertions. cumAt/readAt/anglesAt are the three things
     // that can be wrong; none of them needs the animation to be running.
     cumAt: elapsedAt,
