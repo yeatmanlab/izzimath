@@ -135,8 +135,7 @@ function footer(b) {
   <a href="${b}/references/">Research and references</a>
   <a href="${b}/about/">About &amp; credits</a>
   <a href="${b}/printables/">All printables</a>
-  <a href="${b}/learn/time/">How a clock works</a>
-  <a href="${b}/learn/money/">How coins work</a>
+  <a href="${b}/learn/">Short lessons</a>
   <a href="${b}/cup/">The character cup</a>
   <a href="${b}/roam/">Have an assessment score?</a>
   <a href="https://github.com/yeatmanlab/izzimath">Source</a>

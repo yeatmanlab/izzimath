@@ -4,6 +4,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { activities } from '../content/activities/index.js';
+import { LESSONS } from '../content/lessons.js';
+/* The templates' OWN escaper, imported rather than reimplemented. A local copy
+   was written first and it already disagreed — templates.mjs also escapes the
+   apostrophe to &#39; — so a title with one in it would never have matched and
+   the check would have failed for the wrong reason. */
+import { esc } from './templates.mjs';
 
 const OUT = 'dist';
 const files = [];
@@ -189,6 +195,88 @@ for (const f of files) {
     errors++;
   }
   console.log(`  ${seen} lesson callouts on activity pages${bad ? `, ${bad} PROBLEMS` : ', all shipping loud'}`);
+}
+
+/* ------------------------------------------------- the lessons index at /learn/
+   Also here rather than in check.mjs, for the same reason: every assertion is
+   about a built page.
+
+   The index exists because the two lessons had no parent — their breadcrumb was
+   `Home / How a clock works`, they are deliberately absent from the header nav,
+   and the only global route to them was two footer links. So what has to hold is
+   the WIRING, and every strand of it is the kind that breaks silently: a lesson
+   missing from the index is an orphan again, a breadcrumb that skips the index is
+   the bug this page was built to fix, and the reverse links are derived from a
+   field nobody maintains in that direction. */
+{
+  console.log('');
+  let errs = 0;
+  const say = (m) => { console.log(`  FAIL  learn: ${m}`); errors++; errs++; };
+  let idx = null;
+  try { idx = fs.readFileSync(`${OUT}/learn/index.html`, 'utf8'); } catch {
+    say('the index was not built at learn/index.html');
+  }
+  const lessons = Object.values(LESSONS);
+  if (idx) {
+    for (const l of lessons) {
+      if (!idx.includes(`/learn/${l.id}/`)) say(`the index does not link to /learn/${l.id}/, so that lesson is an orphan again`);
+      if (!idx.includes(esc(l.title))) say(`the index does not name "${l.title}"`);
+      /* The card's figure is drawn by the same widgets the lesson draws with, so
+         an empty card body means the preview silently failed rather than that a
+         lesson has no figure. */
+      if (!/class="lsnfig"[^>]*>\s*<svg/.test(idx)) say('a card is missing its figure — .lsnfig has no svg in it');
+    }
+    // Grade must not be the organising axis: that is the design, not a detail.
+    if (/class="ctag">(Kindergarten|\dth grade|\dst grade|\dnd grade|\drd grade)/.test(idx)) {
+      say('a card is tagged by GRADE — the index is organised by topic on purpose, because a grade ladder reads as a course to work through');
+    }
+  }
+  // Each lesson page's breadcrumb has to pass through the index.
+  for (const l of lessons) {
+    let html;
+    try { html = fs.readFileSync(`${OUT}/learn/${l.id}/index.html`, 'utf8'); } catch {
+      say(`/learn/${l.id}/ was not built`); continue;
+    }
+    /* SCOPED TO THE BREADCRUMB, and the first version was not — it tested the
+       whole page for a /learn/ link, which the FOOTER supplies on every page.
+       So the assertion passed with the crumb deleted: a dead check that read as
+       coverage. Only the nav element can answer "does this page have a parent". */
+    const crumbNav = html.match(/<nav class="wrap noprint" aria-label="Breadcrumb"[\s\S]*?<\/nav>/);
+    if (!crumbNav) say(`/learn/${l.id}/ has no breadcrumb at all`);
+    else if (!/href="[^"]*\/learn\/"/.test(crumbNav[0])) {
+      say(`/learn/${l.id}/ has a breadcrumb that skips the index, so the lesson still has no parent`);
+    }
+    /* The practice strip. Derived from `lesson:` on each activity, so if that
+       filter ever comes back empty the page silently returns to being a dead
+       end — which is what it was before, exiting to /grades/ generically. */
+    const users = [...activities].filter((a) => a.lesson === l.id);
+    if (!users.length) { say(`no activity declares lesson "${l.id}", so its practice strip is empty`); continue; }
+    for (const a of users) {
+      if (!html.includes(esc(a.title))) {
+        say(`/learn/${l.id}/ does not offer ${a.id}, which declares this lesson`);
+      }
+    }
+  }
+  // One global route, and it has to be the index rather than a single lesson.
+  const home = fs.readFileSync(`${OUT}/index.html`, 'utf8');
+  /* SCOPED TO THE FOOTER ELEMENT. The first version matched `class="fin"` and
+     the markup is `class="wrap fin"`, so it matched nothing and the assertion
+     could not fail — the second dead strand in this one check, both found by
+     reintroducing the bug rather than by reading the code. */
+  const foot = home.match(/<footer class="foot noprint"[\s\S]*?<\/footer>/);
+  if (!foot) say('the home page has no footer');
+  else {
+    if (!/href="[^"]*\/learn\/"/.test(foot[0])) {
+      say('the footer does not link the index, so there is no global route to the lessons');
+    }
+    for (const l of lessons) {
+      if (foot[0].includes(`/learn/${l.id}/`)) {
+        say(`the footer links /learn/${l.id}/ directly — one "Short lessons" link is the point, or the footer grows by one link per lesson`);
+      }
+    }
+  }
+  console.log(`  ${lessons.length} lessons on the index${errs
+    ? `, ${errs} PROBLEM${errs === 1 ? '' : 'S'}` : ', each linked both ways with its practice strip'}`);
 }
 
   for (const f of files) {

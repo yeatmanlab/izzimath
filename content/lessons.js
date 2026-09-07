@@ -39,6 +39,18 @@ export const LESSONS = {
   time: {
     id: 'time',
     title: 'How a clock works',
+    /* `topic` is the index's tag and `glyph` its mark. Both live here rather
+       than at the call site because build.mjs used to pick the callout's glyph
+       with `a.lesson === 'money' ? '¢' : '◔'` — a two-way branch that would
+       have handed lesson number three a clock face without saying a word. */
+    topic: 'Time',
+    glyph: '◔',
+    /* The index card's preview, written in the SAME `show` vocabulary as the
+       steps below, so the one rule that tells a clock lesson from a coin lesson
+       — does `show` have an `h`? — stays in one place. src/mount/lesson.js
+       already branches on exactly that. 4:30 rather than an o'clock because the
+       short hand sitting between two numbers is what the lesson is about. */
+    card: { h: 4, m: 30 },
     lead: 'Two hands, and the short one is the one that catches people out.',
     /* `show` is what the player draws: a clock at h:m, optionally with a digital
        face beside it, optionally with one hand called out. The player animates
@@ -114,6 +126,9 @@ export const LESSONS = {
   money: {
     id: 'money',
     title: 'How coins work',
+    topic: 'Money',
+    glyph: '¢',
+    card: { coins: ['quarter', 'nickel', 'dime', 'penny'] },
     lead: 'Four coins, and the smallest one is not the cheapest.',
     steps: [
       {
@@ -194,6 +209,39 @@ export const LESSON_CALL = {
     say: 'A short lesson on what each coin is worth — including why the small one beats the big one.',
     cta: 'Show me how coins work',
   },
+};
+
+/* ------------------------------------------------------ the index at /learn/
+   ONE FLAT PAGE, NOT A GRADE LADDER, and that is the whole design.
+
+   The point of this site is practice a child wants to do, not lessons to sit
+   through. Organising these by grade would imply a course you work from the top
+   of; tagging them by TOPIC says what they are, which is two explainers you
+   reach when something has not landed. So there is no grade column, no ordering,
+   no filter, and this is deliberately NOT in the header nav — seven items are
+   there already, and a top-level "Lessons" tab beside Grades, Books and Games is
+   exactly the framing being avoided.
+
+   Reached four ways, in the order a reader actually meets them: the callout on
+   an activity that has one (the main path, and it points at the lesson itself
+   rather than through here), one footer link on every page, the tour's "Short
+   lessons" door, and the breadcrumb on a lesson page — which is how you find out
+   the other lesson exists while you are reading one. */
+export const LESSON_INDEX = {
+  title: 'Short lessons',
+  lead: 'Two things a printed sheet cannot do: show you a clock’s hands moving, and lay pennies '
+    + 'against a nickel.',
+  glyph: '▶',
+  head: 'What these are for',
+  /* Says out loud why there are only two, because the site answers that kind of
+     question rather than leaving a thin page looking unfinished. */
+  say: 'Not a course, and not organised by grade — you get here from an activity when something '
+    + 'is not landing, and every time and money activity links back. There are two because '
+    + 'movement is only worth it where a still picture genuinely cannot do the job: the fix for '
+    + 'reading 2:30 as “half past three” is watching the short hand creep, and the fix for '
+    + '“the bigger coin is worth more” is seeing ten pennies against one dime.',
+  practice: 'Practice it in',
+  empty: 'No activity links here yet.',
 };
 
 // Where a visit gets recorded, so the callout can stand down afterwards.

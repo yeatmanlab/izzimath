@@ -55,11 +55,20 @@ your change, and reports a clean pass for code it never loaded.
 
 Then open, or drive headless:
 
-- `http://localhost:8890/_tools/audit.html` — responsive audit. 38 pages ×
+- `http://localhost:8890/_tools/audit.html` — responsive audit. 39 pages ×
   5 widths (360, 390, 768, 1024, 1440). Flags unscrolled horizontal overflow,
   tap targets under 24px (inline links in prose are exempt, per WCAG 2.5.8),
   body text under 11px, a control sitting under the pinned suggestion button,
-  and **SVG `<text>` below AA contrast**.
+  **SVG `<text>` below AA contrast**, and **text within 12px of the window
+  edge**.
+
+  That last one was added after `.sec { padding: 46px 0 0 }` was found
+  overriding `.wrap`'s `padding: 0 24px` — same element, later rule — so all
+  eleven `class="wrap sec"` sections lost their gutter between roughly 600px and
+  1228px, and `.hero` did the same to the home page. Headings sat against the
+  frame while the breadcrumb above them stayed inset. It survived because a
+  phone is fine (the mobile rule re-sets the padding and wins) and because
+  nothing here measured a gutter.
 
   That last one is a blind spot in both Node checkers and a real bug lived in
   it: `a11y.mjs` reads built HTML and cannot compute a colour against its

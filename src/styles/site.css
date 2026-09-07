@@ -102,7 +102,7 @@ main { position: relative; z-index: 1; flex: 1 }
 
 /* ---------- nav ---------- */
 .nav { position: relative; z-index: 20; border-bottom: 1px solid var(--line); background: rgba(5,6,14,.72); backdrop-filter: blur(14px) }
-.nav-in { display: flex; align-items: center; gap: 26px; padding: 14px 0; flex-wrap: wrap }
+.nav-in { display: flex; align-items: center; gap: 26px; padding-top: 14px; padding-bottom: 14px; flex-wrap: wrap }
 .logo { display: flex; align-items: center; gap: 10px; font-family: var(--fdisp); font-weight: 700; font-size: 19px; letter-spacing: -.03em; text-decoration: none; flex: none }
 .logo .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--sp); display: grid; place-items: center; color: var(--onsp); font-size: 16px; flex: none }
 .nav a.nl { color: var(--txt2); text-decoration: none; font-size: 14px; font-weight: 500 }
@@ -157,7 +157,11 @@ main { position: relative; z-index: 1; flex: 1 }
 .chbtn[aria-pressed="true"] { color: var(--txt); border-color: var(--a2); background: var(--glass2) }
 
 /* ---------- hero + tiles ---------- */
-.hero { padding: 60px 0 10px }
+/* Vertical padding only, for the reason spelled out on `.sec` below: the
+   shorthand zeroes left and right, and `.wrap`'s 24px gutter is declared
+   earlier, so the HOME PAGE's headline and lede also sat flush against the
+   window edge from about 600px to 1228px. */
+.hero { padding-top: 60px; padding-bottom: 10px }
 .pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-family: var(--fdisp); letter-spacing: .13em; text-transform: uppercase; color: var(--a1); border: 1px solid var(--line2); background: var(--glass); padding: 6px 14px; border-radius: 99px }
 .hero h1 { font-size: clamp(34px, 6vw, 62px); margin: 22px 0 0 }
 .hero h1 em { font-style: normal; background: var(--sp); -webkit-background-clip: text; background-clip: text; color: transparent }
@@ -203,7 +207,17 @@ main { position: relative; z-index: 1; flex: 1 }
 .vh { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; border: 0 }
 
-.sec { padding: 46px 0 0 }
+/* padding-TOP, not the shorthand. `padding: 46px 0 0` also set left and right
+   to zero, and `.sec` is declared after `.wrap` — so every `class="wrap sec"`
+   section lost the 24px gutter `.wrap` exists to provide. Eleven sections use
+   that pair, including both lesson pages, the tour, the cup and printables, and
+   between roughly 600px and 1228px their heading and body text sat flush
+   against the window edge while the breadcrumb directly above stayed inset. A
+   phone was fine — the mobile rule re-sets `.wrap` padding to 16px and wins —
+   which is why this survived: it is invisible at the two widths anyone checks
+   by hand, and the responsive audit measures overflow, tap targets, text size
+   and overlap, none of which a missing gutter trips. */
+.sec { padding-top: 46px }
 .sec > h2 { font-size: 25px; margin-bottom: 6px }
 .sec > p.sub { color: var(--txt2); font-size: 14.5px; margin-bottom: 14px }
 
@@ -949,6 +963,25 @@ footer.foot a:hover { color: var(--txt) }
 .cupempty p { font-size: 14px; color: var(--txt2); line-height: 1.65 }
 .cupempty p + p { margin-top: 6px; color: var(--txt3); font-size: 13px }
 .cupsum { margin-top: 14px; font-size: 13.5px; color: var(--txt2) }
+/* ------------------------------------------------------ the lessons index
+   A lesson card leads with its FIGURE rather than a glyph, because the figure is
+   the thing the lesson is about and there are only two cards — a page of two
+   glyph thumbnails would read as a placeholder. The clock and the coins come
+   from the same widgets the lessons themselves draw with, so the preview cannot
+   drift from the content. */
+.lsnfig {
+  height: 104px; display: grid; place-items: center; background: var(--glass);
+  border-bottom: 1px solid var(--line);
+}
+.lsncoins { display: flex; align-items: center; gap: 7px }
+.lsncard .cbody { display: flex; flex-direction: column; gap: 5px }
+/* Which activities send a reader here. Quiet, because it is a footnote on the
+   card rather than the reason to press it. */
+.lsnuse {
+  margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line);
+  font-size: 12.5px; color: var(--txt3); line-height: 1.6;
+}
+
 /* The route in from the Scores panel, which is the only entry a child who has
    not read the tour will ever find. */
 .bdcup { margin: 14px 0 0; font-size: 13.5px }

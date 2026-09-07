@@ -21,6 +21,7 @@ const PAGES = [
   ['/guide/', 'guide — everything on one page'],
   ['/ssdd/k-two-rows/', 'ssdd: K counters'],
   ['/cup/', 'the character cup'],
+  ['/learn/', 'lessons index'],
   ['/learn/time/', 'lesson: clocks'], ['/learn/money/', 'lesson: coins'],
   ['/books/clocks-and-time/', 'book: clocks and time'], ['/books/money-math/', 'book: money math'],
   ['/print/money-math/', 'print: money math'],
@@ -79,6 +80,22 @@ function measure(){
      page at every width — took the harness from about two minutes to past seven
      and it had reached page 8 of 38. The overlap check above had already taught
      the same lesson once. */
+  /* TEXT FLUSH TO THE WINDOW EDGE. Added after `.sec { padding: 46px 0 0 }` was
+     found to override `.wrap`'s `padding: 0 24px` — same element, later rule —
+     so all eleven `class="wrap sec"` sections lost their gutter between roughly
+     600px and 1228px and their headings sat against the edge of the window while
+     the breadcrumb above stayed inset. It survived because a phone is fine (the
+     mobile rule re-sets .wrap padding and wins) and because none of the checks
+     here measure a gutter: overflow, tap size, text size and overlap all pass on
+     a page whose text touches the frame.
+     12px, which is under the 16px mobile gutter, so a correct page has room. */
+  const flush=[];
+  for(const el of d.querySelectorAll('main h1,main h2,main h3,main p,main li')){
+    const r=el.getBoundingClientRect();
+    if(r.width<=0||r.height<=0)continue;
+    if((el.textContent||'').trim()==='')continue;
+    if(r.left<12) flush.push(el.tagName.toLowerCase()+'@'+Math.round(r.left)+'px');
+  }
   const dimSvg=[];
   if(svgPass){
     let pageBg=null;
@@ -163,7 +180,7 @@ function measure(){
       }
     }
   }
-  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3),covered:[...new Set(covered)].slice(0,4),dimSvg:[...new Set(dimSvg)].slice(0,3)};
+  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3),covered:[...new Set(covered)].slice(0,4),dimSvg:[...new Set(dimSvg)].slice(0,3),flush:[...new Set(flush)].slice(0,3)};
 }
 (async()=>{
   for(const [w,wn] of WIDTHS){
@@ -181,6 +198,7 @@ function measure(){
       if(m.tiny.length)p.push('small tap: '+m.tiny.join(' '));
       if(m.smallText.length)p.push('small text: '+m.smallText.join(' '));
       if(m.dimSvg.length)p.push('faint svg text: '+m.dimSvg.join(', '));
+      if(m.flush.length)p.push('text on the window edge: '+m.flush.join(' '));
       if(m.covered.length)p.push('under the pinned button: '+m.covered.join(', '));
       L.push((p.length?'  ✗ ':'  · ')+name.padEnd(26)+(p.join(' | ')||'ok'));
     }

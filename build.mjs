@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { page, activityCard, lookCard, lookColumn, tourDoor, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet, ssddSheet, maxPagesFor } from './src/lib/printsheet.js';
+import { clockFace, coin } from './src/lib/widgets.js';
 import { rng } from './src/lib/rng.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
@@ -14,7 +15,7 @@ import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, i
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
 import { CUP } from './content/leaderboard.js';
-import { LESSONS, LESSON_LINK, LESSON_CALL } from './content/lessons.js';
+import { LESSONS, LESSON_LINK, LESSON_CALL, LESSON_INDEX } from './content/lessons.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
 const BASE = (process.env.BASE ?? '').replace(/\/$/, '');
@@ -331,7 +332,7 @@ for (const a of activities) {
         ${roamBadges(a)}
       </div>
       ${a.lesson && LESSON_LINK[a.lesson] ? `<div class="lsncall" data-lesson-call="${esc(a.lesson)}">
-        <span class="lsncall-ic" aria-hidden="true">${a.lesson === 'money' ? '¢' : '◔'}</span>
+        <span class="lsncall-ic" aria-hidden="true">${esc(LESSONS[a.lesson].glyph)}</span>
         <div class="lsncall-body">
           <b>${esc(LESSON_CALL[a.lesson].head)}</b>
           <span>${esc(LESSON_CALL[a.lesson].say)}</span>
@@ -705,11 +706,81 @@ write('ssdd/index.html', page({
    lead and every caption as plain text. That is not just a no-JavaScript
    fallback: it is the whole lesson in words, which is what makes it printable
    and readable by a screen reader without depending on the player. */
+/* WHICH ACTIVITIES SEND A READER HERE, derived rather than listed. An activity
+   declares `lesson: 'time'`; nobody maintains the other direction, so it is a
+   filter. That matters more than it looks: a lesson page used to exit to
+   `/grades/` generically, so a grade-3 child who arrived from `time-and-data`,
+   watched the lesson and wanted easier practice had no route to the grade-1
+   book. Sorted by grade so the easiest is first, which is the order a stuck
+   reader wants. */
+/* The card preview. `card` is written in the player's own `show` vocabulary, so
+   the test for which kind of lesson this is — does it have an `h`? — is the same
+   line src/mount/lesson.js uses, rather than a second copy that could disagree.
+   The coins are drawn at their real mint diameters, which is the lesson's point. */
+function lessonFigure(id) {
+  const c = LESSONS[id]?.card;
+  if (!c) return '';
+  if (c.h) return clockFace(c.h, c.m ?? 0, { size: 92 });
+  return `<span class="lsncoins">${c.coins.map((k) => coin(k, { size: 44 })).join('')}</span>`;
+}
+
+const lessonUsers = (id) => activities
+  .filter((a) => a.lesson === id)
+  .sort((x, y) => gradeNum(x.grade) - gradeNum(y.grade) || x.title.localeCompare(y.title));
+
+const practiceStrip = (id) => {
+  const used = lessonUsers(id);
+  if (!used.length) return `<p class="sub">${esc(LESSON_INDEX.empty)}</p>`;
+  return `<div class="cards" style="margin-top:14px">
+    ${used.map((a) => activityCard(b, a)).join('')}</div>`;
+};
+
+write('learn/index.html', page({
+  base: b, active: '', title: LESSON_INDEX.title,
+  desc: `${LESSON_INDEX.title} for Izzi Math — ${LESSON_INDEX.lead}`,
+  crumbs: [{ label: 'Home', href: '/' }, { label: LESSON_INDEX.title }],
+  body: `<section class="wrap">
+    <div class="ahead"><div class="gbadge" aria-hidden="true">${esc(LESSON_INDEX.glyph)}</div>
+      <div><h1>${esc(LESSON_INDEX.title)}</h1>
+        <p>${esc(LESSON_INDEX.lead)}</p></div></div>
+    <div class="roam" style="margin:18px 0 26px">
+      <h2 style="font-size:16px">${esc(LESSON_INDEX.head)}</h2>
+      <p>${esc(LESSON_INDEX.say)}</p>
+    </div>
+    <div class="cards">
+      ${Object.values(LESSONS).map((lesson) => {
+        const used = lessonUsers(lesson.id);
+        return `<a class="card lsncard" href="${b}/learn/${lesson.id}/">
+          <div class="lsnfig" aria-hidden="true">${lessonFigure(lesson.id)}</div>
+          <div class="cbody">
+            <div class="ctag">${esc(lesson.topic)} · ${lesson.steps.length} steps</div>
+            <h3>${esc(lesson.title)}</h3>
+            <p>${esc(lesson.lead)}</p>
+            ${used.length ? `<p class="lsnuse">${esc(LESSON_INDEX.practice)}
+              ${used.map((a) => esc(a.title)).join(', ')}</p>` : ''}
+          </div></a>`;
+      }).join('')}
+    </div>
+  </section>`,
+}));
+
+/* ------------------------------------------------------------- the lessons
+   /learn/<id>/ — the animated explanations, one page each. Addressable rather
+   than embedded, because a grade-2 or grade-3 child who is stuck has to be able
+   to get BACK to the grade-1 explanation; every time and money activity links
+   here. See the header of content/lessons.js for why these two topics get
+   movement when nothing else on the site does.
+
+   The body is rendered client-side, so the static page carries the title, the
+   lead and every caption as plain text. That is not just a no-JavaScript
+   fallback: it is the whole lesson in words, which is what makes it printable
+   and readable by a screen reader without depending on the player. */
 for (const lesson of Object.values(LESSONS)) {
   write(`learn/${lesson.id}/index.html`, page({
     base: b, active: '', title: lesson.title,
     desc: `${lesson.title} — a short animated explanation for Izzi Math. ${lesson.lead}`,
-    crumbs: [{ label: 'Home', href: '/' }, { label: lesson.title }],
+    crumbs: [{ label: 'Home', href: '/' },
+      { label: LESSON_INDEX.title, href: '/learn/' }, { label: lesson.title }],
     scripts: ['/assets/src/mount/lesson.js'],
     body: `<section class="wrap sec" style="padding-top:24px">
       <h1 style="font-size:30px">${esc(lesson.title)}</h1>
@@ -719,8 +790,11 @@ for (const lesson of Object.values(LESSONS)) {
           `<li><b>${esc(st.head)}</b> ${esc(st.say)}</li>`).join('')}</ol>
         <p class="lsn-close">${esc(lesson.close)}</p>
       </div>
-      <p class="sub" style="margin-top:26px">Nothing here is timed and there is nothing to get wrong.
-      When it makes sense, the practice is on the <a href="${b}/grades/">grade pages</a>.</p>
+      <div class="sec" style="margin-top:30px">
+        <h2 style="font-size:19px">${esc(LESSON_INDEX.practice)}</h2>
+        <p class="sub">Nothing here is timed and there is nothing to get wrong. The easiest is first.</p>
+        ${practiceStrip(lesson.id)}
+      </div>
     </section>`,
   }));
 }
@@ -782,7 +856,7 @@ for (const lesson of Object.values(LESSONS)) {
     ['By skill', `${b}/skills/`, 'If you already know the sticking point, this is the faster way in.'],
     ['How to help', `${b}/parents/`, 'How long, how often, and what to say when they are stuck.'],
     ['Keeping score', `${b}/`, 'Optional and never asked for twice: pick a creature, a name and a secret snack, and scores stay in this browser. No account, and nothing is sent anywhere.'],
-    ['Short lessons', `${b}/learn/time/`,
+    ['Short lessons', `${b}/learn/`,
       'How a clock works, and how coins work. The clock hands move, which is what a printed sheet cannot do. Linked from every time and money activity, so a child who is stuck can go back to it.'],
     ['The character cup', `${b}/cup/`,
       `Which of the ${characterList.length - 1} friends has been out the most, counted in badges. It ranks the characters and never the children — there is no child on it, and nothing is sent anywhere.`],
