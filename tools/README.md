@@ -58,9 +58,18 @@ Then open, or drive headless:
 - `http://localhost:8890/_tools/audit.html` — responsive audit. 38 pages ×
   5 widths (360, 390, 768, 1024, 1440). Flags unscrolled horizontal overflow,
   tap targets under 24px (inline links in prose are exempt, per WCAG 2.5.8),
-  and body text under 11px.
+  body text under 11px, a control sitting under the pinned suggestion button,
+  and **SVG `<text>` below AA contrast**.
+
+  That last one is a blind spot in both Node checkers and a real bug lived in
+  it: `a11y.mjs` reads built HTML and cannot compute a colour against its
+  background, and the text-size rule only walks `p, li, td, span, small`. The
+  clock dial's numerals shipped at 10px in `--txt3`, which is 3.63:1 against
+  the panel — on items whose whole question is reading the dial. It runs at one
+  width only and caches by fill and size, because contrast does not vary with
+  the viewport and the first version took the harness past seven minutes.
 - `http://localhost:8890/_tools/func.html` — problem type test **and the profile
-  panel**. Every one of the nine types: renders, is interactive, its own stated
+  panel**. Every one of the ten types: renders, is interactive, its own stated
   answer verifies, it has a worked explanation, and it renders as both a print
   sheet and a key.
 

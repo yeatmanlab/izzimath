@@ -35,9 +35,23 @@ const PAGES = [
 ];
 const WIDTHS = [[360,'phone-sm'],[390,'phone'],[768,'tablet'],[1024,'laptop'],[1440,'desktop']];
 const L=[]; let checks=0;
+/* Set for one width only — see the note in measure(). */
+let svgPass=false;
+const svgSeen=new Map();
 const frame=document.createElement('iframe');
 frame.style.cssText='position:fixed;left:-99999px;top:0;border:0';
 document.body.appendChild(frame);
+/* SVG <text> IS A BLIND SPOT IN BOTH OTHER CHECKERS, and a real bug lived in it.
+   scripts/a11y.mjs reads built HTML and cannot compute a colour against its
+   background; the text-size rule below only walks `p, li, td, span, small`. So
+   the clock dial's numerals shipped at 10px in --txt3, which is 3.63:1 against
+   the panel — and reading the dial IS the task on those items ("the long hand is
+   pointing at the 7"). Nothing would have caught it.
+   AA thresholds: 4.5:1, or 3:1 for text at 24px, or 18.66px bold. */
+const relLum=(c)=>{const m=(c||'').match(/[\d.]+/g); if(!m||m.length<3)return null;
+  const f=m.slice(0,3).map(Number).map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);});
+  return 0.2126*f[0]+0.7152*f[1]+0.0722*f[2];};
+
 function measure(){
   const d=frame.contentDocument,w=frame.contentWindow;
   if(!d||!d.body)return null;
@@ -58,6 +72,39 @@ function measure(){
        &&w.getComputedStyle(el).position!=='fixed'
        &&!inScroller(el))
       wide.push(el.tagName.toLowerCase()+'@'+Math.round(r.width));
+  }
+  /* COST: this runs at ONE width only, and caches by fill+size. Contrast does
+     not change with the viewport, and the first version — getComputedStyle per
+     text node plus a getComputedStyle parent walk for the background, on every
+     page at every width — took the harness from about two minutes to past seven
+     and it had reached page 8 of 38. The overlap check above had already taught
+     the same lesson once. */
+  const dimSvg=[];
+  if(svgPass){
+    let pageBg=null;
+    for(const t of d.querySelectorAll('svg text')){
+      const r=t.getBoundingClientRect(); if(!r.width||!r.height)continue;
+      const cs=w.getComputedStyle(t);
+      const key=cs.fill+'|'+cs.fontSize+'|'+cs.fontWeight;
+      if(svgSeen.has(key)){ const v=svgSeen.get(key); if(v)dimSvg.push(v); continue; }
+      if(pageBg===null){
+        // Once per page: the panels these figures sit in share one background.
+        let bgc=null;
+        for(let p=t.parentElement;p;p=p.parentElement){
+          const c=w.getComputedStyle(p).backgroundColor;
+          if(c&&c!=='rgba(0, 0, 0, 0)'){bgc=c;break;}
+        }
+        pageBg=relLum(bgc||w.getComputedStyle(d.body).backgroundColor);
+      }
+      const fg=relLum(cs.fill);
+      if(fg==null||pageBg==null){ svgSeen.set(key,null); continue; }
+      const ratio=(Math.max(fg,pageBg)+0.05)/(Math.min(fg,pageBg)+0.05);
+      const px=parseFloat(cs.fontSize)||0;
+      const need=(px>=24||(px>=18.66&&(parseInt(cs.fontWeight)||400)>=700))?3:4.5;
+      const hit=ratio<need? Math.round(px)+'px '+cs.fill+' '+ratio.toFixed(2)+':1 (needs '+need+')' : null;
+      svgSeen.set(key,hit);
+      if(hit)dimSvg.push(hit);
+    }
   }
   for(const el of d.querySelectorAll('a,button,select,input')){
     const r=el.getBoundingClientRect();
@@ -116,11 +163,12 @@ function measure(){
       }
     }
   }
-  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3),covered:[...new Set(covered)].slice(0,4)};
+  return {docOverflow,wide:[...new Set(wide)].slice(0,4),tiny:[...new Set(tiny)].slice(0,3),smallText:[...new Set(smallText)].slice(0,3),covered:[...new Set(covered)].slice(0,4),dimSvg:[...new Set(dimSvg)].slice(0,3)};
 }
 (async()=>{
   for(const [w,wn] of WIDTHS){
     frame.style.width=w+'px'; frame.style.height='900px';
+    svgPass = w===1024;   // widest common desktop; contrast is width-independent
     L.push(''); L.push('════ '+wn+' ('+w+'px) ════');
     for(const [url,name] of PAGES){
       await new Promise(res=>{frame.onload=res;frame.src=url;});
@@ -132,6 +180,7 @@ function measure(){
       if(m.wide.length)p.push('wide: '+m.wide.join(' '));
       if(m.tiny.length)p.push('small tap: '+m.tiny.join(' '));
       if(m.smallText.length)p.push('small text: '+m.smallText.join(' '));
+      if(m.dimSvg.length)p.push('faint svg text: '+m.dimSvg.join(', '));
       if(m.covered.length)p.push('under the pinned button: '+m.covered.join(', '));
       L.push((p.length?'  ✗ ':'  · ')+name.padEnd(26)+(p.join(' | ')||'ok'));
     }

@@ -423,7 +423,17 @@ function handWords(h, m) {
 
 export function clockFace(h, m = 0, { print = false, size = 112, numerals = true, ticks = true } = {}) {
   const ink = print ? '#111' : 'var(--a1)';
+  /* TWO GREYS, because the numerals are content and the ticks are not. A child
+     is asked "the long hand is pointing at the 7" — reading the dial IS the
+     task — so the numerals have to clear 4.5:1, and --txt3 is 3.63:1 against
+     the panel at the 10px they are set in. --txt2 is 7.8:1. The five-minute
+     ticks stay on --txt3, which clears the 3:1 that a meaningful graphic needs
+     and keeps the dial from reading as a grey ring.
+     Neither the a11y checker nor the responsive audit could have caught this:
+     one reads built HTML and the other only measures `p, li, td, span, small`,
+     and this is an SVG <text>. */
   const faint = print ? '#555' : 'var(--txt3)';
+  const numInk = print ? '#333' : 'var(--txt2)';
   const hAng = ((h % 12) * 30) + (m / 60) * 30;    // the hour hand CREEPS, which is the misconception
   const mAng = (m / 60) * 360;
   const [hx, hy] = clockPt(hAng, 24);
@@ -446,7 +456,7 @@ export function clockFace(h, m = 0, { print = false, size = 112, numerals = true
     for (let k = 1; k <= 12; k++) {
       const [x, y] = clockPt(k * 30, 31);
       t += `<text x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}" text-anchor="middle"
-        font-size="10" font-weight="600" fill="${faint}">${k}</text>`;
+        font-size="10" font-weight="600" fill="${numInk}">${k}</text>`;
     }
   }
   // short hand thick and short, long hand thin and long: the only cue that says which is which
