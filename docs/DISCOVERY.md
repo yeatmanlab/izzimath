@@ -19,7 +19,7 @@ panel has a short line about what just happened and a smaller line with more
 detail, and **both are written for whoever pressed the button.** Nothing refers
 to "your child".
 
-The scale is the invitation: `37 books`, `17 games`, `54 activities`, `24
+The scale is the invitation: `38 books`, `17 games`, `55 activities`, `24
 badges`. Every one of those numbers is filled from `content/` at runtime, because
 this project does not use praise words and does not claim effects — a large true
 number is the honest way to make a catalogue look worth exploring. The printing

@@ -36,7 +36,7 @@
 import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT } from '../../content/lessons.js';
 import { clockFace, clockDigital, coin, COINS, coinsValue, money, array2d } from '../lib/widgets.js';
 import { currentCharacter } from '../lib/theme.js';
-import { characters, getCharacter, fill } from '../../content/characters.js';
+import { getCharacter, fill } from '../../content/characters.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduced = () => typeof matchMedia === 'function'

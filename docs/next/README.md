@@ -12,7 +12,7 @@ next person (or the next session) does not have to reconstruct the reasoning.
 
 | | |
 | --- | --- |
-| Activities | 54 — 37 books, 17 games, across K–5 |
+| Activities | 55 — 38 books, 17 games, across K–5 |
 | Strands | 31 of 31 covered (five per grade, six at grade 3) |
 | Pages | 125, statically generated |
 | Problem types | 9, shared by every activity |

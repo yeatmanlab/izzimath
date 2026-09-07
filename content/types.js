@@ -109,6 +109,15 @@ export function answerText(problem) {
     case 'pick': return String(problem.answerSay
       ?? figureLabel(problem.options?.find((o) => o.id === problem.answer)?.figure)
       ?? problem.answer);
-    default: return String(problem.answer);
+    /* `answerSay` for anything else too, and only the key reads it — `isCorrect`
+       still compares the response to `answer`, so this cannot affect marking on
+       screen. It exists because a printed stem may hold MORE BLANKS THAN THE
+       ANSWER HAS NUMBERS: `add-three-numbers` prints the two-step scaffold a
+       first grader brought in, "5 + 3 + 2:  ____ + 2 = ____", where the child
+       writes the running total and then the answer. One value on the key cannot
+       mark two boxes, and the "printed blanks the key can fill" check says so.
+       Nothing but `pick` used this field before, so honouring it here changes no
+       existing output. */
+    default: return String(problem.answerSay ?? problem.answer);
   }
 }

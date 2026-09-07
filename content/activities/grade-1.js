@@ -323,7 +323,10 @@ const allKindsOfStories = {
   trick: 'Find the two numbers, then ask what the story does to them: puts together, takes away, or compares.',
   printScratch: true,
   blurb: 'Every kind of story problem, and how to tell them apart.',
-  ccss: ['1.OA.A.1', '1.OA.A.2'],
+  /* 1.OA.A.2 — "add three whole numbers" — used to be claimed here and was never
+     generated: 96 items across six seeds, not one of them naming three numbers.
+     It belongs to `add-three-numbers`, which meets it. */
+  ccss: ['1.OA.A.1'],
   im: [2],
   refs: ['wwc-2021-math', 'im-scope-sequence', 'van-der-kleij-2015'],
   theory: 'Four structures cover almost every one-step story problem. A child who knows the structures can solve a problem whose wording they have never seen; a child who hunts for keywords cannot.',
@@ -882,4 +885,168 @@ const dimesAndPennies = {
   },
 };
 
-export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard, clocksAndTime, dimesAndPennies];
+
+/* ---------------------------------------------------- BOOK: adding three numbers
+   REQUESTED BY A FIRST GRADER, from an IXL page, and it turned out to fill two
+   holes rather than add a fourth addition activity:
+
+     · 1.OA.A.2 is "add three whole numbers whose sum is at most 20", and
+       `all-kinds-of-stories` CLAIMED it while generating nothing of the kind —
+       96 items across six seeds, none of them naming three numbers. The claim
+       has moved here, to the activity that earns it.
+     · 1.OA.B.3, properties of operations used as strategies, was not covered
+       anywhere on the site. That is the interesting half: given 7 + 3 + 5 you
+       may add any pair first, so add the pair that makes ten.
+
+   Nothing else on the site adds three numbers in one expression — the only
+   three-term stem anywhere is a grade-4 angle sum.
+
+   WHERE IT SITS IN THE SEQUENCE. Downstream of two things grade 1 already has,
+   and it is placed second in the export list so it appears directly after its
+   prerequisite on the grade page: `make-ten-race` drills the pairs that make ten
+   (1 and 9, 2 and 8 …) and `adding-to-twenty` teaches filling ten first. This
+   activity is where that pair knowledge stops being a fact to recall and becomes
+   a CHOICE — which two of these three do I start with. The trick says so, and
+   the hints name make-ten by the same words the other two use, because a
+   strategy called something different in two places reads as two strategies. */
+const addThreeNumbers = {
+  id: 'add-three-numbers', title: 'Adding Three Numbers', kind: 'book', grade: '1', strand: S[0],
+  glyph: '⊕',
+  skill: 'Adding three one-digit numbers, and choosing which two to add first.',
+  trick: 'Add two of them first, then add the last one. You may start with ANY two — so look for a pair that makes ten, because that is the easiest pair to start from.',
+  blurb: 'Three numbers at once. Find the pair that makes ten and start there.',
+  ccss: ['1.OA.A.2', '1.OA.B.3'],
+  im: [2, 3],
+  refs: ['im-scope-sequence', 'im-k5', 'fuchs-2012-timed', 'codding-2011'],
+  theory: 'Three addends are where the associative property stops being a fact about arithmetic and becomes a decision the child makes. The sum is fixed; the route is not, and choosing the route is the skill.',
+  roam: [{ task: 'fluencyArf', subscale: 'sum' }, { task: 'roamAlpaca', subscale: 'cat2' }],
+  evidence: 'Two standards, and both were gaps. 1.OA.A.2 (add three whole numbers whose sum is at most 20) was claimed by all-kinds-of-stories, which generated no three-addend item in 96 tries; the claim now sits on the activity that meets it. 1.OA.B.3 (use properties of operations as strategies) was not covered anywhere. The make-ten route is the same one adding-to-twenty already teaches and make-ten-race already drills, so this asks for no new strategy — only for the child to spot where to apply it. No efficacy trial sits behind the three-addend format specifically; it is in the standard, it is in IM Units 2 and 3, and it is what a first grader asked for.',
+  pages: 12, printItems: 4,   // measured: 5 spills to 10.63in of a 10.1in page
+  printMaxPages: 1,   // K/1 stay one page
+  printInstruction: 'Add two of them first, then add the last one.',
+  printInstructions: {
+    input: 'Add two first, then add the last. Write the answer.',
+    /* Both, because both are on the page: a `choice` prints its stem and an
+       answer line, and this stem carries the three pairs. Saying only "circle"
+       leaves the box unexplained; saying only "write" ignores that circling is
+       easier for a six-year-old. */
+    choice: 'Circle the pair you would add first, or write it in the box.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 5;
+
+    // A trio where exactly one pair makes ten, so "find the pair" has one answer.
+    const makeTenTrio = () => {
+      /* NOT 5. a = 5 makes b = 5 too, and then the three pairs are 5+5, 5+c and
+         5+c — the same option twice, which is the repeated-option defect the
+         checker looks for and which reads as a broken question on the page. */
+      const a = r.pick([2, 3, 4, 6, 7, 8]);
+      const b = 10 - a;
+      /* The third addend must not make ten with either of the others, or the
+         "which pair" question has two right answers — which is the tied-answer
+         defect the checker looks for. */
+      let c = r.int(2, 9);
+      let guard = 0;
+      while ((a + c === 10 || b + c === 10 || c === a || c === b) && guard++ < 40) c = r.int(2, 9);
+      return r.shuffle([a, b, c]);
+    };
+
+    // 0 — the total, with a make-ten pair sitting in it
+    if (mode === 0) {
+      const [x, y, z] = makeTenTrio();
+      const pair = [x, y, z].find((n, k) => [x, y, z].some((m, j) => j !== k && n + m === 10));
+      const other = [x, y, z].filter((n, k) => k !== [x, y, z].indexOf(pair)).find((n) => pair + n === 10);
+      const rest = x + y + z - pair - other;
+      return {
+        type: 'input', accept: null,
+        prompt: `${x} + ${y} + ${z} = ?`,
+        answer: String(x + y + z),
+        placeholder: 'total',
+        printStem: `${x} + ${y} + ${z} = ____`,
+        hint: 'Two of these three make ten. Find them, add them first, then add the one that is left.',
+        explain: `${x + y + z}. ${pair} and ${other} make 10, and then 10 and ${rest} is ${x + y + z}. Starting with the pair that makes ten is the easy route.`,
+      };
+    }
+
+    // 1 — which pair would you add first? The strategy, on its own.
+    if (mode === 1) {
+      const [x, y, z] = makeTenTrio();
+      const pairs = [[x, y], [y, z], [x, z]];
+      const right = pairs.find(([a, b]) => a + b === 10);
+      const say = ([a, b]) => `${a} and ${b}`;
+      return {
+        type: 'choice',
+        prompt: `${x} + ${y} + ${z}<br>Which two would you add first?`,
+        choices: r.shuffle(pairs.map(say)),
+        answer: say(right),
+        /* The options are written into the STEM, because a choice item prints as
+           a write-in and never emits its options — so "circle the pair" is only
+           a true instruction if the pairs are on the page. */
+        printStem: `${x} + ${y} + ${z} — which two first: ${
+          pairs.slice(0, -1).map(say).join(', ')}, or ${say(pairs[pairs.length - 1])}?`,
+        hint: 'You are looking for the two that make ten.',
+        explain: `${say(right)}, because they make 10. Then 10 and ${x + y + z - 10} is ${x + y + z}. You are allowed to start with any two, so start with the easiest.`,
+      };
+    }
+
+    // 2 — the two-step scaffold, written out. This is the page a first grader
+    //     brought in: add the first two, write it down, then add the last.
+    if (mode === 2) {
+      const x = r.int(2, 6), y = r.int(1, 4), z = r.int(1, 5);
+      const first = x + y;
+      return {
+        type: 'input', accept: null,
+        prompt: `${x} + ${y} + ${z}<br><span class="sub">Add the first two, then add the last one.</span>`,
+        answer: String(first + z),
+        /* Two blanks on paper, so the key needs two numbers — the running total
+           and the answer. `answer` stays the single value the screen marks. */
+        answerSay: `${first}, then ${first + z}`,
+        placeholder: 'total',
+        printStem: `${x} + ${y} + ${z}:&nbsp; ____ + ${z} = ____`,
+        hint: `Start at the left. ${x} and ${y} first, then add the ${z}.`,
+        explain: `${x} + ${y} is ${first}, and ${first} + ${z} is ${first + z}. Two small steps instead of one big one.`,
+      };
+    }
+
+    // 3 — a story with three quantities in it, which is what 1.OA.A.2 asks for
+    if (mode === 3) {
+      const [x, y, z] = makeTenTrio();
+      /* `.many`, not the bare field — `collectible` is `{one, many}` and
+         interpolating the object printed "[object Object]" in every story.
+         content/wordproblems.js has always used `{collectible.many}`; this was
+         the one place that did not. */
+      const thing = fill('{collectible.many}', ch);
+      const where = fill('{unit.one}', ch);
+      /* `{Actor}`, not `{Name}` — with Just math selected the name is the words
+         "Just math", so the story read "Just math found 8 counters". `actor` is
+         the field that carries a person for every pack, "Sam" when nobody is
+         chosen, which is what content/wordproblems.js has always used. */
+      const stem = fill(`{Actor} found ${x} ${thing} on one ${where}, ${y} on the next one and ${z} on the one after that.`, ch);
+      return {
+        type: 'input', accept: null, schema: 'partWhole',
+        prompt: `${esc(stem)} How many did ${esc(fill('{Actor}', ch))} find altogether?`,
+        answer: String(x + y + z),
+        placeholder: 'how many',
+        printStem: `${stem} How many altogether?`,
+        hint: 'Three numbers to put together. Add two of them first, and look for a pair that makes ten.',
+        explain: `${x + y + z} altogether. Two of the three make ten, so add those first and then add the last one on.`,
+      };
+    }
+
+    // 4 — the same three numbers in a different order. The point is that you do
+    //     NOT have to add again, which is the property rather than the sum.
+    const [x, y, z] = makeTenTrio();
+    const total = x + y + z;
+    return {
+      type: 'input', accept: null,
+      prompt: `${x} + ${y} + ${z} = ${total}.<br>So what is ${z} + ${x} + ${y}?`,
+      answer: String(total),
+      placeholder: 'total',
+      printStem: `${x} + ${y} + ${z} = ${total}.  So ${z} + ${x} + ${y} = ____`,
+      hint: 'Look carefully. Are they the same three numbers?',
+      explain: `${total}, the same as before. They are the same three numbers in a different order, and moving them round cannot change how many there are — so you do not have to add it again.`,
+    };
+  },
+};
+
+export default [addingToTwenty, addThreeNumbers, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard, clocksAndTime, dimesAndPennies];

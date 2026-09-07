@@ -26,7 +26,7 @@ measure a build you are still changing: a **responsive audit** (41 pages × 5 wi
 tap-target size, text size and SVG text contrast), a **problem-type test** (all ten types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
-client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (2,160
+client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (2,200
 cases — every activity × character × style × mode × sheet/key — failing anything
 taller or wider than one page of Letter, or whose last page is under 80% full).
 All three end with `CHECKS_RUN=<n>` — **if that is missing or zero the harness did
