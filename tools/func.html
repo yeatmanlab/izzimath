@@ -1318,6 +1318,117 @@ L.push('');
   }
 }
 
+/* ------------------------------------------------------- pick, clocks, coins
+   `pick` is the tenth problem type and the first whose options are figures, so
+   none of the existing per-type coverage touches it. Checked here rather than
+   in scripts/check.mjs because the renderer, the hit target and the accessible
+   name only exist once something has been drawn. */
+{
+  const pk = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('pick:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  try {
+    const W = await import('/assets/src/lib/widgets.js');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const opts = [
+      { id: 'a', figure: W.clockFace(3, 0, { size: 80 }) },
+      { id: 'b', figure: W.clockFace(4, 30, { size: 80 }) },
+      { id: 'c', figure: W.clockFace(9, 0, { size: 80 }) },
+    ];
+    let got = null;
+    RD.renderProblem(host, { type: 'pick', prompt: 'Which clock shows half past 4?',
+      options: opts, answer: 'b', answerSay: 'half past 4' }, (resp, ok) => { got = { resp, ok }; });
+    const buttons = [...host.querySelectorAll('button.pick')];
+    pk('renders one button per option', buttons.length === 3, buttons.length + ' buttons');
+    pk('the tap target clears the 24px floor',
+      buttons.every((b) => b.getBoundingClientRect().width >= 24 && b.getBoundingClientRect().height >= 24),
+      buttons[0] ? Math.round(buttons[0].getBoundingClientRect().width) + 'x' + Math.round(buttons[0].getBoundingClientRect().height) : '-');
+    /* The name comes from the figure's own label, so a screen-reader user reads
+       hand positions and still has to interpret them. A name of "half past 4"
+       would let them match strings instead of reading a clock. */
+    pk('each option is named by its figure, not by the answer',
+      buttons.every((b) => /short hand/.test(b.getAttribute('aria-label') || '')),
+      buttons[0]?.getAttribute('aria-label')?.slice(0, 40));
+    pk('the inner figure is not read twice',
+      buttons.every((b) => b.querySelector('svg')?.getAttribute('aria-hidden') === 'true'));
+    buttons[1].click();
+    pk('a right pick reports right', got && got.ok === true && got.resp === 'b', JSON.stringify(got));
+    pk('the chosen option is marked', buttons[1].classList.contains('right'));
+
+    const host2 = document.createElement('div');
+    document.body.appendChild(host2);
+    let got2 = null;
+    RD.renderProblem(host2, { type: 'pick', prompt: 'x', options: opts, answer: 'b' }, (resp, ok) => { got2 = ok; });
+    const b2 = [...host2.querySelectorAll('button.pick')];
+    b2[0].click();
+    pk('a wrong pick reports wrong and shows the right one',
+      got2 === false && b2[1].classList.contains('right') && b2[0].classList.contains('wrong'));
+
+    /* The coin sizes are the misconception. Measured on the rendered SVG, since
+       CSS is what broke it last time. */
+    const cwrap = document.createElement('div');
+    cwrap.innerHTML = W.COIN_KINDS.map((k) => W.coin(k, { size: 60 })).join('');
+    document.body.appendChild(cwrap);
+    const widths = {};
+    [...cwrap.querySelectorAll('svg')].forEach((sv, i) => { widths[W.COIN_KINDS[i]] = sv.getBoundingClientRect().width; });
+    pk('the dime draws smaller than the nickel', widths.dime < widths.nickel,
+      'dime ' + Math.round(widths.dime) + ' vs nickel ' + Math.round(widths.nickel));
+    pk('the drawn order is the real mint order',
+      widths.dime < widths.penny && widths.penny < widths.nickel && widths.nickel < widths.quarter,
+      Object.entries(widths).map(([k, v]) => k + ' ' + Math.round(v)).join(', '));
+    cwrap.remove(); host.remove(); host2.remove();
+  } catch (e) {
+    pk('harness itself', false, 'THREW ' + e.message);
+  }
+}
+
+/* ------------------------------------------------------------ the lessons
+   Animated, so the movement is the thing to check: a step that says "watch the
+   hand go round" and does not move it teaches nothing, and that shipped once. */
+{
+  const ls = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('lesson:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  try {
+    const LB = await import('/assets/src/mount/lesson.js');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    LB.renderLesson(host, 'time');
+    const hand = () => ({ h: host.querySelector('.lsn-hour')?.style.transform, m: host.querySelector('.lsn-min')?.style.transform });
+    const deg = (t) => Number(String(t || '').match(/-?[\d.]+/)?.[0] ?? 0);
+    ls('the clock is built', !!host.querySelector('.lsn-hour') && !!host.querySelector('.lsn-min'));
+    const start = hand();
+    for (let i = 0; i < 3; i++) host.querySelector('[data-next]').click();
+    const swept = hand();
+    ls('the sweep step turns the long hand a full circle',
+      Math.abs((deg(swept.m) - deg(start.m)) - 360) < 1,
+      'minute hand moved ' + (deg(swept.m) - deg(start.m)) + 'deg');
+    ls('and creeps the short hand one hour',
+      Math.abs((deg(swept.h) - deg(start.h)) - 30) < 1,
+      'hour hand moved ' + (deg(swept.h) - deg(start.h)) + 'deg');
+    host.querySelector('[data-next]').click();
+    const half = hand();
+    ls('the half-past step turns it half a circle',
+      Math.abs((deg(half.m) - deg(swept.m)) - 180) < 1, 'moved ' + (deg(half.m) - deg(swept.m)) + 'deg');
+    ls('and leaves the short hand between two numbers',
+      Math.abs(deg(half.h) % 30 - 15) < 1, 'hour hand at ' + deg(half.h) + 'deg');
+    host.querySelector('[data-back]').click();
+    ls('Back rewinds rather than sweeping on again', deg(hand().m) === deg(swept.m));
+    host.remove();
+
+    const host2 = document.createElement('div');
+    document.body.appendChild(host2);
+    LB.renderLesson(host2, 'money');
+    ls('the money lesson draws coins', host2.querySelectorAll('.lsn-coin svg').length >= 2,
+      host2.querySelectorAll('.lsn-coin svg').length + ' coins');
+    for (let i = 0; i < 4; i++) host2.querySelector('[data-next]').click();
+    const shown = [...host2.querySelectorAll('.lsn-coin svg')].map((s) => s.getBoundingClientRect().width);
+    ls('and the highlight does not resize them',
+      shown.length === 2 && Math.abs(Math.max(...shown) / Math.min(...shown) - 1.184) < 0.03,
+      'ratio ' + (Math.max(...shown) / Math.min(...shown)).toFixed(3) + ' (real 1.184)');
+    host2.remove();
+  } catch (e) {
+    ls('harness itself', false, 'THREW ' + e.message);
+  }
+}
+
 /* ---------------------------------------------------------- the character cup
    Client-rendered, so scripts/check.mjs cannot see it — same reason the profile
    panel is tested here. The two views have different rules and the difference is

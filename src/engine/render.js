@@ -2,7 +2,7 @@
 // the interaction, and calls back with (response, correct).
 
 import { numberLine, tickRange, numberBond, dots, tenFrame, esc } from '../lib/widgets.js';
-import { isCorrect } from '../../content/types.js';
+import { isCorrect, figureLabel } from '../../content/types.js';
 import { parseAnswer, cmpF, fracText } from '../lib/frac.js';
 
 const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
@@ -14,6 +14,45 @@ function check(problem, response) {
     return !!(got && want && cmpF(got, want) === 0);
   }
   return isCorrect(problem, response);
+}
+
+/* -------------------------------------------------------------------- pick
+   Choose among PICTURES. `choice` cannot do this: it renders each option
+   through esc() and matches on textContent, so its options can only ever be
+   words. Clock faces and coins need a type of their own.
+
+   Each option's accessible name is the FIGURE'S OWN aria-label, lifted out of
+   the SVG by figureLabel() rather than written a second time — see the note in
+   content/types.js. Briefly: a hand-written label beside a generated figure is
+   two descriptions of one picture and they drift; and a label reading "half
+   past 4" would let a screen-reader user answer "which clock shows half past
+   4?" by matching strings instead of reading a clock. The widget labels
+   describe where the hands point, so the reading still has to happen.
+
+   The inner SVG is hidden from the tree because the BUTTON carries the name;
+   leaving both would read the description twice. */
+function renderPick(host, p, cb) {
+  const wrap = el(`<div class="picks" role="group" aria-label="Answer choices"></div>`);
+  (p.options || []).forEach((o) => {
+    const name = o.say || figureLabel(o.figure);
+    const b = el(`<button class="pick" type="button" aria-label="${esc(name)}">${o.figure}</button>`);
+    b.querySelector('svg')?.setAttribute('aria-hidden', 'true');
+    b.addEventListener('click', () => {
+      if (wrap.dataset.locked) return;
+      wrap.dataset.locked = '1';
+      const ok = check(p, o.id);
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) {
+        [...wrap.children].forEach((x) => { if (x.dataset.id === String(p.answer)) x.classList.add('right'); });
+      }
+      [...wrap.children].forEach((x) => { if (x !== b && !x.classList.contains('right')) x.classList.add('dim'); });
+      cb(o.id, ok);
+    });
+    b.dataset.id = o.id;
+    wrap.appendChild(b);
+  });
+  host.appendChild(wrap);
+  return { reset: () => { delete wrap.dataset.locked; [...wrap.children].forEach((x) => { x.className = 'pick'; }); } };
 }
 
 /* ------------------------------------------------------------------ choice */
@@ -450,6 +489,7 @@ const RENDERERS = {
   choice: renderChoice, input: renderInput, numberline: renderNumberLine,
   compare: renderCompare, tap: renderTap, ordinal: renderOrdinal,
   bond: renderBond, truefalse: renderTrueFalse, boardmove: renderBoardMove,
+  pick: renderPick,
 };
 
 // Render the visual + prompt + interaction for one problem.

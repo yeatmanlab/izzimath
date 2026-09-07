@@ -14,6 +14,7 @@ import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, i
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
 import { CUP } from './content/leaderboard.js';
+import { LESSONS, LESSON_LINK } from './content/lessons.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
 const BASE = (process.env.BASE ?? '').replace(/\/$/, '');
@@ -329,6 +330,9 @@ for (const a of activities) {
         ${(a.ccss || []).map((c) => `<span class="tag">${esc(c)}</span>`).join('')}
         ${roamBadges(a)}
       </div>
+      ${a.lesson && LESSON_LINK[a.lesson] ? `<p class="lsnlink">
+        <span aria-hidden="true">◔</span>
+        <a href="${b}/learn/${a.lesson}/">${esc(LESSON_LINK[a.lesson])}</a></p>` : ''}
 
       <div class="stage" data-activity="${a.id}">
         <div class="sbar" data-bar></div>
@@ -677,6 +681,37 @@ write('ssdd/index.html', page({
     </div>
   </section>`,
 }));
+
+/* ------------------------------------------------------------- the lessons
+   /learn/<id>/ — the animated explanations, one page each. Addressable rather
+   than embedded, because a grade-2 or grade-3 child who is stuck has to be able
+   to get BACK to the grade-1 explanation; every time and money activity links
+   here. See the header of content/lessons.js for why these two topics get
+   movement when nothing else on the site does.
+
+   The body is rendered client-side, so the static page carries the title, the
+   lead and every caption as plain text. That is not just a no-JavaScript
+   fallback: it is the whole lesson in words, which is what makes it printable
+   and readable by a screen reader without depending on the player. */
+for (const lesson of Object.values(LESSONS)) {
+  write(`learn/${lesson.id}/index.html`, page({
+    base: b, active: '', title: lesson.title,
+    desc: `${lesson.title} — a short animated explanation for Izzi Math. ${lesson.lead}`,
+    crumbs: [{ label: 'Home', href: '/' }, { label: lesson.title }],
+    scripts: ['/assets/src/mount/lesson.js'],
+    body: `<section class="wrap sec" style="padding-top:24px">
+      <h1 style="font-size:30px">${esc(lesson.title)}</h1>
+      <p class="sub">${esc(lesson.lead)}</p>
+      <div data-lesson="${esc(lesson.id)}">
+        <ol class="lsn-static">${lesson.steps.map((st) =>
+          `<li><b>${esc(st.head)}</b> ${esc(st.say)}</li>`).join('')}</ol>
+        <p class="lsn-close">${esc(lesson.close)}</p>
+      </div>
+      <p class="sub" style="margin-top:26px">Nothing here is timed and there is nothing to get wrong.
+      When it makes sense, the practice is on the <a href="${b}/grades/">grade pages</a>.</p>
+    </section>`,
+  }));
+}
 
 /* --------------------------------------------------------------- the cup
    The one comparison the site permits: the four characters against each other,

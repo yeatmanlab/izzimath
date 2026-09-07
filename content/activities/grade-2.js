@@ -1,4 +1,5 @@
-import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc, band3 } from '../../src/lib/widgets.js';
+import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc, band3,
+  coin, coinRow, coinsValue, money, COINS, COIN_KINDS, pickRow } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -710,4 +711,213 @@ const countUpToTheTarget = {
   },
 };
 
-export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel, countUpToTheTarget];
+
+/* --------------------------------------------------- BOOK: money math (G2 S4)
+   2.MD.C.8 is the only money standard in K-3, and its own example is "if you
+   have 2 dimes and 3 pennies, how many cents do you have?" — so mode 2 is
+   that sentence, and the rest of the activity is what a child needs before and
+   after it.
+
+   THE MISCONCEPTION IS SIZE, NOT ARITHMETIC
+   The most reported error in early money work is that a bigger coin is worth
+   more, and US coinage is actively hostile here: the dime is the SMALLEST of
+   the four and beats both the penny and the nickel. src/lib/widgets.js draws
+   the four at their real mint diameters for that reason, and a check fails the
+   build if the drawn order stops matching. The animated lesson at /learn/money/
+   shows the equivalence the sources all recommend — five pennies laid against
+   one nickel — which is the part a printed sheet can only approximate.
+
+   WHAT HAS TO COME FIRST
+   Counting coins is skip counting wearing a hat: fives for nickels, tens for
+   dimes, twenty-fives for quarters. Every source says fluency there comes
+   first, which is why this sits at grade 2 behind the skip-counting work and
+   not at grade 1, where there is no money standard in either CCSS or IM.
+   Sort-then-count from the highest value is the recommended strategy, so
+   coinRow draws a handful biggest-first — the picture models the method.
+
+   NOTATION IS PART OF THE STANDARD. "Using $ and ¢ symbols appropriately" is
+   the standard's own wording, so mode 5 asks for it directly: cents under a
+   dollar take ¢, anything with a dollar in it takes $ with two decimal places.
+   money() in widgets.js is the single place that decides, and a check pins it. */
+const moneyMath = {
+  id: 'money-math', title: 'Money Math', kind: 'book', grade: '2', strand: S[3],
+  glyph: '¢',
+  lesson: 'money',
+  skill: 'Naming coins, counting a mixed handful, and writing amounts with $ and ¢.',
+  trick: 'Penny 1, nickel 5, dime 10, quarter 25. Sort biggest first, then count on — 25, 35, 40, 41. The dime is the small one and it still beats the nickel, so go by what a coin IS, never by how big it looks.',
+  printDensity: 'd2',
+  blurb: 'How much is in the handful? Count the coins, then write it down.',
+  ccss: ['2.MD.C.8'],
+  im: [6],
+  refs: ['im-scope-sequence', 'im-k5'],
+  theory: 'Coin value is arbitrary with respect to coin size, and children default to size. The four are always drawn at their real relative diameters so the picture cannot reinforce the error, and the strategy taught is sort-then-count from the highest value, which is what keeps a mixed handful tractable.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
+  evidence: 'No efficacy trial sits behind this activity and the site does not pretend otherwise. What the literature offers is descriptive and consistent: the size-versus-value confusion is the dominant early error, the fix is showing equivalence physically, coins should be met one at a time before being mixed, and counting a handful depends on prior skip-counting fluency. Those shape the ordering and the figures rather than supporting an effect size. The coverage argument is plain: money is 2.MD.C.8 and IM grade-2 Unit 6, and the catalogue had nothing on it at all — no penny, no nickel, no dime, no quarter.',
+  // Measured: four fits with room, five lands at 10.16in of a 10.10in page.
+  pages: 12, printItems: 4,
+  printInstruction: 'Count each handful. Write the amount with ¢ or $.',
+  printInstructions: {
+    input: 'How much is it? Write the amount.',
+    pick: 'Circle the coins that match.',
+    choice: 'Circle the answer.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 6;
+
+    /* A handful that stays inside grade 2's arithmetic and inside a child's
+       patience: at most two quarters, and a total under a dollar so the answer
+       is written in cents. */
+    const handful = () => {
+      /* A handful has to be WORTH COUNTING. The first version only checked the
+         total was under a dollar and that there were two coins, so it happily
+         produced two pennies and asked "how much money is this?" — a question
+         with nothing in it. Now: at least two different kinds, at least 11 cents
+         so a nickel or dime is involved, under a dollar so the answer is written
+         in cents, and no more than eight coins so a six-year-old can track it.
+         Retried against the seeded rng, so it stays deterministic. */
+      for (let tries = 0; tries < 12; tries++) {
+        const out = [];
+        for (let k = 0; k < r.int(0, 2); k++) out.push('quarter');
+        for (let k = 0; k < r.int(0, 2); k++) out.push('dime');
+        for (let k = 0; k < r.int(0, 2); k++) out.push('nickel');
+        for (let k = 0; k < r.int(0, 4); k++) out.push('penny');
+        const total = coinsValue(out);
+        if (total >= 11 && total < 100 && new Set(out).size >= 2 && out.length <= 8) return out;
+      }
+      // 41 cents: the same handful the lesson counts, so the fallback teaches too
+      return ['quarter', 'dime', 'nickel', 'penny'];
+    };
+
+    // 0 — count a mixed handful
+    if (mode === 0) {
+      const hand = handful();
+      const total = coinsValue(hand);
+      const counted = [...hand].sort((a, b) => COINS[b].value - COINS[a].value)
+        .reduce((acc, k) => { acc.run += COINS[k].value; acc.parts.push(acc.run); return acc; }, { run: 0, parts: [] })
+        .parts.join(', ');
+      return {
+        type: 'input', accept: null,
+        prompt: `How much money is this?${coinRow(hand, { size: 60 })}`,
+        visualWidth: 400,
+        answer: String(total),
+        placeholder: 'cents',
+        printStem: 'How much money is this?',
+        printVisual: coinRow(hand, { print: true, size: 44 }),
+        hint: 'Sort them biggest first, then count on from the biggest one.',
+        explain: `${money(total)}. Counting on from the biggest: ${counted}.`,
+      };
+    }
+
+    // 1 — which coin is this worth? Identification, one coin at a time.
+    if (mode === 1) {
+      const want = COIN_KINDS[r.int(0, 3)];
+      const opts = r.shuffle([...COIN_KINDS])
+        .map((k, n) => ({ id: 'abcd'[n], kind: k, figure: coin(k, { size: 62 }) }));
+      const answer = opts.find((o) => o.kind === want).id;
+      return {
+        type: 'pick',
+        prompt: `Which one is the <strong>${COINS[want].name}</strong>?`,
+        options: opts.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: `the ${COINS[want].name}, ${money(COINS[want].value)}`,
+        printStem: `Which one is the ${COINS[want].name}?`,
+        printVisual: pickRow(opts.map(({ id, kind }) => ({ id, figure: coin(kind, { print: true, size: 44 }) })), { print: true }),
+        hint: 'Go by what each coin is worth, not by how big it is.',
+        explain: `A ${COINS[want].name} is ${money(COINS[want].value)}. ${
+          want === 'dime' ? 'It is the smallest of the four and still worth more than the nickel.'
+            : want === 'nickel' ? 'It is bigger than the dime and worth less — size is no guide.'
+              : want === 'quarter' ? 'It is the biggest and worth the most, which is the only one that matches.'
+                : 'Everything else is counted in pennies.'}`,
+      };
+    }
+
+    // 2 — the standard's own sentence
+    if (mode === 2) {
+      const d = r.int(1, 4), pn = r.int(1, 4);
+      const total = d * 10 + pn;
+      const A = fill('{Actor}', ch);
+      const stem = `${A} has ${d} ${d === 1 ? 'dime' : 'dimes'} and ${pn} ${pn === 1 ? 'penny' : 'pennies'}. How many cents is that?`;
+      return {
+        type: 'input', accept: null,
+        prompt: esc(stem),
+        answer: String(total),
+        placeholder: 'cents',
+        printStem: stem,
+        printVisual: coinRow([...Array(d).fill('dime'), ...Array(pn).fill('penny')], { print: true, size: 40 }),
+        hint: 'Count the dimes in tens first, then add the pennies one at a time.',
+        explain: `${money(total)}. ${d} ${d === 1 ? 'dime' : 'dimes'} is ${d * 10} cents, and ${pn} more ${pn === 1 ? 'penny' : 'pennies'} makes ${total}.`,
+      };
+    }
+
+    // 3 — which handful makes the amount?
+    if (mode === 3) {
+      const right = handful();
+      const total = coinsValue(right);
+      const swap = (hand) => {
+        const out = [...hand];
+        out[r.int(0, out.length - 1)] = COIN_KINDS[r.int(0, 3)];
+        return coinsValue(out) === total ? [...out, 'penny'] : out;
+      };
+      const sets = [right, swap(right), swap(right), swap(right)];
+      const seen = new Set([total]);
+      const opts = r.shuffle(sets.map((hand, n) => ({ hand, right: coinsValue(hand) === total })))
+        .map((o, n) => ({ id: 'abcd'[n], ...o }));
+      /* Only one option may hit the total, or the item has two right answers —
+         the defect the "exactly one right option" check exists for. Any decoy
+         that lands on the total gets a penny added until it does not. */
+      for (const o of opts) {
+        if (o.right) continue;
+        while (coinsValue(o.hand) === total || seen.has(coinsValue(o.hand))) o.hand = [...o.hand, 'penny'];
+        seen.add(coinsValue(o.hand));
+      }
+      const withFigs = opts.map((o) => ({ ...o, figure: coinRow(o.hand, { size: 34 }) }));
+      const answer = withFigs.find((o) => o.right).id;
+      return {
+        type: 'pick',
+        prompt: `Which coins make <strong>${money(total)}</strong>?`,
+        options: withFigs.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: money(total),
+        printStem: `Which coins make ${money(total)}?`,
+        printVisual: pickRow(withFigs.map((o) => ({ id: o.id, figure: coinRow(o.hand, { print: true, size: 26 }) })), { print: true }),
+        hint: `Count each set biggest first and stop when you reach ${money(total)}.`,
+        explain: `${money(total)} is ${[...withFigs.find((o) => o.right).hand]
+          .sort((a, b) => COINS[b].value - COINS[a].value)
+          .map((k) => COINS[k].name).join(' + ')}.`,
+      };
+    }
+
+    // 4 — spending, which is subtraction with a reason
+    if (mode === 4) {
+      const had = r.int(6, 19) * 5;              // a multiple of 5, so mental subtraction is fair
+      const spent = r.int(1, Math.floor(had / 5) - 1) * 5;
+      const A = fill('{Actor}', ch);
+      const stem = `${A} has ${money(had)} and spends ${money(spent)}. How much is left?`;
+      return {
+        type: 'input', accept: null,
+        prompt: esc(stem),
+        answer: String(had - spent),
+        placeholder: 'cents',
+        printStem: stem,
+        hint: `Count up from ${spent} to ${had}, or take the ${spent} away in tens and fives.`,
+        explain: `${money(had - spent)}. ${had} take away ${spent} is ${had - spent}.`,
+      };
+    }
+
+    // 5 — notation, which 2.MD.C.8 names explicitly
+    const cents = r.int(101, 275);
+    const dollarForm = money(cents);
+    const wrong = [`$${cents}`, `${cents}¢`, `$${(cents / 100).toFixed(1)}`];
+    return {
+      type: 'choice',
+      prompt: `How do you write <strong>${cents} cents</strong> with a dollar sign?`,
+      choices: r.shuffle([dollarForm, ...wrong.filter((w) => w !== dollarForm).slice(0, 3)]),
+      answer: dollarForm,
+      printStem: `Write ${cents} cents with a dollar sign.`,
+      hint: 'A hundred cents is one dollar. The two digits after the dot are the cents that are left over.',
+      explain: `${dollarForm}. ${cents} cents is ${Math.floor(cents / 100)} ${Math.floor(cents / 100) === 1 ? 'dollar' : 'dollars'} and ${cents % 100} cents, and cents always take two places after the dot.`,
+    };
+  },
+};
+
+export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel, countUpToTheTarget, moneyMath];

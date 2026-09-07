@@ -176,6 +176,14 @@ export function printProblem(p, i, { key = false } = {}) {
   }
 
   switch (p.type) {
+    /* `pick` prints like a choice: the stem, then the lettered options, then a
+       blank for the letter. It shares the case rather than getting its own
+       because the layout is identical — the only difference is that its
+       printVisual holds four figures instead of one, which is the generator's
+       problem and not this function's. Sharing it also means a pick item cannot
+       silently lose its figure the way it did on the first run, when the type
+       was simply absent from this switch and the checker caught it. */
+    case 'pick':
     case 'input':
     case 'choice': {
       // If the problem has a print-mode visual (a bar, an array, a ten-frame),

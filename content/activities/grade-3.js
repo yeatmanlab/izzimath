@@ -487,6 +487,7 @@ const roundAndReckon = {
 /* ------------------------------------------------- BOOK: time and data (G3 S5) */
 const timeAndData = {
   id: 'time-and-data', title: 'Time and Data', kind: 'book', grade: '3', strand: S[4],
+  lesson: 'time',
   glyph: '⏱',
   skill: 'Elapsed time to the minute, and reading a scaled bar graph.',
   trick: 'Count on in whole hours first, then add the minutes. Never try to subtract times in a column like ordinary numbers.',

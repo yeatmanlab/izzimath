@@ -10,6 +10,8 @@ import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, p
   from '../content/feedback.js';
 import { characters, characterList, getCharacter } from '../content/characters.js';
 import { standings, playerStandings, playerRowFrom, CUP, CUP_CHARACTERS } from '../content/leaderboard.js';
+import { coin, COINS, COIN_KINDS, money, clockFace, addMinutes } from '../src/lib/widgets.js';
+import { LESSONS } from '../content/lessons.js';
 import { CHAR_MERGE } from '../src/lib/profile.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
@@ -155,6 +157,130 @@ console.log('\n=== character palettes ===');
       console.log(`  ${id.padEnd(8)} label on gradient ${worst.toFixed(2)}:1 (${onsp} on ${stops.length} stops)`);
   }
   console.log(`  ${Object.keys(characters).length} palettes agree with the CSS · primary accents all distinguishable`);
+}
+
+/* ---------------------------------------------------- clocks, coins, lessons
+   Two figures here carry a misconception INSIDE THEIR GEOMETRY, so getting the
+   drawing wrong teaches the error the activity exists to correct.
+
+   Coins: the most reported misconception in early money work is that a bigger
+   coin is worth more, and the dime is the smallest of the four while beating
+   the penny and the nickel. The drawn order must be the real mint order —
+   dime < penny < nickel < quarter — and NOTHING may scale a coin afterwards.
+   That second half is not hypothetical: the lesson highlighted the focused coin
+   with `transform: scale(1.14)`, which against the real 1.18 nickel-to-dime
+   ratio made the two measure 75px and 63px before the scale and 75px and 72px
+   after it — visually identical, on the one step whose whole point is that the
+   dime is smaller. It was caught by measuring the rendered width in a browser,
+   which is exactly the class of thing no DOM assertion sees.
+
+   Clocks: the label describes the HAND POSITIONS, not the time, because "clock
+   showing 3:30" hands a screen-reader user the answer, and because where the
+   short hand sits is the thing children misread. */
+console.log('\n=== clocks and coins ===');
+{
+  const drawn = (k) => Number(coin(k).match(/width="([0-9.]+)"/)[1]);
+  const order = [...COIN_KINDS].sort((a, b) => drawn(a) - drawn(b));
+  if (order.join(',') !== 'dime,penny,nickel,quarter') {
+    fail('coins', `drawn smallest-first as ${order.join(' < ')} — the real order is dime < penny < nickel < quarter, and a dime drawn bigger than a nickel teaches the misconception`);
+  }
+  // the values must be the real ones, or every sum on every sheet is wrong
+  const want = { penny: 1, nickel: 5, dime: 10, quarter: 25 };
+  for (const [k, v] of Object.entries(want)) {
+    if (COINS[k]?.value !== v) fail('coins', `${k} is ${COINS[k]?.value} cents, not ${v}`);
+  }
+  // and nothing may resize a coin in CSS
+  const css = fs.readFileSync(new URL('../src/styles/site.css', import.meta.url), 'utf8');
+  const coinRules = css.split('\n').filter((l) => /\.lsn-coin|\.coinrow/.test(l));
+  for (const l of coinRules) {
+    if (/scale\(|width:|height:|font-size/.test(l) && !/border-radius/.test(l)) {
+      fail('coins', `a CSS rule resizes a coin, which destroys the size comparison: ${l.trim().slice(0, 72)}`);
+    }
+  }
+
+  /* $ and ¢ used APPROPRIATELY is the literal wording of 2.MD.C.8: cents under
+     a dollar, dollars-and-cents at or above one. Writing 135¢ or $0.35 would
+     teach the notation error the standard names. */
+  const notation = [[1, '1\u00a2'], [99, '99\u00a2'], [100, '$1.00'], [135, '$1.35'], [250, '$2.50']];
+  for (const [c, wantStr] of notation) {
+    if (money(c) !== wantStr) fail('coins', `${c} cents formats as ${money(c)}, expected ${wantStr}`);
+  }
+
+  /* The clock label must not state the time. Attributes, never the conclusion —
+     the same rule the geometry figures follow. */
+  let handfulsSeen = 0;
+  let clocks = 0;
+  for (const [h, m] of [[3, 0], [2, 30], [4, 15], [10, 20], [12, 0]]) {
+    const label = clockFace(h, m).match(/aria-label="([^"]*)"/)[1];
+    clocks++;
+    if (new RegExp(`\\b${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}\\b`).test(label)) {
+      fail('clocks', `the clock label states the time (${label}) — it must describe the hands instead`);
+    }
+    if (!/short hand/.test(label) || !/long hand/.test(label)) {
+      fail('clocks', `the clock label does not say where both hands point: ${label}`);
+    }
+    /* Half past is the misconception: the short hand must be described as
+       BETWEEN two numbers, never as pointing at one. */
+    if (m !== 0 && !/between/.test(label)) {
+      fail('clocks', `at ${h}:${String(m).padStart(2, '0')} the short hand is between two numbers and the label does not say so: ${label}`);
+    }
+  }
+
+  /* Clock arithmetic has to wrap at 12, or a word problem says 13 o'clock. */
+  for (const [h, m, add, wh, wm] of [[4, 0, 120, 6, 0], [11, 30, 60, 12, 30], [12, 0, 60, 1, 0], [11, 0, 120, 1, 0]]) {
+    const got = addMinutes(h, m, add);
+    if (got.h !== wh || got.m !== wm) {
+      fail('clocks', `${h}:${String(m).padStart(2, '0')} plus ${add} minutes gave ${got.h}:${String(got.m).padStart(2, '0')}, expected ${wh}:${String(wm).padStart(2, '0')}`);
+    }
+  }
+
+  /* A handful of coins has to be worth counting. The generator's first version
+     checked only that the total was under a dollar and that there were two
+     coins, and produced "how much money is this?" over two pennies — legal,
+     deterministic, and not a question. Read off the rendered figure's own
+     label, which lists the coins, so this measures what a child is actually
+     shown. */
+  {
+    let handfuls = 0;
+    const acts = activities.filter((a) => a.id === 'money-math');
+    for (const a of acts) {
+      for (const cid of CHARS) {
+        for (let i = 0; i < (a.pages ?? 10); i++) {
+          for (const s0 of [8817, 1, 7, 4242, 31337]) {
+            const sd = deriveSeed(s0, `p${i}`);
+            let p; try { p = a.generate(sd, i, getCharacter(cid), rng(sd), s0); } catch { continue; }
+            const label = String(p.visual ?? p.printVisual ?? '').match(/aria-label="([^"]*)"/)?.[1];
+            if (!label || !/penn|nickel|dime|quarter/.test(label)) continue;
+            if (!/how much money/i.test(String(p.prompt ?? p.printStem ?? ''))) continue;
+            handfuls++;
+            const kinds = ['penn', 'nickel', 'dime', 'quarter'].filter((k) => label.includes(k)).length;
+            const cents = Number(p.answer);
+            if (kinds < 2) fail(a.id, `i=${i} asks how much a handful is worth and it is all one coin: ${label}`);
+            if (cents < 11) fail(a.id, `i=${i} asks how much a handful is worth and it comes to ${cents} cents: ${label}`);
+            if (cents >= 100) fail(a.id, `i=${i} handful comes to ${cents} cents, which is past a dollar and past the grade`);
+          }
+        }
+      }
+    }
+    if (acts.length && !handfuls) fail('money-math', 'no count-the-handful items were found to check');
+    handfulsSeen = handfuls;
+  }
+
+  /* Every lesson has to read correctly as words, because the built page carries
+     the captions as text and that is what a screen reader and a printer get. */
+  let lessonSteps = 0;
+  for (const [id, l] of Object.entries(LESSONS)) {
+    if (!l.title || !l.lead || !l.close) fail(`lesson:${id}`, 'missing a title, lead or close');
+    if (!l.steps?.length) { fail(`lesson:${id}`, 'has no steps'); continue; }
+    l.steps.forEach((st, k) => {
+      lessonSteps++;
+      if (!st.head || !st.say) fail(`lesson:${id}`, `step ${k + 1} has no head or say`);
+      if (!st.show) fail(`lesson:${id}`, `step ${k + 1} has nothing to show`);
+      if (st.say && st.say.length < 24) fail(`lesson:${id}`, `step ${k + 1} says too little to stand as text: ${st.say}`);
+    });
+  }
+  console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words`);
 }
 
 /* ------------------------------------------------------------- the character cup

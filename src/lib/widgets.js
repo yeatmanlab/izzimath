@@ -248,6 +248,204 @@ export function numberBond(whole, a, b, { print = false, blank = null, size = 21
 }
 
 /* ---------------- bar chart (measurement and data strands) ---------------- */
+/* -------------------------------------------------------------------- money
+   THE RELATIVE SIZES ARE REAL, AND THAT IS NOT DECORATION. The single most
+   reported misconception in early money work is that a bigger coin is worth
+   more — and the dime is the smallest of the four while being worth more than
+   the penny and the nickel. Drawing them at equal size, or worse in value
+   order, would teach the error the activity exists to correct. Diameters are
+   the actual US mint figures in millimetres, scaled against the quarter:
+     dime 17.91  <  penny 19.05  <  nickel 21.21  <  quarter 24.26
+   The recommended fix is showing the equivalence physically, which is what
+   `coinRow` with `pennies` does: five pennies laid beside one nickel.
+
+   Print gets outlines only. The `plain` print style is black hairlines on white
+   with no tints at all, so a filled copper disc is not available there — the
+   coin is a ring with its value inside, which is also cheaper to print than a
+   flood fill would be. */
+export const COINS = {
+  penny:   { value: 1,  d: 19.05, name: 'penny',   plural: 'pennies', silver: false },
+  nickel:  { value: 5,  d: 21.21, name: 'nickel',  plural: 'nickels', silver: true },
+  dime:    { value: 10, d: 17.91, name: 'dime',    plural: 'dimes',   silver: true },
+  quarter: { value: 25, d: 24.26, name: 'quarter', plural: 'quarters', silver: true },
+};
+export const COIN_KINDS = ['penny', 'nickel', 'dime', 'quarter'];
+
+/* Cents as a child writes them, and the two notations are not
+   interchangeable: 2.MD.C.8 asks for $ and ¢ used APPROPRIATELY, which means
+   cents under a dollar take ¢ and anything with a dollar in it takes $ with two
+   decimal places. Getting this wrong in the copy would teach the error. */
+export function money(cents) {
+  if (cents < 100) return `${cents}\u00a2`;
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+/* The label names SIZE and COLOUR and the value written on the face — never the
+   coin's name, because on a "which one is the dime" item the name is the
+   answer. Knowing that the small silver 10-cent coin is called a dime is the
+   thing being learnt, so the label has to stop short of it. */
+/* Adjectives that read after "a". "a smallest silver coin" was the first
+   attempt and is not English; these still carry the ordering, which is the
+   information the child needs. */
+const sizeWord = (kind) => ({ dime: 'very small', penny: 'small', nickel: 'medium-sized', quarter: 'large' }[kind]);
+
+export function coin(kind, { print = false, size = 54, showValue = true } = {}) {
+  const c = COINS[kind];
+  if (!c) throw new Error(`coin: no such coin "${kind}"`);
+  const px = (c.d / COINS.quarter.d) * size;
+  const ink = print ? '#111' : (c.silver ? '#C6CEDA' : '#D08A5A');
+  const face = print ? 'none' : (c.silver ? 'rgba(198,206,218,.16)' : 'rgba(208,138,90,.18)');
+  const label = `a ${sizeWord(kind)} ${c.silver ? 'silver' : 'copper'} coin${
+    showValue ? ` with ${c.value} ${c.value === 1 ? 'cent' : 'cents'} written on it` : ''}`;
+  return `<svg viewBox="0 0 ${size} ${size}" width="${px.toFixed(1)}" height="${px.toFixed(1)}"
+    role="img" aria-label="${label}" style="vertical-align:middle">
+    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 2}" fill="${face}" stroke="${ink}" stroke-width="2.4"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 6}" fill="none" stroke="${ink}" stroke-width="0.9" opacity=".7"/>
+    ${showValue ? `<text x="${size / 2}" y="${size / 2 + 6}" text-anchor="middle" font-size="17"
+      font-weight="700" fill="${print ? '#111' : ink}">${c.value}\u00a2</text>` : ''}
+  </svg>`;
+}
+
+/* A handful of coins, drawn biggest-first because sort-then-count from the
+   highest value is the strategy every source recommends — the picture should
+   model the method rather than fight it. */
+export function coinRow(kinds, { print = false, size = 54, showValue = true } = {}) {
+  const order = [...kinds].sort((a, b) => COINS[b].value - COINS[a].value);
+  const total = order.reduce((n, k) => n + COINS[k].value, 0);
+  const said = COIN_KINDS.filter((k) => order.includes(k))
+    .map((k) => { const n = order.filter((o) => o === k).length; return `${n} ${n === 1 ? COINS[k].name : COINS[k].plural}`; })
+    .reverse().join(', ');
+  /* A SPAN, not a div. The prompt is rendered inside a <p>, and a block element
+     nested in a paragraph gets hoisted out by the HTML parser — the coins
+     vanished from the screen entirely while every check stayed green, which is
+     the same silent-figure-loss defect halves-and-quarters had when 520
+     characters of SVG were dropped. inline-flex keeps the layout identical. */
+  return `<span class="coinrow" role="img" aria-label="${said}" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;vertical-align:middle">${
+    order.map((k) => coin(k, { print, size, showValue })).join('')}</span>`;
+}
+
+export const coinsValue = (kinds) => kinds.reduce((n, k) => n + (COINS[k]?.value ?? 0), 0);
+
+/* Options laid out for PAPER. printProblem never renders an activity's options
+   — a choice item prints as a blank box unless the options are written into the
+   stem — so a picture-choice item has to supply its own. Lettered A to D, which
+   is what a workbook does and what lets the answer key name one.
+
+   The letters label the pictures on paper so a child has something to circle.
+   The KEY states the answer itself — "half past 4", not "B" — because the
+   letter depends on the shuffle, and an answer key that names a position rather
+   than a fact reads as two different answers to the same question. The
+   ambiguity check in scripts/check.mjs failed on exactly that when the key
+   carried the letter. */
+export function pickRow(options, { print = false } = {}) {
+  const letters = 'ABCD'.split('');
+  return `<div style="display:flex;gap:${print ? 14 : 12}px;justify-content:center;flex-wrap:wrap">${
+    options.map((o, i) => `<div style="text-align:center">
+      ${o.figure}
+      <div style="font:700 ${print ? 12 : 13}px ui-sans-serif,system-ui;color:${print ? '#111' : 'var(--txt2)'};margin-top:2px">${letters[i]}</div>
+    </div>`).join('')}</div>`;
+}
+
+/* ------------------------------------------------------------------- clocks
+   Extracted from grade-1's clocks-and-rulers, which drew its own inline and
+   could only show o'clock and half past. A dedicated time module needs any
+   minute, minute ticks, and a digital face to pair with the analog one —
+   research is consistent that showing both together is what builds the
+   association.
+
+   THE LABEL DESCRIBES THE HANDS, NOT THE TIME, and that is the whole point.
+   The old label said "clock showing 3:30", which handed a screen-reader user
+   the answer on every read-the-clock item; its own comment admitted this and
+   called it an accepted trade. The invariant in CLAUDE.md now says a figure
+   states its attributes and never its conclusion, and here the attributes are
+   also the pedagogy: the misconception that matters is reading 2:30 as "half
+   past three" because the SHORT HAND SITS BETWEEN 2 AND 3 and looks nearer the
+   3. A label that says where the hands point makes the item answerable without
+   answering it, and names the thing the child has to notice. */
+const clockPt = (deg, len) => [
+  50 + len * Math.sin(deg * Math.PI / 180),
+  50 - len * Math.cos(deg * Math.PI / 180),
+];
+
+/* Where the short hand really is, in words. "between 2 and 3" is the fact the
+   child must read; "at 3" would be the mistake they are prone to. */
+function handWords(h, m) {
+  const h12 = ((h + 11) % 12) + 1;            // 0 and 12 both read as 12
+  const next = h12 === 12 ? 1 : h12 + 1;
+  const short = m === 0 ? `pointing at ${h12}`
+    : `between ${h12} and ${next}${m === 30 ? ', halfway' : ''}`;
+  const long = m === 0 ? 'pointing straight up at 12'
+    : m === 30 ? 'pointing straight down at 6'
+      : m === 15 ? 'pointing straight right at 3'
+        : m === 45 ? 'pointing straight left at 9'
+          : `pointing at the ${m / 5} mark past 12`;
+  return `the short hand ${short}, the long hand ${long}`;
+}
+
+export function clockFace(h, m = 0, { print = false, size = 112, numerals = true, ticks = true } = {}) {
+  const ink = print ? '#111' : 'var(--a1)';
+  const faint = print ? '#555' : 'var(--txt3)';
+  const hAng = ((h % 12) * 30) + (m / 60) * 30;    // the hour hand CREEPS, which is the misconception
+  const mAng = (m / 60) * 360;
+  const [hx, hy] = clockPt(hAng, 24);
+  const [mx, my] = clockPt(mAng, 34);
+  let t = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img"
+    aria-label="clock with ${handWords(h, m)}">
+    <circle cx="50" cy="50" r="45" fill="none" stroke="${ink}" stroke-width="3"/>`;
+  if (ticks) {
+    /* Sixty ticks would be a grey ring at this size, so the five-minute marks
+       are long and the rest are short — which is also how a real clock helps a
+       child count in fives. */
+    for (let k = 0; k < 60; k++) {
+      const big = k % 5 === 0;
+      if (!big && !numerals) continue;
+      const [x1, y1] = clockPt(k * 6, big ? 38 : 41), [x2, y2] = clockPt(k * 6, 43);
+      t += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${faint}" stroke-width="${big ? 2 : 0.8}"/>`;
+    }
+  }
+  if (numerals) {
+    for (let k = 1; k <= 12; k++) {
+      const [x, y] = clockPt(k * 30, 31);
+      t += `<text x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}" text-anchor="middle"
+        font-size="10" font-weight="600" fill="${faint}">${k}</text>`;
+    }
+  }
+  // short hand thick and short, long hand thin and long: the only cue that says which is which
+  t += `<line x1="50" y1="50" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="${ink}" stroke-width="4.6" stroke-linecap="round"/>`;
+  t += `<line x1="50" y1="50" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`;
+  return t + `<circle cx="50" cy="50" r="3" fill="${ink}"/></svg>`;
+}
+
+/* The digital face, shown beside the analog one. Same label rule: it reads the
+   digits out, because on a digital clock the digits ARE the attributes — there
+   is no hand position to describe and nothing to misread. */
+export function clockDigital(h, m = 0, { print = false, size = 112 } = {}) {
+  const ink = print ? '#111' : 'var(--a1)';
+  const h12 = ((h + 11) % 12) + 1;
+  const text = `${h12}:${String(m).padStart(2, '0')}`;
+  return `<svg viewBox="0 0 100 52" width="${size}" height="${(size * 0.52).toFixed(0)}" role="img"
+    aria-label="digital clock reading ${text}">
+    <rect x="2" y="2" width="96" height="48" rx="7" fill="none" stroke="${ink}" stroke-width="3"/>
+    <text x="50" y="36" text-anchor="middle" font-size="27" font-weight="700"
+      font-family="ui-monospace, monospace" fill="${ink}">${text}</text></svg>`;
+}
+
+/* Add minutes to a time and wrap at 12, so a word problem can say "two hours
+   later" without the caller doing clock arithmetic and getting 13 o'clock. */
+export function addMinutes(h, m, delta) {
+  const total = (((h % 12) * 60 + m + delta) % 720 + 720) % 720;
+  const hh = Math.floor(total / 60);
+  return { h: hh === 0 ? 12 : hh, m: total % 60 };
+}
+
+export const timeWords = (h, m) => {
+  const h12 = ((h + 11) % 12) + 1;
+  if (m === 0) return `${h12} o'clock`;
+  if (m === 30) return `half past ${h12}`;
+  if (m === 15) return `quarter past ${h12}`;
+  return `${h12}:${String(m).padStart(2, '0')}`;
+};
+
 export function barChart(bars, { print = false, max = null, step = 1, width = 300, height = 150 } = {}) {
   const top = max ?? Math.max(...bars.map((b) => b.v)) + step;
   const padL = 30, padB = 22, bw = (width - padL - 8) / bars.length;

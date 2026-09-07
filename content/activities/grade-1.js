@@ -1,4 +1,5 @@
-import { tenFrame, doubleFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3 } from '../../src/lib/widgets.js';
+import { tenFrame, doubleFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3,
+  clockFace, clockDigital, addMinutes, timeWords, pickRow } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -350,6 +351,7 @@ const allKindsOfStories = {
 /* --------------------------------------------------- BOOK: clocks and rulers (G1 S4) */
 const clocksAndRulers = {
   id: 'clocks-and-rulers', title: 'Clocks and Rulers', kind: 'book', grade: '1', strand: S[3],
+  lesson: 'time',
   glyph: '◷',
   skill: 'Telling the time to the hour and half hour, and measuring length in whole units.',
   trick: 'The short hand says the hour. Half past is the long hand pointing straight down. When you measure, start at 0, not at the end of the ruler.',
@@ -527,4 +529,202 @@ const hundredBoard = {
   },
 };
 
-export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard];
+
+/* ------------------------------------------------- BOOK: clocks and time (G1 S4)
+   The dedicated time module. `clocks-and-rulers` stays as it is — it pairs
+   reading a clock with measuring a bar, which is how IM's grade-1 Unit 7 runs —
+   but a child who cannot tell the time needs more than every other page.
+
+   WHAT THE RESEARCH SAYS, AND WHAT THAT CHANGES
+   The acquisition order confirmed for grades 1-3 is hour, half hour, quarter
+   hour, five minutes, minute, and "past" is easier than "to". Grade 1 owns the
+   first two (1.MD.B.3), so nothing here goes past the half hour and nothing
+   says "to".
+
+   The misconception worth building around is not the minute hand. Children read
+   2:30 as "half past three", because they were told the short hand points at
+   the hour and right now it looks nearest the 3. So the short hand is the
+   subject of the trick, of the hint, of two of the six item kinds, and of the
+   animated lesson at /learn/time/ — which exists because the fix reported
+   everywhere is WATCHING THE HAND MOVE from the o'clock, and that is the one
+   thing a printed sheet cannot do.
+
+   1.MD.B.3 says analog AND digital, and the sources are consistent that showing
+   the two together is what builds the association, so mode 2 pairs them
+   directly rather than teaching them in separate halves. */
+const clocksAndTime = {
+  id: 'clocks-and-time', title: 'Clocks and Time', kind: 'book', grade: '1', strand: S[3],
+  glyph: '◔',
+  lesson: 'time',
+  skill: 'Telling and writing time to the hour and half hour, on analog and digital clocks.',
+  trick: 'The SHORT hand says the hour and the LONG hand says the minutes. When the short hand sits between two numbers, the hour is the smaller one — half past 4 has the short hand between the 4 and the 5.',
+  printDensity: 'd2',
+  printMaxPages: 1,   // K/1 stay one page
+  blurb: 'What time is it? Read the clock, then find the clock that matches.',
+  ccss: ['1.MD.B.3'],
+  im: [7],
+  refs: ['im-scope-sequence', 'im-k5'],
+  theory: 'The hour hand is the difficult one. It moves continuously, so at half past it sits between two numbers, and a child taught only "the short hand points at the hour" will read the larger of the two. Every item kind here either states where the short hand is or asks for it.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
+  evidence: 'Stated plainly, because the site does not claim what it cannot support: there is no efficacy trial behind this activity. What exists is a descriptive literature on the acquisition order — hour, half hour, quarter, five minutes, minute, confirmed across grades 1 to 3, with "past" easier than "to" — and consistent teaching guidance that the hour-hand error is corrected by watching the hand travel rather than by being told. That is a claim about a mechanism, not an effect size, and it is why the animated lesson exists and why the ordering stops at the half hour. The coverage argument is the stronger one: 1.MD.B.3 asks for analog and digital, and the catalogue had one activity that mixed clocks with rulers.',
+  /* Measured, not chosen. At the screen figure size this fitted only two items
+     a page; giving the pick options their own 54px print figures took it to
+     five. Six is a cliff rather than a slope — 9.90in at five, 11.64in at six —
+     which is the same shape fold-and-sort found. */
+  pages: 12, printItems: 5,
+  printInstruction: 'Read each clock. The short hand is the hour.',
+  printInstructions: {
+    choice: 'What time does the clock say? Circle the answer.',
+    pick: 'Circle the clock that matches.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 6;
+    const h = r.int(1, 12);
+    const half = r.chance(0.5);
+    const m = half ? 30 : 0;
+    const nextH = h === 12 ? 1 : h + 1;
+
+    // 0 — read an analog clock
+    if (mode === 0) {
+      const right = timeWords(h, m);
+      const wrong = [
+        timeWords(h, half ? 0 : 30),                     // the other half of this hour
+        timeWords(nextH, m),                             // the next hour, same hands
+        half ? timeWords(nextH, 30) : timeWords(h === 1 ? 12 : h - 1, 0),
+      ].filter((w) => w !== right);
+      return {
+        type: 'choice',
+        prompt: `What time is it?${clockFace(h, m, { size: 150 })}`,
+        visualWidth: 170,
+        choices: r.shuffle([right, ...r.sample([...new Set(wrong)], 3)]),
+        answer: right,
+        printStem: 'What time is it?',
+        printVisual: clockFace(h, m, { print: true, size: 72 }),
+        hint: half
+          ? 'The long hand points straight down, so it is half past. The short hand is between two numbers — take the smaller one.'
+          : 'The long hand points straight up at the 12, so it is an o’clock. The short hand tells you which one.',
+        explain: half
+          ? `Half past ${h}. The long hand is halfway round, and the short hand is between the ${h} and the ${nextH} — it has left the ${h} but not reached the ${nextH}, so the hour is still ${h}.`
+          : `${h} o’clock. The long hand is straight up, so there are no extra minutes, and the short hand points at the ${h}.`,
+      };
+    }
+
+    // 1 — pick the clock that shows a stated time
+    if (mode === 1) {
+      const said = timeWords(h, m);
+      const decoys = [
+        { h, m: half ? 0 : 30 },
+        { h: nextH, m },
+        { h: h === 1 ? 12 : h - 1, m: half ? 30 : 0 },
+      ];
+      /* Two sets of figures, not one recoloured set. Print gets its own at 54px
+         because four clock faces at screen size took the sheet to 10.57in of a
+         10.1in page and forced printItems down to two — measured, not guessed.
+         `print: true` also gives the ink colours properly rather than by
+         string-replacing CSS variables out of the screen SVG. */
+      const opts = r.shuffle([{ h, m, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
+        .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96 }),
+          printFigure: clockFace(o.h, o.m, { print: true, size: 54 }), right: o.right }));
+      const answer = opts.find((o) => o.right).id;
+      return {
+        type: 'pick',
+        prompt: `Which clock shows <strong>${said}</strong>?`,
+        options: opts.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: said,
+        printStem: `Which clock shows ${said}?`,
+        printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
+        hint: half
+          ? 'Half past means the long hand points straight down.'
+          : 'An o’clock means the long hand points straight up at the 12.',
+        explain: half
+          ? `Half past ${h} has the long hand straight down and the short hand between the ${h} and the ${nextH}.`
+          : `${h} o’clock has the long hand straight up and the short hand on the ${h}.`,
+      };
+    }
+
+    // 2 — analog and digital say the same thing (1.MD.B.3 asks for both)
+    if (mode === 2) {
+      const said = timeWords(h, m);
+      const decoys = [{ h, m: half ? 0 : 30 }, { h: nextH, m }, { h: h === 1 ? 12 : h - 1, m }];
+      const opts = r.shuffle([{ h, m, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
+        .map((o, k) => ({ id: 'abcd'[k], figure: clockDigital(o.h, o.m, { size: 104 }),
+          printFigure: clockDigital(o.h, o.m, { print: true, size: 66 }), right: o.right }));
+      const answer = opts.find((o) => o.right).id;
+      return {
+        type: 'pick',
+        prompt: `This clock says <strong>${said}</strong>. Which digital clock says the same time?${clockFace(h, m, { size: 132 })}`,
+        visualWidth: 150,
+        options: opts.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: `${h}:${String(m).padStart(2, '0')}`,
+        printStem: `The clock says ${said}. Which digital clock says the same?`,
+        printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
+        hint: 'A digital clock writes the hour, then the minutes. Half an hour is 30 minutes.',
+        explain: `${said} is written ${h}:${String(m).padStart(2, '0')}. The hour comes first, then the minutes — and half an hour is 30 minutes, not 50.`,
+      };
+    }
+
+    // 3 — a word problem, whole hours only at this grade
+    if (mode === 3) {
+      const add = r.int(1, 3);
+      const then = addMinutes(h, m, add * 60);
+      const said = timeWords(h, m);
+      const decoys = [
+        addMinutes(h, m, (add + 1) * 60),
+        addMinutes(h, m, (add - 1) * 60 || 30),
+        { h: then.h, m: then.m === 30 ? 0 : 30 },
+      ];
+      const opts = r.shuffle([{ ...then, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
+        .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96 }),
+          printFigure: clockFace(o.h, o.m, { print: true, size: 54 }), right: o.right }));
+      const answer = opts.find((o) => o.right).id;
+      const stem = `It is ${said}. ${fill('{Actor}', ch)} gets dinner in ${add} ${add === 1 ? 'hour' : 'hours'}.`;
+      return {
+        type: 'pick',
+        prompt: `${esc(stem)} Which clock shows dinner time?`,
+        options: opts.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: timeWords(then.h, then.m),
+        printStem: `${stem} Which clock shows dinner time?`,
+        printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
+        hint: `Count on ${add} ${add === 1 ? 'hour' : 'hours'} from ${said}. The long hand ends up where it started.`,
+        explain: `${said} and ${add} more ${add === 1 ? 'hour' : 'hours'} is ${timeWords(then.h, then.m)}. Adding whole hours moves the short hand and leaves the long hand where it was.`,
+      };
+    }
+
+    // 4 — which hand is which. The vocabulary the other five kinds assume.
+    if (mode === 4) {
+      const askHour = r.chance(0.5);
+      const right = askHour ? 'the short hand' : 'the long hand';
+      return {
+        type: 'choice',
+        prompt: `Which hand tells you the <strong>${askHour ? 'hour' : 'minutes'}</strong>?${clockFace(h, m, { size: 132 })}`,
+        visualWidth: 150,
+        choices: r.shuffle(['the short hand', 'the long hand', 'both hands', 'the numbers round the edge']),
+        answer: right,
+        printStem: `Which hand tells you the ${askHour ? 'hour' : 'minutes'}? (short / long)`,
+        printVisual: clockFace(h, m, { print: true, size: 66 }),
+        hint: 'One hand is short and fat, the other is long and thin. They do different jobs.',
+        explain: askHour
+          ? 'The short hand tells you the hour. It moves slowly — all the way round takes twelve hours.'
+          : 'The long hand tells you the minutes. It moves quickly — all the way round takes one hour.',
+      };
+    }
+
+    // 5 — the misconception, asked directly and in words
+    const lo = r.int(1, 12);
+    const hi = lo === 12 ? 1 : lo + 1;
+    return {
+      type: 'choice',
+      prompt: `The short hand is <strong>between the ${lo} and the ${hi}</strong>, and the long hand points straight down. What time is it?`,
+      choices: r.shuffle([`half past ${lo}`, `half past ${hi}`, `${lo} o’clock`, `${hi} o’clock`]),
+      answer: `half past ${lo}`,
+      printStem: `The short hand is between the ${lo} and the ${hi} and the long hand points straight down. What time is it?`,
+      hint: 'The long hand straight down means half past. Now: which hour has the short hand not finished yet?',
+      explain: `Half past ${lo}. The short hand has left the ${lo} but has not reached the ${hi}, so the hour is still ${lo} — this is the one that catches people out.`,
+    };
+  },
+};
+
+export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard, clocksAndTime];

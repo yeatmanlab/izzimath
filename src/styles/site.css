@@ -715,6 +715,80 @@ footer.foot a:hover { color: var(--txt) }
   .fbk-panel { padding: 20px 16px }
 }
 
+/* ---------- pick: choosing among pictures ---------- */
+/* Sized so four clock faces fit two-up on a phone and four-up on a laptop. The
+   tap target is the whole card, not the figure, so a small coin is still an
+   easy press — the audit floor is 24px and these are far above it. */
+.picks { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 6px }
+.pick {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 108px; min-height: 108px; padding: 10px;
+  border: 1px solid var(--line2); border-radius: 16px; background: var(--glass);
+  cursor: pointer; transition: border-color .15s, background .15s, opacity .2s;
+}
+.pick:hover { border-color: var(--a1) }
+.pick.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent) }
+.pick.wrong { border-color: var(--pink); background: color-mix(in srgb, var(--pink) 14%, transparent) }
+.pick.dim { opacity: .4 }
+@media (max-width: 460px) { .pick { min-width: 88px; min-height: 88px; padding: 6px } }
+
+/* ---------- animated lessons ---------- */
+/* The hands are transitioned in JS so the duration can be zeroed for reduced
+   motion in one place; this file only carries the look. `.on` is the called-out
+   hand — thicker and in the ok colour, because the lesson keeps saying "look at
+   the SHORT hand" and a sentence alone does not point. */
+.lsn { max-width: 640px }
+.lsn-stage {
+  display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap;
+  min-height: 268px; padding: 18px 0 6px;
+}
+.lsn-hand { transition: transform .9s cubic-bezier(.32,.06,.24,1) }
+.lsn-hand.on { stroke: var(--ok); stroke-width: 6 }
+.lsn-min.on { stroke-width: 3.6 }
+.lsn-digital { display: flex; align-items: center }
+.lsn-step {
+  font: 600 11px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--txt3); margin-bottom: 8px;
+}
+.lsn-head { font-size: 22px; margin: 0 0 8px; line-height: 1.25 }
+.lsn-say { font-size: 15.5px; color: var(--txt2); line-height: 1.7; min-height: 4.6em }
+.lsn-foot { display: flex; gap: 10px; margin-top: 18px }
+.lsn-close {
+  margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line2); border-radius: 12px;
+  background: var(--glass); font-size: 14.5px; color: var(--txt); line-height: 1.65;
+}
+/* coins */
+.lsn-coins { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap }
+/* The called-out coin gets a RING, never a scale. `transform: scale(1.14)` was
+   the first attempt and it broke the lesson: the dime is 17.91mm against the
+   nickel's 21.21mm, a ratio of 1.18, so scaling the focused dime up by 1.14
+   made the two measure 72px and 75px — visually identical, on the one step
+   whose entire point is that the dime is SMALLER and worth more. Measured in
+   the browser; no DOM assertion would have noticed. Nothing in this lesson may
+   change a coin's drawn size. */
+.lsn-coin { transition: filter .3s, opacity .3s; display: inline-flex; border-radius: 50% }
+.lsn-coin.on { filter: drop-shadow(0 0 0 var(--ok)) drop-shadow(0 0 7px color-mix(in srgb, var(--ok) 70%, transparent)) }
+.lsn-coins:has(.on) .lsn-coin:not(.on) { opacity: .38 }
+.lsn-equiv { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center }
+.lsn-pennies { display: inline-flex; flex-wrap: wrap; max-width: 190px; gap: 3px; justify-content: center }
+.lsn-eqlabel { font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase; color: var(--txt3) }
+.lsn-eq { font-size: 26px; color: var(--txt3) }
+.lsn-run { font-family: var(--fdisp); font-size: 19px; color: var(--txt2); text-align: center; width: 100% }
+.lsn-run b { color: var(--a1); font-size: 23px }
+/* The link back, on every time and money activity from grade 2 up. */
+.lsnlink { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; margin-top: 4px }
+.lsnlink a { color: var(--a1); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--a1) 40%, transparent) }
+.lsnlink a:hover { border-bottom-color: var(--a1) }
+
+@media (prefers-reduced-motion: reduce) {
+  .lsn-hand, .lsn-coin { transition: none }
+}
+@media (max-width: 560px) {
+  .lsn-stage { min-height: 210px; gap: 14px }
+  .lsn-head { font-size: 19px }
+  .lsn-say { min-height: 6em }
+}
+
 /* ---------- the character cup ---------- */
 /* Each row is tinted with its OWN character's accent through --acc, set inline
    from characters.js, rather than reading --a1: --a1 is whichever character the
