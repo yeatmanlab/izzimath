@@ -23,6 +23,12 @@ const [S,A,C,R,RD,T,F,P,BG,FB]=await Promise.all([
 document.body.insertAdjacentHTML('afterbegin', S.SPRITES);
 document.documentElement.dataset.ch='kiwi';
 const host=document.getElementById('host'); const L=[]; let checks=0;
+/* Flush as we go. This harness wrote #out once, at the very end, so a hang was
+   invisible: the page showed "running…" and there was no way to tell which
+   assertion it had reached. Diagnosing one cost most of an afternoon. Half a
+   second of interval costs nothing and turns a hang into a last line. */
+setInterval(() => { const o = document.getElementById('out');
+  if (o && !/CHECKS_RUN/.test(o.textContent)) o.textContent = L.join('\n') + '\n  …running (' + checks + ' checks so far)'; }, 500);
 
 const samples={};
 for(const a of A.activities){
@@ -45,9 +51,13 @@ for(const a of A.activities){
     if(!samples[variant]) samples[variant]={p,from:a.id,variant};
   }
 }
+/* Every type needs an entry or its own-answer round trip feeds the problem
+   `undefined` and reports a failure that looks like a content bug. `pick`
+   answers with an option id, which is what isCorrect compares. */
 const correctResponse=(p)=>({
   choice:String(p.answer), input:String(p.answer), compare:p.answer, truefalse:p.answer,
   numberline:p.target, tap:p.answer??p.n, ordinal:p.answer??p.n, bond:p.answer, boardmove:p.answer,
+  pick:String(p.answer),
 }[p.type]);
 
 /* Walk the SAMPLES, not the type list: there is now more than one sample per
