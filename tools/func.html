@@ -248,6 +248,145 @@ L.push('');
   }
 }
 
+/* ORDERED BEFORE THE SLOW BLOCKS ON PURPOSE. The lesson tests used to sit at
+   the end of this file, behind the profile panel — which drives a real page in
+   an iframe and has a known stall around 159 checks. A check that sits behind a
+   stall never runs, which is a dead check with extra steps: the run reports a
+   pass, having measured nothing. These need no iframe and no network, so they
+   go first. */
+/* ------------------------------------------------------------ the lessons
+   Animated, so the movement is the thing to check: a step that says "watch the
+   hand go round" and does not move it teaches nothing, and that shipped once. */
+{
+  const ls = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('lesson:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  try {
+    const LB = await import('/assets/src/mount/lesson.js');
+    const { LESSONS } = await import('/assets/content/lessons.js');
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const api = LB.renderLesson(host, 'time');
+    const hand = () => ({ h: host.querySelector('.lsn-hour')?.style.transform, m: host.querySelector('.lsn-min')?.style.transform });
+    const deg = (t) => Number(String(t || '').match(/-?[\d.]+/)?.[0] ?? 0);
+    ls('the clock is built', !!host.querySelector('.lsn-hour') && !!host.querySelector('.lsn-min'));
+
+    /* DRIVEN OFF THE DATA, not off a click count. This block used to walk to
+       the sweep with `for (let i = 0; i < 3; i++) click()`, which silently
+       measured the wrong step the moment one was inserted ahead of it — and
+       inserting steps is exactly what a lesson does as it grows. And it settles
+       rather than waiting: requestAnimationFrame does not run in a hidden tab,
+       so anything that watched the frame loop would report a pass having
+       measured nothing. */
+    const steps = LESSONS.time.steps;
+    const sweeps = steps.map((st, k) => (st.sweep ? k : -1)).filter((k) => k >= 0);
+    ls('the time lesson has animated steps', sweeps.length >= 1, sweeps.length + ' of ' + steps.length);
+
+    // Every sweep has to actually move the long hand: a step captioned "watch
+    // it go round" that does not is the bug that shipped once already.
+    let moved = 0;
+    for (const k of sweeps) {
+      api.goto(k - 1); api.settle();
+      const before = deg(hand().m);
+      api.goto(k); api.settle();
+      const after = deg(hand().m);
+      if (after > before) moved++;
+      else ls('sweep at step ' + (k + 1) + ' moves the long hand forward', false,
+        before + 'deg -> ' + after + 'deg');
+    }
+    ls('every sweep moves the long hand forward', moved === sweeps.length, moved + '/' + sweeps.length);
+
+    // One whole lap across the two sweeps, and one hour on the short hand.
+    api.goto(sweeps[0] - 1); api.settle();
+    const s0 = hand();
+    api.goto(sweeps[sweeps.length - 1]); api.settle();
+    const s1 = hand();
+    ls('the sweeps together turn the long hand a full circle',
+      Math.abs((deg(s1.m) - deg(s0.m)) - 360) < 1, 'moved ' + (deg(s1.m) - deg(s0.m)) + 'deg');
+    ls('and creep the short hand one hour',
+      Math.abs((deg(s1.h) - deg(s0.h)) - 30) < 1, 'moved ' + (deg(s1.h) - deg(s0.h)) + 'deg');
+
+    /* THE READOUT AND THE HAND MUST AGREE, at every point of every sweep. This
+       is the property that matters: a counter reading 30 minutes beside a long
+       hand pointing at the 9 teaches the opposite of the lesson. Asserted
+       against the pure functions, so it holds mid-sweep and not just at rest. */
+    let disagree = 0;
+    for (const k of sweeps) {
+      const from = api.cumAt(k - 1), to = api.cumAt(k);
+      for (const p of [0, 0.3, 0.5, 0.8, 1]) {
+        const c = from + (to - from) * p;
+        const shown = api.readAt(c).mins % api.readAt(c).per;
+        const fromHand = ((api.anglesAt(c).minute % 360) + 360) % 360 / 6;
+        if (Math.abs(fromHand - shown) > 1.01) disagree++;
+      }
+    }
+    ls('the counter never disagrees with the long hand', disagree === 0, disagree + ' disagreements');
+
+    // The lap boundary has to DISPLAY 60. `gone % 60` is 0 there, so the naive
+    // version counted 59 and then 0 and never showed the number being taught.
+    const lap = steps.findIndex((st) => st.sweep && st.show.m === 0);
+    if (lap > 0) {
+      const r = api.readAt(api.cumAt(lap));
+      ls('a sweep that lands on the hour shows 60, not 0',
+        r.mins === r.per && r.hrs === 1, r.mins + ' of ' + r.per + ', ' + r.hrs + 'h');
+    }
+
+    const halfIdx = steps.findIndex((st) => st.show.m === 30);
+    api.goto(halfIdx); api.settle();
+    ls('the half-past step leaves the short hand between two numbers',
+      Math.abs(deg(hand().h) % 30 - 15) < 1, 'hour hand at ' + deg(hand().h) + 'deg');
+
+    /* Back then Next has to land where it started. It SETTLES before comparing,
+       because pressing Next onto a sweep step replays the sweep — correct
+       behaviour, and the reader asked for it — so the hands sit at the start
+       until frames run, and frames do not run in a hidden tab. Asserting the
+       un-settled position measured the animation rather than the round trip,
+       and failed for the wrong reason. */
+    api.goto(sweeps[sweeps.length - 1]); api.settle();
+    const atSweep = deg(hand().m);
+    host.querySelector('[data-back]').click();
+    host.querySelector('[data-next]').click();
+    api.settle();
+    ls('Back then Next settles where it started',
+      Math.abs(deg(hand().m) - atSweep) < 1, deg(hand().m) + 'deg vs ' + atSweep + 'deg');
+
+    /* RULE 2: the lesson is spoken by the chosen friend. Checked here because
+       the frame is rendered at runtime from the picker, so a11y.mjs reading the
+       built page cannot see it. */
+    ls('the caption sits in a named friend\u2019s frame',
+      !!host.querySelector('[data-whoname]') && !!host.querySelector('[data-voice] svg[data-avatar]'));
+    host.remove();
+
+    const host2 = document.createElement('div');
+    document.body.appendChild(host2);
+    const api2 = LB.renderLesson(host2, 'money');
+    ls('the money lesson draws coins', host2.querySelectorAll('.lsn-coin svg').length >= 2,
+      host2.querySelectorAll('.lsn-coin svg').length + ' coins');
+    const msteps = LESSONS.money.steps;
+    const mSweeps = msteps.map((st, k) => (st.sweep ? k : -1)).filter((k) => k >= 0);
+    ls('the money lesson animates too', mSweeps.length >= 1, mSweeps.length + ' of ' + msteps.length);
+    // Its animation is the equivalence: every penny laid out, counted.
+    let laid = 0;
+    for (const k of mSweeps) {
+      api2.goto(k); api2.settle();
+      const want = msteps[k].show.pennies;
+      const drawn = host2.querySelectorAll('.lsn-pennies svg').length;
+      if (drawn === want) laid++;
+      else ls('step ' + (k + 1) + ' lays out every penny', false, drawn + ' of ' + want);
+    }
+    ls('every coin sweep ends with all its pennies', laid === mSweeps.length, laid + '/' + mSweeps.length);
+
+    const cmp = msteps.findIndex((st) => (st.show.coins || []).length === 2);
+    api2.goto(cmp); api2.settle();
+    const shown = [...host2.querySelectorAll('.lsn-coin svg')].map((s) => s.getBoundingClientRect().width);
+    ls('and the highlight does not resize them',
+      shown.length === 2 && Math.abs(Math.max(...shown) / Math.min(...shown) - 1.184) < 0.03,
+      'ratio ' + (Math.max(...shown) / Math.min(...shown)).toFixed(3) + ' (real 1.184)');
+    host2.remove();
+  } catch (e) {
+    ls('harness itself', false, 'THREW ' + e.message);
+  }
+}
+
+
 L.push('');
 {
   const frame = document.createElement('iframe');
@@ -1388,54 +1527,6 @@ L.push('');
     cwrap.remove(); host.remove(); host2.remove();
   } catch (e) {
     pk('harness itself', false, 'THREW ' + e.message);
-  }
-}
-
-/* ------------------------------------------------------------ the lessons
-   Animated, so the movement is the thing to check: a step that says "watch the
-   hand go round" and does not move it teaches nothing, and that shipped once. */
-{
-  const ls = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('lesson:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
-  try {
-    const LB = await import('/assets/src/mount/lesson.js');
-    const host = document.createElement('div');
-    document.body.appendChild(host);
-    LB.renderLesson(host, 'time');
-    const hand = () => ({ h: host.querySelector('.lsn-hour')?.style.transform, m: host.querySelector('.lsn-min')?.style.transform });
-    const deg = (t) => Number(String(t || '').match(/-?[\d.]+/)?.[0] ?? 0);
-    ls('the clock is built', !!host.querySelector('.lsn-hour') && !!host.querySelector('.lsn-min'));
-    const start = hand();
-    for (let i = 0; i < 3; i++) host.querySelector('[data-next]').click();
-    const swept = hand();
-    ls('the sweep step turns the long hand a full circle',
-      Math.abs((deg(swept.m) - deg(start.m)) - 360) < 1,
-      'minute hand moved ' + (deg(swept.m) - deg(start.m)) + 'deg');
-    ls('and creeps the short hand one hour',
-      Math.abs((deg(swept.h) - deg(start.h)) - 30) < 1,
-      'hour hand moved ' + (deg(swept.h) - deg(start.h)) + 'deg');
-    host.querySelector('[data-next]').click();
-    const half = hand();
-    ls('the half-past step turns it half a circle',
-      Math.abs((deg(half.m) - deg(swept.m)) - 180) < 1, 'moved ' + (deg(half.m) - deg(swept.m)) + 'deg');
-    ls('and leaves the short hand between two numbers',
-      Math.abs(deg(half.h) % 30 - 15) < 1, 'hour hand at ' + deg(half.h) + 'deg');
-    host.querySelector('[data-back]').click();
-    ls('Back rewinds rather than sweeping on again', deg(hand().m) === deg(swept.m));
-    host.remove();
-
-    const host2 = document.createElement('div');
-    document.body.appendChild(host2);
-    LB.renderLesson(host2, 'money');
-    ls('the money lesson draws coins', host2.querySelectorAll('.lsn-coin svg').length >= 2,
-      host2.querySelectorAll('.lsn-coin svg').length + ' coins');
-    for (let i = 0; i < 4; i++) host2.querySelector('[data-next]').click();
-    const shown = [...host2.querySelectorAll('.lsn-coin svg')].map((s) => s.getBoundingClientRect().width);
-    ls('and the highlight does not resize them',
-      shown.length === 2 && Math.abs(Math.max(...shown) / Math.min(...shown) - 1.184) < 0.03,
-      'ratio ' + (Math.max(...shown) / Math.min(...shown)).toFixed(3) + ' (real 1.184)');
-    host2.remove();
-  } catch (e) {
-    ls('harness itself', false, 'THREW ' + e.message);
   }
 }
 

@@ -152,6 +152,31 @@ already exist, and a routine only needs a `ui` the registry knows.
   whose answers differ. That last one is the only mechanical way to ask "is this
   answerable?", and it earned its place immediately: the kite's two diagonals
   both run corner to corner and only one is a fold line.
+- **A lesson animates, and the chosen friend speaks it.** The animated lessons
+  at `/learn/` are the one place on this site that does not print, so each one
+  earns the screen twice over. **At least one step animates**, and the movement
+  has to carry something a still picture cannot: the clock sweeps because the
+  fix for the hour-hand misconception is watching the short hand creep, and the
+  coin lesson lays ten pennies down one at a time because the fix for "the
+  bigger coin is worth more" is physical equivalence. Not decoration. **And
+  every step's words are spoken by the chosen friend** — avatar, name and accent
+  around the caption, with an optional second beat in the same voice. **One set
+  of words for all five**: the friend is the frame, not the author, because
+  per-character copy is five times the text and five times the drift, and the
+  words have to stand alone anyway — "Just math" takes the frame off and reads
+  the same sentences. That is the decision the printed sheet's trick box already
+  made, so paper and screen agree. `scripts/check.mjs` fails a lesson with no
+  animated step and one whose aside re-attributes itself; `tools/func.html`
+  checks the frame, because it is rendered at runtime and `a11y.mjs` cannot see
+  it. The reasoning is in the header of `content/lessons.js`.
+
+  A sweep is also the one place the player runs a frame loop, and the reason is
+  the counter rather than the movement: hands on a CSS transition with a
+  separately animated readout can disagree, and a counter saying 30 minutes
+  beside a hand pointing at the 9 teaches the opposite of the lesson. Both come
+  from one number, every frame. The arithmetic is exported as pure functions
+  because **`requestAnimationFrame` does not run in a hidden tab**, so a test
+  that watches the loop measures nothing and reports a pass.
 - **Games sit downstream of books.** A game never introduces a concept, always
   names its strategy first, and never starts a clock unprompted. A game must also
   say what it IS: `goal` is the task in the child's words, `strategy` is how to do

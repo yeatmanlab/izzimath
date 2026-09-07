@@ -812,7 +812,7 @@ footer.foot a:hover { color: var(--txt) }
   color: var(--txt3); margin-bottom: 8px;
 }
 .lsn-head { font-size: 22px; margin: 0 0 8px; line-height: 1.25 }
-.lsn-say { font-size: 15.5px; color: var(--txt2); line-height: 1.7; min-height: 4.6em }
+.lsn-say { font-size: 15.5px; color: var(--txt); line-height: 1.7; margin: 0 }
 .lsn-foot { display: flex; gap: 10px; margin-top: 18px }
 .lsn-close {
   margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line2); border-radius: 12px;
@@ -834,6 +834,64 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-pennies { display: inline-flex; flex-wrap: wrap; max-width: 190px; gap: 3px; justify-content: center }
 .lsn-eqlabel { font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase; color: var(--txt3) }
 .lsn-eq { font-size: 26px; color: var(--txt3) }
+/* The lesson is spoken by the chosen friend, so the caption sits in their frame
+   — avatar, name, words — rather than floating as narration. `.plain` is Just
+   math: the frame comes off and the same words read as a plain paragraph, which
+   is the one path that must not look like something is missing. */
+.lsn-voice {
+  display: flex; gap: 12px; align-items: flex-start; margin-top: 12px;
+  padding: 12px 14px; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--a1) 24%, transparent);
+  background: color-mix(in srgb, var(--a1) 6%, transparent);
+}
+.lsn-voice.plain { padding: 0; border: 0; background: none; gap: 0 }
+.lsn-voice.plain .lsn-face, .lsn-voice.plain .lsn-whoname { display: none }
+.lsn-face { flex: none }
+.lsn-face svg { width: 38px; height: 38px; display: block }
+/* THE MIN-HEIGHT LIVES HERE, not on the caption. It exists so the buttons
+   below do not jump as captions change length — but on the caption itself it
+   opened a hole between a short caption and the friend's follow-up line, which
+   read as a formatting fault. On the container the two lines sit together and
+   the slack falls below them. */
+.lsn-lines { min-width: 0; flex: 1; min-height: 5.8em }
+.lsn-whoname {
+  display: block; font: 600 11px/1 var(--fdisp); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--a1); margin-bottom: 5px;
+}
+/* A second beat from the same friend, not a second speaker. On --txt2, not
+   --txt3: --txt3 is 3.63:1 against the panel and this is body text, so it
+   fails AA. Secondary by SIZE and by sitting below the caption, which costs
+   nothing a reader with low vision has to pay for. */
+.lsn-aside { font-size: 13.5px; color: var(--txt2); line-height: 1.6; margin-top: 7px }
+.lsn-aside[hidden] { display: none }
+
+/* The sweep readout. Three cells, tabular numerals so the count does not jiggle
+   as digits change width, and every label at 11px — the floor the responsive
+   audit holds. `min-height` so the row appearing and disappearing between steps
+   does not shift the clock above it. */
+.lsn-read {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  margin: 4px 0 2px; min-height: 58px;
+}
+.lsn-read[hidden] { display: none }
+.lsn-cell {
+  flex: 1 1 110px; max-width: 170px; text-align: center;
+  border: 1px solid var(--line); border-radius: 11px; padding: 7px 9px; background: var(--glass);
+}
+.lsn-cell small {
+  display: block; font: 600 11px/1.3 var(--fdisp); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--txt3); margin-bottom: 3px;
+}
+.lsn-cell b {
+  display: block; font-family: var(--fdisp); font-size: 22px; color: var(--a1);
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.lsn-cell b i { font-style: normal; font-size: 12px; color: var(--txt3); margin-left: 4px }
+@media (max-width: 460px) {
+  .lsn-cell { flex: 1 1 86px; padding: 6px 6px }
+  .lsn-cell b { font-size: 19px }
+}
+
 .lsn-run { font-family: var(--fdisp); font-size: 19px; color: var(--txt2); text-align: center; width: 100% }
 .lsn-run b { color: var(--a1); font-size: 23px }
 /* The route to the lesson, in two weights. LOUD is the default: a reader who

@@ -4,6 +4,7 @@
 // unreachable ROAM subscale, NaN leaking into a problem.
 
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { activities, STRANDS } from '../content/activities/index.js';
 import { ROUTINES, ROUTINE_IDS, warmUpFor, WODB_QUAD_COUNT, LADDER_COUNT } from '../content/routines.js';
 import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, plainUrl, formUrl, mailUrl, plainText }
@@ -277,10 +278,37 @@ console.log('\n=== clocks and coins ===');
       if (!st.head || !st.say) fail(`lesson:${id}`, `step ${k + 1} has no head or say`);
       if (!st.show) fail(`lesson:${id}`, `step ${k + 1} has nothing to show`);
       if (st.say && st.say.length < 24) fail(`lesson:${id}`, `step ${k + 1} says too little to stand as text: ${st.say}`);
+      /* RULE 2: the frame already says who is speaking, so an aside must NOT
+         say it again. These began in the third person — "{Name} says the long
+         hand does all the running" — from a first design where the aside was a
+         separate voice beside a neutral narrator. Once the whole caption moved
+         into the friend's frame that rendered as "FLAME SAYS / Flame says…",
+         which is how it was spotted: on the page, not in the code.
+         The re-skin is the frame, not the words, so a placeholder is not
+         wanted here and an earlier check demanding one was what forced the
+         third person in the first place. */
+      if (st.aside && /^\{?[Nn]ame\}?\s+says|^\{Name\}/.test(st.aside)) {
+        fail(`lesson:${id}`, `step ${k + 1}'s aside attributes itself again — the frame already says whose voice this is: ${st.aside}`);
+      }
+      /* An "aside without a say leaves Just math an empty step" assertion was
+         written here and deleted: `!st.say` already fails two lines up, so it
+         could never be the check that fired. Dead by construction, and a dead
+         check reads as coverage. */
     });
   }
+  /* RULE 1: every lesson animates something. The format's whole justification is
+     movement that a printed sheet cannot carry, so a lesson with no animated
+     step is a page of prose at a URL — see the header of content/lessons.js. */
+  let animated = 0;
+  for (const [id, l] of Object.entries(LESSONS)) {
+    const sweeps = (l.steps || []).filter((st) => st.sweep).length;
+    const asides = (l.steps || []).filter((st) => st.aside).length;
+    if (!sweeps) fail(`lesson:${id}`, 'has no animated step — the format exists for movement a still picture cannot carry, so a lesson without one is prose at a URL');
+    if (!asides) fail(`lesson:${id}`, 'gives the chosen friend nothing to say — every lesson carries a voice, see the header of content/lessons.js');
+    animated += sweeps;
+  }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate`);
 }
 
 /* ------------------------------------------------------------- the character cup
@@ -2143,6 +2171,44 @@ console.log('\n=== badge legibility ===');
     }
   }
   console.log(`  ${n} character x category pairs · worst ${worst.r.toFixed(2)}:1 (${worst.where})`);
+}
+
+/* ------------------------------------------------ the client modules parse
+   NOTHING ELSE IN `npm run verify` PARSES THEM, and that is how a syntax error
+   in src/mount/lesson.js got past all three checkers: check.mjs imports
+   content/, a11y.mjs reads built HTML, links.mjs reads hrefs, and build.mjs
+   copies these files verbatim. So the lesson page rendered its static fallback,
+   the player never ran, and everything stayed green. A backtick inside an HTML
+   comment inside a template literal was all it took.
+
+   `node --check` rather than `await import`, because importing EXECUTES: the
+   first version of this check did that and four mount modules failed on
+   `window is not defined`. They only ever run in a browser and touch the DOM at
+   import on purpose, so the honest question is whether they parse — not whether
+   they survive a runtime they will never see. */
+console.log('\n=== the client modules parse ===');
+{
+  const dirs = ['src/mount', 'src/lib', 'src/engine'];
+  const root = new URL('../', import.meta.url).pathname;
+  let seen = 0, broken = 0;
+  for (const d of dirs) {
+    let names = [];
+    try { names = fs.readdirSync(root + d).filter((f) => f.endsWith('.js')); } catch { continue; }
+    for (const f of names.sort()) {
+      seen++;
+      try {
+        execFileSync(process.execPath, ['--check', `${root}${d}/${f}`], { stdio: 'pipe' });
+      } catch (e) {
+        const msg = String(e.stderr || e.message).split('\n').find((l) => /Error/.test(l)) || 'failed to parse';
+        fail(`${d}/${f}`, `does not parse: ${msg.trim()}`);
+        broken++;
+      }
+    }
+  }
+  if (!seen) fail('client modules', 'none were found to parse — an empty result is not a pass');
+  // The count has to agree with the failures above it, or the summary is a
+  // constant dressed as a result.
+  console.log(`  ${seen - broken} of ${seen} modules under src/ parse${broken ? `, ${broken} BROKEN` : ''}`);
 }
 
 console.log(`\n=== distribution ===`);

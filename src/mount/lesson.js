@@ -23,8 +23,10 @@
  * hand move too?" is followed by one that states where it ended up.
  */
 
-import { LESSONS, lessonById, lessonSeenKey } from '../../content/lessons.js';
+import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT } from '../../content/lessons.js';
 import { clockFace, clockDigital, coin, COINS, coinsValue, money } from '../lib/widgets.js';
+import { currentCharacter } from '../lib/theme.js';
+import { characters, getCharacter, fill } from '../../content/characters.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduced = () => typeof matchMedia === 'function'
@@ -59,13 +61,38 @@ export function renderLesson(host, id) {
   if (!lesson) { host.innerHTML = '<p class="sub">No such lesson.</p>'; return null; }
 
   let at = 0;
+  let dir = 1;   // which way the reader last moved, so a sweep only runs forward
 
   host.innerHTML = `
     <div class="lsn">
       <div class="lsn-stage" data-stage></div>
+      <!-- aria-hidden, because a sweep rewrites these numbers sixty times a
+           second and a live region would read every one of them. The meaning
+           reaches a screen reader twice over: each step's caption below is the
+           live region, and [data-readsay] announces the settled figures ONCE
+           when a sweep finishes. -->
+      <p class="lsn-read" data-read aria-hidden="true" hidden></p>
+      <span class="sr" data-readsay aria-live="polite"></span>
       <p class="lsn-step" data-count></p>
       <h2 class="lsn-head" data-head></h2>
-      <p class="lsn-say" data-say aria-live="polite"></p>
+      <!-- THE LESSON IS SPOKEN BY THE CHOSEN FRIEND. One voice, not a narrator
+           with a sidekick chipping in — that was the first attempt and the two
+           of them restated each other. The avatar sits BESIDE the words and
+           never inside the figure, which is the invariant in CLAUDE.md; and
+           "data-avatar" is the hook src/lib/theme.js already swaps on every
+           page, so changing friend in the header re-skins this for free.
+           ONE SET OF WORDS for all five. The friend is the frame — face, name,
+           colour — and per-character copy would be five times the text and
+           would drift. Same decision the printed sheet's trick box made.
+           With Just math the frame comes off and the same words read plain. -->
+      <div class="lsn-voice" data-voice>
+        <span class="lsn-face" aria-hidden="true"><svg data-avatar="idle"><use href="#av-none"/></svg></span>
+        <div class="lsn-lines">
+          <span class="lsn-whoname" data-whoname></span>
+          <p class="lsn-say" data-say aria-live="polite"></p>
+          <p class="lsn-aside" data-whosay hidden></p>
+        </div>
+      </div>
       <div class="lsn-foot">
         <button class="btn" type="button" data-back>&larr; Back</button>
         <button class="btn pri" type="button" data-next>Next &rarr;</button>
@@ -103,17 +130,127 @@ export function renderLesson(host, id) {
     return cum;
   }
 
-  function paintClock(show) {
+  /* ------------------------------------------------------------- the sweep
+     A SWEEP IS THE ONE PLACE THIS PLAYER RUNS A FRAME LOOP, and the reason is
+     the readout rather than the movement. The hands alone are better off on a
+     CSS transition — that is what the note at the top of this file says, and it
+     is still true. But a counter has to be animated too, and if the counter is
+     driven separately from the hands then a readout saying thirty minutes can
+     appear beside a long hand pointing at the 9. That teaches the opposite of
+     the lesson. So on a sweep both come from ONE number, recomputed every
+     frame, and they cannot disagree.
+
+     Linear, not eased. The point of the step is a steady count; easing would
+     make the minutes crawl, race and crawl again. */
+  let raf = null;
+  const stopSweep = () => { if (raf != null) { cancelAnimationFrame(raf); raf = null; } };
+  const startCum = () => elapsedAt(0);
+
+  // Duration from the distance swept, so a fifteen-minute run and a
+  // sixty-five-minute one do not take the same time on screen.
+  const sweepMs = (units) => Math.max(1200, Math.min(6000, Math.abs(units) * 90));
+
+  /* ONE RUNNER FOR BOTH LESSONS. The clock sweeps its hands and the coin lesson
+     lays out its pennies one at a time; they are the same shape of thing — a
+     value walked from `from` to `to` with the picture and its readout redrawn
+     from that one value — so they share the loop rather than growing a second
+     copy that could drift. `onFrame` gets the interpolated value; `onDone` gets
+     the final one, once, which is where anything announced to a screen reader
+     belongs. */
+  function runSweep(from, to, ms, onFrame, onDone) {
+    const t0 = performance.now();
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / ms);
+      onFrame(from + (to - from) * p);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else { raf = null; onDone(to); }
+    };
+    raf = requestAnimationFrame(tick);
+  }
+
+  function pointHands(cum, ms) {
+    const hour = clock.querySelector('.lsn-hour');
+    const min = clock.querySelector('.lsn-min');
+    const a = anglesAt(cum);
+    for (const [el, ang] of [[hour, a.hour], [min, a.minute]]) {
+      el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+      el.style.transformOrigin = '50px 50px';
+      el.style.transform = `rotate(${ang.toFixed(2)}deg)`;
+    }
+  }
+
+  /* The readout, from the same `cum` the hands just used. `gone` is measured
+     from the FIRST step rather than from midnight, so "hours gone by" answers
+     "since we started watching" — which is what the caption promises. The
+     minutes deliberately wrap at 60 and the hours tick up, because that carry is
+     the whole point of the step. */
+  /* PURE, AND SEPARATE FROM THE PAINT ON PURPOSE. requestAnimationFrame does
+     not run in a hidden tab, so a test that watches the frame loop measures
+     nothing and reports a pass — the exact shape of dead check this repo has
+     been bitten by before. The arithmetic that could actually be wrong is all
+     here, where tools/func.html can assert it directly at any point of the
+     sweep without waiting for a frame. */
+  function readAt(cum) {
+    const per = LESSON_COUNT.per;
+    const gone = Math.floor(Math.max(0, cum - startCum()));
+    /* 60 IS DISPLAYED, not skipped. `gone % 60` is 0 at the lap boundary, so a
+       sweep that lands on a whole hour counted 59 and then 0 and never showed
+       the number the whole step is about. At the boundary the lap reads full. */
+    const mins = gone > 0 && gone % per === 0 ? per : gone % per;
+    return {
+      mins,
+      hrs: Math.floor(gone / per),
+      h12: (Math.floor(cum / 60) % 12) || 12,
+      m60: Math.floor(cum) % 60,
+      per,
+    };
+  }
+
+  // Where the hands point for a given cum, in degrees. The readout and the
+  // hands take the same `cum`, which is what stops them disagreeing.
+  const anglesAt = (cum) => ({ hour: (cum / 720) * 360, minute: (cum / 60) * 360 });
+
+  function paintRead(cum) {
+    const r = readAt(cum);
+    const cell = (label, v, sub) => `<span class="lsn-cell"><small>${esc(label)}</small>`
+      + `<b>${esc(v)}${sub ? `<i>${esc(sub)}</i>` : ''}</b></span>`;
+    host.querySelector('[data-read]').innerHTML =
+      cell(LESSON_COUNT.minutes, r.mins, `${LESSON_COUNT.of} ${r.per}`)
+      + cell(LESSON_COUNT.hours, r.hrs)
+      + cell(LESSON_COUNT.now, `${r.h12}:${String(r.m60).padStart(2, '0')}`);
+    return r;
+  }
+
+  // Announced once, when the numbers have settled — never per frame.
+  function sayRead(r) {
+    host.querySelector('[data-readsay]').textContent =
+      `${r.mins} ${LESSON_COUNT.of} ${r.per} ${LESSON_COUNT.minutes}, `
+      + `${r.hrs} ${r.hrs === 1 ? LESSON_COUNT.hour1 : LESSON_COUNT.hours}, `
+      + `the clock says ${r.h12}:${String(r.m60).padStart(2, '0')}`;
+  }
+
+  function paintClock(show, { sweep = false } = {}) {
     const hour = clock.querySelector('.lsn-hour');
     const min = clock.querySelector('.lsn-min');
     const cum = elapsedAt(at);
-    const hAng = (cum / 720) * 360;
-    const mAng = (cum / 60) * 360;
-    const ms = reduced() ? 0 : 900;
-    for (const [el, ang] of [[hour, hAng], [min, mAng]]) {
-      el.style.transition = `transform ${ms}ms cubic-bezier(.32,.06,.24,1)`;
-      el.style.transformOrigin = '50px 50px';
-      el.style.transform = `rotate(${ang.toFixed(2)}deg)`;
+    const read = host.querySelector('[data-read]');
+    stopSweep();
+    read.hidden = !lesson.steps[at].count;
+
+    if (sweep && !reduced() && at > 0) {
+      const from = elapsedAt(at - 1);
+      /* Painted at the START before the loop begins, so the row is never blank.
+         requestAnimationFrame does not run in a hidden tab, so without this a
+         reader who switches away mid-sweep and comes back finds an empty
+         counter under a still clock. */
+      pointHands(from, 0);
+      paintRead(from);
+      runSweep(from, cum, sweepMs(cum - from),
+        (c) => { pointHands(c, 0); paintRead(c); },
+        (c) => sayRead(paintRead(c)));
+    } else {
+      pointHands(cum, reduced() ? 0 : 900);
+      if (!read.hidden) sayRead(paintRead(cum));
     }
     hour.classList.toggle('on', show.focus === 'hour' || show.focus === 'both');
     min.classList.toggle('on', show.focus === 'minute' || show.focus === 'both');
@@ -129,22 +266,91 @@ export function renderLesson(host, id) {
     }
   }
 
-  function paintCoins(show) {
+  /* THE COIN READOUT, and it is the money lesson's answer to the clock's
+     counter. Same two questions: how many have I counted, and what is that the
+     same as. */
+  function coinReadAt(shown, show) {
+    const want = show.pennies || 0;
+    const kind = show.coins?.[0];
+    return {
+      shown: Math.min(want, Math.floor(shown)),
+      want,
+      name: COINS[kind]?.name ?? '',
+      value: COINS[kind]?.value ?? 0,
+    };
+  }
+
+  function paintCoinRead(shown, show) {
+    const r = coinReadAt(shown, show);
+    const cell = (label, v, sub) => `<span class="lsn-cell"><small>${esc(label)}</small>`
+      + `<b>${esc(v)}${sub ? `<i>${esc(sub)}</i>` : ''}</b></span>`;
+    host.querySelector('[data-read]').innerHTML =
+      cell(LESSON_COUNT.pennies, r.shown, `${LESSON_COUNT.of} ${r.want}`)
+      + cell(LESSON_COUNT.same, `1 ${r.name}`);
+    return r;
+  }
+
+  const sayCoinRead = (r) => {
+    host.querySelector('[data-readsay]').textContent =
+      `${r.shown} ${LESSON_COUNT.of} ${r.want} ${LESSON_COUNT.pennies}, `
+      + `${LESSON_COUNT.same} 1 ${r.name}`;
+  };
+
+  function paintCoins(show, { sweep = false } = {}) {
     const total = coinsValue(show.coins);
+    const read = host.querySelector('[data-read]');
+    stopSweep();
+    read.hidden = !lesson.steps[at].count;
+
     /* The equivalence step: the pennies are shown BESIDE the coin they add up
-       to, because that is the comparison, not a sum to be worked out. */
-    const pennies = show.pennies
-      ? `<div class="lsn-equiv"><span class="lsn-eqlabel">${show.pennies} pennies</span>
-          <span class="lsn-pennies">${Array.from({ length: show.pennies }, () => coin('penny', { size: 34 })).join('')}</span>
-          <span class="lsn-eq" aria-hidden="true">=</span></div>` : '';
-    stage.innerHTML = `${pennies}
-      <div class="lsn-coins">${show.coins.map((k) =>
-        `<span class="lsn-coin${show.focus === k ? ' on' : ''}">${coin(k, { size: 86 })}</span>`).join('')}</div>
-      ${show.running ? `<p class="lsn-run">${
-        [...show.coins].sort((a, b) => COINS[b].value - COINS[a].value)
-          .reduce((acc, k) => { const run = (acc.run ?? 0) + COINS[k].value;
-            acc.parts.push(String(run)); acc.run = run; return acc; }, { parts: [] }).parts
-          .join(' &rarr; ')} &nbsp;=&nbsp; <b>${money(total)}</b></p>` : ''}`;
+       to, because that is the comparison, not a sum to be worked out. On a
+       sweep they arrive ONE AT A TIME, which is the thing this lesson's own
+       header claims a screen can do and paper cannot — pennies becoming the
+       coin, the way counters get pushed around a desk. */
+    const draw = (n) => {
+      const pennies = show.pennies
+        ? `<div class="lsn-equiv"><span class="lsn-eqlabel">${n} pennies</span>
+            <span class="lsn-pennies">${Array.from({ length: n }, () => coin('penny', { size: 34 })).join('')}</span>
+            <span class="lsn-eq" aria-hidden="true">=</span></div>` : '';
+      stage.innerHTML = `${pennies}
+        <div class="lsn-coins">${show.coins.map((k) =>
+          `<span class="lsn-coin${show.focus === k ? ' on' : ''}">${coin(k, { size: 86 })}</span>`).join('')}</div>
+        ${show.running ? `<p class="lsn-run">${
+          [...show.coins].sort((a, b) => COINS[b].value - COINS[a].value)
+            .reduce((acc, k) => { const run = (acc.run ?? 0) + COINS[k].value;
+              acc.parts.push(String(run)); acc.run = run; return acc; }, { parts: [] }).parts
+            .join(' &rarr; ')} &nbsp;=&nbsp; <b>${money(total)}</b></p>` : ''}`;
+    };
+
+    if (sweep && show.pennies && !reduced()) {
+      draw(1);                      // never a blank frame; see the note above
+      paintCoinRead(1, show);
+      // 260ms a penny, so five is brisk and ten is still watchable.
+      runSweep(0, show.pennies, Math.max(1200, show.pennies * 260),
+        (v) => { draw(Math.min(show.pennies, Math.floor(v) + 1)); paintCoinRead(v, show); },
+        (v) => { draw(show.pennies); sayCoinRead(paintCoinRead(v, show)); });
+    } else {
+      draw(show.pennies || 0);
+      if (!read.hidden) sayCoinRead(paintCoinRead(show.pennies || 0, show));
+    }
+  }
+
+  /* Just math takes the frame off rather than showing a blank face — the same
+     rule the printed sheet's trick box follows, where `named` gates the art.
+     The follow-up line is dropped there too, because it is written in the third
+     person about a named friend and `fill` would put "Just math" in its place. */
+  function paintWho(step) {
+    const box = host.querySelector('[data-voice]');
+    const id = currentCharacter();
+    const ch = getCharacter(id);
+    const named = id !== 'none';
+    box.classList.toggle('plain', !named);
+    host.querySelector('[data-whoname]').textContent = named ? `${ch.name} says` : '';
+    box.querySelector('use')?.setAttribute('href', `#av-${id}`);
+    const extra = host.querySelector('[data-whosay]');
+    const on = named && !!step.aside;
+    extra.hidden = !on;
+    extra.textContent = on ? fill(step.aside, ch) : '';
   }
 
   function paint() {
@@ -152,7 +358,12 @@ export function renderLesson(host, id) {
     host.querySelector('[data-count]').textContent = `Step ${at + 1} of ${lesson.steps.length}`;
     host.querySelector('[data-head]').textContent = step.head;
     host.querySelector('[data-say]').textContent = step.say;
-    if (isClock) paintClock(step.show); else paintCoins(step.show);
+    /* Only forward. Back is supposed to rewind honestly — see the handler
+       below — and re-running a six-second sweep because the reader asked to see
+       the previous state would be the opposite of that. */
+    paintWho(step);
+    const sweep = !!step.sweep && dir > 0;
+    if (isClock) paintClock(step.show, { sweep }); else paintCoins(step.show, { sweep });
     host.querySelector('[data-back]').disabled = at === 0;
     const next = host.querySelector('[data-next]');
     const last = at === lesson.steps.length - 1;
@@ -163,15 +374,42 @@ export function renderLesson(host, id) {
   }
 
   host.querySelector('[data-next]').addEventListener('click', () => {
-    if (at < lesson.steps.length - 1) { at++; paint(); }
+    if (at < lesson.steps.length - 1) { at++; dir = 1; paint(); }
   });
   host.querySelector('[data-back]').addEventListener('click', () => {
     /* Going back re-points the hands backwards, which is honest: the reader
        asked to see the previous state, not to watch another forward sweep. */
-    if (at > 0) { at--; paint(); }
+    if (at > 0) { at--; dir = -1; paint(); }
   });
   paint();
-  return { paint, get step() { return at; } };
+  // theme.js fires this when the header picker is used; the aside is copy in
+  // that friend's name, so it has to follow.
+  document.addEventListener('characterchange', () => paintWho(lesson.steps[at]));
+  return {
+    paint,
+    get step() { return at; },
+    /* For tools/func.html. It used to walk to the sweep by clicking Next a
+       hard-coded number of times, which broke the moment a step was inserted
+       ahead of it — and inserting steps is exactly what a lesson does as it
+       grows. */
+    goto(k) { at = Math.max(0, Math.min(lesson.steps.length - 1, k)); dir = 1; paint(); },
+    /* Finish wherever a sweep is: the end state, without waiting for frames.
+       Repaints the current step with the sweep off rather than reimplementing
+       the end state, which is what the first version did — and it returned
+       early for anything that was not a clock, so once the coin lesson started
+       animating too, settling it left one penny on the table. */
+    settle() {
+      stopSweep();
+      const st = lesson.steps[at];
+      if (isClock) paintClock(st.show, { sweep: false });
+      else paintCoins(st.show, { sweep: false });
+    },
+    // The arithmetic, for assertions. cumAt/readAt/anglesAt are the three things
+    // that can be wrong; none of them needs the animation to be running.
+    cumAt: elapsedAt,
+    readAt,
+    anglesAt,
+  };
 }
 
 function mount() {
