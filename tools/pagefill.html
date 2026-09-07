@@ -33,6 +33,16 @@
      the @media print block uses, NOT the preview's 7.5in-with-padding box. */
   #rig { position: absolute; left: -99999px; top: 0 }
   #rig .sheet { width: 7.6in; min-height: 9.9in; padding: 0; margin: 0; box-shadow: none; border-radius: 0 }
+  /* THE THIN CHECK NEEDS THE HEIGHT WITHOUT THE MIN-HEIGHT, and for a long time
+     it did not have it. `.sheet` is a column flexbox whose `.sh-body` is
+     `flex: 1`, so with min-height: 9.9in every page measures AT LEAST 9.9in —
+     the body stretches and the footer is pushed to the foot of the page. MIN_LAST
+     is 8.0in, so `hs[last] < MIN_LAST` was false on every one of the 2,160 cases
+     and at all three call sites. The check that exists to catch a page and a bit
+     could not fire, and it was hiding three real ones.
+     So heights are read twice: boxed, which is what paper does and what OVER
+     asks about, and natural, which is how much content there actually is. */
+  #rig.natural .sheet { min-height: 0 }
 </style>
 <h1>Print page fill</h1>
 <p class="sub">Every sheet, every character, both styles, both modes, sheet and key — measured at print geometry.</p>
@@ -56,6 +66,28 @@
   const fail = [], warn = [];
   let checks = 0;
 
+  /* Heights of the pages currently in the rig, both ways. Same DOM, two reads —
+     toggling the class costs one reflow and does not re-render, so this is not
+     the expensive half of the harness. */
+  function heights() {
+    const pages = [...rig.children];
+    rig.classList.remove('natural');
+    const boxed = pages.map((e) => e.getBoundingClientRect().height / DPI);
+    rig.classList.add('natural');
+    const natural = pages.map((e) => e.getBoundingClientRect().height / DPI);
+    rig.classList.remove('natural');
+    return { pages, boxed, natural };
+  }
+
+  /* THIN IS A MULTI-PAGE QUESTION. "A sheet may be two pages; it may never be a
+     page and a bit" — so what is wrong is a SECOND page carrying two problems,
+     not a single page that is short. A single page is short on purpose in three
+     places: Kindergarten, review mode, and any sheet whose item space is small.
+     Asserting fullness there would fail the design rather than a bug. A single
+     page under 6.5in of content is warned about instead, which is loud enough to
+     read and quiet enough not to fail a K sheet that is meant to be finishable. */
+  const LONELY = 6.5;
+
   for (const a of activities) {
     for (const chId of Object.keys(characters)) {
       const ch = getCharacter(chId);
@@ -64,8 +96,7 @@
           for (const key of [false, true]) {
             rig.innerHTML = sheet({ activity: a, seed: 8817, ch, base: '',
               siteUrl: 'https://izzimath.com', style, mode, key });
-            const pages = [...rig.children];
-            const hs = pages.map((e) => e.getBoundingClientRect().height / DPI);
+            const { pages, boxed: hs, natural } = heights();
             const ws = pages.map((e) => e.scrollWidth / DPI);
             const where = `${a.id} · g${a.grade} · ${chId} · ${style} · ${mode} · ${key ? 'key' : 'sheet'}`;
             checks++;
@@ -74,8 +105,11 @@
             const wide = Math.max(...ws);
             if (wide > LIMIT_W) fail.push(`WIDE  ${wide.toFixed(2)}in of ${LIMIT_W}in  ${where}`);
             // Only a child's sheet has to be full; a key can be short.
-            if (!key && hs[hs.length - 1] < MIN_LAST)
-              fail.push(`THIN  last page ${hs[hs.length - 1].toFixed(2)}in of ${LIMIT_H}in  ${where}`);
+            const last = natural[natural.length - 1];
+            if (!key && pages.length > 1 && last < MIN_LAST)
+              fail.push(`THIN  last of ${pages.length} pages holds ${last.toFixed(2)}in of content  ${where}`);
+            if (!key && pages.length === 1 && mode === 'practice' && last < LONELY)
+              warn.push(`LONELY one page holding ${last.toFixed(2)}in of content  ${where}`);
             if (!key && pages.length > (a.printPages ?? 1))
               warn.push(`SPLIT ${pages.length} pages, activity declares ${a.printPages ?? 1}  ${where}`);
           }
@@ -96,13 +130,13 @@
       for (const style of ['designed', 'plain']) {
         rig.innerHTML = sheet({ activity: a, seed: 8817, ch: getCharacter('kiwi'), base: '',
           siteUrl: 'https://izzimath.com', style, pages });
-        const els = [...rig.children];
-        const hs = els.map((e) => e.getBoundingClientRect().height / DPI);
+        const { pages: els, boxed: hs, natural } = heights();
         const where = `${a.id} · asked ${pages}pp · ${style}`;
         checks++;
         if (els.length !== pages) fail.push(`COUNT ${where} rendered ${els.length} pages, asked ${pages}`);
         if (Math.max(...hs) > LIMIT_H) fail.push(`OVER  ${Math.max(...hs).toFixed(2)}in  ${where}`);
-        if (hs[hs.length - 1] < MIN_LAST) fail.push(`THIN  last page ${hs[hs.length - 1].toFixed(2)}in  ${where}`);
+        const nlast = natural[natural.length - 1];
+        if (nlast < MIN_LAST) fail.push(`THIN  last of ${els.length} pages holds ${nlast.toFixed(2)}in of content  ${where}`);
       }
     }
     rig.innerHTML = '';
@@ -116,14 +150,18 @@
       for (const style of ['designed', 'plain']) {
         for (const key of [false, true]) {
           rig.innerHTML = ssddSheet({ set, ch: getCharacter(chId), siteUrl: 'https://izzimath.com', style, key });
-          const pages = [...rig.children];
-          const hs = pages.map((e) => e.getBoundingClientRect().height / DPI);
+          const { pages, boxed: hs, natural } = heights();
           const where = `ssdd:${set.id} · g${set.grade} · ${chId} · ${style} · ${key ? 'key' : 'sheet'}`;
           checks++;
           if (Math.max(...hs) > LIMIT_H) fail.push(`OVER  ${Math.max(...hs).toFixed(2)}in of ${LIMIT_H}in  ${where}`);
           if (Math.max(...pages.map((e) => e.scrollWidth / DPI)) > LIMIT_W) fail.push(`WIDE  ${where}`);
-          if (!key && hs[hs.length - 1] < MIN_LAST)
-            fail.push(`THIN  last page ${hs[hs.length - 1].toFixed(2)}in of ${LIMIT_H}in  ${where}`);
+          /* An SSDD sheet is one page with a scratch box that is `flex: 1 1 auto`
+             — it exists to soak up the slack, so a short natural height there
+             means a bigger space to work in rather than an unfilled page. Only a
+             multi-page one could be a page and a bit, and there are none today;
+             the check is kept so a two-page set does not slip in unmeasured. */
+          if (!key && pages.length > 1 && natural[natural.length - 1] < MIN_LAST)
+            fail.push(`THIN  last of ${pages.length} pages holds ${natural[natural.length - 1].toFixed(2)}in  ${where}`);
         }
       }
     }

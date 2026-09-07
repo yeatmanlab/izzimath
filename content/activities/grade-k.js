@@ -1,4 +1,5 @@
-import { tenFrame, dots, numberBond, numberLine, tickRange, array2d, esc } from '../../src/lib/widgets.js';
+import { tenFrame, dots, numberBond, numberLine, tickRange, array2d, esc,
+  clockFace, pickRow, pickDecoys } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -345,4 +346,127 @@ const storyTime = {
   },
 };
 
-export default [countingCrew, numberFriends, storyTime, shapeSorter, greatRace, tenFrameFlash, whichIsMore];
+
+/* ------------------------------------------------ BOOK: longer and shorter (K S5)
+   TIME AT KINDERGARTEN, WITH THE STANDARD STATED HONESTLY
+   CCSS has no time standard at K — K.MD is measurable attributes, direct
+   comparison and classification, and its own examples are length and weight.
+   Neither does IM. So this activity does NOT teach telling the time: reading a
+   clock is 1.MD.B.3 and belongs to grade 1, where Clocks and Time does it.
+
+   What it does is the K.MD work with time as the attribute. Duration IS a
+   measurable attribute, and "which takes longer, brushing your teeth or
+   sleeping?" is K.MD.A.2's direct comparison in the same shape as "which is
+   taller". The clock appears only as an object to recognise and as a pattern to
+   match — long hand straight up — never as something to read. That line is the
+   whole design, and the moment an item asks what time it says, it has become a
+   grade-1 activity sitting in the wrong year.
+
+   The events are things a five-year-old has done, because a comparison of two
+   durations is only checkable if the child has felt both. */
+const longerAndShorter = {
+  id: 'longer-and-shorter', title: 'Longer and Shorter', kind: 'book', grade: 'K', strand: S[4],
+  glyph: '◷',
+  skill: 'Comparing how long things take, putting a day in order, and knowing a clock when you see one.',
+  trick: 'Some things are quick and some things take ages. You do not need numbers to say which is longer — you just need to have done both.',
+  printDensity: 'd2',
+  printMaxPages: 1,   // K/1 stay one page
+  blurb: 'Which takes longer? What comes first? And which one is the clock?',
+  ccss: ['K.MD.A.1', 'K.MD.A.2'],
+  im: [1],
+  refs: ['im-scope-sequence', 'im-k5'],
+  theory: 'Time is a measurable attribute before it is a number. A child who can say that sleeping takes longer than a sneeze has the idea that durations can be compared, which is what reading a clock will later put numbers to. Comparing before measuring is the order K.MD uses for length, and it is the order used here.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
+  evidence: 'Said plainly: there is NO Common Core time standard at Kindergarten, and no Illustrative Mathematics unit either. This activity is mapped to K.MD.A.1 and K.MD.A.2 — describing and directly comparing a measurable attribute — with duration as the attribute, which is a defensible reading of a standard whose own examples are length and weight, and not a claim that CCSS asks for time at K. It is here because several state frameworks do place clock familiarity at K, because grade 1 assumes it, and because comparing durations is genuine K.MD work. No item asks a Kindergarten child to read a clock; that is 1.MD.B.3 and Clocks and Time does it.',
+  pages: 8, printItems: 7,
+  printInstruction: 'Which one takes longer? Circle it.',
+  printInstructions: {
+    choice: 'Circle the answer.',
+    pick: 'Circle the clock that matches.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 4;
+
+    /* Quick things and long things, kept far apart on purpose. "Eating lunch"
+       against "eating dinner" is not a fair question to put to a five-year-old;
+       "a sneeze" against "a night's sleep" is. */
+    const QUICK = ['a sneeze', 'clapping your hands', 'blinking', 'saying your name',
+      'putting on one sock', 'drinking a sip of water'];
+    const LONG = ['sleeping all night', 'a whole school day', 'growing a sunflower',
+      'a long car trip', 'winter', 'growing one year older'];
+
+    // 0 — which takes longer: the direct comparison K.MD.A.2 asks for
+    if (mode === 0) {
+      const quick = r.pick(QUICK), slow = r.pick(LONG);
+      const flip = r.chance(0.5);
+      return {
+        type: 'choice',
+        prompt: `Which one takes <strong>longer</strong>?`,
+        choices: flip ? [quick, slow] : [slow, quick],
+        answer: slow,
+        printStem: `Which takes longer: ${flip ? `${quick} or ${slow}` : `${slow} or ${quick}`}?`,
+        hint: 'Think about doing both. Which one would still be going when the other had finished?',
+        explain: `${slow[0].toUpperCase()}${slow.slice(1)} takes much longer. ${quick[0].toUpperCase()}${quick.slice(1)} is over almost straight away.`,
+      };
+    }
+
+    // 1 — which takes SHORTER, so the question is not always the same question
+    if (mode === 1) {
+      const quick = r.pick(QUICK), slow = r.pick(LONG);
+      const flip = r.chance(0.5);
+      return {
+        type: 'choice',
+        prompt: `Which one is <strong>quicker</strong>?`,
+        choices: flip ? [slow, quick] : [quick, slow],
+        answer: quick,
+        printStem: `Which is quicker: ${flip ? `${slow} or ${quick}` : `${quick} or ${slow}`}?`,
+        hint: 'One of these is finished before you can count to five.',
+        explain: `${quick[0].toUpperCase()}${quick.slice(1)} is quicker. ${slow[0].toUpperCase()}${slow.slice(1)} goes on for ages.`,
+      };
+    }
+
+    // 2 — the order of a day, which is time without any measuring
+    if (mode === 2) {
+      const DAY = [
+        ['you wake up', 'morning'], ['you eat breakfast', 'morning'],
+        ['you eat lunch', 'the middle of the day'], ['you eat dinner', 'evening'],
+        ['you go to bed', 'night'], ['the sun comes up', 'morning'], ['the stars come out', 'night'],
+      ];
+      const [what, when] = r.pick(DAY);
+      const parts = ['morning', 'the middle of the day', 'evening', 'night'];
+      return {
+        type: 'choice',
+        prompt: `When does this happen: <strong>${esc(what)}</strong>?`,
+        choices: r.shuffle([when, ...pickDecoys(when, parts)]),
+        answer: when,
+        printStem: `When does this happen: ${what}? (morning / middle of the day / evening / night)`,
+        hint: 'Think about your own day, from waking up to going to sleep.',
+        explain: `${what[0].toUpperCase()}${what.slice(1)} happens in the ${when === 'the middle of the day' ? 'middle of the day' : when}.`,
+      };
+    }
+
+    /* 3 — the o'clock PATTERN, and deliberately not the time. A child is asked
+       which clock has its long hand pointing straight up, which is looking at a
+       picture rather than reading it. Naming the hour would make this grade 1's
+       activity. */
+    const upH = r.int(1, 12);
+    const decoys = [{ h: upH, m: 30 }, { h: upH, m: 15 }, { h: upH, m: 45 }];
+    const opts = r.shuffle([{ h: upH, m: 0, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
+      .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96, numerals: false }),
+        printFigure: clockFace(o.h, o.m, { print: true, size: 66, numerals: false }), right: o.right }));
+    const answer = opts.find((o) => o.right).id;
+    return {
+      type: 'pick',
+      prompt: `On which clock is the <strong>long hand pointing straight up</strong>?`,
+      options: opts.map(({ id, figure }) => ({ id, figure })),
+      answer,
+      answerSay: 'the one with the long hand straight up at the top',
+      printStem: 'Circle the clock with the long hand pointing straight up.',
+      printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
+      hint: 'Two hands on each clock. Find the LONG one, then find the one pointing at the very top.',
+      explain: 'The long hand points straight up at the top. When it does that, grown-ups say "o’clock" — you will learn to read the rest next year.',
+    };
+  },
+};
+
+export default [countingCrew, numberFriends, storyTime, shapeSorter, greatRace, tenFrameFlash, whichIsMore, longerAndShorter];

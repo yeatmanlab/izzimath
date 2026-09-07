@@ -155,7 +155,34 @@ function rewardStrip(band, count, ch) {
 }
 
 /* One problem, print form. `key` renders the answer instead of a blank. */
-export function printProblem(p, i, { key = false } = {}) {
+/* Usable sheet width in CSS pixels, and the grid each density lays out in —
+   both taken from print.css rather than guessed, so a change there is a change
+   here. Used only by the pick case, to work out how many columns a row of
+   lettered figures actually needs. */
+const GRID = { d1: { cols: 2, gap: 26 }, d2: { cols: 3, gap: 20 }, d3: { cols: 4, gap: 18 }, d4: { cols: 5, gap: 18 } };
+const SHEET_PX = 7.6 * 96;
+const CELL_PAD = 28;        // .pr padding, both sides
+const PK_GAP = 10;          // .pkrow gap
+
+/* How many grid columns a pick row needs, read off the figures it contains.
+   The widths come from the emitted SVGs' own width attributes, so this is a
+   measurement of the actual markup rather than an assumption about it — the
+   same approach the figure labels take with their coordinates.
+
+   Without this the options shrank to fit whatever column they landed in, and on
+   a three-column grade-2 sheet four clock faces authored at 54px rendered at
+   36.5px — small enough that a child cannot tell where the hands point, on the
+   item whose whole question is where the hands point. */
+export function pickSpan(printVisual, density) {
+  const g = GRID[density] ?? GRID.d2;
+  const widths = [...String(printVisual ?? '').matchAll(/<svg[^>]*\swidth="(\d+(?:\.\d+)?)"/g)].map((m) => +m[1]);
+  if (!widths.length) return 1;
+  const need = widths.reduce((a, b) => a + b, 0) + (widths.length - 1) * PK_GAP;
+  const col = (SHEET_PX - g.gap * (g.cols - 1)) / g.cols - CELL_PAD;
+  return Math.max(1, Math.min(g.cols, Math.ceil(need / col)));
+}
+
+export function printProblem(p, i, { key = false, density = 'd2' } = {}) {
   const lbl = `<span class="lbl">${String.fromCharCode(97 + (i % 26))})</span>`;
   const A = (v) => (key ? `<span class="ansval">${esc(v)}</span>` : ansLine());
   /* Some stems carry their own blanks — "partial products are ____ and ____".
@@ -183,7 +210,22 @@ export function printProblem(p, i, { key = false } = {}) {
        problem and not this function's. Sharing it also means a pick item cannot
        silently lose its figure the way it did on the first run, when the type
        was simply absent from this switch and the checker caught it. */
-    case 'pick':
+    /* A PICK IS A LETTERED ROW OF FIGURES, so its width is set by how many
+       options it has, not by the column it lands in. Sharing the input/choice
+       case put four 48px clock faces plus their gaps into a 2.4in column of a
+       three-column grid: the row wrapped to two lines and ONE item cost 2.5in
+       of a 10.1in page, which is what held `time-to-five-minutes` to two items
+       a sheet. `pk` spans the grid so the options sit on one line. It is not
+       `wide` — that class stretches its svg to 100% and would inflate every
+       option to the full sheet. */
+    case 'pick': {
+      const stem = p.printStem ?? stripTags(p.prompt);
+      const span = pickSpan(p.printVisual, density);
+      return `<div class="pr pk"${span > 1 ? ` style="grid-column:span ${span}"` : ''}>${lbl}${stem}
+        ${p.printVisual ? `<div class="pv">${p.printVisual}</div>` : ''}${
+        key ? `<div class="keyline"><span class="ansval">${esc(answerText(p))}</span></div>` : ''}</div>`;
+    }
+
     case 'input':
     case 'choice': {
       // If the problem has a print-mode visual (a bar, an array, a ten-frame),
@@ -362,6 +404,15 @@ function collect(activity, seed, ch, n) {
    where it fits and carrying it over where it does not. A sheet is allowed to be
    two pages — what it is not allowed to be is a page and a bit, with two
    problems orphaned onto a second sheet of paper. */
+/* An EVEN split by item count, and it is not as naive as it looks — a weighted
+   split was tried and reverted. Page one carries the trick box and the worked
+   example and no later page carries either, so page one holds less and the last
+   page comes out short; giving page one 78% of a share balanced the heights and
+   pushed `time-and-data` page two to 11.13in, over the 10.1in limit. Item
+   heights vary too much between activities for one ratio to be safe in both
+   directions, and an overflow is worse than an airy last page.
+   The under-fill is real and measured — see docs/next/BACKLOG.md — and the fix
+   is a measured per-page count per activity, exactly as itemsForPages says. */
 function paginate(groups, pages) {
   if (pages <= 1) return [groups];
   const total = groups.reduce((t, g) => t + g.items.length, 0);
@@ -474,7 +525,7 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
     const worked = showExample
       ? `<div class="sh-example">
           <p class="ex-label">Worked example</p>
-          <div class="sh-grid ${density}">${printProblem(items[0], 0, { key: true })}</div>
+          <div class="sh-grid ${density}">${printProblem(items[0], 0, { key: true, density })}</div>
           ${items[0].explain && !items[0].printKeyWorking
             /* The panel renders the item AS A KEY, so an item carrying
                printKeyWorking has already printed its own working inside the
@@ -486,9 +537,22 @@ export function sheet({ activity, seed, ch, base, key = false, siteUrl, mode = '
       : '';
     const rest = showExample ? items.slice(1) : items;
     const offset = showExample ? 1 : 0;
+    /* A BLOCK OF PICKS LAYS OUT IN TWO COLUMNS, whatever the sheet's density.
+       A pick is a lettered row of figures and its width is set by the options,
+       not by the grade: four clock faces at 54px need 246px, which fits a
+       two-column sheet and does not fit a three- or four-column one. Both other
+       ways of resolving that were measured and both were worse — letting the
+       row shrink to the column rendered the faces at 36.5px on the item whose
+       question is where the hands point, and letting the cell span two columns
+       of three left the third empty on every row, which took `clocks-and-time`
+       from five items a page to three. Two columns wastes nothing and shrinks
+       nothing. */
+    const pickBlock = g.type === 'pick';
+    const gridCls = pickBlock ? `${density} pkg` : density;
+    const itemDensity = pickBlock ? 'd1' : density;
     const body = wide
-      ? rest.map((p, i) => printProblem(p, i + offset, { key })).join('')
-      : `<div class="sh-grid ${density}">${rest.map((p, i) => printProblem(p, i + offset, { key })).join('')}</div>`;
+      ? rest.map((p, i) => printProblem(p, i + offset, { key, density: itemDensity })).join('')
+      : `<div class="sh-grid ${gridCls}">${rest.map((p, i) => printProblem(p, i + offset, { key, density: itemDensity })).join('')}</div>`;
     // Younger children get a heading that says what the section IS, with the
     // instruction beside it. By grade 4 that reads as being talked down to, so
     // the big band keeps the instruction on its own.
@@ -715,8 +779,8 @@ function reviewSheet({ activity, seed, ch, key, siteUrl, problems, groups, style
     <p class="sh-inst"><span class="n">1</span><span>${mixed
       ? 'Work these out. Read each one carefully — they are not all the same kind.'
       : esc(fill(activity.printInstruction ?? 'Work these out.', ch))}</span></p>
-    ${narrow.length ? `<div class="sh-grid ${density}">${narrow.map((p, i) => printProblem(p, i, { key })).join('')}</div>` : ''}
-    ${wide.map((p, i) => printProblem(p, narrow.length + i, { key })).join('')}
+    ${narrow.length ? `<div class="sh-grid ${density}">${narrow.map((p, i) => printProblem(p, i, { key, density })).join('')}</div>` : ''}
+    ${wide.map((p, i) => printProblem(p, narrow.length + i, { key, density })).join('')}
   </div>`;
   return shell({
     activity, seed, ch, key, siteUrl, style, variant, band, blocks, count: order.length, problems: order,

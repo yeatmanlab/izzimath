@@ -121,6 +121,33 @@ See [`03-print-craft.md`](03-print-craft.md).
       the four procedures are distinct, which is the only thing that makes it an
       SSDD sheet rather than a worksheet in the format's clothes. Authored rather
       than generated because the format is cross-topic by construction.
+- [ ] **The last page of a multi-page sheet under-fills** — found 2026-09-06,
+      measured, not yet fixed. **30 activities in 201 of the harness's 2,454
+      cases** put less than 8in of content on their last page; the worst is
+      `place-value-palace`, whose second page holds **4.06in of a 10.1in page**
+      in the plain style. The invariant it breaks is the stated one: a sheet may
+      be two pages, never a page and a bit.
+
+      Why it was invisible until now: the page-fill harness's own rig set
+      `min-height: 9.9in` on every page, and `.sheet` is a column flexbox whose
+      `.sh-body` is `flex: 1`, so **every page measured at least 9.9in whatever
+      was on it** and the THIN check could not fail at any of its three call
+      sites. The rig now reads heights twice — boxed for `OVER`, natural for
+      `THIN` — and the check fires. Both halves were mutation-tested.
+
+      Why it is not fixed here: the cause is that page one carries the trick box
+      and the worked example and no later page carries either, so an even split
+      by item count leaves the last page short by about that much. A weighted
+      split was tried — page one at 78% of a share — and **reverted**: it
+      balanced the heights and pushed `time-and-data` page two to 11.13in, over
+      the limit. Item heights vary too much between activities for one ratio to
+      be safe in both directions, and an overflow is worse than an airy page.
+      So the fix is per-activity and it is the one `itemsForPages` already
+      names: measure each activity's items per page and either raise
+      `printItems` until both pages fill or drop `printPages` to 1. Eight
+      activities declare two pages; the other 22 fail only on the longer sheets
+      a reader can ask for. *Medium, and mechanical once the rig is trusted.*
+
 - [ ] **Generator parameter controls** [51, 87] — number range, operation, item
       count, work space, exposed progressively and carried in the URL beside the
       seed. *Medium.*

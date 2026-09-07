@@ -491,6 +491,41 @@ table.tbl th { font-family: var(--fdisp); font-size: 11.5px; letter-spacing: .1e
 table.tbl td { color: var(--txt2) }
 table.tbl td strong { color: var(--txt) }
 
+/* THE ONE TABLE WITH A CONTROL IN IT, AND THE PINNED BUTTON SAT ON TOP OF IT.
+   `/printables/` puts a Print button flush to the right edge of all 54 rows,
+   which is exactly where the fixed suggestion button lives — so at any scroll
+   position one row's Print button was completely covered, and pressing it
+   opened the suggestion menu instead. The responsive audit's overlap check
+   found it at tablet, laptop and desktop; it reported `[no room left]`, meaning
+   not one pixel of that control was reachable.
+
+   Neither element can simply move: the button is fixed to the bottom right by
+   design, and a right-aligned action column is the right place for an action.
+   So the column keeps its alignment and gains a gutter wide enough to clear the
+   button — 190px is its 174px width plus its 16px margin. The empty header cell
+   above it means the gutter reads as the table's right margin rather than as a
+   hole. Below 560px the button is already collapsed to a 44px circle, so the
+   gutter is dropped entirely rather than shrunk: a 68px version was tried and
+   it pushed the table 79px wider than a 360px viewport, trading an overlap for
+   a horizontal scrollbar. The audit finds no covered control at either phone
+   width, so there is nothing to buy there. */
+/* 198px above 560px, where the button carries its label; 52px below it, where
+   the button is already collapsed to a 44px circle in the corner. */
+@media (min-width: 561px) { table.tbl.acts td:last-child { padding-right: 198px } }
+@media (max-width: 560px) { table.tbl.acts td:last-child { padding-right: 52px } }
+/* And the gutter has to be paid for, because a four-column table of real text
+   cannot shrink to make room: at 360px this one overflowed the viewport by 19px
+   before any of this, and adding 198px at 561px overflowed it by 20px. So the
+   STANDARDS column goes below 700px — the breakpoint the table already uses to
+   drop its padding. It is the column a parent choosing a sheet needs least;
+   "K.CC.A.2, K.CC.B.4, K.CC.B.5" in a 60px column is unreadable anyway, and it
+   is stated in full on both the activity page and the print page. That pays for
+   the gutter and for the pre-existing overflow at the same time, so the phone
+   table now ends inside the viewport instead of 19px past it. */
+@media (max-width: 700px) {
+  table.tbl.acts th:nth-child(3), table.tbl.acts td:nth-child(3) { display: none }
+}
+
 /* ---------- footer ---------- */
 /* The bottom padding is the suggestion button's clearance, not taste. The
    comment on .fbk claimed it was "clear of the footer links it would otherwise
@@ -806,8 +841,14 @@ footer.foot a:hover { color: var(--txt) }
 .lsncall.seen .lsncall-ic {
   width: auto; height: auto; border: 0; font-size: 14px; color: var(--txt3);
 }
+/* A STANDALONE CONTROL, so it has to clear 24px like any other — it is not an
+   inline link inside a sentence, which is the case WCAG 2.5.8 exempts. At
+   `display: inline` with 13.5px type it measured 22.6px on every width, and the
+   responsive audit flagged it on all four pages that carry a lesson. Padding
+   rather than a height, so the underline stays on the text. */
 .lsncall.seen .lsncall-quiet {
-  display: inline; font-size: 13.5px; color: var(--a1); text-decoration: none;
+  display: inline-block; font-size: 13.5px; color: var(--a1); text-decoration: none;
+  padding: 3px 0; line-height: 1.5;
   border-bottom: 1px solid color-mix(in srgb, var(--a1) 40%, transparent);
 }
 .lsncall.seen .lsncall-quiet:hover { border-bottom-color: var(--a1) }
@@ -855,7 +896,7 @@ footer.foot a:hover { color: var(--txt) }
   background-image: linear-gradient(90deg, color-mix(in srgb, var(--a1) 12%, transparent), transparent 46%) }
 .cuplv.plr { color: var(--txt3); border-color: var(--line) }
 .cupmine {
-  font: 600 10px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
   color: var(--onsp); background: var(--sp); border-radius: 99px; padding: 4px 8px;
 }
 /* Player rows are not per-character, so they have no --acc of their own; the bar
@@ -884,8 +925,12 @@ footer.foot a:hover { color: var(--txt) }
 .cupbody { min-width: 0; display: block }
 .cuptop { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px }
 .cupname { font-family: var(--fdisp); font-size: 16px; font-weight: 600; color: var(--txt) }
+/* 11px, not 10px, because 11px is the floor the responsive audit holds the
+   whole site to and the rest of these micro-labels already sit on it — .tag,
+   .qnum, .gh-label, table th. The cup shipped three of them at 10 and 10.5 and
+   was the only page in the audit failing on text size. */
 .cuplv {
-  font: 600 10px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
   color: var(--acc); border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
   border-radius: 99px; padding: 4px 8px;
 }
@@ -899,7 +944,7 @@ footer.foot a:hover { color: var(--txt) }
 }
 .cupnum { text-align: right; line-height: 1.15 }
 .cupnum b { display: block; font-family: var(--fdisp); font-size: 21px; font-weight: 700; color: var(--txt); font-variant-numeric: tabular-nums }
-.cupnum small { font-size: 10.5px; color: var(--txt3); letter-spacing: .06em; text-transform: uppercase }
+.cupnum small { font-size: 11px; color: var(--txt3); letter-spacing: .06em; text-transform: uppercase }
 .cupempty { border: 1px dashed var(--line2); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px }
 .cupempty p { font-size: 14px; color: var(--txt2); line-height: 1.65 }
 .cupempty p + p { margin-top: 6px; color: var(--txt3); font-size: 13px }

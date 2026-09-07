@@ -368,13 +368,21 @@ export const coinsValue = (kinds) => kinds.reduce((n, k) => n + (COINS[k]?.value
    than a fact reads as two different answers to the same question. The
    ambiguity check in scripts/check.mjs failed on exactly that when the key
    carried the letter. */
+/* The lettered row of figures a `pick` item prints as.
+   THE LAYOUT IS A CLASS, NOT INLINE STYLE, and that is deliberate. It began as
+   an inline flex row with `flex-wrap: wrap`, which meant print.css could not
+   reach it: four 54px clock faces are 258px wide and a column of a
+   three-column sheet is 230px, so every such row silently wrapped to two lines
+   and ONE item cost two grid rows. That is what held `time-to-five-minutes` to
+   two items a sheet and `clocks-and-time` to five.
+   With the layout in print.css the row cannot wrap and the options shrink to
+   the column instead — see the `.pkrow` rules there. Every call site today is
+   print-only; a screen use would need matching rules in site.css, because
+   print.css is not loaded on an activity page. */
 export function pickRow(options, { print = false } = {}) {
   const letters = 'ABCD'.split('');
-  return `<div style="display:flex;gap:${print ? 14 : 12}px;justify-content:center;flex-wrap:wrap">${
-    options.map((o, i) => `<div style="text-align:center">
-      ${o.figure}
-      <div style="font:700 ${print ? 12 : 13}px ui-sans-serif,system-ui;color:${print ? '#111' : 'var(--txt2)'};margin-top:2px">${letters[i]}</div>
-    </div>`).join('')}</div>`;
+  return `<div class="pkrow"${print ? '' : ' data-screen="1"'}>${
+    options.map((o, i) => `<div class="pkopt">${o.figure}<div class="pklbl">${letters[i]}</div></div>`).join('')}</div>`;
 }
 
 /* ------------------------------------------------------------------- clocks

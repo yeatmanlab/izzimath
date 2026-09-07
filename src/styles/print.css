@@ -190,6 +190,29 @@
 /* Full-width figures (number lines, the board) are width-driven by design, but
    still capped — a board of ten squares at 100% width is 0.4in tall, and one of
    twenty is not allowed to become an inch and a half. */
+/* A pick prints as a lettered row of figures, and the row MUST NOT WRAP.
+   Two earlier attempts were both worse than doing nothing:
+     - `grid-column: 1/-1` gave each pick the full sheet width. Good for an
+       activity with one pick; `clocks-and-time`, which has several, went from
+       9.05in to 11.21in because they stopped sitting side by side.
+     - `span 2` at the narrow densities did the same thing more quietly: 10.60in.
+   A span is only a saving when the row would otherwise wrap, and whether it
+   wraps depends on the option count and the figure size — neither of which CSS
+   knows. So instead the row never wraps and the OPTIONS shrink to whatever
+   column they are in, which keeps one item to one grid row at every density.
+   `min-width: 0` is what makes that possible: a flex item's default
+   `min-width: auto` is the svg's own width attribute, so without it the row
+   overflows rather than shrinking. */
+/* Two columns for a block of picks, whatever the sheet's density — see the
+   note above `pickBlock` in printsheet.js. The type size stays the grade's, so
+   only the column count changes. */
+.sh-grid.pkg { grid-template-columns: repeat(2, 1fr) }
+.pr.pk .pv { max-width: none; margin: 6px 0 2px }
+.pkrow { display: flex; gap: 10px; justify-content: center; flex-wrap: nowrap; align-items: flex-end }
+.pkrow .pkopt { text-align: center; min-width: 0; flex: 0 1 auto }
+.pkrow .pkopt svg { max-width: 100%; height: auto }
+.pkrow .pklbl { font: 700 12px ui-sans-serif, system-ui; color: #111; margin-top: 2px }
+
 .pr.wide { padding: 5px 9px; font-size: 13.5px }
 .pr.wide > svg { margin: 1px 0 0 }
 .pr.wide .pv { max-width: none }

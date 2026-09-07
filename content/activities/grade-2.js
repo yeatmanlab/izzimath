@@ -1,5 +1,6 @@
 import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc, band3,
-  coin, coinRow, coinsValue, money, COINS, COIN_KINDS, pickRow, pickDecoys } from '../../src/lib/widgets.js';
+  coin, coinRow, coinsValue, money, COINS, COIN_KINDS, pickRow, pickDecoys,
+  clockFace, addMinutes } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -764,7 +765,7 @@ const moneyMath = {
   printInstructions: {
     input: 'How much is it? Write the amount.',
     pick: 'Circle the coins that match.',
-    choice: 'Circle the answer.',
+    choice: 'Write the answer on the line.',
   },
   generate(seed, i, ch, r, bookSeed = 0) {
     const mode = i % 6;
@@ -925,4 +926,168 @@ const moneyMath = {
   },
 };
 
-export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel, countUpToTheTarget, moneyMath];
+
+/* ------------------------------------------- BOOK: time to five minutes (G2 S4)
+   2.MD.C.7: to the nearest five minutes, with a.m. and p.m. The step up from
+   grade 1 is exactly one thing — the long hand now means something other than
+   "straight up" or "straight down" — and the way in is the one the research
+   names: counting by fives round the dial. Each numeral is five minutes, so the
+   7 is 35 minutes past, and a second grader who can skip count by fives can
+   read any clock face.
+
+   The hour hand is still the trap it was at grade 1, and worse here: at 3:55 it
+   is almost touching the 4. So mode 0's decoys always include the next hour,
+   and the explanation says which hour it is and why.
+
+   a.m. and p.m. are in the standard and are not a maths idea at all — they are
+   vocabulary about the day. Mode 3 asks them against events a seven-year-old
+   knows, which is the only way to make them checkable rather than arbitrary. */
+const timeToFiveMinutes = {
+  id: 'time-to-five-minutes', title: 'Time to Five Minutes', kind: 'book', grade: '2', strand: S[3],
+  glyph: '◵',
+  lesson: 'time',
+  skill: 'Reading a clock to the nearest five minutes, and telling a.m. from p.m.',
+  trick: 'Every number round the dial is five minutes. Count them in fives — 5, 10, 15 — and the hour is still the number the SHORT hand has passed, not the one it is nearly at.',
+  printDensity: 'd2',
+  blurb: 'Count round in fives. What time is it, and is it morning or afternoon?',
+  ccss: ['2.MD.C.7'],
+  im: [6],
+  refs: ['im-scope-sequence', 'im-k5'],
+  theory: 'Reading to five minutes is skip counting applied to a circle. The dial is a number line bent round, each numeral worth five, so the skill rests on fives fluency rather than on anything new about clocks. The hour-hand error gets worse as the minute hand goes round, so the decoys keep offering the hour it is nearly at.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat1' }],
+  evidence: 'No efficacy trial sits behind this one; the site does not claim otherwise. The ordering is taken from the acquisition sequence that is confirmed across grades 1 to 3 — hour, half hour, quarter, five minutes, minute — which puts five minutes here and not earlier, and the same literature reports "past" as easier than "to", so nothing asks for "five to four". The coverage argument is plain: 2.MD.C.7 had no activity, and the grade-1 book stops at the half hour.',
+  pages: 12, printItems: 5,
+  printInstruction: 'Count round the dial in fives. The short hand is still the hour.',
+  printInstructions: {
+    choice: 'Write the answer on the line.',
+    pick: 'Circle the clock that matches.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 6;
+    const h = r.int(1, 12);
+    const five = r.int(1, 11);                 // never 0: o'clock is grade 1's job
+    const m = five * 5;
+    const nextH = h === 12 ? 1 : h + 1;
+    const said = `${h}:${String(m).padStart(2, '0')}`;
+
+    // 0 — read to five minutes
+    if (mode === 0) {
+      return {
+        type: 'choice',
+        prompt: `What time is it?${clockFace(h, m, { size: 152 })}`,
+        visualWidth: 172,
+        /* The next hour first: at 3:55 the short hand is nearly touching the 4,
+           and reading it as 4:55 is the error this item exists for. */
+        choices: r.shuffle([said, ...pickDecoys(said, [
+          `${nextH}:${String(m).padStart(2, '0')}`,
+          `${h}:${String((m + 5) % 60).padStart(2, '0')}`,
+          `${h}:${String(five).padStart(2, '0')}`,          // read the numeral, not the minutes
+          `${h}:${String((m - 5 + 60) % 60).padStart(2, '0')}`,
+        ])]),
+        answer: said,
+        printStem: 'What time is it?',
+        printVisual: clockFace(h, m, { print: true, size: 76 }),
+        hint: `Count round in fives to the long hand. Then check the short hand: which number has it gone PAST?`,
+        explain: `${said}. The long hand is on the ${five}, and ${five} fives is ${m} minutes. The short hand has gone past the ${h} but has not reached the ${nextH}, so the hour is ${h}.`,
+      };
+    }
+
+    // 1 — count the fives, without reading a whole time
+    if (mode === 1) {
+      return {
+        type: 'input', accept: null,
+        prompt: `The long hand is pointing at the <strong>${five}</strong>. How many minutes past the hour is that?${clockFace(h, m, { size: 132 })}`,
+        visualWidth: 152,
+        answer: String(m),
+        placeholder: 'minutes',
+        printStem: `The long hand points at the ${five}. How many minutes past the hour?`,
+        printVisual: clockFace(h, m, { print: true, size: 68 }),
+        hint: 'Every number round the dial is five minutes. Count them in fives from the 12.',
+        explain: `${m} minutes. Counting in fives from the 12: ${Array.from({ length: five }, (_, k) => (k + 1) * 5).join(', ')}.`,
+      };
+    }
+
+    // 2 — pick the clock
+    if (mode === 2) {
+      const decoys = [
+        { h: nextH, m },
+        { h, m: (m + 5) % 60 },
+        { h, m: (m - 5 + 60) % 60 },
+      ];
+      const opts = r.shuffle([{ h, m, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
+        .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96 }),
+          printFigure: clockFace(o.h, o.m, { print: true, size: 66 }), right: o.right }));
+      const answer = opts.find((o) => o.right).id;
+      return {
+        type: 'pick',
+        prompt: `Which clock shows <strong>${said}</strong>?`,
+        options: opts.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: said,
+        printStem: `Which clock shows ${said}?`,
+        printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
+        hint: `${m} minutes is ${five} fives, so the long hand lands on the ${five}.`,
+        explain: `${said} puts the long hand on the ${five} and the short hand just past the ${h}.`,
+      };
+    }
+
+    // 3 — a.m. or p.m., which is vocabulary rather than arithmetic
+    if (mode === 3) {
+      const events = [
+        ['you eat breakfast', 'am'], ['the sun comes up', 'am'], ['you go to school in the morning', 'am'],
+        ['you eat dinner', 'pm'], ['the sun goes down', 'pm'], ['you go to bed', 'pm'],
+        ['you eat lunch', 'pm'], ['you brush your teeth before school', 'am'],
+      ];
+      const [what, when] = r.pick(events);
+      const eh = when === 'am' ? r.int(6, 11) : r.int(1, 9);
+      return {
+        type: 'choice',
+        prompt: `${esc(`It is ${eh}:${String(m).padStart(2, '0')} when ${what}.`)} Is that <strong>a.m.</strong> or <strong>p.m.</strong>?`,
+        choices: ['a.m.', 'p.m.'],
+        answer: when === 'am' ? 'a.m.' : 'p.m.',
+        printStem: `It is ${eh}:${String(m).padStart(2, '0')} when ${what}. Circle a.m. or p.m.`,
+        hint: 'a.m. is midnight through to noon. p.m. is noon through to midnight.',
+        explain: when === 'am'
+          ? `a.m. — that happens in the morning, before noon.`
+          : `p.m. — that happens after noon, in the afternoon or evening.`,
+      };
+    }
+
+    // 4 — later in the same hour, so no hour arithmetic yet
+    if (mode === 4) {
+      const add = r.int(1, Math.max(1, 11 - five)) * 5;
+      const then = addMinutes(h, m, add);
+      const A = fill('{Actor}', ch);
+      const stem = `It is ${said}. ${A} has ${add} minutes of practice left.`;
+      return {
+        type: 'input', accept: null,
+        prompt: `${esc(stem)} What time will it be when they finish? Write it like <strong>${h}:${String(m).padStart(2, '0')}</strong>.`,
+        answer: `${then.h}:${String(then.m).padStart(2, '0')}`,
+        placeholder: 'h:mm',
+        printStem: `${stem} What time will it be when they finish?`,
+        printVisual: clockFace(h, m, { print: true, size: 62 }),
+        hint: `Count on in fives from ${m} minutes.`,
+        explain: `${then.h}:${String(then.m).padStart(2, '0')}. ${m} minutes and ${add} more is ${then.m} minutes past ${then.h}.`,
+      };
+    }
+
+    // 5 — the hour-hand question, asked in words
+    const past = r.int(1, 11);
+    return {
+      type: 'choice',
+      prompt: `The short hand is <strong>just past the ${past}</strong> and the long hand is on the <strong>${five}</strong>. What time is it?`,
+      choices: r.shuffle([`${past}:${String(m).padStart(2, '0')}`, ...pickDecoys(`${past}:${String(m).padStart(2, '0')}`, [
+        `${past === 12 ? 1 : past + 1}:${String(m).padStart(2, '0')}`,
+        `${five}:${String(past * 5).padStart(2, '0')}`,
+        `${past}:${String(five).padStart(2, '0')}`,
+        `${past === 1 ? 12 : past - 1}:${String(m).padStart(2, '0')}`,
+      ])]),
+      answer: `${past}:${String(m).padStart(2, '0')}`,
+      printStem: `The short hand is just past the ${past} and the long hand is on the ${five}. What time is it?`,
+      hint: 'The hour is the number the short hand has already gone past. The long hand needs counting in fives.',
+      explain: `${past}:${String(m).padStart(2, '0')}. Just past the ${past} means the hour is ${past}, and the long hand on the ${five} is ${m} minutes.`,
+    };
+  },
+};
+
+export default [placeValuePalace, takeItApart, carryAndBorrow, measureAndChart, arraysAndEqualGroups, closeToHundred, hundredLineHop, decadeDuel, countUpToTheTarget, moneyMath, timeToFiveMinutes];

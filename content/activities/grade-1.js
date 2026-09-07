@@ -1,5 +1,6 @@
 import { tenFrame, doubleFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3,
-  clockFace, clockDigital, addMinutes, timeWords, pickRow, pickDecoys } from '../../src/lib/widgets.js';
+  clockFace, clockDigital, addMinutes, timeWords, pickRow, pickDecoys,
+  coin, coinRow, COINS } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -581,7 +582,7 @@ const clocksAndTime = {
   pages: 12, printItems: 5,
   printInstruction: 'Read each clock. The short hand is the hour.',
   printInstructions: {
-    choice: 'What time does the clock say? Circle the answer.',
+    choice: 'Write the time, or the word, on the line.',
     pick: 'Circle the clock that matches.',
   },
   generate(seed, i, ch, r, bookSeed = 0) {
@@ -631,14 +632,17 @@ const clocksAndTime = {
         { h: nextH, m },
         { h: h === 1 ? 12 : h - 1, m: half ? 30 : 0 },
       ];
-      /* Two sets of figures, not one recoloured set. Print gets its own at 54px
+      /* Two sets of figures, not one recoloured set. Print gets its own at 66px
          because four clock faces at screen size took the sheet to 10.57in of a
-         10.1in page and forced printItems down to two — measured, not guessed.
+         10.1in page — measured, not guessed. 66 rather than the 54 this first
+         shipped at: a block of picks now lays out in two columns whatever the
+         sheet's density (see printsheet.js), and a two-column cell has room for
+         four faces at 66px on one line with nothing shrunk.
          `print: true` also gives the ink colours properly rather than by
          string-replacing CSS variables out of the screen SVG. */
       const opts = r.shuffle([{ h, m, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
         .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96 }),
-          printFigure: clockFace(o.h, o.m, { print: true, size: 54 }), right: o.right }));
+          printFigure: clockFace(o.h, o.m, { print: true, size: 66 }), right: o.right }));
       const answer = opts.find((o) => o.right).id;
       return {
         type: 'pick',
@@ -691,7 +695,7 @@ const clocksAndTime = {
       ];
       const opts = r.shuffle([{ ...then, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
         .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96 }),
-          printFigure: clockFace(o.h, o.m, { print: true, size: 54 }), right: o.right }));
+          printFigure: clockFace(o.h, o.m, { print: true, size: 66 }), right: o.right }));
       const answer = opts.find((o) => o.right).id;
       const stem = `It is ${said}. ${fill('{Actor}', ch)} gets dinner in ${add} ${add === 1 ? 'hour' : 'hours'}.`;
       return {
@@ -741,4 +745,140 @@ const clocksAndTime = {
   },
 };
 
-export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard, clocksAndTime];
+
+/* ------------------------------------------- BOOK: dimes and pennies (G1 S3)
+   MONEY AT GRADE 1, WITHOUT A MONEY STANDARD
+   CCSS has no grade-1 money standard. Money is 2.MD.C.8 and nothing earlier;
+   IM agrees, putting it in grade-2 Unit 6. So this is not a money activity
+   pretending to be in the sequence — it is a PLACE VALUE activity, 1.NBT.B.2
+   and IM Unit 4 "Numbers to 99", that uses coins as the manipulative.
+
+   And the fit is exact rather than convenient. A dime is ten cents and a penny
+   is one, so three dimes and four pennies is thirty-four — which is the tens
+   and ones of 34, made of objects a child has held. `tens-and-ones` teaches the
+   same structure with base-ten blocks; this is the same lesson with the
+   manipulative swapped for something that exists outside school.
+
+   WHICH COINS, AND WHY NOT ALL FOUR
+   Dimes and pennies only, plus the nickel named and set beside two-of-it. A
+   quarter is twenty-five, which is not a place, and a nickel is five, which is
+   not either — so counting a handful of all four is grade 2's job and Money
+   Math does it. Every source says one coin at a time before mixing, which
+   points the same way. */
+const dimesAndPennies = {
+  id: 'dimes-and-pennies', title: 'Dimes and Pennies', kind: 'book', grade: '1', strand: S[2],
+  glyph: '⑽',
+  lesson: 'money',
+  skill: 'Knowing the coins by name, and counting dimes and pennies as tens and ones.',
+  trick: 'A dime is ten and a penny is one. So dimes are the tens and pennies are the ones — three dimes and four pennies is 34 cents, exactly like 3 tens and 4 ones is 34.',
+  printDensity: 'd2',
+  printMaxPages: 1,   // K/1 stay one page
+  blurb: 'A dime is ten pennies. Count the dimes, then the pennies.',
+  ccss: ['1.NBT.B.2'],
+  im: [4],
+  refs: ['im-scope-sequence', 'im-k5'],
+  theory: 'Dimes and pennies are a place-value manipulative that exists outside the classroom. The structure is identical to base-ten blocks — ten of the small one makes the big one — with the difference that a child has seen coins used, which is the case for almost no other manipulative on this site.',
+  roam: [{ task: 'roamAlpaca', subscale: 'cat2' }],
+  evidence: 'Stated plainly, because it matters here more than usual: Common Core has NO grade-1 money standard, and neither does Illustrative Mathematics. This activity is mapped to 1.NBT.B.2 — that ten ones make a ten — and to IM Unit 4 "Numbers to 99", because counting dimes and pennies IS counting tens and ones and the mapping is structural rather than a stretch. It is not offered as money instruction ahead of the standard: quarters and mixed handfuls are 2.MD.C.8 and Money Math has them. Coin NAMING is included because grade 2 assumes it and several state frameworks place it at grade 1, and the literature is consistent that coins should be met one at a time before being mixed. No efficacy trial sits behind any of that.',
+  pages: 10, printItems: 4,
+  printInstruction: 'A dime is 10 and a penny is 1. Count the dimes first.',
+  printInstructions: {
+    input: 'How many cents? Write the number.',
+    pick: 'Circle the coin.',
+    choice: 'Circle the answer.',
+  },
+  generate(seed, i, ch, r, bookSeed = 0) {
+    const mode = i % 5;
+
+    // 0 — count dimes and pennies: tens and ones with coins
+    if (mode === 0) {
+      const tens = r.int(1, 8), ones = r.int(1, 9);
+      const hand = [...Array(tens).fill('dime'), ...Array(ones).fill('penny')];
+      const total = tens * 10 + ones;
+      return {
+        type: 'input', accept: null,
+        prompt: `How many cents?${coinRow(hand, { size: 44 })}`,
+        visualWidth: 420,
+        answer: String(total),
+        placeholder: 'cents',
+        printStem: 'How many cents?',
+        printVisual: coinRow(hand, { print: true, size: 32 }),
+        hint: 'Count the dimes in tens first: 10, 20, 30… then count the pennies on, one at a time.',
+        explain: `${total} cents. ${tens} ${tens === 1 ? 'dime' : 'dimes'} is ${tens * 10}, and ${ones} more ${ones === 1 ? 'penny' : 'pennies'} makes ${total} — the same as ${tens} tens and ${ones} ones.`,
+      };
+    }
+
+    // 1 — the place-value link, said out loud
+    if (mode === 1) {
+      const tens = r.int(2, 8), ones = r.int(1, 9);
+      const total = tens * 10 + ones;
+      const askDimes = r.chance(0.5);
+      return {
+        type: 'input', accept: null,
+        prompt: `${esc(`You have ${total} cents in dimes and pennies.`)} How many <strong>${askDimes ? 'dimes' : 'pennies'}</strong> is that?`,
+        answer: String(askDimes ? tens : ones),
+        placeholder: askDimes ? 'dimes' : 'pennies',
+        printStem: `${total} cents in dimes and pennies. How many ${askDimes ? 'dimes' : 'pennies'}?`,
+        hint: askDimes ? 'How many tens are in the number?' : 'How many ones are in the number?',
+        explain: askDimes
+          ? `${tens} dimes. ${total} has ${tens} tens in it, and each dime is a ten.`
+          : `${ones} pennies. ${total} has ${ones} ones in it, and each penny is a one.`,
+      };
+    }
+
+    // 2 — name the coin. Three only: the quarter is grade 2's.
+    if (mode === 2) {
+      const kinds = ['penny', 'nickel', 'dime'];
+      const want = r.pick(kinds);
+      const opts = r.shuffle(kinds).map((k, n) => ({ id: 'abc'[n], kind: k, figure: coin(k, { size: 62 }) }));
+      const answer = opts.find((o) => o.kind === want).id;
+      return {
+        type: 'pick',
+        prompt: `Which one is the <strong>${COINS[want].name}</strong>?`,
+        options: opts.map(({ id, figure }) => ({ id, figure })),
+        answer,
+        answerSay: `the ${COINS[want].name}, ${COINS[want].value} ${COINS[want].value === 1 ? 'cent' : 'cents'}`,
+        printStem: `Which one is the ${COINS[want].name}?`,
+        printVisual: pickRow(opts.map(({ id, kind }) => ({ id, figure: coin(kind, { print: true, size: 44 }) })), { print: true }),
+        hint: 'Each coin has its own number written on it.',
+        explain: `A ${COINS[want].name} is ${COINS[want].value} ${COINS[want].value === 1 ? 'cent' : 'cents'}.${
+          want === 'dime' ? ' It is the smallest one, and it is still worth the most of these three.' : ''}`,
+      };
+    }
+
+    // 3 — how many pennies make one, which is the ten-ones-make-a-ten idea
+    if (mode === 3) {
+      const which = r.chance(0.5) ? 'dime' : 'nickel';
+      const n = COINS[which].value;
+      return {
+        type: 'input', accept: null,
+        prompt: `How many <strong>pennies</strong> are worth the same as one <strong>${which}</strong>?${coinRow([which], { size: 54 })}`,
+        visualWidth: 200,
+        answer: String(n),
+        placeholder: 'pennies',
+        printStem: `How many pennies are worth one ${which}?`,
+        printVisual: coinRow([which], { print: true, size: 38 }),
+        hint: `Look at the number written on the ${which}.`,
+        explain: `${n} pennies. A ${which} is ${n} cents, and a penny is 1 cent, so it takes ${n} of them.${
+          which === 'dime' ? ' Ten ones make a ten — the same rule as the blocks.' : ''}`,
+      };
+    }
+
+    // 4 — worth more, where size is the wrong guide
+    const pair = r.pick([['dime', 'penny'], ['dime', 'nickel'], ['nickel', 'penny']]);
+    const [big, small] = pair;
+    const flip = r.chance(0.5);
+    return {
+      type: 'choice',
+      prompt: `Which is worth <strong>more</strong>?`,
+      choices: flip ? [`a ${big}`, `a ${small}`] : [`a ${small}`, `a ${big}`],
+      answer: `a ${big}`,
+      printStem: `Which is worth more: a ${big} or a ${small}?`,
+      hint: 'Go by the number on the coin, not by how big the coin is.',
+      explain: `A ${big} is ${COINS[big].value} cents and a ${small} is ${COINS[small].value}, so the ${big} is worth more.${
+        big === 'dime' && small === 'nickel' ? ' And the dime is the SMALLER coin — size is no help at all.' : ''}`,
+    };
+  },
+};
+
+export default [addingToTwenty, allKindsOfStories, tensAndOnes, clocksAndRulers, halvesAndQuarters, numberLineHop, makeTenRace, doubleFrameFlash, hundredBoard, clocksAndTime, dimesAndPennies];

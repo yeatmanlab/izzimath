@@ -9,7 +9,7 @@ prints. Built for parents at home. Live at https://izzimath.com/
 npm run verify
 ```
 
-Content validation (~3,000 generated problems across all five characters),
+Content validation (~3,300 generated problems across all five characters),
 internal links and anchors, and accessibility. **All three pass today**, so any
 failure is from the current change. `node scripts/extlinks.mjs` checks external
 links too but hits the network, so it is not in the build.
@@ -22,15 +22,24 @@ engine, live in [`tools/`](tools/README.md). The build copies them to
 `dist/_tools/` for local runs and **deliberately does not in CI**
 (`build.mjs` guards on `!process.env.CI`), so `izzimath.com/_tools/` is a 404 on
 purpose — run them against a local `dist`, which is also the only place they can
-measure a build you are still changing: a **responsive audit** (35 pages × 5 widths, checking overflow,
-tap-target size and text size), a **problem-type test** (all nine types render,
+measure a build you are still changing: a **responsive audit** (38 pages × 5 widths, checking overflow,
+tap-target size and text size), a **problem-type test** (all ten types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
-client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (2,040
+client-rendered and `a11y.mjs` cannot see it), and a **print page-fill test** (2,160
 cases — every activity × character × style × mode × sheet/key — failing anything
 taller or wider than one page of Letter, or whose last page is under 80% full).
 All three end with `CHECKS_RUN=<n>` — **if that is missing or zero the harness did
 not run, and an empty report is not a pass.**
+
+**The page-fill harness reports 201 failures today and they are real.** Its THIN
+check — the last page of a child's sheet must be at least 80% full — was unable
+to fail until 2026-09-06, because the rig set `min-height: 9.9in` on every page
+and `.sheet` is a column flexbox whose `.sh-body` is `flex: 1`: every page
+measured at least 9.9in whatever was on it. With the rig reading natural heights
+as well, 30 activities under-fill their last page. Nothing regressed; the check
+started working. It is item 4 of the backlog, with the measurements and the
+reverted first attempt written down.
 
 The page-fill harness exists because the sheets quietly ran onto second and third
 pages for a long time while the site claimed each one was a single full page. The
@@ -216,7 +225,7 @@ content/
   characters.js     the character packs (palette, world nouns, voice)
   routines.js       the IM warm-up routines, as generators
   feedback.js       the suggestion button's copy, and the GitHub issue URL
-  types.js          the nine problem types, and answer checking
+  types.js          the ten problem types, and answer checking
   wordproblems.js   word problems, tagged by CGI schema
   references.js     the citations, linked both ways to activities
   curriculum.js     IM unit map, deep-linked and verified

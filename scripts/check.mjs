@@ -1646,6 +1646,53 @@ console.log('\n=== choice items keep their shape ===');
   console.log(`  ${groups} choice question shapes · ${wobbly} with a wobbling option count`);
 }
 
+/* ------------------------------------ "circle the answer" needs something to circle
+   A `choice` item PRINTS AS A WRITE-IN. src/lib/printsheet.js shares the choice
+   case with input: it emits the stem and a blank line, and never the options —
+   which is why `pick` exists for questions whose options are figures. So an
+   instruction that tells a child to circle something is only true if the options
+   are written into the STEM: "Which takes longer: clapping your hands or a long
+   car trip?" can be circled, and "What time is it?" cannot.
+
+   Three of the sheets added on 2026-09-06 got this wrong, and money-math's was
+   self-contradictory in one line — the instruction said "Circle the answer" over
+   an item whose own stem said "Write 130 cents with a dollar sign". On paper that
+   is a child looking for options that are not there.
+
+   The test is exact rather than a heuristic: if the instruction that will print
+   above the block says "circle", the item's printStem has to contain its own
+   answer text. Nothing else can settle whether there is anything to circle. */
+console.log('\n=== a printed instruction matches what is printed ===');
+{
+  let checked = 0, silent = 0;
+  const seen = new Set();
+  for (const a of activities) {
+    const inst = a.printInstructions || {};
+    const n = a.pages ?? a.rounds ?? 10;
+    for (const cid of CHARS) {
+      for (let i = 0; i < n; i++) {
+        const sd = deriveSeed(8817, `p${i}`);
+        let p; try { p = a.generate(sd, i, getCharacter(cid), rng(sd), 8817); } catch { continue; }
+        // Only the types whose print form drops their options.
+        if (p.type !== 'choice' && p.type !== 'input') continue;
+        const line = inst[p.type] ?? (Object.keys(inst).length === 0 ? a.printInstruction : null);
+        if (!line || !/circle/i.test(line)) continue;
+        checked++;
+        const stem = String(p.printStem ?? p.stem ?? p.prompt ?? '').replace(/<[^>]*>/g, ' ');
+        const ans = String(p.answer ?? '');
+        if (!ans || stem.toLowerCase().includes(ans.toLowerCase())) continue;
+        const k = `${a.id}|${p.type}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        silent++;
+        fail(a.id, `the printed instruction says "${line}" but a ${p.type} item prints only its stem — `
+          + `"${stem.trim().slice(0, 60)}" with the answer "${ans.slice(0, 30)}" nowhere on the page, so there is nothing to circle`);
+      }
+    }
+  }
+  console.log(`  ${checked} printed items under an instruction that says circle · ${silent} with nothing to circle`);
+}
+
 /* ------------------------------------------------ one right option, exactly one
    The tied-tallest-bar defect, generalised: a question with more than one right
    answer marks a child wrong for reasoning correctly. It happens two ways and

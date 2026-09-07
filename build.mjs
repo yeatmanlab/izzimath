@@ -829,7 +829,7 @@ write('printables/index.html', page({
       const l = byGrade(g);
       if (!l.length) return '';
       return `<div class="sec" id="grade-${g}"><h2 style="font-size:20px">${gradeName(g)}</h2>
-        <table class="tbl"><thead><tr><th>Sheet</th><th>Skill</th><th>Standard</th><th></th></tr></thead>
+        <table class="tbl acts"><thead><tr><th>Sheet</th><th>Skill</th><th>Standard</th><th></th></tr></thead>
         <tbody>${l.map((a) => `<tr>
           <td><strong>${esc(a.title)}</strong></td>
           <td>${esc(a.skill)}</td>

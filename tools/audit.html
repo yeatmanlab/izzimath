@@ -24,6 +24,14 @@ const PAGES = [
   ['/learn/time/', 'lesson: clocks'], ['/learn/money/', 'lesson: coins'],
   ['/books/clocks-and-time/', 'book: clocks and time'], ['/books/money-math/', 'book: money math'],
   ['/print/money-math/', 'print: money math'],
+  // The three modules that finished the time-and-money set. Listed even though
+  // two of them share a shape with the pages above, because "same shape" is a
+  // judgement and a missing page is silent: `longer-and-shorter` draws a clock
+  // with NO numerals at Kindergarten sizing, and `dimes-and-pennies` puts a
+  // coin row inside an input prompt, neither of which existed before.
+  ['/books/time-to-five-minutes/', 'book: time to 5 min'],
+  ['/books/longer-and-shorter/', 'book: longer and shorter'],
+  ['/books/dimes-and-pennies/', 'book: dimes and pennies'],
 ];
 const WIDTHS = [[360,'phone-sm'],[390,'phone'],[768,'tablet'],[1024,'laptop'],[1440,'desktop']];
 const L=[]; let checks=0;
