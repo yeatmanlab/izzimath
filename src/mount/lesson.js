@@ -23,7 +23,7 @@
  * hand move too?" is followed by one that states where it ended up.
  */
 
-import { LESSONS, lessonById } from '../../content/lessons.js';
+import { LESSONS, lessonById, lessonSeenKey } from '../../content/lessons.js';
 import { clockFace, clockDigital, coin, COINS, coinsValue, money } from '../lib/widgets.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -175,8 +175,22 @@ export function renderLesson(host, id) {
 }
 
 function mount() {
+  /* On an activity page there is no lesson to draw, only a callout to stand
+     down. Both live here because both are about the same fact — has this reader
+     seen the lesson — and splitting them across two modules would put the key in
+     two places. */
+  const call = document.querySelector('[data-lesson-call]');
+  if (call) {
+    try {
+      if (localStorage.getItem(lessonSeenKey(call.dataset.lessonCall))) call.classList.add('seen');
+    } catch { /* private mode: leave it loud, which is the safe direction */ }
+  }
   const host = document.querySelector('[data-lesson]');
   if (!host) return;
+  /* Recorded on ARRIVAL rather than on finishing. Someone who opens the lesson
+     and leaves has still met it, and a callout that keeps shouting at a reader
+     who has already been is the same nuisance as one that never shows. */
+  try { localStorage.setItem(lessonSeenKey(host.dataset.lesson), new Date().toISOString()); } catch {}
   renderLesson(host, host.dataset.lesson);
 }
 

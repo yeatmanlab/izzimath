@@ -1,4 +1,4 @@
-import { numberLine, tickRange, fractionBar, array2d, esc, band3 } from '../../src/lib/widgets.js';
+import { numberLine, tickRange, fractionBar, array2d, esc, band3, pickDecoys } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { wordProblem } from '../wordproblems.js';
 import { frac, fracText, simplify, addF, subF, mulF, divF, valF, cmpF, lcm } from '../../src/lib/frac.js';
@@ -135,15 +135,20 @@ const decimalPlace = {
         explain: `${a.toFixed(2)} + ${b.toFixed(2)} = ${sum}.`,
       };
     }
-    const th = r.int(101, 999) / 1000;
+    /* Three DISTINCT digits, on purpose. The options are the number's own three
+       decimal digits plus a filler, so a repeated digit collapsed the question
+       to three options — and two identical options are not a choice anyway. */
+    const digits = r.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3);
+    const th = (digits[0] * 100 + digits[1] * 10 + digits[2]) / 1000;
     const place = r.pick(['tenths', 'hundredths', 'thousandths']);
     const s = th.toFixed(3);
     const digit = place === 'tenths' ? s[2] : place === 'hundredths' ? s[3] : s[4];
     return {
       type: 'choice', prompt: `In <strong>${s}</strong>, which digit is in the ${place} place?`,
-      choices: r.shuffle([...new Set([s[2], s[3], s[4], String((Number(digit) + 1) % 10)])]).slice(0, 4).includes(digit)
-        ? r.shuffle([...new Set([s[2], s[3], s[4], String((Number(digit) + 1) % 10)])]).slice(0, 4)
-        : [digit, s[2], s[3], s[4]].filter((v, k, arr) => arr.indexOf(v) === k).slice(0, 4),
+      /* The other two places first — reading the wrong place is the mistake —
+         then a digit that is not in the number at all. */
+      choices: r.shuffle([digit, ...pickDecoys(digit,
+        [s[2], s[3], s[4], ...'0123456789'.split('').filter((c) => !s.includes(c))], 3)]),
       answer: digit,
       printStem: `In ${s}, the ${place} digit is ____`,
       hint: 'First place after the point is tenths, then hundredths, then thousandths.',
@@ -331,11 +336,15 @@ const coordinateQuest = {
       if (showPoint) s += `<circle cx="${ox + px * u}" cy="${oy + (N - py) * u}" r="6.5" fill="${print ? '#111' : 'var(--a2)'}"/>`;
       return s + `</svg>`;
     };
-    const wrongs = [`(${y}, ${x})`, `(${x}, ${y + 1})`, `(${x + 1}, ${y})`].filter((w) => w !== `(${x}, ${y})`);
+    /* On the diagonal `(y, x)` IS `(x, y)`, so the swap decoy — the one that
+       matters, since reversing the pair is the classic error — vanishes and the
+       question drops to three options. More candidates behind it. */
+    const wrongs = [`(${y}, ${x})`, `(${x}, ${y + 1})`, `(${x + 1}, ${y})`,
+      `(${x}, ${Math.max(0, y - 1)})`, `(${Math.max(0, x - 1)}, ${y})`, `(${y + 1}, ${x})`];
     return {
       type: 'choice', prompt: 'What are the coordinates of the point?',
       visual: grid(x, y), visualWidth: 300,
-      choices: r.shuffle([`(${x}, ${y})`, ...r.sample([...new Set(wrongs)], 3)]),
+      choices: r.shuffle([`(${x}, ${y})`, ...pickDecoys(`(${x}, ${y})`, wrongs, 3)]),
       answer: `(${x}, ${y})`,
       printStem: 'Write the coordinates.',
       printVisual: grid(x, y, true, true),

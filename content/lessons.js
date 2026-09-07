@@ -75,6 +75,18 @@ export const LESSONS = {
           + 'so half an hour has gone by.',
       },
       {
+        /* The PHRASE, not the mechanics. The previous step explains that half an
+           hour has gone; it does not explain what the words "half past" mean,
+           and "past" is doing real work a six-year-old has no reason to know.
+           Asked for by name after a read-through, and fair: the activity's
+           hints all assume the phrase is understood. */
+        show: { h: 4, m: 30, focus: 'minute' },
+        head: 'That is what “half past” means.',
+        say: '“Past” means after. So “half past 4” is the short way of saying half an hour AFTER '
+          + '4 o’clock. First it was 4 o’clock, then half an hour went by, and now it is half '
+          + 'past 4.',
+      },
+      {
         show: { h: 4, m: 30, focus: 'hour' },
         head: 'Now look at the short hand.',
         say: 'It is not on the 4 any more, and it has not reached the 5. It is sitting BETWEEN them, '
@@ -94,8 +106,9 @@ export const LESSONS = {
           + '“4:30” are two ways of saying one time.',
       },
     ],
-    close: 'Short hand for the hour, long hand for the minutes, and when the short hand is between '
-      + 'two numbers you take the smaller one.',
+    close: 'Short hand for the hour, long hand for the minutes. “Half past” means half an hour '
+      + 'after the hour — and when the short hand sits between two numbers, you take the '
+      + 'smaller one.',
   },
 
   money: {
@@ -159,3 +172,29 @@ export const LESSON_LINK = {
   time: 'How does a clock work again?',
   money: 'How much is each coin again?',
 };
+
+/* TWO STATES, and the first one is the point. The link started as one line of
+   small text above the book, which is the right weight for a second grader
+   coming back for a reminder and the wrong weight entirely for a first grader
+   meeting a clock for the first time — it was easy to miss on the page.
+
+   So: a full callout until the lesson has been opened, then the quiet line.
+   Prominent is the DEFAULT, so a reader with no JavaScript and a reader on a
+   fresh device both get the loud version; src/mount/lesson.js records the visit
+   and the activity page collapses it on the next load. Getting that the wrong
+   way round would hide the lesson from exactly the child who needs it. */
+export const LESSON_CALL = {
+  time: {
+    head: 'New to clocks? Start here.',
+    say: 'A short lesson with a clock you can watch move. Nothing to get wrong, and it takes a minute.',
+    cta: 'Show me how a clock works',
+  },
+  money: {
+    head: 'New to coins? Start here.',
+    say: 'A short lesson on what each coin is worth — including why the small one beats the big one.',
+    cta: 'Show me how coins work',
+  },
+};
+
+// Where a visit gets recorded, so the callout can stand down afterwards.
+export const lessonSeenKey = (id) => `izzimath.lesson.${id}`;

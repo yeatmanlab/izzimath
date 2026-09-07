@@ -209,6 +209,7 @@ console.log('\n=== clocks and coins ===');
   /* The clock label must not state the time. Attributes, never the conclusion —
      the same rule the geometry figures follow. */
   let handfulsSeen = 0;
+  let calloutsSeen = 0;
   let clocks = 0;
   for (const [h, m] of [[3, 0], [2, 30], [4, 15], [10, 20], [12, 0]]) {
     const label = clockFace(h, m).match(/aria-label="([^"]*)"/)[1];
@@ -232,6 +233,36 @@ console.log('\n=== clocks and coins ===');
     if (got.h !== wh || got.m !== wm) {
       fail('clocks', `${h}:${String(m).padStart(2, '0')} plus ${add} minutes gave ${got.h}:${String(got.m).padStart(2, '0')}, expected ${wh}:${String(wm).padStart(2, '0')}`);
     }
+  }
+
+  /* The lesson callout must ship LOUD. It has two weights — a full callout for a
+     reader who has never opened the lesson, a quiet line for one coming back —
+     and which one shows is decided in the browser from localStorage. So the
+     built page must carry the loud state, or a reader with no JavaScript, or on
+     a fresh device, gets the quiet version: the small link that was easy to miss
+     in the first place, hidden from exactly the child meeting a clock for the
+     first time.
+
+     Also checks the module that does the collapsing actually ships on the page.
+     It did not: the logic was written, the visit was recorded, and nothing read
+     it back, because lesson.js only shipped on /learn/. */
+  {
+    let callouts = 0;
+    for (const a of activities.filter((x) => x.lesson)) {
+      const file = new URL(`../dist/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/index.html`, import.meta.url);
+      let html; try { html = fs.readFileSync(file, 'utf8'); } catch { continue; }
+      callouts++;
+      if (!html.includes('data-lesson-call=')) fail(a.id, `declares lesson "${a.lesson}" but the page has no callout`);
+      if (/class="lsncall[^"]*\bseen\b/.test(html)) {
+        fail(a.id, 'the lesson callout ships already collapsed — the loud state has to be the default, or a reader without JavaScript never sees it');
+      }
+      if (!html.includes('/assets/src/mount/lesson.js')) {
+        fail(a.id, 'has a lesson callout but does not load lesson.js, so it can never collapse once the lesson has been read');
+      }
+      if (!html.includes(`/learn/${a.lesson}/`)) fail(a.id, `callout does not link to /learn/${a.lesson}/`);
+    }
+    if (activities.some((x) => x.lesson) && !callouts) fail('lessons', 'no activity pages were found to check');
+    calloutsSeen = callouts;
   }
 
   /* A handful of coins has to be worth counting. The generator's first version
@@ -280,7 +311,8 @@ console.log('\n=== clocks and coins ===');
     });
   }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words · ${
+    calloutsSeen} callouts shipping loud`);
 }
 
 /* ------------------------------------------------------------- the character cup
@@ -1595,6 +1627,55 @@ console.log('\n=== figures tell the truth ===');
     supers} superlative questions${seen.size ? ` · ${seen.size} PROBLEMS` : ' · all sound'}`);
   console.log(`  ${labelled} labelled figures a screen reader can read · ${mute.length} silent · ${
     leak.size} naming their own answer · ${amb.size} ambiguous`);
+}
+
+/* ------------------------------------------- the same question, the same options
+   A choice item's option count must not wobble between instances of the same
+   question. When it does, the cause is almost always two decoys that collapse
+   to one string after the dedupe — and the item ships looking malformed rather
+   than throwing.
+
+   That is not hypothetical. Clocks and Time built its third decoy as "half past
+   the NEXT hour" on half-past items, which is the same string as its second
+   one, so a quarter of "what time is it?" questions offered three options
+   instead of four. Every existing check passed: the answer was right, the
+   distractors were distinct, and nothing said how many there should be. It was
+   spotted in a screenshot.
+
+   Grouped by prompt with the numbers stripped, so "what time is it?" at 4:30
+   and at 9:00 count as one question. */
+console.log('\n=== choice items keep their shape ===');
+{
+  const shapes = new Map();
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (const cid of CHARS) {
+      for (let i = 0; i < n; i++) {
+        for (const s0 of [8817, 1, 7, 4242, 31337]) {
+          const sd = deriveSeed(s0, `p${i}`);
+          let p; try { p = a.generate(sd, i, getCharacter(cid), rng(sd), s0); } catch { continue; }
+          if (p.type !== 'choice' || !Array.isArray(p.choices)) continue;
+          const shape = String(p.prompt ?? p.printStem ?? '')
+            .replace(/<[^>]*>/g, ' ').replace(/[\d]+/g, '#').replace(/\s+/g, ' ').trim().slice(0, 70);
+          const k = `${a.id}|${shape}`;
+          if (!shapes.has(k)) shapes.set(k, new Map());
+          const counts = shapes.get(k);
+          counts.set(p.choices.length, (counts.get(p.choices.length) ?? 0) + 1);
+        }
+      }
+    }
+  }
+  let groups = 0, wobbly = 0;
+  for (const [k, counts] of shapes) {
+    groups++;
+    if (counts.size <= 1) continue;
+    wobbly++;
+    const [id, shape] = k.split('|');
+    const spread = [...counts.entries()].sort((x, y) => y[1] - x[1])
+      .map(([len, times]) => `${len} options x${times}`).join(', ');
+    fail(id, `"${shape}" offers a different number of options between instances — ${spread} — which is what two decoys collapsing into one looks like`);
+  }
+  console.log(`  ${groups} choice question shapes · ${wobbly} with a wobbling option count`);
 }
 
 /* ------------------------------------------------ one right option, exactly one

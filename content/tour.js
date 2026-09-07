@@ -90,6 +90,10 @@ export const TOUR = {
          content/leaderboard.js for the three documents that forbid the other
          kind. Worth a row here because the Scores button is the only other way
          in, and a child who has not made a profile never opens that. */
+      /* Ahead of the cup, because it teaches rather than entertains, and a
+         first grader who cannot read a clock needs it more than a leaderboard. */
+      ['Short lessons', '/learn/time/',
+        'Two of them so far — how a clock works and how coins work. The clock hands actually move, which is the one thing a paper worksheet cannot do. Nothing is timed and there is nothing to get wrong.'],
       ['The character cup', '/cup/',
         'Which of the {characters} friends has been out the most, counted in badges. It ranks the friends, never the children — nobody else is on it.'],
       ['How to help', '/parents/',

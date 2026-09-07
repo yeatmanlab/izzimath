@@ -14,7 +14,7 @@ import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, i
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
 import { CUP } from './content/leaderboard.js';
-import { LESSONS, LESSON_LINK } from './content/lessons.js';
+import { LESSONS, LESSON_LINK, LESSON_CALL } from './content/lessons.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
 const BASE = (process.env.BASE ?? '').replace(/\/$/, '');
@@ -330,9 +330,15 @@ for (const a of activities) {
         ${(a.ccss || []).map((c) => `<span class="tag">${esc(c)}</span>`).join('')}
         ${roamBadges(a)}
       </div>
-      ${a.lesson && LESSON_LINK[a.lesson] ? `<p class="lsnlink">
-        <span aria-hidden="true">◔</span>
-        <a href="${b}/learn/${a.lesson}/">${esc(LESSON_LINK[a.lesson])}</a></p>` : ''}
+      ${a.lesson && LESSON_LINK[a.lesson] ? `<div class="lsncall" data-lesson-call="${esc(a.lesson)}">
+        <span class="lsncall-ic" aria-hidden="true">${a.lesson === 'money' ? '¢' : '◔'}</span>
+        <div class="lsncall-body">
+          <b>${esc(LESSON_CALL[a.lesson].head)}</b>
+          <span>${esc(LESSON_CALL[a.lesson].say)}</span>
+        </div>
+        <a class="btn pri lsncall-go" href="${b}/learn/${a.lesson}/">${esc(LESSON_CALL[a.lesson].cta)} &rarr;</a>
+        <a class="lsncall-quiet" href="${b}/learn/${a.lesson}/">${esc(LESSON_LINK[a.lesson])}</a>
+      </div>` : ''}
 
       <div class="stage" data-activity="${a.id}">
         <div class="sbar" data-bar></div>
@@ -368,7 +374,13 @@ for (const a of activities) {
         </div>
       </div>
     </section>`,
-    scripts: [`/assets/src/mount/${engine}.js`],
+    /* lesson.js goes on an activity page too, when that activity has a lesson.
+       It is the module that knows whether the reader has already opened the
+       lesson, and the callout has to stand down on THIS page — the collapse was
+       written and then never ran, because the module only shipped on /learn/.
+       Its mount() finds no [data-lesson] here and returns after the toggle. */
+    scripts: [`/assets/src/mount/${engine}.js`,
+      ...(a.lesson ? ['/assets/src/mount/lesson.js'] : [])],
     head: `<script type="module">window.__ACTIVITY__ = ${JSON.stringify(a.id)};</script>`,
   }));
 }
@@ -770,6 +782,8 @@ for (const lesson of Object.values(LESSONS)) {
     ['By skill', `${b}/skills/`, 'If you already know the sticking point, this is the faster way in.'],
     ['How to help', `${b}/parents/`, 'How long, how often, and what to say when they are stuck.'],
     ['Keeping score', `${b}/`, 'Optional and never asked for twice: pick a creature, a name and a secret snack, and scores stay in this browser. No account, and nothing is sent anywhere.'],
+    ['Short lessons', `${b}/learn/time/`,
+      'How a clock works, and how coins work. The clock hands move, which is what a printed sheet cannot do. Linked from every time and money activity, so a child who is stuck can go back to it.'],
     ['The character cup', `${b}/cup/`,
       `Which of the ${characterList.length - 1} friends has been out the most, counted in badges. It ranks the characters and never the children — there is no child on it, and nothing is sent anywhere.`],
   ];

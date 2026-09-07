@@ -1,5 +1,5 @@
 import { tenFrame, doubleFrame, numberBond, numberLine, tickRange, baseTen, dots, esc, band3,
-  clockFace, clockDigital, addMinutes, timeWords, pickRow } from '../../src/lib/widgets.js';
+  clockFace, clockDigital, addMinutes, timeWords, pickRow, pickDecoys } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -116,7 +116,11 @@ const tensAndOnes = {
       const n = tens * 10 + ones;
       return {
         type: 'choice', prompt: `In <strong>${n}</strong>, how many tens?`,
-        choices: r.shuffle([tens, ones, tens + 1, Math.max(0, tens - 1)].filter((v, k, s2) => s2.indexOf(v) === k).slice(0, 4)).map(String),
+        /* `ones` first: reading the wrong digit is the mistake this item exists
+           to catch. Then the off-by-ones, then wider fillers so a collision
+           still leaves four options. */
+        choices: r.shuffle([tens, ...pickDecoys(tens,
+          [ones, tens + 1, tens - 1, tens + 2, tens - 2, ones + 1, 9, 0].filter((v) => v >= 0 && v <= 9))]).map(String),
         /* The printed stem used to be `${n} has ____ tens and ____ ones.` — two
            blanks against an answer of one digit, so the key printed "2" beside
            a question asking for two numbers and a parent marking it had nothing
@@ -296,8 +300,9 @@ const makeTenRace = {
       type: 'choice',
       prompt,
       visual: tenFrame(a),
-      choices: r.shuffle([need, need + 1, Math.max(1, need - 1), 10 - Math.max(1, need - 2)]
-        .filter((v, k, s2) => v >= 0 && v <= 10 && s2.indexOf(v) === k).slice(0, 4)).map(String),
+      choices: r.shuffle([need, ...pickDecoys(need,
+        [need + 1, need - 1, a, 10 - need + 1, need + 2, need - 2, 10, 1]
+          .filter((v) => v >= 0 && v <= 10))]).map(String),
       answer: String(need),
       printStem,
       explain: form === 2
@@ -451,7 +456,9 @@ const doubleFrameFlash = {
        Ten-Frame Flash with more dots. */
     const n = i < 4 ? r.int(11, 14) : i < 8 ? r.int(13, 17) : r.int(15, 20);
     const ones = n - 10;
-    const near = [...new Set([n, n + 1, n - 1, n + 2, ones, 10 + (10 - ones)])]
+    /* Ordered: the off-by-ones first because those are the real miscounts, then
+       the teen-reversal, then fillers so the pool cannot run short. */
+    const near = [n + 1, n - 1, n + 2, n - 2, 10 + (10 - ones), ones + 10, n + 3, n - 3, 11, 20]
       .filter((v) => v >= 10 && v <= 20 && v !== n);
     return {
       type: 'choice', prompt: 'How many altogether?',
@@ -459,7 +466,7 @@ const doubleFrameFlash = {
       // Long enough to see two frames rather than one, short enough that
       // counting sixteen dots one at a time is not on the table.
       flashMs: i < 4 ? 1100 : i < 8 ? 850 : 650,
-      choices: r.shuffle([String(n), ...r.sample(near, 3).map(String)]),
+      choices: r.shuffle([String(n), ...pickDecoys(n, near, 3).map(String)]),
       answer: String(n),
       printStem: 'How many dots altogether?',
       printVisual: doubleFrame(n, { print: true }),
@@ -587,10 +594,17 @@ const clocksAndTime = {
     // 0 — read an analog clock
     if (mode === 0) {
       const right = timeWords(h, m);
+      const prevH = h === 1 ? 12 : h - 1;
+      /* Three DISTINCT decoys. The third used to be `timeWords(nextH, 30)` on
+         half-past items, which is the same string as the second one — so a
+         quarter of these questions collapsed to three options after the dedupe,
+         and the one that mattered ("half past 5" for 4:30) still appeared but
+         the item looked malformed. Half past the PREVIOUS hour is distinct from
+         both and is a plausible misread in its own right. */
       const wrong = [
         timeWords(h, half ? 0 : 30),                     // the other half of this hour
-        timeWords(nextH, m),                             // the next hour, same hands
-        half ? timeWords(nextH, 30) : timeWords(h === 1 ? 12 : h - 1, 0),
+        timeWords(nextH, m),                             // the next hour: the hour-hand misread
+        half ? timeWords(prevH, 30) : timeWords(prevH, 0),
       ].filter((w) => w !== right);
       return {
         type: 'choice',

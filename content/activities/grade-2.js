@@ -1,5 +1,5 @@
 import { baseTen, numberLine, tickRange, array2d, tenFrame, barChart, esc, band3,
-  coin, coinRow, coinsValue, money, COINS, COIN_KINDS, pickRow } from '../../src/lib/widgets.js';
+  coin, coinRow, coinsValue, money, COINS, COIN_KINDS, pickRow, pickDecoys } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -340,11 +340,16 @@ const arraysAndEqualGroups = {
       Array(rows).fill(cols + 1).join(' + '),
       `${rows} + ${cols}`,
     ];
-    const distinct = [...new Set(cands)].filter((c) => c !== answer);
+    /* Two more candidates than needed, because "rows of cols" and "cols of
+       rows" are the same text and collapsed the pool to two on square-ish
+       arrays — 5 of 125 instances came out with three options. */
+    cands.push(Array(Math.max(2, cols + 1)).fill(rows).join(' + '));
+    cands.push(`${rows} \u00d7 ${cols}`);
+    const distinct = pickDecoys(answer, cands, 3);
     return {
       type: 'choice', prompt: `Which addition matches this array?`,
       visual: array2d(rows, cols, { fit: 150 }), visualWidth: 220,
-      choices: r.shuffle([answer, ...r.sample(distinct, 3)]),
+      choices: r.shuffle([answer, ...distinct]),
       answer,
       printStem: 'Write this array as an addition.',
       printVisual: array2d(rows, cols, { print: true, fit: 96 }),

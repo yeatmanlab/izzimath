@@ -775,10 +775,47 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-eq { font-size: 26px; color: var(--txt3) }
 .lsn-run { font-family: var(--fdisp); font-size: 19px; color: var(--txt2); text-align: center; width: 100% }
 .lsn-run b { color: var(--a1); font-size: 23px }
-/* The link back, on every time and money activity from grade 2 up. */
-.lsnlink { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; margin-top: 4px }
-.lsnlink a { color: var(--a1); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--a1) 40%, transparent) }
-.lsnlink a:hover { border-bottom-color: var(--a1) }
+/* The route to the lesson, in two weights. LOUD is the default: a reader who
+   has never opened it — including one with no JavaScript — gets the full
+   callout, and src/mount/lesson.js adds .seen once they have been. Defaulting
+   to quiet would hide it from exactly the child meeting a clock for the first
+   time. */
+.lsncall {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin: 16px 0 4px; padding: 15px 18px;
+  border: 1px solid color-mix(in srgb, var(--a1) 42%, transparent); border-radius: 14px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--a1) 12%, transparent), transparent 70%);
+}
+.lsncall-ic {
+  font-size: 26px; line-height: 1; color: var(--a1); flex: none;
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 1px solid color-mix(in srgb, var(--a1) 35%, transparent); border-radius: 50%;
+}
+.lsncall-body { flex: 1 1 260px; min-width: 0 }
+.lsncall-body b { display: block; font-family: var(--fdisp); font-size: 15.5px; margin-bottom: 3px }
+.lsncall-body span { font-size: 13.5px; color: var(--txt2); line-height: 1.6 }
+.lsncall-go { flex: none }
+.lsncall-quiet { display: none }
+
+/* Seen it: collapse to one quiet line. */
+.lsncall.seen {
+  display: inline-flex; gap: 7px; padding: 0; margin: 10px 0 4px;
+  border: 0; background: none; align-items: center;
+}
+.lsncall.seen .lsncall-body, .lsncall.seen .lsncall-go { display: none }
+.lsncall.seen .lsncall-ic {
+  width: auto; height: auto; border: 0; font-size: 14px; color: var(--txt3);
+}
+.lsncall.seen .lsncall-quiet {
+  display: inline; font-size: 13.5px; color: var(--a1); text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--a1) 40%, transparent);
+}
+.lsncall.seen .lsncall-quiet:hover { border-bottom-color: var(--a1) }
+
+@media (max-width: 560px) {
+  .lsncall { padding: 13px 14px; gap: 11px }
+  .lsncall-go { width: 100% ; justify-content: center }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .lsn-hand, .lsn-coin { transition: none }

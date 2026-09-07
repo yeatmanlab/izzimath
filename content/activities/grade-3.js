@@ -1,4 +1,4 @@
-import { array2d, numberLine, tickRange, fractionBar, barChart, tapeDiagram, esc } from '../../src/lib/widgets.js';
+import { array2d, numberLine, tickRange, fractionBar, barChart, tapeDiagram, esc, pickDecoys } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { frac, fracText, simplify, valF, gcd } from '../../src/lib/frac.js';
 import { fill } from '../characters.js';
@@ -114,11 +114,16 @@ const fractionNumberLine = {
 
     if (stage === 'name') {
       const d = r.pick(dens), n = r.int(1, d - 1);
-      const wrongs = [...new Set([`${n + 1}/${d}`, `${n}/${d + 1}`, `${d - n}/${d}`])].filter((x) => x !== `${n}/${d}`);
+      /* `${d - n}/${d}` IS `${n}/${d}` whenever d is twice n, which is a quarter
+         of these, so the pool needs more than three candidates in it. */
+      const wrongs = pickDecoys(`${n}/${d}`, [
+        `${n + 1}/${d}`, `${n}/${d + 1}`, `${d - n}/${d}`,
+        `${Math.max(1, n - 1)}/${d}`, `${n}/${Math.max(2, d - 1)}`, `${d}/${n || 1}`,
+      ], 3);
       return {
         type: 'choice', prompt: 'What fraction is shaded?',
         visual: fractionBar(n, d), visualWidth: 320,
-        choices: r.shuffle([`${n}/${d}`, ...r.sample(wrongs, Math.min(3, wrongs.length))]),
+        choices: r.shuffle([`${n}/${d}`, ...wrongs]),
         answer: `${n}/${d}`,
         printStem: `What fraction is shaded?`,
         printVisual: fractionBar(n, d, { print: true, width: 200, height: 30 }),
@@ -284,7 +289,9 @@ const arrayArchitect = {
     return {
       type: 'choice', prompt: 'How many squares?',
       visual: array2d(rows, cols, { fit: 150 }), visualWidth: 220,
-      choices: r.shuffle([...new Set([rows * cols, rows * cols + rows, rows * cols - cols, rows + cols])].filter((x) => x > 0)).slice(0, 4).map(String),
+      choices: r.shuffle([rows * cols, ...pickDecoys(rows * cols,
+        [rows * cols + rows, rows * cols - cols, rows + cols, rows * cols + cols,
+         rows * cols - rows, rows * cols + 1, rows * cols - 1].filter((x) => x > 0), 3)]).map(String),
       answer: String(rows * cols),
       printStem: 'How many squares?',
       printVisual: array2d(rows, cols, { print: true, fit: 96 }),

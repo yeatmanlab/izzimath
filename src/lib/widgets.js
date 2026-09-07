@@ -248,6 +248,37 @@ export function numberBond(whole, a, b, { print = false, blank = null, size = 21
 }
 
 /* ---------------- bar chart (measurement and data strands) ---------------- */
+/* ------------------------------------------------------------------ decoys
+   Four options that are genuinely four.
+
+   Five activities across three grades built their distractors as a fixed list,
+   deduped it, and then took three — so whenever two of the expressions happened
+   to agree, the question shipped with three options instead of four. It was
+   never rare: 50 of 125 instances for make-ten-race, 30 of 300 for
+   double-frame-flash, a quarter of Clocks and Time's and of
+   fraction-number-line's. Every existing check passed, because the answer was
+   right and the distractors that survived were distinct. It took a screenshot
+   of a live page to notice, and `scripts/check.mjs` now fails on an option count
+   that wobbles between instances of the same question.
+
+   This walks the candidates IN ORDER and takes the first n that are new, so a
+   collision costs a later candidate rather than an option. Order them
+   most-instructive-first: the near miss a child would actually make belongs
+   ahead of the filler that only exists to keep the count up. */
+export function pickDecoys(right, candidates, n = 3) {
+  const seen = new Set([String(right)]);
+  const out = [];
+  for (const c of candidates) {
+    if (c === null || c === undefined) continue;
+    const k = String(c);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(c);
+    if (out.length === n) break;
+  }
+  return out;
+}
+
 /* -------------------------------------------------------------------- money
    THE RELATIVE SIZES ARE REAL, AND THAT IS NOT DECORATION. The single most
    reported misconception in early money work is that a bigger coin is worth

@@ -1,4 +1,4 @@
-import { array2d, numberLine, tickRange, fractionBar, esc } from '../../src/lib/widgets.js';
+import { array2d, numberLine, tickRange, fractionBar, esc, pickDecoys } from '../../src/lib/widgets.js';
 import { STRANDS } from './strands.js';
 import { fill } from '../characters.js';
 import { wordProblem } from '../wordproblems.js';
@@ -898,12 +898,20 @@ const factorForest = {
       const factors = [];
       for (let k = 1; k * k <= n; k++) if (n % k === 0) factors.push(k);
       const target = r.pick(factors.filter((f) => f > 1)) ?? 2;
-      const wrongs = [...new Set([target + 1, target - 1, target + 3, n / target + 1])]
-        .filter((x) => x > 1 && x < n && n % x !== 0);
+      /* Walk outwards from the target for genuine NON-factors, rather than
+         hoping four expressions land on three of them. They mostly did not:
+         30 of 75 instances came out as a two-option question, which is a coin
+         toss dressed as a maths problem. */
+      const wrongs = [];
+      for (let step = 1; step < n && wrongs.length < 6; step++) {
+        for (const cand of [target + step, target - step]) {
+          if (cand > 1 && cand < n && n % cand !== 0 && !wrongs.includes(cand)) wrongs.push(cand);
+        }
+      }
       return {
         type: 'choice',
         prompt: `Which of these is a factor of <strong>${n}</strong>?`,
-        choices: r.shuffle([String(target), ...r.sample(wrongs, Math.min(3, wrongs.length)).map(String)]),
+        choices: r.shuffle([String(target), ...pickDecoys(target, wrongs, 3).map(String)]),
         answer: String(target),
         printStem: `Circle the factor of ${n}.`,
         hint: `A factor divides ${n} exactly, with nothing left over.`,
