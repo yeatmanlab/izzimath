@@ -209,7 +209,6 @@ console.log('\n=== clocks and coins ===');
   /* The clock label must not state the time. Attributes, never the conclusion —
      the same rule the geometry figures follow. */
   let handfulsSeen = 0;
-  let calloutsSeen = 0;
   let clocks = 0;
   for (const [h, m] of [[3, 0], [2, 30], [4, 15], [10, 20], [12, 0]]) {
     const label = clockFace(h, m).match(/aria-label="([^"]*)"/)[1];
@@ -233,36 +232,6 @@ console.log('\n=== clocks and coins ===');
     if (got.h !== wh || got.m !== wm) {
       fail('clocks', `${h}:${String(m).padStart(2, '0')} plus ${add} minutes gave ${got.h}:${String(got.m).padStart(2, '0')}, expected ${wh}:${String(wm).padStart(2, '0')}`);
     }
-  }
-
-  /* The lesson callout must ship LOUD. It has two weights — a full callout for a
-     reader who has never opened the lesson, a quiet line for one coming back —
-     and which one shows is decided in the browser from localStorage. So the
-     built page must carry the loud state, or a reader with no JavaScript, or on
-     a fresh device, gets the quiet version: the small link that was easy to miss
-     in the first place, hidden from exactly the child meeting a clock for the
-     first time.
-
-     Also checks the module that does the collapsing actually ships on the page.
-     It did not: the logic was written, the visit was recorded, and nothing read
-     it back, because lesson.js only shipped on /learn/. */
-  {
-    let callouts = 0;
-    for (const a of activities.filter((x) => x.lesson)) {
-      const file = new URL(`../dist/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/index.html`, import.meta.url);
-      let html; try { html = fs.readFileSync(file, 'utf8'); } catch { continue; }
-      callouts++;
-      if (!html.includes('data-lesson-call=')) fail(a.id, `declares lesson "${a.lesson}" but the page has no callout`);
-      if (/class="lsncall[^"]*\bseen\b/.test(html)) {
-        fail(a.id, 'the lesson callout ships already collapsed — the loud state has to be the default, or a reader without JavaScript never sees it');
-      }
-      if (!html.includes('/assets/src/mount/lesson.js')) {
-        fail(a.id, 'has a lesson callout but does not load lesson.js, so it can never collapse once the lesson has been read');
-      }
-      if (!html.includes(`/learn/${a.lesson}/`)) fail(a.id, `callout does not link to /learn/${a.lesson}/`);
-    }
-    if (activities.some((x) => x.lesson) && !callouts) fail('lessons', 'no activity pages were found to check');
-    calloutsSeen = callouts;
   }
 
   /* A handful of coins has to be worth counting. The generator's first version
@@ -311,8 +280,7 @@ console.log('\n=== clocks and coins ===');
     });
   }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words · ${
-    calloutsSeen} callouts shipping loud`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words`);
 }
 
 /* ------------------------------------------------------------- the character cup

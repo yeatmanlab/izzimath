@@ -55,6 +55,14 @@ Several in this repo could not fail when first written:
   `pagefill.html` reports `OVER`/`WIDE`/`THIN`/`COUNT`. They could not see a
   page-fill failure at all.
 
+And put a check where its evidence exists. `npm run verify` and the CI workflow
+both run `scripts/check.mjs` BEFORE `build.mjs`, so a check in that file cannot
+read `dist/` — a built-page assertion belongs in `a11y.mjs`, which runs after.
+The lesson-callout check was written in `check.mjs`, passed locally because a
+manual build had left `dist` lying around, and failed in CI. Its own
+empty-result guard is the only reason that was loud rather than a check quietly
+measuring nothing. **Delete `dist` before believing a green run.**
+
 So: after writing a check, **reintroduce the bug and watch it go red.** Back up
 the file, `perl -0pi -e` the fix out, re-run, confirm the failure names the right
 thing, restore. If the bug only appears under some condition — a narrow viewport,

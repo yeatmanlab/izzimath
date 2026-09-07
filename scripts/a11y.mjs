@@ -3,6 +3,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { activities } from '../content/activities/index.js';
 
 const OUT = 'dist';
 const files = [];
@@ -145,6 +146,51 @@ for (const f of files) {
    notice and it is not the whole check. */
 {
   let checked = 0, offenders = [];
+/* ---------------------------------------------------- the lesson callout
+   HERE rather than in scripts/check.mjs, and that is the whole point: this
+   asserts something about the BUILT page, and check.mjs runs BEFORE the build —
+   in CI and in `npm run verify` alike. The first version of this lived there,
+   passed on my machine because dist was left over from a manual build, and
+   failed in CI with "no activity pages were found to check". Its own
+   empty-result guard is what turned that into a loud failure instead of a check
+   that silently measured nothing.
+
+   What it holds: the callout has two weights, and which one shows is decided in
+   the browser from localStorage. The built page must therefore carry the LOUD
+   one — a reader with no JavaScript, or on a fresh device, has never seen the
+   lesson, and shipping the collapsed version would hide it from exactly the
+   child meeting a clock for the first time. It also checks that the module
+   which does the collapsing is on the page, because the first attempt recorded
+   the visit and never read it back: lesson.js only shipped on /learn/. */
+{
+  console.log('');
+  const withLesson = [...activities].filter((a) => a.lesson);
+  let seen = 0, bad = 0;
+  for (const a of withLesson) {
+    const f = `${OUT}/${a.kind === 'book' ? 'books' : 'games'}/${a.id}/index.html`;
+    let html;
+    try { html = fs.readFileSync(f, 'utf8'); } catch {
+      console.log(`  FAIL  ${a.id}: declares lesson "${a.lesson}" but ${f} was not built`);
+      errors++; bad++; continue;
+    }
+    seen++;
+    const say = (m) => { console.log(`  FAIL  ${a.id}: ${m}`); errors++; bad++; };
+    if (!html.includes('data-lesson-call=')) say(`declares lesson "${a.lesson}" but the page has no callout`);
+    if (/class="lsncall[^"]*\bseen\b/.test(html)) {
+      say('the lesson callout ships already collapsed — loud has to be the default, or a reader without JavaScript never sees it');
+    }
+    if (!html.includes('/assets/src/mount/lesson.js')) {
+      say('has a lesson callout but does not load lesson.js, so it can never collapse once the lesson has been read');
+    }
+    if (!html.includes(`/learn/${a.lesson}/`)) say(`callout does not link to /learn/${a.lesson}/`);
+  }
+  if (withLesson.length && !seen) {
+    console.log('  FAIL  lessons: no activity pages were found to check — an empty result is not a pass');
+    errors++;
+  }
+  console.log(`  ${seen} lesson callouts on activity pages${bad ? `, ${bad} PROBLEMS` : ', all shipping loud'}`);
+}
+
   for (const f of files) {
     const html = fs.readFileSync(f, 'utf8');
     const i = html.indexOf('data-feedback');
