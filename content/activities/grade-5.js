@@ -82,7 +82,7 @@ const fractionFoundry = {
       prompt: `<strong>${n1}/${d1} ÷ ${n2}/${d2} =</strong>`,
       answer: fracText(res), placeholder: 'e.g. 2/3',
       printStem: `${n1}/${d1} ÷ ${n2}/${d2} =`,
-      hint: `Flip the second fraction and multiply: × ${d2}/${n2}.`,
+      hint: `Dividing asks how many of the second fraction fit into the first, and ${n2}/${d2} fits ${d2}/${n2} times into 1 \u2014 so multiply by ${d2}/${n2}.`,
       explain: `${n1}/${d1} × ${d2}/${n2} = ${fracText(res)}.`,
     };
   },
@@ -361,7 +361,7 @@ const standardAlgorithm = {
   id: 'standard-algorithm', title: 'The Standard Algorithm', kind: 'book', grade: '5', strand: S[2],
   glyph: '⟌',
   skill: 'Multiplying multi-digit numbers and dividing by two digits, fluently.',
-  trick: 'One column at a time, and write every carry down where you can see it. Slow is fast here.',
+  trick: 'One column at a time, and write every composed ten down where you can see it. Slow is fast here.',
   blurb: 'The written methods, at full size. Two digits by two, and long division.',
   ccss: ['5.NBT.B.5', '5.NBT.B.6'],
   im: [4],

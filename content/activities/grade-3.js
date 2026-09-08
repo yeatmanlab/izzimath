@@ -67,8 +67,8 @@ const fractionNumberLine = {
   id: 'fraction-number-line', title: 'Fraction Number Line', kind: 'book', grade: '3', strand: S[1],
   glyph: '¾',
   lesson: 'fractions',
-  skill: 'Placing a fraction on a number line, and seeing which fractions are equal.',
-  trick: 'The bottom number says how many equal jumps fit between 0 and 1. Make jumps that size, then take the top number of them.',
+  skill: 'Locating a fraction on a number line, building it from unit fractions, and seeing which fractions are equivalent.',
+  trick: 'The bottom number says how many equal jumps fit between 0 and 1, and one of those jumps is the UNIT FRACTION. Make jumps that size, then take the top number of them — every fraction is built from copies of its unit fraction.',
   printScratch: true,
   blurb: 'Halves, thirds, fourths and eighths — find them on the line.',
   ccss: ['3.NF.A.2', '3.NF.A.3'],
@@ -326,10 +326,10 @@ const fourWaysToSubtract = {
   id: 'four-ways-to-subtract', title: 'Four Ways to Subtract', kind: 'book', grade: '3', strand: S[3],
   glyph: '\u2212',
   skill: 'Three-digit subtraction across all four cases, and knowing which one you are looking at.',
-  trick: 'Look at the columns before you start. If every top digit is bigger, just subtract. If one is smaller, borrow. If it is a zero, borrow from further along. And if the number you are taking away is nearly a hundred, move both numbers.',
+  trick: 'Look at the columns before you start. If every top digit is bigger, just subtract. If one is smaller, DECOMPOSE a ten from next door. If it is a zero, decompose a hundred into ten tens first. And if the number you are taking away is nearly a hundred, move both numbers.',
   printScratch: true,
   printDensity: 'd2',
-  blurb: 'Take away with no borrow, one borrow, a borrow across zero — and the trick that avoids borrowing altogether.',
+  blurb: 'Subtracting with nothing decomposed, one ten decomposed, a hundred decomposed across a zero — and the trick that avoids all of it.',
   ccss: ['3.NBT.A.2'],
   im: [3],
   refs: ['im-scope-sequence', 'wwc-2021-math', 'rohrer-2020'],
@@ -343,7 +343,7 @@ const fourWaysToSubtract = {
   pages: 12, printItems: 14,
   printInstruction: 'Work out each subtraction. For the true or false questions, circle T or F.',
   printInstructions: {
-    input: 'Subtract. Show your borrowing.',
+    input: 'Subtract. Show where you decompose a ten.',
     truefalse: 'Is the claim true or false? Circle T or F.',
   },
   generate(seed, i, ch, r) {
@@ -360,8 +360,8 @@ const fourWaysToSubtract = {
         answer: String(a - b), placeholder: '?',
         printStem: `${a} \u2212 ${b} =`,
         printKeyWorking: true,
-        hint: `Every digit on top is bigger than the one below it, so no borrowing is needed. Take each column on its own.`,
-        explain: `No borrowing here: ${o} \u2212 ${bo} = ${o - bo}, ${t} \u2212 ${bt} = ${t - bt}, ${h} \u2212 ${bh} = ${h - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
+        hint: `Every digit on top is bigger than the one below it, so nothing has to be decomposed. Take each column on its own.`,
+        explain: `Nothing to decompose here: ${o} \u2212 ${bo} = ${o - bo}, ${t} \u2212 ${bt} = ${t - bt}, ${h} \u2212 ${bh} = ${h - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
       };
     }
 
@@ -376,8 +376,8 @@ const fourWaysToSubtract = {
         answer: String(a - b), placeholder: '?',
         printStem: `${a} \u2212 ${b} =`,
         printKeyWorking: true,
-        hint: `${o} is smaller than ${bo}, so borrow a ten: the ${o} becomes ${o + 10} and the ${t} becomes ${t - 1}.`,
-        explain: `Borrow one ten: ${o + 10} \u2212 ${bo} = ${o + 10 - bo}, then ${t - 1} \u2212 ${bt} = ${t - 1 - bt}, then ${h} \u2212 ${bh} = ${h - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
+        hint: `${o} is smaller than ${bo}, so decompose a ten: the ${o} becomes ${o + 10} and the ${t} becomes ${t - 1}.`,
+        explain: `Decompose one ten: ${o + 10} \u2212 ${bo} = ${o + 10 - bo}, then ${t - 1} \u2212 ${bt} = ${t - 1 - bt}, then ${h} \u2212 ${bh} = ${h - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
       };
     }
 
@@ -397,8 +397,8 @@ const fourWaysToSubtract = {
         answer: String(a - b), placeholder: '?',
         printStem: `${a} \u2212 ${b} =`,
         printKeyWorking: true,
-        hint: `There are no tens to borrow from. Take one hundred and turn it into ten tens first, then borrow one of those.`,
-        explain: `${a} is ${h - 1} hundreds and 10 tens. Borrow one of those tens: 10 \u2212 ${bo} = ${10 - bo}, then 9 \u2212 ${bt} = ${9 - bt}, then ${h - 1} \u2212 ${bh} = ${h - 1 - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
+        hint: `There are no tens to decompose. Decompose one hundred into ten tens first, then decompose one of those tens.`,
+        explain: `${a} is ${h - 1} hundreds and 10 tens. Decompose one of those tens: 10 \u2212 ${bo} = ${10 - bo}, then 9 \u2212 ${bt} = ${9 - bt}, then ${h - 1} \u2212 ${bh} = ${h - 1 - bh}. So ${a} \u2212 ${b} = ${a - b}.`,
       };
     }
 

@@ -232,12 +232,12 @@ const placeValuePalace = {
 
 /* ------------------------------------------------------------ BOOK: carry and borrow */
 const carryAndBorrow = {
-  id: 'carry-and-borrow', title: 'Carry and Borrow', kind: 'book', grade: '2', strand: S[1],
+  id: 'carry-and-borrow', title: 'Composing and Decomposing Tens', kind: 'book', grade: '2', strand: S[1],
   glyph: '⇄',
-  skill: 'Two-digit addition and subtraction, with and without regrouping.',
-  trick: 'Line the ones up under the ones. Start at the right. If a column makes ten or more, write the ones digit and carry the ten next door.',
+  skill: 'Two-digit addition and subtraction, with and without composing or decomposing a ten.',
+  trick: 'Line the ones up under the ones and start at the right. If the ones make ten or more, COMPOSE a ten and write it in the tens column. If you cannot take the ones away, DECOMPOSE a ten from next door into ten ones. (Grown-ups may have learned these as carrying and borrowing.)',
   printScratch: true,
-  blurb: 'The four cases: add with and without a carry, subtract with and without a borrow.',
+  blurb: 'The four cases: adding with and without composing a ten, subtracting with and without decomposing one.',
   ccss: ['2.NBT.B.5', '2.NBT.B.7'],
   im: [2, 7],
   refs: ['im-scope-sequence', 'rohrer-2020', 'barton-variation'],
@@ -248,9 +248,9 @@ const carryAndBorrow = {
     { task: 'fluencyCalf', subscale: 'sub-noborrow' },
     { task: 'fluencyCalf', subscale: 'sub-borrow' },
   ],
-  evidence: 'Four procedures that fail separately, so they are practised separately and then interleaved: add without carrying, add with carrying, subtract without borrowing, subtract with borrowing. Interleaving matters here — mixing the four is what forces a child to read the problem rather than repeat the last method.',
+  evidence: 'Four procedures that fail separately, so they are practised separately and then interleaved: adding with and without composing a ten, subtracting with and without decomposing one. Interleaving matters here — mixing the four is what forces a child to read the problem rather than repeat the last method. The words are Illustrative Mathematics\u2019: its grade 2 lessons are titled \u201cHow Do We Compose a Hundred?\u201d and \u201cCompose Three-digit Numbers\u201d, and carry, borrow and regroup appear in none of them. Compose and decompose also name what actually happens to the ten, where borrowing implies a debt that is never repaid. The trick box keeps one bridge to the older words, because the adult holding the sheet was taught those.',
   pages: 16, printItems: 14,
-  printInstruction: 'Work these out. Watch for the ones that regroup.',
+  printInstruction: 'Work these out. Watch for the ones where a ten has to be composed or decomposed.',
   generate(seed, i, ch, r) {
     // Every fifth item is a word problem, tagged by schema rather than by
     // operation — the structure is the thing being taught. A fixed stride
@@ -268,7 +268,7 @@ const carryAndBorrow = {
       const a = t1 * 10 + o1, b = t2 * 10 + o2;
       return { type: 'input', prompt: `<strong>${a} + ${b}</strong>`, answer: String(a + b), placeholder: '?',
         printStem: `${a} + ${b} =`, hint: 'No column goes past nine here — just add each column.',
-        explain: `${a} + ${b} = ${a + b}. Nothing regrouped.` };
+        explain: `${a} + ${b} = ${a + b}. No ten had to be composed.` };
     }
     if (stage === 1) {
       // CALF A2/A4 — with carry
@@ -276,8 +276,8 @@ const carryAndBorrow = {
       const a = r.int(1, 8) * 10 + o1, b = r.int(1, 8) * 10 + o2;
       return { type: 'input', prompt: `<strong>${a} + ${b}</strong>`, answer: String(a + b), placeholder: '?',
         printStem: `${a} + ${b} =`,
-        hint: `${o1} + ${o2} is more than ten, so a ten carries into the tens column.`,
-        explain: `${o1} + ${o2} = ${o1 + o2}, so write ${(o1 + o2) % 10} and carry 1. Total ${a + b}.` };
+        hint: `${o1} + ${o2} is more than ten, so compose a ten and write it in the tens column.`,
+        explain: `${o1} + ${o2} = ${o1 + o2}, which is one ten and ${(o1 + o2) % 10} ones. Write the ${(o1 + o2) % 10} and compose the ten into the tens column. Total ${a + b}.` };
     }
     if (stage === 2) {
       // CALF S1 — no borrow
@@ -285,7 +285,7 @@ const carryAndBorrow = {
       const t2 = r.int(1, t1 - 1), o2 = r.int(0, o1);
       const a = t1 * 10 + o1, b = t2 * 10 + o2;
       return { type: 'input', prompt: `<strong>${a} − ${b}</strong>`, answer: String(a - b), placeholder: '?',
-        printStem: `${a} − ${b} =`, hint: 'Every ones digit on top is big enough — no borrowing needed.',
+        printStem: `${a} − ${b} =`, hint: 'Every ones digit on top is big enough, so no ten has to be decomposed.',
         explain: `${a} − ${b} = ${a - b}.` };
     }
     // CALF S2 — with borrow
@@ -294,8 +294,8 @@ const carryAndBorrow = {
     const a = t1 * 10 + o1, b = t2 * 10 + o2;
     return { type: 'input', prompt: `<strong>${a} − ${b}</strong>`, answer: String(a - b), placeholder: '?',
       printStem: `${a} − ${b} =`,
-      hint: `You cannot take ${o2} from ${o1}, so borrow a ten.`,
-      explain: `Borrow a ten: ${o1 + 10} − ${o2} = ${o1 + 10 - o2}. Answer ${a - b}.` };
+      hint: `You cannot take ${o2} from ${o1}, so decompose a ten from next door into ten ones.`,
+      explain: `Decompose a ten into ten ones, so the ${o1} becomes ${o1 + 10}: ${o1 + 10} − ${o2} = ${o1 + 10 - o2}. Answer ${a - b}.` };
   },
 };
 

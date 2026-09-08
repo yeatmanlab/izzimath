@@ -240,7 +240,8 @@ export const LESSONS = {
         sweep: true, count: true,
         head: 'Cut it in half.',
         say: 'One cut down the middle makes two pieces, and they have to be the SAME SIZE or they '
-          + 'are not halves. One piece out of two is shaded: one half.',
+          + 'are not halves. One piece out of two is shaded: one half. A single piece like that has '
+          + 'a name \u2014 a UNIT FRACTION \u2014 and every other fraction is built out of copies of one.',
         aside: 'Equal pieces. If one side is fatter it is not a half.',
       },
       {

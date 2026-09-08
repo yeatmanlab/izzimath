@@ -83,7 +83,7 @@ const tensAndOnes = {
      about, argued rather than answered. */
   warmUp: { routine: 'wodb', params: { max: 99 } },
   glyph: '⑽',
-  skill: 'Place value to 100 — reading a number as tens and ones, and adding without regrouping.',
+  skill: 'Place value to 100 — reading a number as tens and ones, and adding without composing a new ten.',
   trick: 'The left digit counts tens, the right digit counts ones. Add tens to tens and ones to ones, and keep each in its own column.',
   blurb: 'How many tens? How many ones? Then add them up.',
   ccss: ['1.NBT.B.2', '1.NBT.C.4'],
@@ -139,7 +139,7 @@ const tensAndOnes = {
     return {
       type: 'input', prompt: `What is <strong>${a} + ${b}</strong>?`,
       answer: String(a + b), placeholder: '?', printStem: `${a} + ${b} =`,
-      hint: 'Add the ones, then add the tens. Nothing carries here.',
+      hint: 'Add the ones, then add the tens. No new ten to compose here.',
       explain: `${o1} + ${o2} = ${o1 + o2} ones, and ${t1} + ${t2} = ${t1 + t2} tens. So ${a + b}.`,
     };
   },
