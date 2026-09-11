@@ -15,6 +15,8 @@ import { references, refIds, getRef, refShort, refCitation, buildReverseIndex, i
 import { IM_UNITS, imUnit, imUnitsFor, imCourseGuide } from './content/curriculum.js';
 import { characters, characterList, getCharacter } from './content/characters.js';
 import { CUP } from './content/leaderboard.js';
+import { BADGES, BADGE_COUNT, CATEGORIES } from './content/badges.js';
+import { badgeTable } from './src/lib/badgeart.js';
 import { LESSONS, LESSON_LINK, LESSON_CALL, LESSON_INDEX } from './content/lessons.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
@@ -829,7 +831,46 @@ for (const lesson of Object.values(LESSONS)) {
         <p class="sub">Loading the ${cupChars.length} friends&hellip;</p>
       </div>
       <p class="sub" style="margin-top:26px">Nothing on this page is sent anywhere, and no child appears on it.
-      If you want to know what a badge is, the <a href="${b}/guide/">one-page guide</a> lists all of them.</p>
+      If you want to know what a badge is, <a href="${b}/badges/">all ${BADGE_COUNT} of them are listed here</a>,
+      with what it takes to earn each one.</p>
+    </section>`,
+  }));
+}
+
+/* ------------------------------------------------------------------ the badges
+   Every badge and what it takes, with no profile needed to read it.
+
+   This page exists because the cup page spent months telling readers that "the
+   one-page guide lists all of them" and the guide listed none of them: the only
+   copy describing a badge anywhere on the site was a `title=` tooltip on the
+   shelf, which a tablet cannot show. The shelf now answers when pressed
+   (src/lib/badgeart.js); this is the same answer for someone who has not earned
+   anything yet, and it prints.
+
+   It shows `todo` rather than `says` throughout — to a reader who has not earned
+   it, what matters is how to. */
+{
+  write('badges/index.html', page({
+    base: b, active: '', title: `All ${BADGE_COUNT} badges`,
+    desc: `Every Izzi Math badge and what it takes to earn one. Badges come from doing the maths — none is given for showing up.`,
+    crumbs: [{ label: 'Home', href: '/' }, { label: 'Badges' }],
+    body: `<section class="wrap sec prose" style="padding-top:24px">
+      <h1 style="font-size:30px">All ${BADGE_COUNT} badges</h1>
+      <p class="sub">A badge says what you did &mdash; it is a record, not a prize, so there is
+      none for showing up, none for being quick, and none that can be lost. ${
+        BADGES.filter((x) => x.cat === 'climb' || x.cat === 'streak').length} of them can only be
+      reached by getting the maths right.</p>
+      <p class="sub">Keeping score is optional. Press <strong>Scores</strong> at the top of any page
+      to start, and the ones you have earned show up on your own shelf, where pressing a badge says
+      what you did and when.</p>
+      <div class="prow noprint" style="margin-bottom:22px">
+        <button class="btn pri" onclick="window.print()">&darr; Print this page</button>
+        <a class="btn" href="${b}/cup/">The character cup &rarr;</a>
+      </div>
+      ${badgeTable()}
+      <p class="sub" style="margin-top:26px">Nothing here is compared between children. There are no
+      rarity percentages and no list of who has what &mdash; the only ranking on the site is
+      <a href="${b}/cup/">the four friends against each other</a>, and no child appears on it.</p>
     </section>`,
   }));
 }
@@ -863,6 +904,8 @@ for (const lesson of Object.values(LESSONS)) {
     ['By skill', `${b}/skills/`, 'If you already know the sticking point, this is the faster way in.'],
     ['How to help', `${b}/parents/`, 'How long, how often, and what to say when they are stuck.'],
     ['Keeping score', `${b}/`, 'Optional and never asked for twice: pick a creature, a name and a secret snack, and scores stay in this browser. No account, and nothing is sent anywhere.'],
+    ['Badges', `${b}/badges/`,
+      `All ${BADGE_COUNT} of them, and what each one takes. A badge says what you did, so there is none for showing up and none for being quick.`],
     ['Short lessons', `${b}/learn/`,
       'How a clock works, and how coins work. The clock hands move, which is what a printed sheet cannot do. Linked from every time and money activity, so a child who is stuck can go back to it.'],
     ['The character cup', `${b}/cup/`,
@@ -873,7 +916,7 @@ for (const lesson of Object.values(LESSONS)) {
     desc: 'Every part of Izzi Math in one list: books, games, printables, plans and how scores work.',
     crumbs: [{ label: 'Home', href: '/' }, { label: 'Take a tour' }],
     scripts: ['/assets/src/mount/tour.js'],
-    body: `<section class="wrap sec" style="padding-top:24px">
+    body: `<section class="wrap sec prose" style="padding-top:24px">
       <h1 style="font-size:30px">Everything on Izzi Math, on one page.</h1>
       <p class="sub">Nothing here needs an account. Every activity works on screen and prints,
       and the maths is the same whichever character is on.</p>

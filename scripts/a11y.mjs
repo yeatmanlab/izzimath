@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { activities } from '../content/activities/index.js';
 import { LESSONS } from '../content/lessons.js';
+import { BADGES, BADGE_COUNT } from '../content/badges.js';
 /* The templates' OWN escaper, imported rather than reimplemented. A local copy
    was written first and it already disagreed — templates.mjs also escapes the
    apostrophe to &#39; — so a title with one in it would never have matched and
@@ -277,6 +278,108 @@ for (const f of files) {
   }
   console.log(`  ${lessons.length} lessons on the index${errs
     ? `, ${errs} PROBLEM${errs === 1 ? '' : 'S'}` : ', each linked both ways with its practice strip'}`);
+}
+
+/* ------------------------------------------------------ the badge list at /badges/
+   Here rather than in check.mjs because every assertion is about a built page,
+   and check.mjs runs before the build.
+
+   This page exists because a promise on another page was false: the cup told
+   readers "the one-page guide lists all of them" and the guide listed none. So
+   what is checked is the promise as much as the page — a list that loses a
+   badge, or a cup that points at nothing, puts the site back where it was. */
+{
+  console.log('');
+  let errs = 0;
+  const say = (m) => { console.log(`  FAIL  badges: ${m}`); errors++; errs++; };
+  let idx = null;
+  try { idx = fs.readFileSync(`${OUT}/badges/index.html`, 'utf8'); } catch {
+    say('the list was not built at badges/index.html');
+  }
+  if (idx) {
+    for (const bd of BADGES) {
+      if (!idx.includes(esc(bd.name))) say(`the list does not name "${bd.name}"`);
+      /* `todo`, not `says`. A reader here has earned nothing by definition, so
+         what they need is how to — and past-tense copy in front of someone who
+         has not done it reads as a claim about them. */
+      if (!idx.includes(esc(bd.todo))) say(`the list shows ${bd.id} without saying what it takes`);
+    }
+    const shown = (idx.match(/class="bdlist-li"/g) || []).length;
+    if (shown !== BADGE_COUNT) say(`the list renders ${shown} rows for ${BADGE_COUNT} badges`);
+    /* The page's own claim about itself has to be generated, not typed: the
+       printables page once read "Six of the forty-one sheets" for two days. */
+    if (!idx.includes(`All ${BADGE_COUNT} badges`)) say(`the page does not state its own count of ${BADGE_COUNT}`);
+    if (!/class="bdlist-medal"[^>]*>\s*<svg/.test(idx)) say('a row is missing its medal — .bdlist-medal has no svg in it');
+  }
+  /* Both ways. The cup is where a child reads that a friend is behind, so it is
+     the page that has to be able to answer "what is a badge". */
+  let cup = null;
+  try { cup = fs.readFileSync(`${OUT}/cup/index.html`, 'utf8'); } catch { say('the cup was not built'); }
+  if (cup && !/href="[^"]*\/badges\/"/.test(cup)) {
+    say('the cup does not link the badge list, which is the promise that was false before it existed');
+  }
+  if (idx && !/href="[^"]*\/cup\/"/.test(idx)) say('the badge list does not link back to the cup');
+  console.log(`  ${BADGE_COUNT} badges listed at /badges/${errs
+    ? `, ${errs} PROBLEM${errs === 1 ? '' : 'S'}` : ', each with what it takes, linked both ways with the cup'}`);
+}
+
+/* ------------------------------------------- a prose page that offers to print
+   "Print this page" on a dark-themed page is a trap, and it was live: the rules
+   in print.css force `html, body` to black on white, which does nothing for a
+   descendant carrying its own colour — and nearly every text class here does.
+   /guide/ shipped a Print button whose output had `.gmap dd` at --txt2 on white
+   (1.9:1) and would have had the badge list at --txt (#EAF0FF), which is white
+   on white.
+
+   The print SHEETS are not this: their greys are chosen for paper. So what is
+   checked is the prose pages — the ones with a print button and no `.sheet` —
+   and the requirement is that each one's container appears in the PROSE PRINT
+   list in print.css. That is what makes the next page someone adds a button to
+   fail here rather than on a parent's printer. */
+{
+  console.log('');
+  let errs = 0;
+  const say = (m) => { console.log(`  FAIL  prose-print: ${m}`); errors++; errs++; };
+  const css = fs.readFileSync(new URL('../src/styles/print.css', import.meta.url), 'utf8');
+  const marker = css.match(/PROSE PRINT: ([^\n]+)/);
+  const listed = marker ? marker[1].split(',').map((x) => x.trim().replace(/^\./, '')) : [];
+  if (!listed.length) say('print.css has no PROSE PRINT list, so nothing says which pages print as prose');
+  /* The list has to name selectors that are actually reset, not a comment that
+     drifted away from the rule under it.
+
+     Read by walking declaration blocks rather than with one regex over the
+     file: `\\.gmap[^{]*color: #000` cannot match, because the colour it is
+     looking for is on the far side of the `{`. That version reported both
+     containers as unreset while the rule sat right there — a check that fails
+     on correct code is as useless as one that cannot fail, and it took reading
+     its own output to see which of the two was wrong. */
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const resetSelectors = [...bare.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter((m) => /\bcolor:\s*#000\s*!important/.test(m[2]))
+    .flatMap((m) => m[1].split(',').map((x) => x.trim()));
+  for (const cls of listed) {
+    if (!resetSelectors.some((sel) => new RegExp(`\\.${cls}\\b`).test(sel))) {
+      say(`.${cls} is in the PROSE PRINT list but nothing resets its colour for paper`);
+    }
+  }
+  let prosePages = 0;
+  for (const f of files) {
+    const html = fs.readFileSync(f, 'utf8');
+    if (!html.includes('window.print()')) continue;
+    /* `data-sheet` is the host a print page renders its sheets into. Testing
+       for `class="sheet"` instead found nothing: those pages are client-
+       rendered, so the built markup has the host and not the sheet — and all 55
+       of them came back as prose pages printing in a screen colour. */
+    if (/data-sheet/.test(html)) continue;           // a print sheet, not prose
+    prosePages++;
+    const rel = `/${path.relative(OUT, f).replace(/index\.html$/, '')}`;
+    if (!listed.some((cls) => new RegExp(`class="[^"]*\\b${cls}\\b`).test(html))) {
+      say(`${rel} offers "Print this page" and none of its content is in the PROSE PRINT list — its text will print in a screen colour`);
+    }
+  }
+  if (!prosePages) say('no page was found offering to print itself, so this check measured nothing');
+  console.log(`  ${prosePages} prose pages offer to print${errs
+    ? `, ${errs} PROBLEM${errs === 1 ? '' : 'S'}` : `, ${listed.map((c) => `.${c}`).join(', ')} reset for paper`}`);
 }
 
   for (const f of files) {

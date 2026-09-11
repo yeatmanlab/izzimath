@@ -772,6 +772,81 @@ L.push('');
         && near.querySelectorAll('.bdcell').length > 0
         && near.querySelectorAll('.bdcell.got').length === 0);
       t('shelf shows the gaps too', d.querySelectorAll('.bd-locked').length > 0);
+
+      /* PRESSING A BADGE. Asked for by a first grader who could not tell what
+         any of the circles on the shelf were for — and was right, because the
+         only copy was a `title=` tooltip and an iPad cannot show one. Driven
+         here rather than in check.mjs because the answer is filled in at
+         runtime, so the Node checkers see an empty region however this behaves. */
+      {
+        const lit = d.querySelector('.bdstrip .bdcell.got');
+        const litTell = d.getElementById(lit?.getAttribute('aria-controls'));
+        t('a badge is a real button', lit?.tagName === 'BUTTON', lit?.tagName);
+        t('the badge is a fair tap target', (lit?.getBoundingClientRect().height ?? 0) >= 24,
+          Math.round(lit?.getBoundingClientRect().height ?? 0) + 'px');
+        t('nothing is said until one is pressed', !!litTell && litTell.hidden && !litTell.textContent.trim());
+
+        lit.click(); await sleep(90);
+        const litSaid = (litTell.textContent || '').replace(/\s+/g, ' ').trim();
+        const badge = BG.badgeById(lit.dataset.badge);
+        t('an earned badge says what you did',
+          !litTell.hidden && litSaid.includes(badge.says), litSaid.slice(0, 70));
+        /* The date and the character are the only two things about a badge that
+           are STORED (docs/BADGES.md rule 8), so they are the only two the line
+           cannot derive — and the reason to show them. */
+        t('and names the friend who was there', /Kiwi/.test(litSaid));
+        /* Not /Earned \d/: toLocaleDateString puts the month first in en-US and
+           the day first elsewhere, so anchoring on the order would pass in one
+           locale and fail in the other. A month name and a number is the claim. */
+        t('and says when', /Earned [A-Z][a-z]+[^.]*\d/.test(litSaid),
+          litSaid.slice(litSaid.indexOf('Earned')).slice(0, 34));
+        t('the button reads as open', lit.getAttribute('aria-expanded') === 'true');
+
+        lit.click(); await sleep(90);
+        t('pressing it again puts it away',
+          litTell.hidden && lit.getAttribute('aria-expanded') === 'false');
+
+        /* An unearned badge must say how to GET it. Showing `says` there would
+           be a claim about something the child has not done. */
+        const dark = d.querySelector('.bdnext + .bdstrip .bdcell:not(.got)');
+        const darkTell = d.getElementById(dark?.getAttribute('aria-controls'));
+        dark.click(); await sleep(90);
+        const darkSaid = (darkTell.textContent || '').replace(/\s+/g, ' ').trim();
+        const unearned = BG.badgeById(dark.dataset.badge);
+        t('a locked badge says what it takes',
+          !darkTell.hidden && darkSaid.includes(unearned.todo), darkSaid.slice(0, 70));
+        t('and does not claim it was done',
+          !darkSaid.includes(unearned.says) && !/Earned/.test(darkSaid));
+
+        /* One at a time, and these two are in DIFFERENT rows, so this is the
+           case where a second answer could be left stacked under the first. */
+        lit.click(); await sleep(90);
+        t('one answer open at a time',
+          darkTell.hidden && !litTell.hidden
+          && d.querySelectorAll('[data-tell]:not([hidden])').length === 1,
+          d.querySelectorAll('[data-tell]:not([hidden])').length + ' open');
+        t('and only one button reads as open',
+          d.querySelectorAll('.bdcell[aria-expanded="true"]').length === 1);
+        /* Twenty-four buttons inside a modal dialog: the trap still has to hold
+           with the whole set disclosed, which is the state it was never in. */
+        d.querySelector('.bdall > summary').click(); await sleep(120);
+        const shelfCells = d.querySelectorAll('.bdall .bdcell');
+        t('all 24 in the shelf are buttons',
+          shelfCells.length > 0 && [...shelfCells].every((c) => c.tagName === 'BUTTON'),
+          shelfCells.length + ' cells');
+        const one = [...shelfCells].find((c) => !c.classList.contains('got'));
+        one.click(); await sleep(90);
+        t('the whole shelf answers too',
+          !d.getElementById(one.getAttribute('aria-controls')).hidden);
+        t('and its answer lands in its own row',
+          d.getElementById(one.getAttribute('aria-controls')).closest('.bdgroup') === one.closest('.bdgroup'));
+        d.querySelector('.bdall > summary').click(); await sleep(80);
+        /* The tip is what makes any of this discoverable. A control a child
+           cannot see is a control a child does not use. */
+        t('the panel says to press one',
+          /[Pp]ress a badge/.test(d.querySelector('.bdtip')?.textContent || ''),
+          d.querySelector('.bdtip')?.textContent || 'no tip at all');
+      }
       /* This panel is mostly something to READ, so it must open at the top. It
          used to focus the first real control — two thirds of the way down — and
          the browser scrolled the greeting, including the snack the child needs
@@ -1658,10 +1733,117 @@ L.push('');
     cb('there are two views to choose from', tabs.length === 2, tabs.map((t) => t.textContent.trim()).join(' / '));
     cb('exactly one view reads as pressed',
       tabs.filter((t) => t.getAttribute('aria-pressed') === 'true').length === 1);
+
+    /* The friend who is on is marked, and only that one. renderCup is pure, so
+       this is the markup half; the press itself needs the real page and is
+       below. */
+    LB.renderCup(d, { rows, players, view: 'characters', ch: 'kiwi' });
+    const on = [...d.querySelectorAll('[data-cup-ch]')].filter((r) => r.getAttribute('aria-pressed') === 'true');
+    cb('the friend you are playing as is marked', on.length === 1 && on[0].dataset.cupCh === 'kiwi',
+      on.map((r) => r.dataset.cupCh).join(',') || 'none marked');
+    cb('and says so in words, not only in colour',
+      /playing/i.test(on[0]?.textContent || ''), (on[0]?.querySelector('.cupon')?.textContent || 'no pill'));
+    LB.renderCup(d, { rows, players, view: 'characters', ch: 'none' });
+    cb('nobody is marked with Just math chosen',
+      [...d.querySelectorAll('[data-cup-ch]')].every((r) => r.getAttribute('aria-pressed') === 'false'));
     d.remove();
   } catch (e) {
     cb('harness itself', false, 'THREW ' + e.message);
   }
+}
+
+/* ------------------------------------------- pressing a friend on the real cup
+   Asked for by a first grader: they read the cup, saw Kiwi had the fewest
+   badges and wanted to play as Kiwi — and the only picker was in the header,
+   two screens up, with nothing connecting it to the row they were looking at.
+
+   Through the real page rather than renderCup, because what is being checked is
+   the wiring: the press, theme.js, the redraw that follows, and the header
+   picker agreeing with the row. Every one of those is invisible to a pure
+   render, and a check that called the renderer would pass with the click
+   handler deleted. */
+{
+  const cb = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('cupswitch:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  const fr = document.createElement('iframe');
+  fr.style.cssText = 'position:absolute;left:-99999px;top:0;width:1100px;height:1400px';
+  fr.src = '/cup/';
+  document.body.appendChild(fr);
+  await new Promise((r) => { fr.onload = r; setTimeout(r, 8000); });
+  const w = fr.contentWindow, dd = fr.contentDocument;
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    await nap(400);
+    const rowFor = (id) => dd.querySelector('[data-cup-ch="' + id + '"]');
+    cb('the page renders four friends to press',
+      dd.querySelectorAll('[data-cup-ch]').length === 4,
+      dd.querySelectorAll('[data-cup-ch]').length + ' rows');
+
+    /* Start from Just math, so the first press is a real change rather than a
+       no-op — with kiwi already on, "it is kiwi afterwards" would be true
+       whether the press did anything or not. */
+    dd.querySelector('.chbtn[data-ch="none"]').click(); await nap(250);
+    cb('starting from Just math, nobody is marked',
+      [...dd.querySelectorAll('[data-cup-ch]')].every((r) => r.getAttribute('aria-pressed') === 'false'),
+      dd.documentElement.dataset.ch);
+
+    rowFor('kiwi').click(); await nap(300);
+    cb('pressing a friend plays as them', dd.documentElement.dataset.ch === 'kiwi',
+      'data-ch=' + dd.documentElement.dataset.ch);
+    cb('the row it was pressed on now reads as on',
+      rowFor('kiwi')?.getAttribute('aria-pressed') === 'true');
+    cb('and no other row does',
+      [...dd.querySelectorAll('[data-cup-ch]')].filter((r) => r.getAttribute('aria-pressed') === 'true').length === 1);
+    /* The header picker and the row are two views of one choice. They disagreed
+       in the first draft, because the list redrew and the picker did not. */
+    cb('the header picker agrees with the row',
+      dd.querySelector('.chbtn[data-ch="kiwi"]')?.getAttribute('aria-pressed') === 'true');
+    cb('the page is themed, not just labelled',
+      !!getComputedStyle(dd.documentElement).getPropertyValue('--a1').trim());
+    /* Focus follows the press, or a keyboard reader is dropped at the top of a
+       list that changed under them — the rule the view toggle already follows. */
+    cb('focus stays on the row that was pressed',
+      dd.activeElement === rowFor('kiwi'),
+      dd.activeElement?.dataset?.cupCh || dd.activeElement?.tagName);
+    cb('the choice is remembered for the next page',
+      w.localStorage.getItem('izzimath.character') === 'kiwi',
+      w.localStorage.getItem('izzimath.character'));
+
+    // and a second press moves it, rather than only ever adding
+    rowFor('flame').click(); await nap(300);
+    cb('pressing another friend moves it',
+      dd.documentElement.dataset.ch === 'flame'
+      && rowFor('kiwi')?.getAttribute('aria-pressed') === 'false'
+      && rowFor('flame')?.getAttribute('aria-pressed') === 'true',
+      'data-ch=' + dd.documentElement.dataset.ch);
+    /* Switching from the HEADER has to redraw the list too, or the page shows
+       one friend as on while the site is another. And it must not steal focus
+       into the list, which is why the redraw only refocuses its own press. */
+    const ashBtn = dd.querySelector('.chbtn[data-ch="ash"]');
+    /* Focused first ON PURPOSE. A synthetic click does not move focus, so
+       without this the reader's focus is on nothing and "the redraw did not
+       steal it" is true however the redraw behaves — the same trap as asserting
+       where focus lands after a synthetic Tab. Focusing first is what a real
+       press does, and makes the assertion able to fail. */
+    ashBtn.focus();
+    ashBtn.click(); await nap(300);
+    cb('switching in the header updates the rows',
+      rowFor('ash')?.getAttribute('aria-pressed') === 'true'
+      && rowFor('flame')?.getAttribute('aria-pressed') === 'false',
+      'data-ch=' + dd.documentElement.dataset.ch);
+    cb('and does not snatch focus into the list',
+      dd.activeElement === ashBtn && !dd.querySelector('[data-cup]').contains(dd.activeElement),
+      dd.activeElement === ashBtn ? 'the header button'
+        : dd.activeElement?.dataset?.cupCh ? dd.activeElement.dataset.cupCh + "'s ROW in the list"
+        : (dd.activeElement?.tagName || 'nothing'));
+    /* The instruction. The rows looked exactly like rows before, so without a
+       line saying they can be pressed the control is invisible. */
+    cb('the page says the rows can be pressed',
+      /[Tt]ap a friend/.test(dd.querySelector('.cuppick')?.textContent || ''),
+      dd.querySelector('.cuppick')?.textContent?.slice(0, 48) || 'nothing said');
+  } catch (e) {
+    cb('harness itself', false, 'THREW ' + e.message);
+  }
+  fr.remove();
 }
 
 L.push(''); L.push('CHECKS_RUN='+checks);

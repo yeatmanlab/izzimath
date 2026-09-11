@@ -22,7 +22,7 @@ engine, live in [`tools/`](tools/README.md). The build copies them to
 `dist/_tools/` for local runs and **deliberately does not in CI**
 (`build.mjs` guards on `!process.env.CI`), so `izzimath.com/_tools/` is a 404 on
 purpose — run them against a local `dist`, which is also the only place they can
-measure a build you are still changing: a **responsive audit** (41 pages × 5 widths, checking overflow,
+measure a build you are still changing: a **responsive audit** (42 pages × 5 widths, checking overflow,
 tap-target size, text size and SVG text contrast), a **problem-type test** (all ten types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
@@ -189,6 +189,28 @@ already exist, and a routine only needs a `ui` the registry knows.
   from one number, every frame. The arithmetic is exported as pure functions
   because **`requestAnimationFrame` does not run in a hidden tab**, so a test
   that watches the loop measures nothing and reports a pass.
+- **An explanation a finger cannot reach is not an explanation.** This site is
+  mostly read on a tablet, where there is no hover — so a `title=` attribute is
+  invisible, and a `<span>` carrying one is not focusable either, which puts
+  keyboard and screen reader in the same position. The badge shelf shipped its
+  entire copy that way: twenty-four circles, a child who could not tell what any
+  of them were for, and nowhere to find out. Every cell is a button now, the
+  sentence is inside it as text, and pressing it fills a region in that row —
+  earned says what you did and when, unearned says what to do. Enforced in
+  `scripts/check.mjs` (the markup and both lines of copy) and `tools/func.html`
+  (the press, because the answer is filled in at runtime). Same rule elsewhere:
+  if a control is the only route to something, it must be pressable, and if it
+  is pressable it must say so — the cup's rows switch character and the line
+  above them says "Tap a friend to play as them", because they look exactly like
+  rows.
+- **A prose page that offers to print needs `.prose`.** The print rules force
+  `html, body` black on white, which does nothing for a descendant carrying its
+  own colour — and on a dark theme nearly every text class does. `/guide/` had a
+  "Print this page" button producing a sheet with `.sub` at 1.9:1 on white.
+  `.prose` is the one container print.css resets, its name is in the PROSE PRINT
+  marker there, and `scripts/a11y.mjs` fails any page with a print button that is
+  not a sheet and does not carry it. Print SHEETS are not this: their greys are
+  chosen for paper and must not be flattened.
 - **Games sit downstream of books.** A game never introduces a concept, always
   names its strategy first, and never starts a clock unprompted. A game must also
   say what it IS: `goal` is the task in the child's words, `strategy` is how to do

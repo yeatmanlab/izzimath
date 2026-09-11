@@ -1,6 +1,16 @@
 /* The badge set. Design rule and its sources: docs/BADGES.md.
    The one-line version: a badge states a fact about what the child did.
 
+   Two lines of copy, and both are load-bearing:
+     says   what you DID, past tense, for a badge that is earned.
+     todo   what you HAVE TO DO, as an instruction, for one that is not.
+   A locked badge cannot honestly use `says` — "Went back and fixed a wrong
+   answer" beside a silhouette reads as a claim about the child rather than a
+   way in. A first grader looked at the shelf, could not tell what any of the
+   circles were for, and there was nowhere to find out: the only copy on the
+   page was a `title=` tooltip, which an iPad has no way to show. Both lines
+   now go on the badge itself, revealed by pressing it.
+
    Every badge is DERIVED. `evaluate()` is a pure function of the progress
    records, so the shelf recomputes from scratch every time and cannot drift out
    of step with the scores. Only the earning date and which character was present
@@ -46,48 +56,61 @@ export const BADGES = [
   /* --- climbing the adaptive ladder: the badges that mark real skill --- */
   { id: 'first-climb', cat: 'climb', rank: 1, name: 'First Climb',
     says: 'Got past the warm-up rungs in a game.',
+    todo: 'Keep going in a game until the questions get harder.',
     test: (p) => rows(p).some((r) => r.bestTier >= 1) },
   { id: 'hard-ones', cat: 'climb', rank: 2, name: 'Into the Hard Ones',
     says: 'Reached the hard ones in a game.',
+    todo: 'Get enough right in a game that it moves you up to the hard ones.',
     test: (p) => rows(p).some((r) => r.bestTier >= 2) },
   { id: 'summit', cat: 'climb', rank: 3, name: 'Summit',
     says: 'Reached the very hard ones — the top rung.',
+    todo: 'Climb all the way to the top rung of a game.',
     test: (p) => summits(p) >= 1 },
   { id: 'three-summits', cat: 'climb', rank: 3, name: 'Three Summits',
     says: 'Reached the top rung in three different games.',
+    todo: 'Reach the top rung in three different games.',
     test: (p) => summits(p) >= 3 },
   { id: 'every-summit', cat: 'climb', rank: 3, name: 'Every Summit',
     says: 'Reached the top rung in every game that has one.',
+    todo: 'Reach the top rung in every game that has one.',
     test: (p, acts) => summits(p) >= acts.filter((a) => a.adaptive).length },
 
   /* --- streaks: within one run, so they are about holding it together --- */
   { id: 'streak-5', cat: 'streak', rank: 1, name: 'Five in a Row',
     says: 'Five right without a miss.',
+    todo: 'Get five right in a row without a miss.',
     test: (p) => rows(p).some((r) => r.bestStreak >= 5) },
   { id: 'streak-10', cat: 'streak', rank: 2, name: 'Ten in a Row',
     says: 'Ten right without a miss.',
+    todo: 'Get ten right in a row without a miss.',
     test: (p) => rows(p).some((r) => r.bestStreak >= 10) },
   { id: 'streak-15', cat: 'streak', rank: 3, name: 'Unbroken',
     says: 'Fifteen right without a miss.',
+    todo: 'Get fifteen right in a row without a miss.',
     test: (p) => rows(p).some((r) => r.bestStreak >= 15) },
 
   /* --- care taken: the behaviour most worth reinforcing --- */
   { id: 'second-look', cat: 'care', rank: 1, name: 'Second Look',
     says: 'Went back and fixed a wrong answer.',
+    todo: 'When one comes out wrong, have another go and put it right.',
     test: (p) => sum(p, (r) => r.fixes) >= 1 },
   { id: 'second-look-10', cat: 'care', rank: 2, name: 'Worth Checking',
     says: 'Went back and fixed ten answers.',
+    todo: 'Go back and put ten wrong answers right.',
     test: (p) => sum(p, (r) => r.fixes) >= 10 },
 
   /* --- finishing what you started --- */
   { id: 'first-book', cat: 'finish', rank: 1, name: 'Book Finished',
     says: 'Worked all the way to the end of a book.',
+    todo: 'Work all the way to the last page of any book.',
     test: (p) => rows(p).some((r) => r.finished) },
   { id: 'five-books', cat: 'finish', rank: 2, name: 'Five Books',
     says: 'Finished five different books.',
+    todo: 'Finish five different books.',
     test: (p) => rows(p).filter((r) => r.finished).length >= 5 },
   { id: 'grade-of-books', cat: 'finish', rank: 3, name: 'A Whole Grade',
     says: 'Finished every book in one grade.',
+    todo: 'Finish every book in one grade.',
     test: (p, acts) => {
       const m = byId(acts);
       const done = new Set(rows(p).filter((r) => r.finished).map((r) => r.activityId));
@@ -101,9 +124,11 @@ export const BADGES = [
   /* --- exploring: breadth, which volume badges cannot buy --- */
   { id: 'three-strands', cat: 'breadth', rank: 1, name: 'Three Corners',
     says: 'Tried three different kinds of maths.',
+    todo: 'Try three different kinds of maths \u2014 counting, adding, shapes, and so on.',
     test: (p, acts) => strandsTouched(p, acts).size >= 3 },
   { id: 'strand-sweep', cat: 'breadth', rank: 2, name: 'Every Corner',
     says: 'Tried every kind of maths in one grade.',
+    todo: 'Try every kind of maths in one grade.',
     test: (p, acts) => {
       const touched = strandsTouched(p, acts);
       const grades = [...new Set(acts.map((a) => a.grade))];
@@ -114,28 +139,35 @@ export const BADGES = [
     } },
   { id: 'every-grade', cat: 'breadth', rank: 3, name: 'All the Way Up',
     says: 'Did something in every grade, Kindergarten to fifth.',
+    todo: 'Do one activity in every grade, Kindergarten to fifth.',
     test: (p, acts) => gradesTouched(p, acts).size >= new Set(acts.map((a) => a.grade)).size },
   { id: 'three-friends', cat: 'breadth', rank: 2, name: 'Three Friends',
     says: 'Played with Kiwi, Georgie and Flame.',
+    todo: 'Play with Kiwi, then Georgie, then Flame.',
     test: (p, acts, meta) => ['kiwi', 'georgie', 'flame'].every((c) => meta?.characters?.has(c)) },
 
   /* --- on paper: the half of this site that is not a screen --- */
   { id: 'printer', cat: 'paper', rank: 1, name: 'Off the Screen',
     says: 'Printed a sheet to do on paper.',
+    todo: 'Print any sheet and do it on paper.',
     test: (p) => sum(p, (r) => r.printed) >= 1 },
   { id: 'ten-sheets', cat: 'paper', rank: 2, name: 'Ten Sheets',
     says: 'Printed ten sheets.',
+    todo: 'Print ten sheets.',
     test: (p) => sum(p, (r) => r.printed) >= 10 },
   { id: 'both-ways', cat: 'paper', rank: 2, name: 'Both Ways',
     says: 'Did the same activity on screen and on paper.',
+    todo: 'Do an activity on screen, then print the same one.',
     test: (p) => rows(p).some((r) => r.printed > 0 && (r.plays > 0 || r.finished)) },
 
   /* --- milestones. Only two count raw totals, and they are not the point. --- */
   { id: 'hundred-right', cat: 'shelf', rank: 2, name: 'A Hundred Right',
     says: 'A hundred problems answered correctly.',
+    todo: 'Answer a hundred problems correctly.',
     test: (p) => sum(p, (r) => r.rightTotal) >= 100 },
   { id: 'five-hundred-right', cat: 'shelf', rank: 3, name: 'Five Hundred Right',
     says: 'Five hundred problems answered correctly.',
+    todo: 'Answer five hundred problems correctly.',
     test: (p) => sum(p, (r) => r.rightTotal) >= 500 },
 
   /* --- the shelf itself: set completion, about your own set only ---
@@ -145,9 +177,11 @@ export const BADGES = [
      and a shelf with a slot that can never fill is worse than a smaller shelf. */
   { id: 'half-shelf', cat: 'shelf', rank: 2, name: 'Half the Shelf',
     says: 'Collected half the badges.',
+    todo: 'Earn half the other badges.',
     test: (p, acts, meta) => (meta?.earnedCount ?? 0) * 2 >= NON_META_COUNT },
   { id: 'full-shelf', cat: 'shelf', rank: 3, name: 'The Whole Shelf',
     says: 'Collected every other badge there is.',
+    todo: 'Earn every other badge.',
     test: (p, acts, meta) => (meta?.earnedCount ?? 0) >= NON_META_COUNT },
 ];
 

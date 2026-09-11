@@ -26,6 +26,7 @@ import { avatar } from '../lib/sprites.js';
 import { avatarSvg } from '../lib/avatarart.js';
 import { avatarLabel } from '../../content/avatars.js';
 import { levelGap } from '../../content/levels.js';
+import { setCharacter, currentCharacter } from '../lib/theme.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -50,7 +51,20 @@ export function cupSummary(totals) {
   return `${b}, from ${totals.right} right ${totals.right === 1 ? 'answer' : 'answers'}.`;
 }
 
-function characterRow(r, leader) {
+/* A character row is a BUTTON, and pressing it plays as that character.
+
+   Asked for by a first grader: they read the cup, saw Kiwi had the fewest
+   badges, and wanted to go and help — and the only way to switch was the picker
+   in the header, which nothing on this page connected to the row they were
+   looking at. What the press does is exactly what that picker does, because a
+   character re-skins and nothing else; the one consequence with any weight is
+   that the NEXT badge counts for whoever is on, which is what the child was
+   after and what the "How it is counted" list has always said.
+
+   The whole row is the target rather than a "switch" control beside the name:
+   the row is what a child points at, and a 44px-tall strip is a far better tap
+   target than a chip in the corner of it. */
+function characterRow(r, leader, on = false) {
   /* The bar is aria-hidden and the numbers are in the text, so a screen reader
      gets the standing without being read a decorative width. */
   /* Three states, not two. "not started" for a character with no badges is
@@ -62,19 +76,23 @@ function characterRow(r, leader) {
   const gap = !lv && r.badges > 0 ? levelGap(r.badges) : null;
   const pill = lv ?? (gap ? `${gap.need} to ${gap.next.name}` : 'not started');
   const said = `${ordinal(r.rank)}${r.tied ? ' equal' : ''}: ${r.name}, ${
-    lv ? `${lv}, ` : gap ? `${gap.need} more for ${gap.next.name}, ` : ''}${plural(r.badges, 'badge', 'badges')}`;
-  return `<li class="cuprow${r.rank === 1 && leader ? ' lead' : ''}" style="--acc:${esc(r.accent)}">
-    <span class="cupplace" aria-hidden="true">${r.tied ? '=' : ''}${r.rank}</span>
-    <span class="cupav" aria-hidden="true">${avatar(r.id, 'cupface')}</span>
-    <span class="cupbody">
-      <span class="cuptop">
-        <b class="cupname">${esc(r.name)}</b>
-        <span class="cuplv${lv ? '' : ' none'}">${esc(pill)}</span>
+    lv ? `${lv}, ` : gap ? `${gap.need} more for ${gap.next.name}, ` : ''}${plural(r.badges, 'badge', 'badges')}. ${
+    on ? CUP.pickedSay(r.name) : CUP.pickSay(r.name)}`;
+  return `<li class="cuprow ch${r.rank === 1 && leader ? ' lead' : ''}${on ? ' on' : ''}" style="--acc:${esc(r.accent)}">
+    <button type="button" class="cupgo" data-cup-ch="${esc(r.id)}" aria-pressed="${on}">
+      <span class="cupplace" aria-hidden="true">${r.tied ? '=' : ''}${r.rank}</span>
+      <span class="cupav" aria-hidden="true">${avatar(r.id, 'cupface')}</span>
+      <span class="cupbody">
+        <span class="cuptop">
+          <b class="cupname">${esc(r.name)}</b>
+          <span class="cuplv${lv ? '' : ' none'}">${esc(pill)}</span>
+          ${on ? `<span class="cupon">${esc(CUP.picked)}</span>` : ''}
+        </span>
+        <span class="cupbar" aria-hidden="true"><i style="width:${(r.share * 100).toFixed(1)}%"></i></span>
       </span>
-      <span class="cupbar" aria-hidden="true"><i style="width:${(r.share * 100).toFixed(1)}%"></i></span>
-    </span>
-    <span class="cupnum"><b>${r.badges}</b><small>${r.badges === 1 ? 'badge' : 'badges'}</small></span>
-    <span class="sr">${esc(said)}</span>
+      <span class="cupnum"><b>${r.badges}</b><small>${r.badges === 1 ? 'badge' : 'badges'}</small></span>
+      <span class="sr">${esc(said)}</span>
+    </button>
   </li>`;
 }
 
@@ -108,7 +126,7 @@ function toggle(view) {
     ${btn('characters', PLAYERS.charLabel)}${btn('players', PLAYERS.label)}</div>`;
 }
 
-export function renderCup(host, { rows = [], players = [], view = 'characters', activeId = null } = {}) {
+export function renderCup(host, { rows = [], players = [], view = 'characters', activeId = null, ch = null } = {}) {
   const isPlayers = view === 'players';
   let inner;
   if (isPlayers) {
@@ -122,10 +140,11 @@ export function renderCup(host, { rows = [], players = [], view = 'characters', 
     const table = standings(rows);
     const totals = cupTotals(rows);
     inner = `<p class="cupnote">${esc(CUP.local)}</p>
+      <p class="cuppick">${esc(CUP.pick)}</p>
       ${totals.counted ? '' : `<div class="cupempty">
         <p><b>${esc(CUP.empty)}</b></p><p>${esc(CUP.emptyHint)}</p></div>`}
       <ol class="cuplist" aria-label="${esc(CUP.title)}">
-        ${table.map((r) => characterRow(r, totals.counted)).join('')}
+        ${table.map((r) => characterRow(r, totals.counted, r.id === ch)).join('')}
       </ol>
       ${totals.counted ? `<p class="cupsum">${esc(cupSummary(totals))}</p>` : ''}`;
   }
@@ -146,6 +165,11 @@ async function mount() {
   let view = 'characters';
   try { view = localStorage.getItem(VIEW_KEY) === 'players' ? 'players' : 'characters'; } catch { /* private mode */ }
 
+  /* Set when a press on this page caused the redraw, so focus comes back to the
+     row that was pressed — and is NOT stolen when the change came from the
+     header picker instead, where focus belongs to the button the reader used. */
+  let refocus = null;
+
   const draw = async () => {
     const P = window.__izziProfile;
     let rows = [], players = [], activeId = null;
@@ -154,10 +178,23 @@ async function mount() {
       players = (await P?.cupPlayers?.()) ?? [];
       activeId = (await P?.store?.getActiveId?.()) ?? null;
     } catch { /* storage blocked: fall through to the roster at zero */ }
-    renderCup(host, { rows, players, view, activeId });
+    renderCup(host, { rows, players, view, activeId, ch: currentCharacter() });
+    if (refocus) {
+      host.querySelector(`[data-cup-ch="${refocus}"]`)?.focus();
+      refocus = null;
+    }
   };
 
   host.addEventListener('click', async (e) => {
+    /* Playing as this friend. setCharacter announces the change on `document`,
+       which is what redraws the list below — so this does not draw itself, or
+       the rows would be built twice on every press. */
+    const ch = e.target.closest?.('[data-cup-ch]');
+    if (ch) {
+      refocus = ch.dataset.cupCh;
+      setCharacter(refocus);
+      return;
+    }
     const b = e.target.closest?.('[data-cup-view]');
     if (!b) return;
     view = b.dataset.cupView;
@@ -170,6 +207,7 @@ async function mount() {
 
   await draw();
   document.addEventListener('izzi:progress', draw);
+  document.addEventListener('characterchange', draw);
 }
 
 if (typeof document !== 'undefined') {

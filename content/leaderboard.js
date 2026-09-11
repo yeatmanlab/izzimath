@@ -56,9 +56,21 @@ export const CUP = {
   empty: 'Nothing counted yet. Pick a friend, do an activity, and they will show up here.',
   emptyHint: 'Badges are what count. They come from doing the maths, so they cannot be collected by '
     + 'being quick.',
+  /* The rows are buttons, and this line is what tells a child so. Asked for by
+     a first grader who saw that Kiwi had the fewest badges, wanted to go and
+     help, and had no way to do it from this page — the picker is in the header,
+     two screens up, and nothing connected the two. Switching here is the same
+     cosmetic switch the header picker makes: it decides who a future badge
+     counts for and touches nothing else. */
+  pick: 'Tap a friend to play as them. It changes how the site looks and who the '
+    + 'next badge counts for — never the maths.',
+  picked: 'playing',
+  pickSay: (name) => `Press to play as ${name}.`,
+  pickedSay: (name) => `You are playing as ${name}.`,
   howHead: 'How it is counted',
   how: [
     'A badge counts for whichever friend was on screen when it was earned.',
+    'Tap a friend here to play as them, so the next one counts for them.',
     'Right answers break a tie. Nothing is timed and there is no score.',
     'Every profile on this device adds to the same four totals.',
   ],

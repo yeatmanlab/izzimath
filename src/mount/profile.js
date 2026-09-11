@@ -32,7 +32,7 @@ import { createStore, localDriver } from '../lib/profile.js';
 import { TIERS } from '../lib/ladder.js';
 import { evaluate as evaluateBadges, badgeById, BADGE_COUNT, BADGES } from '../../content/badges.js';
 import { levelFor, nextLevel, levelGap, levelReached, MAX_LEVEL } from '../../content/levels.js';
-import { badgeSvg, shelfHtml, badgeStrip } from '../lib/badgeart.js';
+import { badgeSvg, shelfHtml, badgeStrip, badgeTell } from '../lib/badgeart.js';
 import { celebrate } from '../engine/celebrate.js';
 import { activities } from '../../content/activities/index.js';
 import { base } from '../lib/url.js';
@@ -150,6 +150,42 @@ function onKey(e) {
   else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 
+/* Pressing a badge. The copy used to live in a `title=` attribute, so on a
+   tablet there was no way to reach it at all — a first grader looked at the
+   shelf and could not tell what any of the circles were for.
+
+   One region per row, and only ever one open: pressing a second badge moves the
+   answer rather than stacking two of them, and pressing the same one again puts
+   it away. `aria-expanded` travels with that so the state is not only visual.
+
+   Wired per screen rather than delegated on the panel, which is the pattern the
+   rest of this file uses — `open()` replaces the panel's innerHTML, so a
+   listener added here dies with the screen it belongs to. */
+function wireBadges(root, records) {
+  const cells = [...root.querySelectorAll('[data-badge]')];
+  const tells = [...root.querySelectorAll('[data-tell]')];
+  const shut = () => {
+    for (const c of cells) c.setAttribute('aria-expanded', 'false');
+    for (const t of tells) { t.hidden = true; t.innerHTML = ''; t.dataset.showing = ''; }
+  };
+  for (const btn of cells) {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.badge;
+      const tell = root.querySelector(`#${btn.getAttribute('aria-controls')}`);
+      const same = tell?.dataset.showing === id;
+      shut();
+      if (!tell || same) return;
+      const rec = records.get(id);
+      tell.innerHTML = badgeTell(id, {
+        got: !!rec, at: rec?.earnedAt ?? null, withChar: rec?.earnedWith ?? null,
+      });
+      tell.hidden = false;
+      tell.dataset.showing = id;
+      btn.setAttribute('aria-expanded', 'true');
+    });
+  }
+}
+
 /* The shelf, as it appears beside the scores: what has been earned, then the
    few easiest badges that have not, then the whole set behind a disclosure.
 
@@ -178,13 +214,16 @@ function shelf(me, badges) {
     ? `<p class="bdlv">${reached ? `<b>${reached}</b> ` : ''}${
         gap ? gap.says : 'Every level earned.'}</p>`
     : '';
+  /* Every strip and every shelf row gets its own region for its answer, so two
+     strips on the same screen cannot share a DOM id. */
   return `<div class="bdshelf">
     <p class="bdshelf-h">${me.name}'s badges <span>${got.length} of ${BADGE_COUNT}</span></p>
     ${lvline}
+    <p class="bdtip">Press a badge to see what it is for.</p>
     ${got.length
-      ? badgeStrip(got, held)
+      ? badgeStrip(got, held, { tellId: 'bdtell-got' })
       : `<p class="bdnone">None yet. Each one says something ${me.name} did.</p>`}
-    ${near.length ? `<p class="bdnext">Close by</p>${badgeStrip(near, held)}` : ''}
+    ${near.length ? `<p class="bdnext">Close by</p>${badgeStrip(near, held, { tellId: 'bdtell-near' })}` : ''}
     <p class="bdcup"><a href="${base()}/cup/">See the character cup &rarr;</a></p>
     <details class="bdall"><summary>See all ${BADGE_COUNT} badges</summary>
       ${shelfHtml(got)}</details>
@@ -426,6 +465,7 @@ async function flowMine(me, justMade = false) {
       <button class="btn" data-out>Stop keeping score</button>
     </div>
     ${grownUps()}`, { focus: 'top' });
+  wireBadges(panel, new Map(badges.map((r) => [r.badgeId, r])));
   panel.querySelector('[data-switch]').addEventListener('click', flowPickUp);
   panel.querySelector('[data-out]').addEventListener('click', async () => {
     await store.signOut();
@@ -648,6 +688,24 @@ const repaint = () => {
   paintButton(); paintMarks();
   document.dispatchEvent(new CustomEvent('izzi:progress'));
 };
+
+/* Remember who the child switched to. The profile stores a `theme`, set once
+   when it was created, and flowConfirm re-applies it on every pick-up — so a
+   child who switched afterwards was snapped back to whoever they had chosen on
+   day one the next time they signed in. That was survivable while the only
+   picker was in the header; it is not now the cup invites the switch.
+
+   Listening for the announcement rather than calling this from each switch
+   site, because theme.js fires it for all of them: the header picker, the cup
+   row, the tour, and ?ch= in a shared link. */
+document.addEventListener('characterchange', async (e) => {
+  const id = await store.getActiveId();
+  if (!id) return;
+  const ch = e.detail?.id;
+  const me = await store.getProfile(id);
+  if (!ch || !me || me.theme === ch) return;
+  await store.updateProfile(id, { theme: ch });
+});
 
 window.__izziProfile = { noteProgress, offerToKeepScore, store, repaint, cupRows, cupPlayers };
 repaint();

@@ -18,6 +18,7 @@
 */
 
 import { BADGES, CATEGORIES, badgeById } from '../../content/badges.js';
+import { characters } from '../../content/characters.js';
 
 const RIM = {
   1: '',
@@ -73,35 +74,111 @@ export function badgeSvg(badgeId, { size = 64, locked = false, decorative = fals
   </svg>`;
 }
 
+/* ------------------------------------------------------- the cell, and the tell
+
+   A cell is a BUTTON, not a span. The only place a badge's copy used to live was
+   a `title=` attribute, which is a desktop hover tooltip: on the tablet this
+   site is mostly read on there is no hover, so a child could see twenty-four
+   circles and had no way to ask what any of them were. A span is not focusable
+   either, so keyboard and screen reader were in the same position.
+
+   So: press a badge and the row tells you. Earned says what you did and when;
+   unearned says what to do. The whole sentence is also in a `.sr` span inside
+   the button, which makes it the button's accessible name — a screen reader
+   gets the answer without having to press anything.
+
+   `tellId` is passed in rather than generated, because the shelf renders seven
+   rows and each one needs its own region for `aria-controls` to mean anything. */
+function cell(b, got, size, tellId) {
+  const state = got ? `Earned. ${b.says}` : `Not earned yet. ${b.todo}`;
+  return `<button type="button" class="bdcell${got ? ' got' : ''}" data-badge="${b.id}"
+    aria-expanded="false"${tellId ? ` aria-controls="${tellId}"` : ''}>
+    ${badgeSvg(b.id, { size, locked: !got, decorative: true })}
+    <b>${b.name}</b>
+    <span class="sr">${state}</span>
+  </button>`;
+}
+
+/* The empty region a row's answer lands in. Kept in the markup rather than
+   created on tap so `aria-controls` points at something that exists. */
+const tell = (tellId) => `<div class="bdtell" id="${tellId}" data-tell hidden></div>`;
+
+/* What one badge says, filled in when its cell is pressed. Pure, so the same
+   builder serves the panel and scripts/check.mjs.
+
+   `at` and `with` come from the stored record — the earning date and which
+   character was there are the only two things about a badge that are stored
+   (docs/BADGES.md rule 8), so they are the only two a derived line cannot
+   recompute, which is exactly why they are worth showing. */
+export function badgeTell(badgeId, { got = false, at = null, withChar = null, size = 46 } = {}) {
+  const b = badgeById(badgeId);
+  if (!b) return '';
+  const friend = withChar && withChar !== 'none' ? characters[withChar]?.name : null;
+  let when = '';
+  if (got && at) {
+    const d = new Date(at);
+    if (!Number.isNaN(d.getTime())) {
+      when = `Earned ${d.toLocaleDateString(undefined, { day: 'numeric', month: 'long' })}${
+        friend ? `, with ${friend}` : ''}.`;
+    }
+  }
+  if (got && !when && friend) when = `Earned with ${friend}.`;
+  return `<div class="bdtell-in">
+    <span class="bdtell-medal" aria-hidden="true">${badgeSvg(b.id, { size, locked: !got, decorative: true })}</span>
+    <div class="bdtell-body">
+      <p class="bdtell-kicker">${got ? 'What you did' : 'How to get it'}</p>
+      <p class="bdtell-name">${b.name}</p>
+      <p class="bdtell-says">${got ? b.says : b.todo}</p>
+      ${when ? `<p class="bdtell-when">${when}</p>` : ''}
+    </div>
+  </div>`;
+}
+
 /* A flat row of specific badges, for showing a handful rather than the set.
    Same cell markup as the shelf, so they look like the same objects. */
-export function badgeStrip(ids, held = new Set(), { size = 54 } = {}) {
+export function badgeStrip(ids, held = new Set(), { size = 54, tellId = 'bdtell-strip' } = {}) {
   const have = held instanceof Set ? held : new Set(held);
   return `<div class="bdrow bdstrip">${ids.map((id) => {
     const b = badgeById(id);
-    if (!b) return '';
-    return `<span class="bdcell${have.has(b.id) ? ' got' : ''}" title="${b.name} — ${b.says}">
-      ${badgeSvg(b.id, { size, locked: !have.has(b.id), decorative: true })}
-      <b>${b.name}</b>
-    </span>`;
-  }).join('')}</div>`;
+    return b ? cell(b, have.has(b.id), size, tellId) : '';
+  }).join('')}</div>${tell(tellId)}`;
 }
 
 /* The shelf: every badge, earned ones lit, the rest as silhouettes. Grouped by
    category so it reads as a set with gaps rather than a flat wall. */
-export function shelfHtml(earnedIds, { size = 54 } = {}) {
+export function shelfHtml(earnedIds, { size = 54, tellId = 'bdtell-all' } = {}) {
   const held = new Set(earnedIds);
   const groups = {};
   for (const [key, cat] of Object.entries(CATEGORIES)) groups[key] = { cat, items: [] };
   for (const b of BADGES) groups[b.cat]?.items.push(b);
-  return Object.values(groups).filter((g) => g.items.length).map((g) => `
+  return Object.entries(groups).filter(([, g]) => g.items.length).map(([key, g]) => `
     <div class="bdgroup">
       <p class="bdcat">${g.cat.name}</p>
       <div class="bdrow">
-        ${g.items.map((b) => `<span class="bdcell${held.has(b.id) ? ' got' : ''}" title="${b.name} — ${b.says}">
-          ${badgeSvg(b.id, { size, locked: !held.has(b.id), decorative: true })}
-          <b>${b.name}</b>
-        </span>`).join('')}
+        ${g.items.map((b) => cell(b, held.has(b.id), size, `${tellId}-${key}`)).join('')}
       </div>
+      ${tell(`${tellId}-${key}`)}
+    </div>`).join('');
+}
+
+/* Every badge and what it takes, as readable prose rather than a shelf of
+   silhouettes — the static half of the same answer, for the page at /badges/.
+   Nothing here depends on a profile, so it works before a child has one and is
+   the thing the cup page can honestly link to. */
+export function badgeTable() {
+  const groups = {};
+  for (const b of BADGES) (groups[b.cat] ||= []).push(b);
+  return Object.entries(CATEGORIES).filter(([key]) => groups[key]?.length).map(([key, cat]) => `
+    <div class="sec bdlist" id="badges-${key}">
+      <h2 style="font-size:19px">${cat.name}</h2>
+      <ul class="bdlist-ul">
+        ${groups[key].map((b) => `<li class="bdlist-li">
+          <span class="bdlist-medal" aria-hidden="true">${badgeSvg(b.id, { size: 48, decorative: true })}</span>
+          <div>
+            <p class="bdlist-name">${b.name} <span class="bdlist-rank">${'★'.repeat(b.rank)}</span></p>
+            <p class="bdlist-how">${b.todo}</p>
+          </div>
+        </li>`).join('')}
+      </ul>
     </div>`).join('');
 }

@@ -1000,6 +1000,9 @@ footer.foot a:hover { color: var(--txt) }
    row belonged to a character. */
 .cuprow.plr .cupbar i { background: linear-gradient(90deg, color-mix(in srgb, var(--a2) 70%, transparent), var(--a1)) }
 .cupnote { font-size: 13px; color: var(--txt3); line-height: 1.6; margin-bottom: 14px; max-width: 62ch }
+/* Says that the rows can be pressed. Brighter than .cupnote because it is an
+   instruction rather than a footnote. */
+.cuppick { font-size: 13.5px; color: var(--txt2); line-height: 1.6; margin: -6px 0 14px; max-width: 62ch }
 .cuplist {
   list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;
   max-height: 27rem; overflow-y: auto; overscroll-behavior: contain;
@@ -1014,6 +1017,24 @@ footer.foot a:hover { color: var(--txt) }
   background-image: linear-gradient(90deg, color-mix(in srgb, var(--acc) 12%, transparent), transparent 46%);
 }
 .cuprow.lead { border-color: color-mix(in srgb, var(--acc) 55%, transparent) }
+/* A character row is a button, so the grid moves onto the button and the row
+   keeps only its frame — otherwise the tap target is the text and not the strip
+   a child actually points at. The players view keeps the grid on the row: no
+   child is a control. */
+.cuprow.ch { display: block; padding: 0 }
+.cupgo {
+  display: grid; grid-template-columns: 2ch 44px 1fr auto; align-items: center; gap: 14px;
+  width: 100%; padding: 12px 16px 12px 13px; border: 0; border-radius: 13px;
+  background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.cuprow.on { border-color: color-mix(in srgb, var(--acc) 70%, transparent) }
+/* Same pill as "you" on a player row, and deliberately so — both answer "which
+   of these is mine". On --sp rather than on --acc: text on a character's own
+   accent measured 1.7:1 for Flame, which is the trap --onsp exists for. */
+.cupon {
+  font: 600 11px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--onsp); background: var(--sp); border-radius: 99px; padding: 4px 8px;
+}
 .cupplace { font: 600 15px/1 var(--fdisp); color: var(--txt3); text-align: right; font-variant-numeric: tabular-nums }
 .cuprow.lead .cupplace { color: var(--acc) }
 .cupav { display: block }
@@ -1079,6 +1100,8 @@ footer.foot a:hover { color: var(--txt) }
 
 @media (max-width: 560px) {
   .cuprow { grid-template-columns: 2ch 36px 1fr auto; gap: 10px; padding: 10px 12px 10px 10px }
+  .cuprow.ch { padding: 0 }
+  .cupgo { grid-template-columns: 2ch 36px 1fr auto; gap: 10px; padding: 10px 12px 10px 10px }
   .cuprow.plr { grid-template-columns: 36px 1fr auto }
   .cupface { width: 36px; height: 36px }
   .cupname { font-size: 15px }
@@ -1483,13 +1506,50 @@ a.reflink.page:hover { color: var(--a1) }
 .bdcat { font: 600 9.5px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
   color: var(--txt3); margin: 0 0 7px }
 .bdrow { display: flex; flex-wrap: wrap; gap: 12px }
+/* A cell is a button, because the only copy saying what a badge is for used to
+   be a `title=` tooltip and a tablet cannot show one. See src/lib/badgeart.js. */
 .bdcell { display: grid; grid-template-rows: auto 1fr; place-items: center; gap: 4px;
-  width: 76px; text-align: center }
+  width: 76px; text-align: center;
+  background: none; border: 1px solid transparent; border-radius: 12px;
+  padding: 4px 2px; margin: -4px -2px; font: inherit; color: inherit; cursor: pointer }
+.bdcell:hover { border-color: var(--line2) }
+.bdcell[aria-expanded="true"] { border-color: var(--a2); background: var(--glass) }
 /* A fixed row for the label, so a name that wraps to two lines does not push its
    own medal out of line with the rest of the row. */
 .bdcell b { font: 600 9.5px/1.25 var(--fdisp); color: var(--txt3); min-height: 2.5em;
   display: flex; align-items: flex-start; justify-content: center }
 .bdcell.got b { color: var(--txt2) }
+
+/* What the pressed badge says. One of these per row, so the answer appears
+   under the badge that was asked about rather than at the bottom of the shelf. */
+.bdtell { margin: 10px 0 2px }
+.bdtell-in { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+  border: 1px solid color-mix(in srgb, var(--a2) 40%, var(--line)); border-radius: 14px;
+  padding: 11px 14px; background: var(--glass) }
+.bdtell-medal { display: block }
+.bdtell-kicker { font: 600 9.5px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--a2); margin: 0 0 4px }
+.bdtell-name { font: 700 15px/1.2 var(--fdisp); color: var(--txt); margin: 0 }
+.bdtell-says { font-size: 13.5px; color: var(--txt2); line-height: 1.5; margin: 4px 0 0 }
+.bdtell-when { font-size: 12px; color: var(--txt3); margin: 6px 0 0 }
+/* Says out loud that the badges can be pressed. A control a child cannot see is
+   a control a child does not use — and it goes ABOVE the badges, because an
+   instruction underneath the thing it describes is read after the reader has
+   already given up. */
+.bdtip { font-size: 12.5px; color: var(--txt2); margin: 0 0 12px }
+
+/* Every badge and what it takes, as prose, at /badges/. The cup page promised
+   a page that "lists all of them" for months and no such list existed. */
+/* Tighter than a generic .sec, which puts 46px above every group and left a
+   hole between the page's own buttons and the first heading. */
+.bdlist { padding-top: 22px }
+.bdlist-ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px }
+.bdlist-li { display: grid; grid-template-columns: 48px 1fr; gap: 14px; align-items: center;
+  border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; background: var(--glass) }
+.bdlist-medal { display: block }
+.bdlist-name { font: 700 15px/1.2 var(--fdisp); color: var(--txt); margin: 0 }
+.bdlist-rank { font-size: 11px; color: var(--a2); letter-spacing: .1em }
+.bdlist-how { font-size: 13.5px; color: var(--txt2); line-height: 1.55; margin: 4px 0 0 }
 
 /* the moment one is earned: a card, one flourish, then gone */
 .bdpop { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 95;

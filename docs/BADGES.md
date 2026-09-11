@@ -59,6 +59,35 @@ produce genuine pride. Every source agrees points do not fix boring.
    function of the progress records, so the shelf recomputes and cannot drift.
    Only the earning *date* and which character was present are stored.
 
+## A badge has to be askable
+
+Two lines of copy per badge, and both are load-bearing. `says` is what you DID,
+past tense, for a badge that is earned. `todo` is what you HAVE TO DO, as an
+instruction, for one that is not. A locked badge cannot honestly use `says`:
+"Went back and fixed a wrong answer" beside a silhouette is a claim about
+something the child has not done.
+
+Both go **on the badge**, revealed by pressing it. This is the second half of
+rule 1 — a badge that states a fact the reader cannot read states nothing. The
+first version put the copy in a `title=` attribute, which is a **hover** tooltip:
+on the tablet this site is mostly read on there is no hover, and a `<span>` is
+not focusable, so keyboard and screen reader could not reach it either. A first
+grader looked at the shelf, could not tell what any of the circles were for, and
+was right that there was nowhere to find out.
+
+So every cell is a `<button>`, the whole sentence is inside it as text (which
+makes it the button's accessible name, so a screen reader gets the answer without
+pressing anything), and each row has a region the answer lands in. One answer
+open at a time. `scripts/check.mjs` fails a badge with no `todo`, a `todo` that
+copies `says`, a `todo` written in the past tense, a cell that is not a button,
+and any cell that still leans on a `title=`.
+
+The same answer for a reader with **no profile** is the page at `/badges/`, which
+lists all twenty-four with what each one takes and prints on paper. It exists
+because the cup page spent months telling readers that "the one-page guide lists
+all of them" while the guide listed none of them. `scripts/a11y.mjs` holds both
+ends of that: the list cannot lose a badge, and the cup cannot stop linking it.
+
 ## Where the shelf goes, and how much of it shows
 
 The shelf sits under the score table in the profile panel, and the earned count

@@ -278,6 +278,33 @@
   a { text-decoration: none; color: #000 }
   a[href]::after { content: '' }
   .sh-block { page-break-inside: avoid }
+
+  /* --------------------------------------------------------- PROSE PRINT: .prose
+     A PROSE page with a Print button is not a sheet, and it needs this reset.
+     The rules above force `html, body` to black on white, which does nothing
+     for a descendant that sets its own colour — and on a dark-themed site
+     nearly every text class does. `.sub` and `.gmap dd` are --txt2 (#93A0C8),
+     about 1.9:1 on white, and `.bdlist-name` is --txt (#EAF0FF), which is white
+     on white: /guide/ has been offering a "Print this page" button that
+     produced a sheet with most of its words washed out or missing.
+
+     One container class rather than a list of inner ones, because the first
+     version reset `.gmap` and `.bdlist` and left the two intro paragraphs above
+     them — which are `.sub`, like half the prose on the site — still printing
+     in a screen colour. Scoped to `.prose` rather than to `main` because the
+     print SHEETS also live in main and their greys (#333, #444, var(--soft))
+     are chosen for paper and must not be flattened. The marker above is what
+     scripts/a11y.mjs reads: a new prose page with a Print button has to carry
+     the class, or nothing will have checked that it prints legibly. */
+  .prose, .prose * { color: #000 !important; background: none !important }
+  .prose .gmap dt a { border-bottom-color: #999 !important }
+  .prose .bdlist-li { border: 1px solid #bbb !important; break-inside: avoid }
+  /* The medal is a filled disc in the character's accent — a solid ink block on
+     paper, against the line-art rule, and it carries no information the name
+     does not. */
+  .prose .bdlist-medal { display: none !important }
+  .prose .bdlist-li { grid-template-columns: 1fr !important }
+  .prose .bdlist-rank { color: #555 !important }
 }
 
 /* self-check: the child can find their own error without an adult marking it */

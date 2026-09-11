@@ -30,7 +30,7 @@ import { avatarSvg, EAR_KINDS, EXTRA_KINDS, FACE_KINDS } from '../src/lib/avatar
 import { BADGES, BADGE_COUNT, CATEGORIES, badgeById, evaluate as evaluateBadges } from '../content/badges.js';
 import { LEVELS, levelFor } from '../content/levels.js';
 import { SPRITES, EXPRESSIONS, spriteId } from '../src/lib/sprites.js';
-import { badgeSvg, shelfHtml } from '../src/lib/badgeart.js';
+import { badgeSvg, shelfHtml, badgeStrip, badgeTell, badgeTable } from '../src/lib/badgeart.js';
 import { createStore, nullDriver, localDriver, mergeProgress, MERGE, blankProgress } from '../src/lib/profile.js';
 
 let errors = 0, warns = 0, checked = 0;
@@ -463,7 +463,59 @@ console.log('\n=== the character cup ===');
     fail('cup', `the page lead does not cover both views: "${CUP.lead}"`);
   }
 
-  console.log(`  ${CUP_CHARACTERS.length} characters ranked, ${Object.keys(CHAR_MERGE).length} merge rules · ties share a place · players ordered on effort with no places`);
+  /* A FRIEND IS A CONTROL AND A CHILD IS NOT, and that asymmetry is the same
+     line the two metrics draw. A first grader read the cup, saw Kiwi had the
+     fewest badges, wanted to play as Kiwi and could not: the only picker was in
+     the header. So the character rows switch — and the player rows must never
+     become the same kind of thing, because a row that acts on a child is a step
+     towards the board docs/SPEC.md §4.1 forbids.
+
+     Driven through the real renderer with a fake host rather than grepping the
+     source, so it is the markup a reader gets that is asserted. */
+  {
+    const LB = await import('../src/mount/leaderboard.js');
+    const draw = (opts) => { let html = ''; LB.renderCup({ set innerHTML(v) { html = v; } }, opts); return html; };
+    const rows = CUP_CHARACTERS.map((id, i) => ({ id, badges: i }));
+    const players = [{ id: 'a', name: 'Pip', avatar: 3, activities: 4, sheets: 1, badges: 2 }];
+
+    const chars = draw({ rows, players, view: 'characters', ch: 'kiwi' });
+    const switches = [...chars.matchAll(/data-cup-ch="([a-z]+)"/g)].map((m) => m[1]);
+    if (switches.length !== CUP_CHARACTERS.length) {
+      fail('cup', `${switches.length} rows of ${CUP_CHARACTERS.length} can be pressed to play as that friend`);
+    }
+    for (const id of CUP_CHARACTERS) {
+      if (!switches.includes(id)) fail('cup', `${id}'s row cannot be pressed to play as them`);
+    }
+    if (/data-cup-ch="none"/.test(chars)) fail('cup', '"Just math" is on the cup as a friend to switch to');
+    /* aria-pressed, and exactly one of them: two rows reading pressed would tell
+       a child they are playing as two friends at once. Counted only on the
+       character rows, because the view toggle is a pressed button too. */
+    const pressed = [...chars.matchAll(/data-cup-ch="([a-z]+)" aria-pressed="true"/g)].map((m) => m[1]);
+    if (pressed.join(',') !== 'kiwi') {
+      fail('cup', `playing as Kiwi marked [${pressed.join(', ') || 'nothing'}] as pressed`);
+    }
+    const off = draw({ rows, players, view: 'characters', ch: 'none' });
+    if (/aria-pressed="true"[^>]*>\s*<span class="cupplace"/.test(off)
+      || [...off.matchAll(/data-cup-ch="([a-z]+)" aria-pressed="true"/g)].length) {
+      fail('cup', 'a row reads as pressed with "Just math" chosen, which is nobody');
+    }
+    /* The control has to be reachable by someone who cannot see the highlight,
+       and findable by someone who does not know rows are pressable. */
+    for (const id of CUP_CHARACTERS) {
+      const name = characters[id].name;
+      const want = id === 'kiwi' ? CUP.pickedSay(name) : CUP.pickSay(name);
+      if (!chars.includes(want)) fail('cup', `${name}'s row does not say "${want}" — a reader who cannot see the highlight has no way to know`);
+    }
+    if (!chars.includes(CUP.pick)) fail('cup', 'nothing on the page says the rows can be pressed');
+
+    const plr = draw({ rows, players, view: 'players', activeId: 'a' });
+    if (/data-cup-ch/.test(plr)) fail('cup', 'a PLAYER row is a control — children are listed, never acted on');
+    if (/<button/.test(plr.slice(plr.indexOf('<ol'), plr.indexOf('</ol>')))) {
+      fail('cup', 'a player row contains a button; the gallery of children is not a set of controls');
+    }
+  }
+
+  console.log(`  ${CUP_CHARACTERS.length} characters ranked, ${Object.keys(CHAR_MERGE).length} merge rules · ties share a place · players ordered on effort with no places · a friend is a control, a child is not`);
 }
 
 /* ------------------------------------------------- is the pack actually whole
@@ -691,6 +743,12 @@ console.log('\n=== sheet distinctness ===');
   console.log(`  ${checkedSheets} sheets rendered across ${SEEDS.length} seeds · ${worst.n ? `worst ${worst.n} repeats (${worst.id})` : 'no sheet repeats an item'}`);
 }
 
+/* `says` opens in the past tense — Got, Reached, Went, Finished — and `todo` is
+   read by a child who has not earned the badge, so it must not. Pasting `says`
+   into `todo` and softening one word is the mistake this catches; a plain
+   equality test does not. */
+const REPORTS = /^(got|reached|went|worked|finished|tried|did|printed|collected|played|answered|climbed|earned|completed)\b/i;
+
 console.log('\n=== badges ===');
 {
   const ids = new Set();
@@ -700,6 +758,13 @@ console.log('\n=== badges ===');
     ids.add(b.id);
     if (!b.name) fail(w, 'no name');
     if (!b.says) fail(w, 'no line saying what was done');
+    /* And a line saying how to GET it, for the twenty-three a reader has not.
+       `says` is past tense by design, so a locked badge showing it claims the
+       child did something they did not — and until this existed, the only copy
+       on the shelf at all was a `title=` tooltip no tablet can display. */
+    if (!b.todo) fail(w, 'no line saying what it takes — a locked badge cannot honestly use `says`');
+    else if (b.todo === b.says) fail(w, '`todo` is a copy of `says`, so a locked badge reads as a claim about the child');
+    else if (REPORTS.test(b.todo)) fail(w, `"${b.todo}" reports rather than instructs — \`todo\` is read by someone who has NOT earned it`);
     if (!CATEGORIES[b.cat]) fail(w, `category "${b.cat}" does not exist`);
     if (![1, 2, 3].includes(b.rank)) fail(w, `rank ${b.rank} is not 1, 2 or 3`);
     if (typeof b.test !== 'function') fail(w, 'no test');
@@ -752,7 +817,65 @@ console.log('\n=== badges ===');
   if (cells !== BADGE_COUNT) fail('badges', `shelf shows ${cells} of ${BADGE_COUNT} badges`);
   if (!/bdcell got/.test(shelf)) fail('badges', 'shelf does not mark an earned badge');
 
-  console.log(`  ${BADGE_COUNT} badges in ${Object.keys(CATEGORIES).length} categories · nothing earned for showing up · all reachable`);
+  /* A BADGE HAS TO BE ASKABLE. A first grader read the shelf, could not tell
+     what any of the circles were for, and there was nowhere to find out: the
+     copy lived in a `title=` attribute, which is a hover tooltip — an iPad has
+     no way to show one, and a `<span>` is not focusable, so keyboard and screen
+     reader could not reach it either.
+
+     So every cell is a button, every button carries the whole sentence as text,
+     and every row has a region for the answer to land in. */
+  for (const [what, html] of [['shelf', shelf], ['strip', badgeStrip(['summit', 'printer'], new Set(['summit']))]]) {
+    const buttons = (html.match(/<button type="button" class="bdcell/g) || []).length;
+    const total = (html.match(/class="bdcell/g) || []).length;
+    if (buttons !== total) {
+      fail('badges', `${total - buttons} of ${total} ${what} cells are not buttons — a span cannot be tapped for its meaning or focused for it`);
+    }
+    if ((html.match(/data-badge="/g) || []).length !== total) fail('badges', `a ${what} cell does not say which badge it is`);
+    if ((html.match(/aria-expanded="false"/g) || []).length !== total) fail('badges', `a ${what} cell does not report whether it is open`);
+    if (/title="/.test(html)) fail('badges', `${what} still leans on a title= tooltip, which a tablet cannot show`);
+    const tells = [...html.matchAll(/data-tell[^>]*id="([^"]+)"|id="([^"]+)"[^>]*data-tell/g)];
+    const targets = new Set([...html.matchAll(/aria-controls="([^"]+)"/g)].map((m) => m[1]));
+    if (!tells.length) fail('badges', `${what} has nowhere to put the answer`);
+    for (const t of targets) {
+      if (!new RegExp(`id="${t}"`).test(html)) fail('badges', `${what} points aria-controls at "${t}", which is not in the markup`);
+    }
+    /* Two regions with one id is the bug a second strip on the same screen
+       would introduce, and aria-controls would then resolve to the wrong one. */
+    const ids = [...html.matchAll(/class="bdtell" id="([^"]+)"/g)].map((m) => m[1]);
+    if (new Set(ids).size !== ids.length) fail('badges', `${what} renders two regions with the same id`);
+  }
+  /* The sentence must be IN the button, not only in the region it opens: that
+     is what makes it the button's accessible name, so a screen reader gets the
+     answer without pressing anything. */
+  for (const b of [badgeById('summit'), badgeById('ten-sheets')]) {
+    const lit = badgeStrip([b.id], new Set([b.id]));
+    const dark = badgeStrip([b.id], new Set());
+    if (!lit.includes(b.says)) fail('badges', `an earned ${b.id} cell does not say what was done`);
+    if (!dark.includes(b.todo)) fail('badges', `an unearned ${b.id} cell does not say what it takes`);
+    if (dark.includes(b.says)) fail('badges', `an unearned ${b.id} cell claims "${b.says}"`);
+  }
+  /* And what a press reveals: what you did plus the two facts that ARE stored
+     (docs/BADGES.md rule 8) when earned, how to get it when not. */
+  const told = badgeTell('summit', { got: true, at: '2026-09-07T12:00:00.000Z', withChar: 'kiwi' });
+  if (!told.includes(badgeById('summit').says)) fail('badges', 'a pressed earned badge does not say what was done');
+  if (!/Kiwi/.test(told)) fail('badges', 'a pressed earned badge does not name the character who was there');
+  if (!/September/.test(told)) fail('badges', 'a pressed earned badge does not say when it was earned');
+  const untold = badgeTell('summit', { got: false });
+  if (!untold.includes(badgeById('summit').todo)) fail('badges', 'a pressed unearned badge does not say what it takes');
+  if (untold.includes(badgeById('summit').says)) fail('badges', 'a pressed unearned badge reports it as done');
+  if (/Kiwi|September/.test(untold)) fail('badges', 'a pressed unearned badge invents a date or a character');
+
+  /* The static list at /badges/, which is the same answer for a reader with no
+     profile. The cup page told readers for months that the guide "lists all of
+     them" and the guide listed none. */
+  const table = badgeTable();
+  for (const b of BADGES) {
+    if (!table.includes(b.name)) fail('badges', `/badges/ leaves out ${b.id}`);
+    if (!table.includes(b.todo)) fail('badges', `/badges/ lists ${b.id} without saying what it takes`);
+  }
+
+  console.log(`  ${BADGE_COUNT} badges in ${Object.keys(CATEGORIES).length} categories · nothing earned for showing up · all reachable · every cell a button that says what it is for`);
 }
 
 /* ---------------------------------------------------------------- profiles */
