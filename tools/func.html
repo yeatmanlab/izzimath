@@ -623,6 +623,16 @@ L.push('');
         .find((r) => /Decade Duel/.test(r.cells[0]?.textContent || ''));
       const cell = row?.cells[1]?.textContent.trim();
       t('tier 0 still shows a score', !!cell, cell ? '"' + cell + '"' : 'EMPTY CELL');
+      /* The marks in the last column are a tick and a down-arrow. Their only
+         copy was a `title=` tooltip, which a tablet cannot show and which a
+         bare <span> cannot expose to a screen reader either. */
+      await w.__izziProfile.store.record(me.id, 'decade-duel', { printed: true });
+      d.querySelector('.meclose')?.click(); await sleep(120);
+      d.querySelector('[data-me]').click(); await sleep(300);
+      const marked = [...d.querySelectorAll('.metable .memark')];
+      t('every mark says what it means in words',
+        marked.length > 0 && marked.every((mk) => !!mk.querySelector('.sr')?.textContent.trim()),
+        marked.map((mk) => mk.querySelector('.sr')?.textContent || 'GLYPH ONLY').join(', ') || 'no marks');
       d.querySelector('.meclose')?.click(); await sleep(120);
     }
 

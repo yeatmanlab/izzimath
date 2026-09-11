@@ -427,9 +427,14 @@ async function flowMine(me, justMade = false) {
     .sort((a, b) => (b.lastAt || '').localeCompare(a.lastAt || ''))
     .map((p) => {
       const a = byId.get(p.activityId);
+      /* The glyph plus the words. `title=` alone is a hover tooltip, so on a
+         tablet these two were a tick and an arrow with nothing saying what they
+         meant — and a bare <span> with no role is not a widget, so an
+         aria-label on one is unreliable too. The .sr span is read, and it is
+         the same fix the badge cells needed. */
       const marks = [
-        p.finished ? '<span class="memark ok" title="Finished">✓</span>' : '',
-        p.printed ? `<span class="memark" title="Printed ${p.printed}×">⤓</span>` : '',
+        p.finished ? '<span class="memark ok" title="Finished">✓<span class="sr">finished</span></span>' : '',
+        p.printed ? `<span class="memark" title="Printed ${p.printed}×">⤓<span class="sr">printed ${p.printed} ${p.printed === 1 ? 'time' : 'times'}</span></span>` : '',
       ].join('');
       /* Tier 0 is a real answer, not a missing one. Testing `p.bestTier` for
          truthiness meant a child who played and stayed on the first rung saw an
