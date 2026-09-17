@@ -443,16 +443,16 @@ export const LESSONS = {
         sweep: true, count: true,
         head: '8 + 4 balances 12.',
         aside: 'I work out each side, then compare them.',
-        say: '8 and 4 in one pan. 12 in the other. 8 plus 4 is 12, so the sides are the same and '
-          + 'the beam is level again.',
+        say: '8 and 4 in one pan. 12 in the other. 8 plus 4 is 12. So the sides are the same, '
+          + 'and the beam is level again.',
       },
       {
         show: { left: [8, 4], right: [12] },
         count: true,
         head: 'That is what the equals sign means.',
         aside: 'Equals means balanced. It does not mean “here comes the answer”.',
-        say: 'When we write 8 + 4 = 12, the equals sign is doing the job of this beam. It says '
-          + 'the two sides are THE SAME. It does not mean “the answer comes next”.',
+        say: 'We write 8 + 4 = 12. The equals sign is doing the job of this beam. It says the '
+          + 'two sides are THE SAME. It does not mean “the answer comes next”.',
       },
       {
         /* THE MISCONCEPTION, PUT ON THE BEAM. 12 in the box is the answer to the
@@ -479,8 +479,8 @@ export const LESSONS = {
         count: true,
         head: '7 is the one that balances.',
         aside: '7 and 5 is 12, the same as 8 and 4. That is why it is level.',
-        say: '7 and 5 is 12. 8 and 4 is 12. Both sides are the same, so the beam is level and the '
-          + 'equals sign is telling the truth.',
+        say: '7 and 5 is 12. 8 and 4 is 12. Both sides are the same. So the beam is level, and '
+          + 'the equals sign is telling the truth.',
       },
       {
         /* THE SAME SHAPE, DIFFERENT NUMBERS, asked rather than shown. A child who
