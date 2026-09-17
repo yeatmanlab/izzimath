@@ -542,6 +542,50 @@ L.push('');
     ls('Back then Next settles where it started',
       Math.abs(deg(hand().m) - atSweep) < 1, deg(hand().m) + 'deg vs ' + atSweep + 'deg');
 
+    /* --------------------------------------- CHECK FOR UNDERSTANDING
+       A try step asks a child to DO the thing; an ask step asks whether they
+       know it. The property that matters is the FEEDBACK: the reason shown has
+       to belong to the option that was pressed, wrong ones included. A widget
+       that always showed the right answer's reason would be telling a child who
+       picked "8 o'clock" why 7 is correct, which is the least useful sentence
+       available. */
+    const askIdx = steps.findIndex((st) => st.ask);
+    api.goto(askIdx);
+    const askQ = () => host.querySelector('.lsn-q')?.textContent || '';
+    const opts = () => [...host.querySelectorAll('.lsn-opt')];
+    const why = () => host.querySelector('.lsn-why')?.textContent || '';
+    ls('a check asks a question', /\?$/.test(askQ().trim()), askQ());
+    ls('and offers answers to press', opts().length >= 2, opts().length + ' answers');
+    ls('nothing is marked before one is pressed',
+      !why() && opts().every((o) => o.getAttribute('aria-pressed') === 'false'));
+    const wrongAt = steps[askIdx].ask.options.findIndex((o) => !o.right);
+    const rightAt = steps[askIdx].ask.options.findIndex((o) => o.right);
+    opts()[wrongAt].click();
+    ls('a wrong answer is marked wrong, not right',
+      opts()[wrongAt].classList.contains('wrong') && !opts()[wrongAt].classList.contains('right'));
+    ls('and gets ITS OWN reason, not the right answer\u2019s',
+      why() === steps[askIdx].ask.options[wrongAt].why, why());
+    ls('the reason is a reason, not a verdict', why().length >= 24 && !/^(no|nope|wrong)\.?$/i.test(why().trim()));
+    opts()[rightAt].click();
+    ls('the answer can be changed', opts()[rightAt].classList.contains('right')
+      && !opts()[wrongAt].classList.contains('wrong'));
+    ls('and the right one says why it is right',
+      why() === steps[askIdx].ask.options[rightAt].why, why());
+    /* THE FIGURE MUST NOT CARRY THE ANSWER. The clock's closing check asks for
+       a time, so the digital face has to be off — it would print the answer
+       beside the question. check.mjs holds the rule; this holds the render. */
+    const askTime = steps.findIndex((st) => st.ask
+      && st.ask.options.some((o) => /o\u2019clock|\d:\d\d/.test(o.say)));
+    if (askTime >= 0) {
+      api.goto(askTime);
+      ls('a check that asks for a time hides the digital face',
+        host.querySelector('.lsn-digital')?.hidden === true);
+    }
+    api.goto(0);
+    ls('and the question goes away on a step that is not asking',
+      host.querySelector('[data-ask]')?.hidden === true
+      && host.querySelectorAll('.lsn-opt').length === 0);
+
     /* RULE 2: the lesson is spoken by the chosen friend. Checked here because
        the frame is rendered at runtime from the picker, so a11y.mjs reading the
        built page cannot see it. */

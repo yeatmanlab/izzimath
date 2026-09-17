@@ -821,6 +821,31 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-clock.can-grab .lsn-grab { pointer-events: stroke; cursor: grab }
 .lsn-clock.can-grab { touch-action: none }
 .lsn-clock.can-grab .lsn-hand { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--a1) 55%, transparent)) }
+/* ------------------------------------------------- check for understanding
+   One question, two or three answers, and a reason under whichever was pressed.
+   The reason is the point: "no" teaches nothing. */
+.lsn-ask { margin: 16px 0 0; display: grid; gap: 9px }
+.lsn-ask[hidden] { display: none }
+.lsn-q { font: 600 15.5px/1.4 var(--fdisp); color: var(--txt); margin: 0 }
+.lsn-opts { display: flex; gap: 9px; flex-wrap: wrap }
+.lsn-opt {
+  font: 500 14.5px/1.3 var(--fdisp); color: var(--txt);
+  background: var(--glass); border: 1px solid var(--line2); border-radius: 12px;
+  padding: 10px 15px; min-height: 40px; cursor: pointer; text-align: left;
+}
+.lsn-opt:hover { border-color: var(--txt3) }
+/* Marked, not scored. The colours say which answer this was, and the sentence
+   under them does the teaching. */
+.lsn-opt.right { border-color: color-mix(in srgb, var(--ok) 70%, transparent);
+  background: color-mix(in srgb, var(--ok) 12%, transparent) }
+.lsn-opt.wrong { border-color: color-mix(in srgb, var(--amber) 70%, transparent);
+  background: color-mix(in srgb, var(--amber) 10%, transparent) }
+.lsn-why {
+  margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--txt2);
+  border-left: 2px solid var(--amber); padding-left: 11px;
+}
+.lsn-why.right { border-left-color: var(--ok); color: var(--txt) }
+
 /* The coin tray and the pile. A tap is the whole gesture — dragging between two
    boxes on a tablet is fiddly enough to become the lesson. */
 .lsn-tray { display: grid; gap: 7px; justify-items: center }

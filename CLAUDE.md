@@ -196,6 +196,27 @@ already exist, and a routine only needs a `ui` the registry knows.
   sat on the answer while the hands travelled to it — two faces of one clock
   disagreeing, on the step that introduces the digital clock.
 
+  **The words are measured, not judged by eye.** These lessons are read by
+  six-year-olds and read aloud to them, so what makes them hard is sentence
+  construction rather than vocabulary — three clauses chained with "and" and
+  "— because" is unreadable to a first grader and worse through a synthesiser,
+  which has no idea where the thought breaks. A step in here was Flesch-Kincaid
+  grade 8.4 with a 28-word sentence and it read fine to whoever wrote it, so
+  `check.mjs` caps the longest sentence at 18 words and the mean at 12 across
+  every piece of prose in the file — captions, asides, stop lines, questions and
+  the reasons behind answers. One fact per sentence; if it needs "and" to hold
+  two, it is two sentences. (FK is reported, not gated: it counts syllables, so
+  "twenty-eight" scores as hard.)
+
+  **And every lesson checks that it landed.** A step may declare `ask` — one
+  question, two or three answers, and a reason attached to EVERY one, wrong ones
+  included, because that is where the value is: "no" teaches nothing and "the
+  hand has not reached the 8 yet" teaches the thing the child got wrong. Each
+  check is aimed at its lesson's own misconception rather than at recall. Never
+  scored, never a gate, and the figure must not carry the answer — the clock's
+  closing check hides the digital face, and `check.mjs` fails one that does not,
+  gated on whether an ANSWER is a time rather than on the question's wording.
+
   **A lesson hands the figure over.** A step may declare `try` — a goal to reach
   by moving the figure themselves, with what to make shown right beside the
   number it has to match. All four stages have one: set the clock, build an

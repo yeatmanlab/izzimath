@@ -795,8 +795,19 @@ for (const lesson of Object.values(LESSONS)) {
       <h1 style="font-size:30px">${esc(lesson.title)}</h1>
       <p class="sub">${esc(lesson.lead)}</p>
       <div data-lesson="${esc(lesson.id)}">
-        <ol class="lsn-static">${lesson.steps.map((st) =>
-          `<li><b>${esc(st.head)}</b> ${esc(st.say)}</li>`).join('')}</ol>
+        <!-- THE WHOLE LESSON IN WORDS, which is what makes it readable with no
+             JavaScript and by a screen reader without depending on the player.
+             A check for understanding is part of the lesson, so its question,
+             its answers and the reason behind the right one all belong here —
+             leaving them out would make the static page quietly incomplete on
+             exactly the steps that ask the child something. -->
+        <ol class="lsn-static">${lesson.steps.map((st) => {
+          const ask = st.ask
+            ? ` <em>${esc(st.ask.q)}</em> ${st.ask.options.map((o) => esc(o.say)).join(' · ')}.
+                ${esc(st.ask.options.find((o) => o.right)?.why || '')}`
+            : '';
+          return `<li><b>${esc(st.head)}</b> ${esc(st.say)}${ask}</li>`;
+        }).join('')}</ol>
         <p class="lsn-close">${esc(lesson.close)}</p>
       </div>
       <div class="sec" style="margin-top:30px">

@@ -252,6 +252,19 @@ export function renderLesson(host, id) {
           <p class="lsn-aside" data-whosay hidden></p>
         </div>
       </div>
+      <!-- CHECK YOURSELF, and it sits AFTER the friend has spoken rather than
+           above the figure, because the question is the last beat of the step:
+           the caption sets it up and the question follows. The first version
+           put it beside the counter like the "your turn" box, and a child read
+           the question before the sentence explaining what to look at.
+
+           One question, two or three answers, and a reason attached to every
+           one of them — including the wrong ones, which is where the value is:
+           "no" teaches nothing, and "the hand has not reached the 8 yet"
+           teaches the thing the child got wrong. Never scored, never a gate;
+           Next works throughout and the answer can be changed as often as
+           they like. -->
+      <div class="lsn-ask" data-ask hidden></div>
       <div class="lsn-foot">
         <button class="btn" type="button" data-back>&larr; Back</button>
         <button class="btn pri" type="button" data-next>Next &rarr;</button>
@@ -622,6 +635,45 @@ export function renderLesson(host, id) {
       if (audioOn()) speak(LESSON_TRY.got(said), currentCharacter());
     }
     if (!hit) solved = false;
+  }
+
+  /* ------------------------------------------------- CHECK FOR UNDERSTANDING
+     A `try` step asks a child to DO the thing; an ask step asks whether they
+     know it. Both are needed and they are not the same: setting 9:30 with two
+     fingers does not prove you would read 7:30 off a dial, which is the
+     misconception the whole clock lesson exists for.
+
+     Every option carries its own `why`, wrong ones included. That is the site's
+     oldest rule — bare right-or-wrong feedback is worth about a tenth of
+     elaborated feedback, and the gap is widest in maths — and here it is the
+     whole point of asking: the child who picks "8 o'clock" needs to hear that
+     the hand has not reached the 8 yet, not that they are wrong. */
+  let asked = null;
+
+  function paintAsk(step) {
+    const box = host.querySelector('[data-ask]');
+    if (!box) return;
+    const a = step.ask;
+    box.hidden = false;
+    box.innerHTML = `<p class="lsn-q">${esc(a.q)}</p>
+      <div class="lsn-opts">${a.options.map((o, i) => `
+        <button type="button" class="lsn-opt${asked === i ? (o.right ? ' right' : ' wrong') : ''}"
+          data-opt="${i}" aria-pressed="${asked === i}">${esc(o.say)}</button>`).join('')}</div>
+      ${asked != null ? `<p class="lsn-why${a.options[asked].right ? ' right' : ''}">${
+        esc(a.options[asked].why)}</p>` : ''}`;
+  }
+
+  if (host) {
+    host.querySelector('[data-ask]').addEventListener('click', (e) => {
+      const b = e.target.closest?.('[data-opt]');
+      const step = lesson.steps[at];
+      if (!b || !step?.ask) return;
+      asked = Number(b.dataset.opt);
+      paintAsk(step);
+      /* Read the reason out, not the verdict. The words a child needs are the
+         ones explaining their own answer. */
+      if (audioOn()) speak(step.ask.options[asked].why, currentCharacter());
+    });
   }
 
   function paintTry() {
@@ -1053,7 +1105,11 @@ export function renderLesson(host, id) {
   function stepWords(step) {
     const ch = getCharacter(currentCharacter());
     const named = ch.id !== 'none';
-    return [step.head, step.say, named && step.aside ? step.aside : '']
+    /* The question and its answers come last, and they are read out with the
+       rest: a check a child cannot read is a check of their reading. */
+    const ask = step.ask
+      ? [step.ask.q, ...step.ask.options.map((o) => o.say)].join(' ') : '';
+    return [step.head, step.say, named && step.aside ? step.aside : '', ask]
       .filter(Boolean).join(' ');
   }
 
@@ -1067,6 +1123,7 @@ export function renderLesson(host, id) {
      reached through settle() came out as a picture rather than as something to
      touch, and adding a stage meant remembering three places. */
   function drawStep(step, { sweep = false } = {}) {
+    if (step.ask) { asked = null; }
     /* STOP WHATEVER WAS MOVING, first and unconditionally. The individual
        painters each did this, but the try branch below goes straight to the
        widget and skipped it — so arriving on "Make 10 cents" from the step that
@@ -1110,6 +1167,9 @@ export function renderLesson(host, id) {
       bar?.querySelector('.lsn-shade')?.setAttribute('opacity', '1');
     }
     drawStep(step, { sweep });
+    const askBox = host.querySelector('[data-ask]');
+    if (step.ask) paintAsk(step);
+    else if (askBox) { askBox.hidden = true; askBox.innerHTML = ''; }
     host.querySelector('[data-back]').disabled = at === 0;
     /* Offered on every step that moves, including one reached by going Back —
        where the sweep deliberately did not run. That is the case a child is

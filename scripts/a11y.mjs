@@ -279,6 +279,25 @@ for (const f of files) {
     else if (!/href="[^"]*\/learn\/"/.test(crumbNav[0])) {
       say(`/learn/${l.id}/ has a breadcrumb that skips the index, so the lesson still has no parent`);
     }
+    /* A CHECK FOR UNDERSTANDING IS PART OF THE LESSON, so the static page has
+       to carry it. That page is the whole lesson in words — what a reader with
+       no JavaScript gets, and what a screen reader can read without depending
+       on the player — so a step that asks the child something and renders as a
+       caption alone is a page that is quietly incomplete on exactly the steps
+       that matter most. */
+    for (const st of l.steps.filter((x) => x.ask)) {
+      if (!html.includes(esc(st.ask.q))) {
+        say(`/learn/${l.id}/ does not carry the question "${st.ask.q}" in its text, so it is missing from the page without JavaScript`);
+      }
+      for (const o of st.ask.options) {
+        if (!html.includes(esc(o.say))) say(`/learn/${l.id}/ leaves the answer "${o.say}" out of its text`);
+      }
+      const right = st.ask.options.find((o) => o.right);
+      if (right && !html.includes(esc(right.why))) {
+        say(`/learn/${l.id}/ states the question but not the reason behind the answer, which is the half that teaches`);
+      }
+    }
+
     /* The practice strip. Derived from `lesson:` on each activity, so if that
        filter ever comes back empty the page silently returns to being a dead
        end — which is what it was before, exiting to /grades/ generically. */

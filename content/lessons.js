@@ -75,6 +75,37 @@
  * whole proof. So `scripts/check.mjs` fails a `stops` declared on either of
  * them rather than letting the field sit there doing nothing.
  *
+ * HOW THE WORDS ARE WRITTEN, AND WHY IT IS MEASURED
+ * These are read by six-year-olds and read ALOUD to six-year-olds, so the thing
+ * that makes them hard is not vocabulary — it is sentence construction. Three
+ * clauses chained with "and" and "— because" is unreadable to a first grader
+ * and worse through a speech synthesiser, which has no idea where the thought
+ * breaks.
+ *
+ * So it is measured rather than judged by eye, because judging prose by eye is
+ * exactly how it drifted: a step in this file was a Flesch-Kincaid grade 8.4
+ * with a 28-word sentence in it, in a lesson for six-year-olds, and it read
+ * fine to whoever wrote it. `scripts/check.mjs` now caps the longest sentence
+ * at 18 words and the mean at 12 over every piece of prose here — captions,
+ * asides, stop lines, questions and the reasons behind answers.
+ *
+ * One rule per sentence. If a sentence needs "and" to hold two facts, it is two
+ * sentences.
+ *
+ * AND A CHECK THAT IT LANDED
+ * A step may declare `ask` — one question, two or three answers, and a reason
+ * attached to EVERY one of them. The wrong ones are where the value is: "no"
+ * teaches nothing, and "the hand has not reached the 8 yet" teaches the thing
+ * the child got wrong. That is the site's oldest rule (bare right-or-wrong
+ * feedback is worth about a tenth of elaborated feedback, and the gap is widest
+ * in maths) applied to the one place that had no feedback at all.
+ *
+ * Each lesson's check is aimed at its own misconception rather than at recall:
+ * which hand says the hour, whether the dime beats the nickel, whether one
+ * eighth beats one half, whether 9 x 6 has to be worked out. Never scored and
+ * never a gate. And the figure must not carry the answer — the clock's closing
+ * check hides the digital face, and check.mjs fails one that does not.
+ *
  * AND THEN THE CHILD HAS A GO
  * A step may declare `try` — a goal to reach by moving the figure themselves,
  * with what to make shown right beside the number it has to match. Every stage
@@ -147,9 +178,8 @@ export const LESSONS = {
         show: { h: 3, m: 0, focus: 'hour', digital: true },
         head: 'This clock says it too.',
         aside: 'Two clocks, one time. I check one against the other.',
-        say: 'That is the same time written down: 3:00. The number before the two dots is the '
-          + 'hour, so it says 3, the same as the short hand. Keep an eye on both clocks — they '
-          + 'always agree.',
+        say: 'That is the same time, written down: 3:00. The first number is the hour. It says '
+          + '3, just like the short hand. Watch both clocks from now on. They always agree.',
       },
       {
         /* THE NUMBER 60 IS NAMED HERE, before anything moves, and then the
@@ -160,9 +190,27 @@ export const LESSONS = {
         show: { h: 3, m: 0, focus: 'minute', digital: true },
         head: 'The LONG hand says the minutes.',
         aside: 'I count round the dial in fives: 5, 10, 15, 20. Twelve numbers, sixty minutes.',
-        say: 'An hour is made of 60 minutes — every hour, always 60. The long hand is the one '
-          + 'that counts them. Right now it points straight up at the 12, which means no minutes '
-          + 'have gone by yet. That is what “o’clock” means.',
+        say: 'An hour is made of 60 minutes. Every hour. Always 60. The long hand is the one '
+          + 'that counts them. Right now it points straight up at the 12. No minutes have '
+          + 'gone by yet. That is what “o’clock” means.',
+      },
+      {
+        /* A CHECK FOR UNDERSTANDING, right after both hands have been named and
+           before anything moves. The whole lesson rests on telling them apart,
+           so this is the one worth asking early. */
+        show: { h: 3, m: 0, focus: null, digital: true },
+        ask: {
+          q: 'Which hand tells you the hour?',
+          options: [
+            { say: 'The short fat one', right: true,
+              why: 'Yes. The short fat hand always says the hour.' },
+            { say: 'The long thin one',
+              why: 'That is the one that counts the minutes. The hour is the short fat hand.' },
+          ],
+        },
+        head: 'Quick check.',
+        aside: 'Short and fat for the hour. I say it to myself every time.',
+        say: 'Two hands, two jobs. Pick the one that tells you the hour.',
       },
       {
         /* ONE NUMBER, ON ITS OWN, BEFORE THE HOUR. The lesson used to jump
@@ -175,8 +223,8 @@ export const LESSONS = {
         sweep: true, count: true,
         head: 'One number is 5 minutes.',
         aside: 'One step of the long hand, five minutes. Always five.',
-        say: 'The long hand has moved on by one number, from the 12 to the 1. That is 5 minutes. '
-          + 'Look at the other clock: it went from 3:00 to 3:05.',
+        say: 'The long hand moved on by one number, from the 12 to the 1. That is 5 minutes. '
+          + 'Look at the other clock. It went from 3:00 to 3:05.',
       },
       {
         /* THE FIRST TASTE OF THE INTERACTION, and the smallest possible one:
@@ -189,8 +237,8 @@ export const LESSONS = {
         try: { h: 3, m: 10 },
         head: 'Your turn. Move it on one more number.',
         aside: 'Slide the long hand. It is the thin one.',
-        say: 'Put your finger on the long thin hand and slide it round to the 2. Watch the other '
-          + 'clock while you do it — it should change to 3:10.',
+        say: 'Put your finger on the long thin hand. Slide it round to the 2. Watch the other '
+          + 'clock while you do it. It should change to 3:10.',
       },
       {
         /* THE ONE THAT EARNS THE SCREEN, and it is now a run with pauses rather
@@ -218,9 +266,9 @@ export const LESSONS = {
         ],
         head: 'Now watch a whole hour go by.',
         aside: 'I watch the short hand out of the corner of my eye. It creeps.',
-        say: 'The long hand goes all the way round, and every number it passes is another 5 '
-          + 'minutes. The counter keeps the total, and both clocks change together. Watch the '
-          + 'minutes climb towards 60.',
+        say: 'The long hand goes all the way round. Every number it passes is another 5 '
+          + 'minutes. The counter keeps the total. Both clocks change together. Watch the '
+          + 'minutes climb to 60.',
       },
       {
         /* THE LANDING, HELD STILL. The counter reads 60 of 60 beside 1 hour
@@ -232,8 +280,9 @@ export const LESSONS = {
         count: true,
         head: '60 minutes make 1 hour.',
         aside: 'This is the one I had to learn by heart. Sixty, every time.',
-        say: 'The long hand got back to the 12 and the counter stopped at 60 of 60 — one whole '
-          + 'hour gone by. That is the rule, and it never changes: 60 minutes is 1 hour.',
+        say: 'The long hand got back to the 12. The counter stopped at 60 of 60. That is one '
+          + 'whole hour gone by. And that is the rule. It never changes. 60 minutes is 1 '
+          + 'hour.',
       },
       {
         /* THE HOUR CHANGING, as its own step. It happened during the run, while
@@ -244,9 +293,9 @@ export const LESSONS = {
         count: true,
         head: 'And the hour changed.',
         aside: 'The long hand does all the running. The short one barely moves.',
-        say: 'The short hand crept from the 3 to the 4 while all that was happening, and the other '
-          + 'clock went from 3:00 to 4:00. When the minutes get to 60 they start again at 0, and '
-          + 'the hour goes up by one. That is how the two hands work together.',
+        say: 'While all that happened, the short hand crept from the 3 to the 4. The other '
+          + 'clock went from 3:00 to 4:00. When the minutes reach 60 they start again at 0. '
+          + 'The hour goes up by one. That is how the two hands work together.',
       },
       {
         /* AN O'CLOCK, SET BY HAND, straight after the hour changed on screen.
@@ -257,8 +306,8 @@ export const LESSONS = {
         try: { h: 7, m: 0 },
         head: 'Your turn. Make it 7 o’clock.',
         aside: 'Short hand to the 7, long hand straight up. That is an o’clock.',
-        say: 'Slide the short fat hand round to the 7, and put the long thin hand straight up at '
-          + 'the 12. The clock beside it should say 7:00.',
+        say: 'Slide the short fat hand round to the 7. Then put the long thin hand straight up '
+          + 'at the 12. The clock beside it should say 7:00.',
       },
       {
         // The readout stays on for one more step, because "30 minutes" beside a
@@ -267,8 +316,8 @@ export const LESSONS = {
         sweep: true, count: true,
         head: 'Halfway round is half past.',
         aside: 'Half of 60 is 30, and half of anything works the same way.',
-        say: 'The long hand is pointing straight down at the 6, half of the way round. Half of 60 '
-          + 'is 30, so the counter says 30 of 60 — half an hour.',
+        say: 'The long hand points straight down at the 6. That is half of the way round. Half '
+          + 'of 60 is 30. So the counter says 30 of 60. Half an hour.',
       },
       {
         /* The PHRASE, not the mechanics. The previous step explains that half an
@@ -279,23 +328,22 @@ export const LESSONS = {
         show: { h: 4, m: 30, focus: 'minute' },
         head: 'That is what “half past” means.',
         aside: 'This one catches me out too. Past only ever means after.',
-        say: '“Past” means after. So “half past 4” is the short way of saying half an hour AFTER '
-          + '4 o’clock. First it was 4 o’clock, then half an hour went by, and now it is half '
-          + 'past 4.',
+        say: '“Past” means after. So “half past 4” means half an hour AFTER 4 o’clock. First '
+          + 'it was 4 o’clock. Then half an hour went by. Now it is half past 4.',
       },
       {
         show: { h: 4, m: 30, focus: 'hour' },
         head: 'Now look at the short hand.',
         aside: 'I check the short hand last, to be sure of the hour.',
-        say: 'It is not on the 4 any more, and it has not reached the 5. It is sitting BETWEEN them, '
-          + 'halfway, because half of the hour has gone.',
+        say: 'It is not on the 4 any more. It has not reached the 5 either. It sits BETWEEN '
+          + 'them, halfway. That is because half of the hour has gone.',
       },
       {
         show: { h: 4, m: 30, focus: 'hour', digital: true },
         head: 'So this is half past 4 — not half past 5.',
         aside: 'When it sits between two numbers, I take the smaller one.',
-        say: 'The short hand has left the 4 but has not got to the 5, so the hour is still 4. That is '
-          + 'the one thing to remember: when the short hand is between two numbers, take the '
+        say: 'The short hand has left the 4. It has not got to the 5. So the hour is still 4. '
+          + 'Remember this one. When the short hand sits between two numbers, take the '
           + 'SMALLER one.',
       },
       {
@@ -310,23 +358,44 @@ export const LESSONS = {
         try: { h: 9, m: 30 },
         head: 'Your turn. Make it half past 9.',
         aside: 'Long hand straight down. Then nudge the short one until it says 9:30.',
-        say: 'Half past means the long hand points straight down at the 6. Slide it there, then '
-          + 'move the short hand until the other clock says 9:30. Notice the short hand does not '
-          + 'sit ON the 9 — it sits just past it.',
+        say: 'Half past means the long hand points straight down at the 6. Slide it there. '
+          + 'Then move the short hand until the other clock says 9:30. Look closely. The '
+          + 'short hand does not sit ON the 9. It sits just past it.',
       },
       {
         show: { h: 4, m: 30, focus: null, digital: true },
         count: true,
         head: 'Two clocks, one time.',
         aside: 'I read the digital one, then say the time out loud the long way.',
-        say: '4:30 means 4 o’clock and 30 minutes. The number after the two dots is the minutes, '
-          + 'and it never gets past 59 — because at 60 it becomes a whole hour and starts again '
+        say: '4:30 means 4 o’clock and 30 minutes. The number after the two dots is the '
+          + 'minutes. It never gets past 59. At 60 it becomes a whole hour and starts again '
           + 'at 0. So “half past 4” and “4:30” are two ways of saying one time.',
       },
+      {
+        /* THE MISCONCEPTION, ASKED STRAIGHT OUT, at the end. Setting 9:30 with
+           two fingers does not prove a child would READ 7:30 off a dial, and
+           reading it is the thing this lesson exists for.
+
+           No digital face on this step: it would print the answer on the
+           figure. scripts/check.mjs fails an ask step that shows one. */
+        show: { h: 7, m: 30, focus: 'hour' },
+        ask: {
+          q: 'The short hand is between the 7 and the 8. What is the hour?',
+          options: [
+            { say: '7 o\u2019clock', right: true,
+              why: 'Yes. It has left the 7 and not reached the 8. So the hour is 7.' },
+            { say: '8 o\u2019clock',
+              why: 'Not yet. The hand has not got to the 8. Take the smaller number.' },
+          ],
+        },
+        head: 'Last check.',
+        aside: 'Between two numbers, I take the smaller one. Every time.',
+        say: 'Look at the short hand. It is sitting between two numbers again.',
+      },
     ],
-    close: 'Three things to keep. There are 60 minutes in an hour, and half of that is 30. Short '
-      + 'hand for the hour, long hand for the minutes. And when the short hand sits between two '
-      + 'numbers, you take the smaller one.',
+    close: 'Three things to keep. There are 60 minutes in an hour. Half of that is 30. Short '
+      + 'hand for the hour. Long hand for the minutes. And when the short hand sits between '
+      + 'two numbers, take the smaller one.',
   },
 
   /* ------------------------------------------------------- EQUIVALENT FRACTIONS
@@ -355,34 +424,36 @@ export const LESSONS = {
       {
         show: { den: 1, num: 1 },
         head: 'This is one whole bar.',
-        say: 'All of it is shaded, and nothing has been cut yet. Before any fraction makes sense you '
-          + 'have to know what the WHOLE is \u2014 everything else is a piece of this.',
+        say: 'All of it is shaded. Nothing has been cut yet. Before any fraction makes sense '
+          + 'you have to know what the WHOLE is. Everything else is a piece of this.',
         aside: 'I find the whole first. Everything after that is a piece of it.',
       },
       {
         show: { den: 2, num: 1 },
         sweep: true, count: true,
         head: 'Cut it in half.',
-        say: 'One cut down the middle makes two pieces, and they have to be the SAME SIZE or they '
-          + 'are not halves. One piece out of two is shaded: one half. A single piece like that has '
-          + 'a name \u2014 a UNIT FRACTION \u2014 and every other fraction is built out of copies of one.',
+        say: 'One cut down the middle makes two pieces. They have to be the SAME SIZE, or they '
+          + 'are not halves. One piece out of two is shaded: one half. A single piece like '
+          + 'that has a name. It is a UNIT FRACTION. Every other fraction is built out of '
+          + 'copies of one.',
         aside: 'Equal pieces. If one side is fatter it is not a half.',
       },
       {
         show: { den: 4, num: 2 },
         sweep: true, count: true,
         head: 'Now cut each half in two.',
-        say: 'Watch the shaded part while the cuts go in. It did not move and it did not change '
-          + 'size \u2014 it is the same shaded part it always was. But there are four pieces now, and '
-          + 'two of them are shaded, so we call it two quarters.',
+        say: 'Watch the shaded part while the cuts go in. It did not move. It did not change '
+          + 'size. It is the same shaded part it always was. But there are four pieces now, '
+          + 'and two of them are shaded. So we call it two quarters.',
         aside: 'Nothing was added. The cuts went in, that is all that happened.',
       },
       {
         show: { den: 8, num: 4 },
         sweep: true, count: true,
         head: 'And again.',
-        say: 'Eight pieces, four of them shaded: four eighths. Look at where the shading stops \u2014 '
-          + 'exactly the same place as before. Halfway along the bar, all three times.',
+        say: 'Eight pieces, four of them shaded: four eighths. Look at where the shading '
+          + 'stops. It is exactly the same place as before. Halfway along the bar, all three '
+          + 'times.',
         aside: 'One half, two quarters, four eighths. The shading stops on the same line every time.',
       },
       {
@@ -394,16 +465,16 @@ export const LESSONS = {
         try: { num: 1, den: 2 },
         head: 'Your turn. Shade one half.',
         aside: 'The bar is in quarters. How many quarters make a half?',
-        say: 'Tap the pieces to shade them. The bar is cut into quarters this time, so you will '
-          + 'need more than one piece — keep going until the counter says one half.',
+        say: 'Tap the pieces to shade them. The bar is cut into quarters this time. So you '
+          + 'will need more than one piece. Keep going until the counter says one half.',
       },
       {
         show: { den: 8, num: 4 },
         count: true,
         head: 'So those are three names for one amount.',
-        say: 'One half, two quarters and four eighths are the same amount of bar. Each time the '
-          + 'pieces doubled, the shaded ones doubled too \u2014 double the top and the bottom by the '
-          + 'same number and the amount does not change. That is the whole rule.',
+        say: 'One half, two quarters and four eighths are the same amount of bar. Each time '
+          + 'the pieces doubled, the shaded ones doubled too. Double the top and the bottom '
+          + 'by the same number. The amount does not change. That is the whole rule.',
         aside: 'Double both, or halve both. Never just one of them.',
       },
       {
@@ -411,16 +482,16 @@ export const LESSONS = {
         sweep: true, count: true,
         head: 'Now watch something different.',
         say: 'Back to one half: two pieces, one of them shaded. Keep your eye on HOW MUCH is '
-          + 'shaded, because this next bit is where everybody gets caught.',
+          + 'shaded. This next bit is where everybody gets caught.',
         aside: 'Here it comes. This is the one I got wrong for ages.',
       },
       {
         show: { den: 8, num: 1 },
         sweep: true, count: true,
         head: 'This time only ONE piece stays shaded.',
-        say: 'Eight pieces, and just one of them shaded: one eighth. The shaded part got SMALLER. '
-          + 'Eight is a bigger number than two, but one eighth is a smaller piece than one half \u2014 '
-          + 'because cutting the bar into more pieces makes every piece thinner.',
+        say: 'Eight pieces, and just one of them shaded: one eighth. The shaded part got '
+          + 'SMALLER. Eight is a bigger number than two. But one eighth is a smaller piece '
+          + 'than one half. Cutting the bar into more pieces makes every piece thinner.',
         aside: 'A bigger bottom number means smaller pieces, not more of them.',
       },
       {
@@ -433,13 +504,32 @@ export const LESSONS = {
         try: { num: 1, den: 2 },
         head: 'Your turn again. Shade one half of this one.',
         aside: 'Eighths this time. It will take more pieces for the same amount.',
-        say: 'Same job, but the bar is cut into eighths now. Shade one half of it. You will need '
-          + 'more pieces than last time, and the shaded part will come out exactly the same size.',
+        say: 'Same job, but the bar is cut into eighths now. Shade one half of it. You will '
+          + 'need more pieces than last time. The shaded part will come out exactly the same '
+          + 'size.',
+      },
+      {
+        /* THE WHOLE-NUMBER BIAS, asked out loud: eight is a bigger number than
+           two, so one eighth must be bigger. The lesson's second sweep shows
+           that it is not. This finds out whether the child believes it. */
+        show: { den: 8, num: 1 },
+        ask: {
+          q: 'Which is bigger, one half or one eighth?',
+          options: [
+            { say: 'One half', right: true,
+              why: 'Yes. More pieces means each piece is thinner, not bigger.' },
+            { say: 'One eighth, because 8 is bigger',
+              why: 'The 8 is the bigger number, but the piece is smaller. Cutting into more pieces makes each one thinner.' },
+          ],
+        },
+        head: 'Quick check.',
+        aside: 'Bigger bottom number, smaller pieces. That is the one to hold on to.',
+        say: 'One piece of this bar is shaded. Think about the size of the piece.',
       },
     ],
-    close: 'Double the top and the bottom together and the amount stays the same \u2014 one half, two '
-      + 'quarters, four eighths. But a bigger bottom number on its own means SMALLER pieces: one '
-      + 'eighth is much less than one half.',
+    close: 'Double the top and the bottom together and the amount stays the same. One half, two '
+      + 'quarters, four eighths. But a bigger bottom number on its own means SMALLER pieces. '
+      + 'One eighth is much less than one half.',
   },
 
   /* -------------------------------------------------------------- COMMUTATIVITY
@@ -466,35 +556,34 @@ export const LESSONS = {
         show: { rows: 3, cols: 8, turn: 0 },
         count: true,
         head: 'This is an array.',
-        say: 'Rows of squares, and every row the same length: three rows with eight in each row. '
-          + 'You never have to count the squares one at a time \u2014 count ONE row, then count how '
-          + 'many rows there are.',
+        say: 'Rows of squares, and every row the same length. Here there are three rows with '
+          + 'eight in each row. You never have to count the squares one at a time. Count ONE '
+          + 'row. Then count how many rows there are.',
         aside: 'I count one row, then the rows. Much quicker than counting squares.',
       },
       {
         show: { rows: 3, cols: 8, turn: 0 },
         count: true,
         head: 'Three rows of eight is 24.',
-        say: 'Count on in eights, once for each row: 8, 16, 24. Twenty-four squares altogether. '
-          + 'That is what 3 \u00d7 8 means \u2014 three eights.',
+        say: 'Count on in eights, once for each row: 8, 16, 24. Twenty-four squares '
+          + 'altogether. That is what 3 × 8 means. Three eights.',
         aside: '8, 16, 24. Three jumps of eight and I am done.',
       },
       {
         show: { rows: 3, cols: 8, turn: 90 },
         sweep: true, count: true,
         head: 'Now turn it.',
-        say: 'A quarter turn, and watch carefully: nothing was added and nothing was taken away. '
-          + 'These are the same twenty-four squares. But now they read as eight rows with three in '
-          + 'each row.',
+        say: 'A quarter turn. Watch carefully. Nothing was added and nothing was taken away. '
+          + 'These are the same twenty-four squares. But now they read as eight rows with '
+          + 'three in each row.',
         aside: 'Same squares. I did not touch a single one of them.',
       },
       {
         show: { rows: 3, cols: 8, turn: 90 },
         count: true,
         head: 'Eight rows of three is 24 as well.',
-        say: 'Count on in threes this time: 3, 6, 9, 12, 15, 18, 21, 24. The same twenty-four. So '
-          + '3 \u00d7 8 and 8 \u00d7 3 are two ways of describing one pile of squares, and they cannot come '
-          + 'out different.',
+        say: 'Count on in threes this time: 3, 6, 9, 12, 15, 18, 21, 24. The same twenty-four. '
+          + 'So 3 × 8 and 8 × 3 describe one pile of squares. They cannot come out different.',
         aside: 'Two facts for the price of one.',
       },
       {
@@ -504,33 +593,32 @@ export const LESSONS = {
         try: { rows: 4, cols: 6 },
         head: 'Your turn. Make 4 rows of 6.',
         aside: 'Drag sideways for a longer row, up and down for more rows.',
-        say: 'Drag across the squares to change the array. Make it 4 rows with 6 in each row, and '
-          + 'watch what the total does on the way.',
+        say: 'Drag across the squares to change the array. Make it 4 rows with 6 in each row. '
+          + 'Watch what the total does on the way.',
       },
       {
         show: { rows: 4, cols: 7, turn: 0 },
         count: true,
         head: 'It is not a trick of that one array.',
-        say: 'Here is a different one: four rows with seven in each row. Four sevens \u2014 7, 14, 21, '
-          + '28. Twenty-eight squares.',
+        say: 'Here is a different one: four rows with seven in each row. Four sevens. 7, 14, '
+          + '21, 28. Twenty-eight squares.',
         aside: 'Four rows of seven, so I count on in sevens.',
       },
       {
         show: { rows: 4, cols: 7, turn: 90 },
         sweep: true, count: true,
         head: 'Turn it too.',
-        say: 'Seven rows with four in each row, and twenty-eight either way. Turning an array '
-          + 'always works, for every array there is \u2014 because turning something cannot change how '
-          + 'many squares are in it.',
+        say: 'Seven rows with four in each row. Twenty-eight either way. This works for every '
+          + 'array there is. Turning something cannot change how many squares are in it.',
         aside: 'Any array, any time. Turning it never changes how many there are.',
       },
       {
         show: { rows: 4, cols: 7, turn: 90 },
         count: true,
         head: 'So you only have to learn half the table.',
-        say: 'Every fact comes with a twin. Learn 4 \u00d7 7 = 28 and you have been given 7 \u00d7 4 = 28 '
-          + 'for nothing, and that is true of every pair in the whole times table.',
-        aside: 'I learn the easier one of each pair and turn it round for the other.',
+        say: 'Every fact comes with a twin. Learn 4 × 7 = 28 and you get 7 × 4 = 28 for '
+          + 'nothing. That is true of every pair in the whole times table.',
+        aside: 'I learn the easier one of each pair. Then I turn it round for the other.',
       },
       {
         /* AND NOW ITS TURN, by hand. 6 rows of 4 is the array they just built
@@ -540,12 +628,29 @@ export const LESSONS = {
         try: { rows: 6, cols: 4 },
         head: 'Your turn. Now make 6 rows of 4.',
         aside: 'Same 24 squares, standing up instead of lying down.',
-        say: 'Build the turn of the one you just made: 6 rows with 4 in each. The total will be '
-          + 'the same 24, because turning an array never adds or takes away a square.',
+        say: 'Build the turn of the one you just made: 6 rows with 4 in each. The total will '
+          + 'be the same 24. Turning an array never adds or takes away a square.',
+      },
+      {
+        /* THE PAYOFF, asked as a question: does the child know they get the
+           twin for free, or do they still think it is a second fact to learn? */
+        show: { rows: 6, cols: 9, turn: 0 },
+        ask: {
+          q: 'You know 6 \u00d7 9 = 54. What is 9 \u00d7 6?',
+          options: [
+            { say: '54', right: true,
+              why: 'Yes. It is the same array turned round, so the total is the same.' },
+            { say: 'You have to work it out',
+              why: 'You do not. Turn the array and no square moves, so it is 54 as well.' },
+          ],
+        },
+        head: 'Last check.',
+        aside: 'Two facts for the price of one. I only learn the easier one.',
+        say: 'Here is an array of 6 rows with 9 in each row.',
       },
     ],
-    close: 'Turning an array cannot add a square or lose one, so 3 \u00d7 8 and 8 \u00d7 3 have to be '
-      + 'equal \u2014 and the same goes for every pair. Learn one of each twin and the other is free.',
+    close: 'Turning an array cannot add a square or lose one. So 3 × 8 and 8 × 3 have to be '
+      + 'equal. The same goes for every pair. Learn one of each twin and the other is free.',
   },
 
   money: {
@@ -561,15 +666,15 @@ export const LESSONS = {
         show: { coins: ['quarter', 'nickel', 'penny', 'dime'], focus: null },
         head: 'These are the four coins.',
         aside: 'Look at the sizes now, before anyone tells you the values.',
-        say: 'They are drawn the size they really are. Look at them for a moment before we say what '
-          + 'each one is worth — because the sizes are about to surprise you.',
+        say: 'They are drawn the size they really are. Look at them for a moment. Do not read '
+          + 'the values yet. The sizes are about to surprise you.',
       },
       {
         show: { coins: ['penny'], focus: 'penny' },
         head: 'A penny is 1 cent.',
         aside: 'I count everything in pennies first, then swap up.',
-        say: 'It is the brown one. Everything else is counted in pennies, so this is the one to '
-          + 'start from.',
+        say: 'It is the brown one. Every other coin is counted in pennies. So this is the one '
+          + 'to start from.',
       },
       {
         /* A STOP PART WAY, because five pennies arriving in under two seconds
@@ -609,21 +714,22 @@ export const LESSONS = {
         try: { cents: 10 },
         head: 'Your turn. Make 10 cents.',
         aside: 'More than one way to do this one. Any of them counts.',
-        say: 'Tap coins to take them. You can do it with one dime, or two nickels, or ten '
-          + 'pennies — they are all 10 cents, and that is the point.',
+        say: 'Tap coins to take them. You can do it with one dime. Or two nickels. Or ten '
+          + 'pennies. They are all 10 cents, and that is the point.',
       },
       {
         show: { coins: ['nickel', 'dime'], focus: 'dime' },
         head: 'Here is the surprising bit.',
         aside: 'I got this one wrong the first time too. Size is no help at all.',
-        say: 'The dime is SMALLER than the nickel — but it is worth twice as much. Coins are not '
-          + 'worth what their size looks like. You have to know them.',
+        say: 'The dime is SMALLER than the nickel. But it is worth twice as much. Coins are '
+          + 'not worth what their size looks like. You have to know them.',
       },
       {
         show: { coins: ['quarter'], focus: 'quarter' },
         head: 'A quarter is 25 cents.',
         aside: 'This is the only coin whose size tells the truth.',
-        say: 'It is the biggest of the four, and it is worth the most. This one does match its size.',
+        say: 'It is the biggest of the four. It is also worth the most. This one does match '
+          + 'its size.',
       },
       {
         /* THE HARDER ONE, after the quarter. 25 cents needs either the quarter
@@ -633,19 +739,36 @@ export const LESSONS = {
         try: { cents: 25 },
         head: 'Your turn. Make 25 cents.',
         aside: 'I go biggest first. One quarter and I am done.',
-        say: 'Tap coins until the total says 25 cents. One quarter does it in one go — but two '
+        say: 'Tap coins until the total says 25 cents. One quarter does it in one go. Two '
           + 'dimes and a nickel is 25 cents too. Watch the total as you tap.',
       },
       {
         show: { coins: ['quarter', 'dime', 'nickel', 'penny'], focus: null, running: true },
         head: 'To count a handful, start with the biggest value.',
         aside: 'I line them up biggest first, every single time.',
-        say: 'Put them in order, then count on: 25, then 35, then 40, then 41. Forty-one cents. '
-          + 'Starting from the biggest keeps the counting easy.',
+        say: 'Put them in order first. Then count on: 25, then 35, then 40, then 41. Forty-one '
+          + 'cents. Starting from the biggest keeps the counting easy.',
+      },
+      {
+        /* THE SIZE MISCONCEPTION, asked out loud. The lesson shows it twice;
+           this finds out whether it landed. */
+        show: { coins: ['nickel', 'dime'], focus: null },
+        ask: {
+          q: 'Which is worth more, the nickel or the dime?',
+          options: [
+            { say: 'The dime', right: true,
+              why: 'Yes. The dime is smaller and worth twice as much.' },
+            { say: 'The nickel, it is bigger',
+              why: 'Size is no help here. The dime is smaller and still worth more.' },
+          ],
+        },
+        head: 'Quick check.',
+        aside: 'The small one wins this round. It still catches me out.',
+        say: 'Both coins are here. One of them is worth more than the other.',
       },
     ],
-    close: 'Penny 1, nickel 5, dime 10, quarter 25. The dime is small and still beats the nickel, '
-      + 'and a handful is easiest counted biggest first.',
+    close: 'Penny 1, nickel 5, dime 10, quarter 25. The dime is small and still beats the '
+      + 'nickel. And a handful is easiest counted biggest first.',
   },
 };
 

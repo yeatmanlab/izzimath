@@ -35,6 +35,36 @@ import { createStore, nullDriver, localDriver, mergeProgress, MERGE, blankProgre
 
 let errors = 0, warns = 0, checked = 0;
 const fail = (...m) => { errors++; console.log('  FAIL ', ...m); };
+
+/* ------------------------------------------------- how hard the words are
+   THESE LESSONS ARE PITCHED AT GRADE 1 AND READ ALOUD, so the thing that makes
+   them hard is not vocabulary — it is sentence construction. Three clauses
+   chained with "and" and "— because" is unreadable to a six-year-old and worse
+   through a speech synthesiser, which has no idea where the thought breaks.
+
+   Measured rather than judged by eye, because judging prose by eye is how it
+   drifted: the worst step in this file was a Flesch-Kincaid grade 8.4 with a
+   28-word sentence in a lesson for six-year-olds, and it read fine to me.
+   After the rewrite the longest sentence anywhere is 15 words and the mean is
+   7.4, so the caps below have real headroom and still catch a regression.
+
+   Flesch-Kincaid is REPORTED but not gated: it counts syllables, so
+   "twenty-eight" and "altogether" score as hard words a first grader says
+   every day. Sentence length is the one that matters here and it is the one
+   enforced. */
+const sylOf = (w) => {
+  const t = w.toLowerCase().replace(/[^a-z]/g, '');
+  if (!t) return 0;
+  if (t.length <= 3) return 1;
+  const m = t.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '').match(/[aeiouy]{1,2}/g);
+  return m ? m.length : 1;
+};
+const sentencesOf = (t) => String(t).replace(/[\u201c\u201d]/g, '')
+  .split(/(?<=[.!?])\s+/).filter((x) => /\w/.test(x));
+const wordsOf = (t) => String(t).replace(/[^\w\s'\u2019-]/g, ' ').split(/\s+/).filter(Boolean);
+const MAX_SENTENCE = 18;     // measured worst 15
+const MAX_MEAN = 12;         // measured worst 8.7
+
 const warn = (...m) => { warns++; console.log('  warn ', ...m); };
 
 const GRADES = ['K', '1', '2', '3', '4', '5'];
@@ -389,6 +419,98 @@ console.log('\n=== clocks and coins ===');
     });
   }
 
+  /* CHECKS FOR UNDERSTANDING. A `try` step asks a child to DO the thing; an ask
+     step asks whether they know it. What matters structurally is the feedback:
+     every option carries its own reason, wrong ones included, because bare
+     right-or-wrong is worth about a tenth of elaborated feedback and the gap is
+     widest in maths. A wrong option whose reason is "No" would be the whole
+     value of asking, thrown away. */
+  let checksFor = 0;
+  for (const [id, l] of Object.entries(LESSONS)) {
+    (l.steps || []).forEach((st, k) => {
+      if (!st.ask) return;
+      checksFor++;
+      const w = `lesson:${id}`;
+      const a = st.ask;
+      if (st.try) fail(w, `step ${k + 1} both asks a question and hands the figure over; one thing at a time`);
+      if (st.sweep) fail(w, `step ${k + 1} asks a question while the figure is still moving`);
+      if (!a.q || !/\?$/.test(a.q)) fail(w, `step ${k + 1}'s check does not ask a question: "${a.q}"`);
+      const opts = a.options || [];
+      if (opts.length < 2 || opts.length > 4) fail(w, `step ${k + 1} offers ${opts.length} answers; two to four`);
+      const right = opts.filter((o) => o.right);
+      if (right.length !== 1) fail(w, `step ${k + 1} has ${right.length} right answers, which is not one`);
+      for (const [j, o] of opts.entries()) {
+        if (!o.say) fail(w, `step ${k + 1} answer ${j + 1} has nothing to press`);
+        /* The REASON, and long enough to be one. "No" is not feedback. */
+        if (!o.why || o.why.length < 24) {
+          fail(w, `step ${k + 1} answer ${j + 1} gives no reason${o.why ? `, only "${o.why}"` : ''} — a wrong answer explained is the whole point of asking`);
+        }
+      }
+      /* AND THE ANSWER MUST NOT BE WRITTEN ON THE FIGURE, which is the same
+         rule the activities' figures follow.
+
+         Gated on whether an ANSWER is a time, not on the wording of the
+         question. The first version tested the question for "hour" or "minute"
+         and fired on "Which hand tells you the hour?" — where the digital face
+         is not the answer at all but a fair cue, since matching the 3 on it to
+         the hand pointing at the 3 is the reasoning being asked for. A rule
+         that flags good content is as much of a problem as one that misses bad
+         content; what makes the digital face a leak is an option like
+         "7 o'clock". */
+      const timeAnswer = opts.some((o) => /\d\s*:\s*\d\d|o\u2019clock|o'clock|past\b/i.test(o.say || ''));
+      if (l.kind === 'clock' && st.show.digital && timeAnswer) {
+        fail(w, `step ${k + 1} asks for a time with the digital face showing, which prints the answer beside the question`);
+      }
+    });
+  }
+
+  /* And the words themselves, on every piece of prose a child is shown or read. */
+  let worstSentence = 0, worstMean = 0, worstFk = -99, proseBits = 0;
+  for (const [id, l] of Object.entries(LESSONS)) {
+    const bits = [['lead', l.lead], ['close', l.close]];
+    (l.steps || []).forEach((st, k) => {
+      bits.push([`step ${k + 1} head`, st.head], [`step ${k + 1}`, st.say]);
+      if (st.aside) bits.push([`step ${k + 1} aside`, st.aside]);
+      (st.stops || []).forEach((sp, j) => bits.push([`step ${k + 1} stop ${j + 1}`, sp.say]));
+      /* The question and every reason too: these are the sentences a child
+         reads when they are least sure of themselves. */
+      if (st.ask) {
+        bits.push([`step ${k + 1} question`, st.ask.q]);
+        (st.ask.options || []).forEach((o, j) => bits.push([`step ${k + 1} reason ${j + 1}`, o.why]));
+      }
+    });
+    for (const [where, text] of bits) {
+      if (!text) continue;
+      proseBits++;
+      const ss = sentencesOf(text), ws = wordsOf(text);
+      if (!ss.length || !ws.length) continue;
+      const longest = Math.max(...ss.map((x) => wordsOf(x).length));
+      const mean = ws.length / ss.length;
+      const fk = 0.39 * mean + 11.8 * (ws.reduce((n, w) => n + sylOf(w), 0) / ws.length) - 15.59;
+      worstSentence = Math.max(worstSentence, longest);
+      /* REPORTED OVER EXACTLY WHAT IS GATED. The first version measured the
+         mean over every piece of prose including one-sentence headings, so the
+         summary read "worst mean 14.0 (cap 12)" on a run with no failures —
+         a line that looks like a failure nobody acted on, which is the mirror
+         image of a summary that can only say good news. */
+      if (ss.length > 1) {
+        worstMean = Math.max(worstMean, mean);
+        worstFk = Math.max(worstFk, fk);
+      }
+      if (longest > MAX_SENTENCE) {
+        const bad = ss.find((x) => wordsOf(x).length === longest);
+        fail(`lesson:${id}`, `${where} has a ${longest}-word sentence, over the ${MAX_SENTENCE} a six-year-old can hold: "${bad.trim().slice(0, 64)}…"`);
+      }
+      /* The mean is only a claim about CHAINING, so it takes two sentences to
+         make. A one-sentence lead of 13 words is not chaining anything and the
+         18-word cap already covers it; failing it here made the check argue
+         with itself. */
+      if (ss.length > 1 && mean > MAX_MEAN) {
+        fail(`lesson:${id}`, `${where} averages ${mean.toFixed(1)} words a sentence, over ${MAX_MEAN} — it is chaining clauses rather than stopping`);
+      }
+    }
+  }
+
   /* RULE 1: every lesson animates something. The format's whole justification is
      movement that a printed sheet cannot carry, so a lesson with no animated
      step is a page of prose at a URL — see the header of content/lessons.js. */
@@ -401,7 +523,9 @@ console.log('\n=== clocks and coins ===');
     animated += sweeps;
   }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain, ${tries} handed to the child`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain, ${tries} handed to the child, ${checksFor} checking it landed`);
+  console.log(`  ${proseBits} pieces of prose · longest sentence ${worstSentence} words (cap ${
+    MAX_SENTENCE}) · worst mean ${worstMean.toFixed(1)} of ${MAX_MEAN} allowed · hardest paragraph reads as grade ${worstFk.toFixed(1)}`);
 }
 
 /* ------------------------------------------------------------- the character cup
