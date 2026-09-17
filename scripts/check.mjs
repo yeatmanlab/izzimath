@@ -296,6 +296,43 @@ console.log('\n=== clocks and coins ===');
          check reads as coverage. */
     });
   }
+  /* WHERE AN ANIMATION STOPS TO TALK, checked against the run it belongs to.
+
+     A sweep step may declare `stops` — times it pauses at, each holding up a
+     sentence. A stop that is not strictly inside the run is dropped by the
+     player, silently, and the lesson is a caption short with nothing on the
+     page to say so. The arithmetic is here rather than in the player because
+     this is a fact about the CONTENT: does the time this stop names fall
+     between the step before it and the step it belongs to.
+
+     `% 720` is the dial position, so a run that passes 12 wraps by itself. */
+  const dialAt = (st) => ((st.show.h % 12) * 60) + (st.show.m || 0);
+  let stopCount = 0;
+  for (const [id, l] of Object.entries(LESSONS)) {
+    (l.steps || []).forEach((st, k) => {
+      if (!st.stops?.length) return;
+      const w = `lesson:${id}`;
+      if (!st.sweep) { fail(w, `step ${k + 1} declares stops but does not animate, so nothing would ever pause`); return; }
+      if (k === 0) { fail(w, 'step 1 declares stops, but the first step has nothing to sweep from'); return; }
+      const from = dialAt(l.steps[k - 1]);
+      const span = (((dialAt(st) - from) % 720) + 720) % 720;
+      let last = 0;
+      for (const [j, sp] of st.stops.entries()) {
+        stopCount++;
+        if (!sp.say || sp.say.length < 12) fail(w, `step ${k + 1} stop ${j + 1} pauses the animation and says nothing worth reading`);
+        if (typeof sp.h !== 'number') { fail(w, `step ${k + 1} stop ${j + 1} does not say what time it stops at`); continue; }
+        const d = (((dialAt({ show: sp }) - from) % 720) + 720) % 720;
+        if (d <= 0 || d >= span) {
+          fail(w, `step ${k + 1} stop ${j + 1} is at ${sp.h}:${String(sp.m || 0).padStart(2, '0')}, which is not inside a run from ${
+            Math.floor(from / 60) || 12}:${String(from % 60).padStart(2, '0')} to ${st.show.h}:${String(st.show.m).padStart(2, '0')} — the player drops it`);
+        } else if (d <= last) {
+          fail(w, `step ${k + 1} stop ${j + 1} comes before the one in front of it; the clock does not go backwards mid-run`);
+        }
+        last = d;
+      }
+    });
+  }
+
   /* RULE 1: every lesson animates something. The format's whole justification is
      movement that a printed sheet cannot carry, so a lesson with no animated
      step is a page of prose at a URL — see the header of content/lessons.js. */
@@ -308,7 +345,7 @@ console.log('\n=== clocks and coins ===');
     animated += sweeps;
   }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain`);
 }
 
 /* ------------------------------------------------------------- the character cup
@@ -1746,6 +1783,50 @@ console.log('\n=== figures tell the truth ===');
     supers} superlative questions${seen.size ? ` · ${seen.size} PROBLEMS` : ' · all sound'}`);
   console.log(`  ${labelled} labelled figures a screen reader can read · ${mute.length} silent · ${
     leak.size} naming their own answer · ${amb.size} ambiguous`);
+
+  /* THE SCAFFOLD BELONGS ON THE HINT AND NOWHERE ELSE.
+
+     `clockFace({ minutes: true })` writes the minute count round the outside of
+     the dial, which is the help a first grader asked for — being told to "count
+     round in fives" on a dial numbered 1 to 12 and not knowing what to do. It
+     is also, on a question that asks how many minutes past the hour it is, the
+     answer printed on the figure. Both facts are true at once, so which side of
+     the question it appears on is the whole of it: a hint may carry it and a
+     prompt may never.
+
+     The padded viewBox is the marker. The ring is drawn at radius 54, outside
+     the 45 the dial itself uses, so the figure has to open its box up to fit —
+     and a clock with room for a minute ring is a clock with a minute ring. */
+  const RING = 'viewBox="-13 -13 126 126"';
+  let scaffolds = 0, misplaced = 0, weak = 0;
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (let i = 0; i < n; i++) {
+      let p;
+      try { p = a.generate(deriveSeed(8817, `p${i}`), i, getCharacter('kiwi'), rng(deriveSeed(8817, `p${i}`)), 8817); } catch { continue; }
+      if (!p) continue;
+      /* Everything a reader sees BEFORE asking for help — including the printed
+         sheet, where there is no hint button to put it behind. */
+      const asked = [p.prompt, p.printVisual, p.printStem, p.figure, p.printFigure,
+        ...(p.options || []).flatMap((o) => [o.figure, o.printFigure])]
+        .filter(Boolean).join(' ');
+      if (asked.includes(RING)) {
+        misplaced++;
+        fail('figures', `${a.id} item ${i + 1} puts the minute ring on the question itself, which prints the answer on the figure`);
+      }
+      if (!p.hintFigure) continue;
+      scaffolds++;
+      /* A hint figure that is the question's figure again is a button that
+         does nothing — the child presses for help and gets the same picture. */
+      if (!p.hintFigure.includes(RING)) {
+        weak++;
+        fail('figures', `${a.id} item ${i + 1} has a hint figure with no scaffold on it — the same picture again is not help`);
+      }
+      if (!p.hint) fail('figures', `${a.id} item ${i + 1} has a hint figure and no hint words; the box would open on a picture alone`);
+    }
+  }
+  console.log(`  ${scaffolds} hint figures carrying a scaffold · ${misplaced + weak
+    ? `${misplaced} on the question side, ${weak} adding nothing` : 'none of them on the question side'}`);
 }
 
 /* ------------------------------------------- the same question, the same options

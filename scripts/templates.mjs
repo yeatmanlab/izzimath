@@ -86,6 +86,12 @@ function nav(b, active) {
     ${link('/grades/', 'Grades', 'grades')}
     ${link('/books/', 'Books', 'books')}
     ${link('/games/', 'Games', 'games')}
+    <!-- The lessons were reachable from the footer and from a callout on the
+         time and money activities, and from nowhere else — so a parent looking
+         for "the bit that explains a clock" had to already know it existed.
+         Next to Books and Games because that is what it is: child-facing
+         content, not a reference page. -->
+    ${link('/learn/', 'Lessons', 'learn')}
     ${link('/printables/', 'Printables', 'printables')}
     ${link('/skills/', 'By skill', 'skills')}
     ${link('/parents/', 'How to help', 'parents')}

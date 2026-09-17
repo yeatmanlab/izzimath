@@ -182,6 +182,17 @@ already exist, and a routine only needs a `ui` the registry knows.
   rather than redrawing it, which is the entire difference between the animation
   and a still picture.
 
+  **A long animation stops to talk.** A sweep step may declare `stops` — times
+  it pauses at, each holding one sentence about the number that just changed —
+  and the clock lesson's hour uses four of them. A first grader watched the
+  whole hour go by and pressed on without meeting the carry: the hands moved and
+  nothing said anything while they were moving. A stop must fall strictly inside
+  its run or the player can only drop it silently, so `check.mjs` fails one that
+  does not. **And both faces come from one number**: the digital clock beside the
+  dial used to be drawn from the step's own time, so through the whole sweep it
+  sat on the answer while the hands travelled to it — two faces of one clock
+  disagreeing, on the step that introduces the digital clock.
+
   A sweep is also the one place the player runs a frame loop, and the reason is
   the counter rather than the movement: hands on a CSS transition with a
   separately animated readout can disagree, and a counter saying 30 minutes
@@ -211,6 +222,19 @@ already exist, and a routine only needs a `ui` the registry knows.
   marker there, and `scripts/a11y.mjs` fails any page with a print button that is
   not a sheet and does not carry it. Print SHEETS are not this: their greys are
   chosen for paper and must not be flattened.
+- **A scaffold belongs on the hint and nowhere else.** `clockFace({ minutes:
+  true })` writes the minute count round the outside of the dial, which is the
+  help a first grader asked for — being told to "count round in fives" on a dial
+  numbered 1 to 12 and not knowing what to do. It is also, on a question asking
+  how many minutes past the hour it is, the answer printed on the figure. Both
+  are true at once, so which side of the question it appears on is the whole of
+  it: a `hintFigure` may carry it and a prompt or a printed sheet may never.
+  `check.mjs` reads the emitted SVG for the padded viewBox the ring needs and
+  fails either mistake — the ring on the question, or a hint figure with no
+  scaffold on it, which is the same picture again and not help. The hint box
+  also offers the lesson for any activity declaring one: the callout at the top
+  of the page is the right weight for a child arriving and no use at all to one
+  stuck on question seven.
 - **Games sit downstream of books.** A game never introduces a concept, always
   names its strategy first, and never starts a clock unprompted. A game must also
   say what it IS: `goal` is the task in the child's words, `strategy` is how to do

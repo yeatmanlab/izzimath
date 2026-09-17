@@ -66,6 +66,30 @@ function clockStage() {
   return wrap;
 }
 
+/* ------------------------------------------------------------- the digital face
+   Built ONCE and re-lettered, for exactly the reason the analog dial is: during
+   a sweep it has to change every frame from the same number as the hands, and
+   re-rendering the SVG sixty times a second to move four characters is waste
+   that also throws away the element every test holds on to.
+
+   It used to be rendered from `show.h`/`show.m` — the step's FINAL time — so
+   through the whole sweep the digital clock sat on the answer while the hands
+   travelled to it. Two faces of one clock disagreeing is the precise thing this
+   player exists to prevent, and it was doing it on the step that shows a child
+   what a digital clock is.
+
+   `aria-hidden`, like the dial, because the label would be a frame behind the
+   digits it describes. The settled time is announced from [data-readsay]. */
+function digitalStage() {
+  const wrap = document.createElement('div');
+  wrap.className = 'lsn-digital';
+  wrap.innerHTML = clockDigital(12, 0, { size: 150 });
+  wrap.querySelector('svg')?.setAttribute('aria-hidden', 'true');
+  wrap.querySelector('svg')?.removeAttribute('role');
+  wrap.querySelector('svg')?.removeAttribute('aria-label');
+  return wrap;
+}
+
 /* ------------------------------------------------------------------ the bar
    ONE BAR, BUILT ONCE, and that is the entire argument of the fractions lesson.
    Re-rendering it per step would replace the shaded rectangle with a new one of
@@ -131,6 +155,16 @@ export function renderLesson(host, id) {
            when a sweep finishes. -->
       <p class="lsn-read" data-read aria-hidden="true" hidden></p>
       <span class="sr" data-readsay aria-live="polite"></span>
+      <!-- WHERE THE ANIMATION STOPS TO TALK. A sweep that runs start to finish
+           is one thing to watch and nothing to read; a first grader watched the
+           hour go by and pressed on without having met the carry. So the run
+           pauses at the places that teach — the first numeral, half past, the
+           three-quarter mark, and the hour itself — and holds a sentence up
+           here while it waits. Directly under the counter, because the sentence
+           is about the numbers in it.
+           A live region: unlike the counter, it changes a handful of times per
+           step rather than sixty times a second, so it is safe to announce. -->
+      <p class="lsn-hold" data-hold aria-live="polite" hidden></p>
       <p class="lsn-step" data-count></p>
       <h2 class="lsn-head" data-head></h2>
       <!-- THE LESSON IS SPOKEN BY THE CHOSEN FRIEND. One voice, not a narrator
@@ -154,6 +188,10 @@ export function renderLesson(host, id) {
       <div class="lsn-foot">
         <button class="btn" type="button" data-back>&larr; Back</button>
         <button class="btn pri" type="button" data-next>Next &rarr;</button>
+        <!-- A child who pressed Next through the animation has no way back to
+             it except Back-then-Next, which re-reads as going backwards. On the
+             steps that move, the move itself is the content. -->
+        <button class="btn" type="button" data-replay hidden>&#9655; Watch it again</button>
       </div>
       <p class="lsn-close" data-close hidden></p>
     </div>`;
@@ -167,6 +205,8 @@ export function renderLesson(host, id) {
   const isClock = kind === 'clock';
   const clock = isClock ? clockStage() : null;
   if (clock) stage.appendChild(clock);
+  const digital = isClock ? digitalStage() : null;
+  if (digital) { digital.hidden = true; stage.appendChild(digital); }
   const bar = kind === 'bar' ? barStage() : null;
   if (bar) stage.appendChild(bar);
 
@@ -208,12 +248,60 @@ export function renderLesson(host, id) {
      Linear, not eased. The point of the step is a steady count; easing would
      make the minutes crawl, race and crawl again. */
   let raf = null;
-  const stopSweep = () => { if (raf != null) { cancelAnimationFrame(raf); raf = null; } };
+  let hold = null;            // the timer that holds a stop open
+  const stopSweep = () => {
+    if (raf != null) { cancelAnimationFrame(raf); raf = null; }
+    /* The HOLD timer has to die with the frame loop. Without this, pressing
+       Next during a pause left a setTimeout alive that resumed the old step's
+       animation over the new step's clock a second and a half later. */
+    if (hold != null) { clearTimeout(hold); hold = null; }
+  };
   const startCum = () => elapsedAt(0);
 
-  // Duration from the distance swept, so a fifteen-minute run and a
-  // sixty-five-minute one do not take the same time on screen.
-  const sweepMs = (units) => Math.max(1200, Math.min(6000, Math.abs(units) * 90));
+  /* Duration from the distance swept, so a fifteen-minute run and a
+     sixty-five-minute one do not take the same time on screen.
+
+     140ms a minute rather than 90. At 90 a quarter of an hour went by in 1.35
+     seconds, which is long enough to see that something moved and not long
+     enough to watch WHICH hand moved how far — and watching the short hand
+     creep is the entire reason this lesson is animated. A first grader went
+     through it and came out still reading the hour off the wrong number. */
+  const sweepMs = (units) => Math.max(1400, Math.min(7000, Math.abs(units) * 140));
+
+  /* WHERE THE RUN PAUSES, as a plain list, computed from the step rather than
+     from anything the animation is doing.
+
+     PURE, and that is deliberate for the same reason readAt is: a stop plan
+     that is only observable while frames are running is a plan no test can
+     check, because requestAnimationFrame does not run in a hidden tab. This
+     returns the legs a sweep will walk — every one of them, in order, ending at
+     the step's own time — and tools/func.html asserts the plan instead of
+     trying to catch the pauses as they happen.
+
+     A stop states the time it lands on, in the same `{ h, m }` vocabulary a
+     step's `show` uses, because an author thinking "pause at half past" should
+     not have to convert that into minutes-since-the-start. `cum % 720` is the
+     dial position, so the arithmetic wraps past 12 by itself. A stop that is
+     not strictly inside the sweep is dropped here and failed by check.mjs —
+     silently skipping one would leave the lesson a caption short with nothing
+     to show it. */
+  const dialMins = (o) => ((o.h % 12) * 60) + (o.m || 0);
+  function legsAt(k) {
+    const st = lesson.steps[k];
+    if (!st || k < 1) return [];
+    const from = elapsedAt(k - 1);
+    const to = elapsedAt(k);
+    const stops = (st.stops || [])
+      .map((sp) => ({ say: sp.say, dwell: sp.dwell, cum: from + (((dialMins(sp) - (from % 720)) + 720) % 720) }))
+      .filter((sp) => sp.cum > from && sp.cum < to)
+      .sort((a, b) => a.cum - b.cum);
+    return [...stops, { cum: to, say: null }];
+  }
+
+  /* How long a stop stays up. From the length of what it says, because the only
+     thing the reader is doing is reading it — a fixed delay is either too long
+     for "60 minutes!" or too short for a sentence. */
+  const dwellFor = (say) => Math.max(1800, Math.min(4200, 400 + String(say || '').split(/\s+/).length * 260));
 
   /* ONE RUNNER FOR BOTH LESSONS. The clock sweeps its hands and the coin lesson
      lays out its pennies one at a time; they are the same shape of thing — a
@@ -275,6 +363,18 @@ export function renderLesson(host, id) {
   // hands take the same `cum`, which is what stops them disagreeing.
   const anglesAt = (cum) => ({ hour: (cum / 720) * 360, minute: (cum / 60) * 360 });
 
+  /* The digital face, from the SAME cum the hands just took. Only the four
+     characters change, so the element the reader is looking at is never
+     replaced. */
+  function pointDigital(cum) {
+    if (!digital) return '';
+    const r = readAt(cum);
+    const text = `${r.h12}:${String(r.m60).padStart(2, '0')}`;
+    const t = digital.querySelector('text');
+    if (t) t.textContent = text;
+    return text;
+  }
+
   function paintRead(cum) {
     const r = readAt(cum);
     const cell = (label, v, sub) => `<span class="lsn-cell"><small>${esc(label)}</small>`
@@ -294,13 +394,27 @@ export function renderLesson(host, id) {
       + `the clock says ${r.h12}:${String(r.m60).padStart(2, '0')}`;
   }
 
+  /* One frame of the clock: both faces and the counter, all three from `c`. The
+     reason they are in one function is that it is impossible to call one and
+     forget another — which is how the digital face came to sit on the step's
+     final time for the whole length of the sweep. */
+  function frameAt(c) {
+    pointHands(c, 0);
+    pointDigital(c);
+    return paintRead(c);
+  }
+
   function paintClock(show, { sweep = false } = {}) {
     const hour = clock.querySelector('.lsn-hour');
     const min = clock.querySelector('.lsn-min');
     const cum = elapsedAt(at);
     const read = host.querySelector('[data-read]');
+    const holdEl = host.querySelector('[data-hold]');
     stopSweep();
     read.hidden = !lesson.steps[at].count;
+    holdEl.hidden = true;
+    holdEl.textContent = '';
+    if (digital) digital.hidden = !show.digital;
 
     if (sweep && !reduced() && at > 0) {
       const from = elapsedAt(at - 1);
@@ -308,27 +422,35 @@ export function renderLesson(host, id) {
          requestAnimationFrame does not run in a hidden tab, so without this a
          reader who switches away mid-sweep and comes back finds an empty
          counter under a still clock. */
-      pointHands(from, 0);
-      paintRead(from);
-      runSweep(from, cum, sweepMs(cum - from),
-        (c) => { pointHands(c, 0); paintRead(c); },
-        (c) => sayRead(paintRead(c)));
+      frameAt(from);
+      /* WALKED LEG BY LEG. With no stops declared this is one leg and behaves
+         exactly as the single sweep did. With stops it runs, holds a sentence
+         up, and carries on — which is the difference between an hour going by
+         and a child being told what happened while it did. */
+      const legs = legsAt(at);
+      const walk = (i, at0) => {
+        const leg = legs[i];
+        runSweep(at0, leg.cum, sweepMs(leg.cum - at0),
+          (c) => frameAt(c),
+          (c) => {
+            const r = frameAt(c);
+            sayRead(r);
+            const last = i === legs.length - 1;
+            if (last) { holdEl.hidden = true; return; }
+            holdEl.textContent = leg.say || '';
+            holdEl.hidden = !leg.say;
+            hold = setTimeout(() => { hold = null; walk(i + 1, leg.cum); },
+              leg.dwell ?? dwellFor(leg.say));
+          });
+      };
+      walk(0, from);
     } else {
       pointHands(cum, reduced() ? 0 : 900);
+      pointDigital(cum);
       if (!read.hidden) sayRead(paintRead(cum));
     }
     hour.classList.toggle('on', show.focus === 'hour' || show.focus === 'both');
     min.classList.toggle('on', show.focus === 'minute' || show.focus === 'both');
-    let extra = stage.querySelector('.lsn-digital');
-    if (show.digital && !extra) {
-      extra = document.createElement('div');
-      extra.className = 'lsn-digital';
-      stage.appendChild(extra);
-    }
-    if (extra) {
-      extra.innerHTML = show.digital ? clockDigital(show.h, show.m, { size: 150 }) : '';
-      extra.hidden = !show.digital;
-    }
   }
 
   /* THE COIN READOUT, and it is the money lesson's answer to the clock's
@@ -503,6 +625,10 @@ export function renderLesson(host, id) {
     else if (kind === 'bar') { paintBar(step.show, { sweep }); if (step.count) paintCells(barCells(step.show)); }
     else if (kind === 'array') { paintArray(step.show, { sweep }); if (step.count) paintCells(arrayCells(step.show)); }
     host.querySelector('[data-back]').disabled = at === 0;
+    /* Offered on every step that moves, including one reached by going Back —
+       where the sweep deliberately did not run. That is the case a child is
+       most likely to want it in. */
+    host.querySelector('[data-replay]').hidden = !(step.sweep && at > 0);
     const next = host.querySelector('[data-next]');
     const last = at === lesson.steps.length - 1;
     next.textContent = last ? 'Done' : 'Next →';
@@ -513,6 +639,17 @@ export function renderLesson(host, id) {
 
   host.querySelector('[data-next]').addEventListener('click', () => {
     if (at < lesson.steps.length - 1) { at++; dir = 1; paint(); }
+  });
+  host.querySelector('[data-replay]').addEventListener('click', () => {
+    const step = lesson.steps[at];
+    if (!step.sweep || at === 0) return;
+    /* Runs the step's own animation again from its start. `dir` is left alone:
+       this is not a move through the lesson, and setting it would change what
+       Back does next. */
+    if (kind === 'clock') paintClock(step.show, { sweep: true });
+    else if (kind === 'coins') paintCoins(step.show, { sweep: true });
+    else if (kind === 'bar') { paintBar(step.show, { sweep: true }); if (step.count) paintCells(barCells(step.show)); }
+    else if (kind === 'array') { paintArray(step.show, { sweep: true }); if (step.count) paintCells(arrayCells(step.show)); }
   });
   host.querySelector('[data-back]').addEventListener('click', () => {
     /* Going back re-points the hands backwards, which is honest: the reader
@@ -556,6 +693,11 @@ export function renderLesson(host, id) {
     cumAt: elapsedAt,
     readAt,
     anglesAt,
+    /* The stop plan, for the same reason: it is the part that can be wrong — a
+       stop outside the sweep, out of order, or silently dropped — and none of
+       it needs a frame to have run. */
+    legsAt,
+    dwellFor,
   };
 }
 

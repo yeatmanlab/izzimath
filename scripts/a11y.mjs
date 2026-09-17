@@ -102,6 +102,38 @@ for (const f of files) {
   }
 }
 
+/* The lessons have a door in the header now.
+
+   They were reachable from two footer links and from a callout on the time and
+   money activities, and from nowhere else — so a parent looking for "the bit
+   that explains a clock" had to already know it existed, and the reader who
+   needed it most was a child deep in an activity. A nav link is the one route
+   that is on every page, which is why it is checked on every page: a template
+   change that drops it puts the lessons back behind a callout.
+
+   Scoped to the header element. The FOOTER links /learn/ on every page too, so
+   a whole-page test for the href would pass with the nav link deleted — the
+   same dead-check shape that the breadcrumb test here was caught by. */
+{
+  console.log('');
+  let missing = [], checked = 0;
+  for (const f of files) {
+    const html = fs.readFileSync(f, 'utf8');
+    const head = html.match(/<header class="nav noprint"[\s\S]*?<\/header>/);
+    if (!head) continue;
+    checked++;
+    if (!/class="nl" href="[^"]*\/learn\/"/.test(head[0])) missing.push(path.relative(OUT, f));
+  }
+  for (const m of missing.slice(0, 4)) {
+    console.log(`  FAIL  nav: ${m} has a header with no link to the lessons`);
+    errors++;
+  }
+  if (!checked) { console.log('  FAIL  nav: no page has a header, so this checked nothing'); errors++; }
+  console.log(missing.length
+    ? `  ${checked} headers, ${missing.length} with no route to the lessons`
+    : `  ${checked} headers, every one with a route to the lessons`);
+}
+
 /* Every page SHAPE has to be in the responsive audit's list.
 
    tools/audit.html says it itself: "a new page type that the responsive audit

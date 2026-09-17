@@ -52,6 +52,22 @@
  * 2.MD.C.8 for money), and an older child coming back for a reminder is better
  * served by the version that assumes nothing than by a compressed one.
  *
+ * AN ANIMATION THAT PAUSES TO EXPLAIN ITSELF
+ * A sweep step may declare `stops` — times it pauses at, each holding up one
+ * short sentence about the number that just changed. The reason is a first
+ * grader who watched a whole hour go by and pressed on without meeting the
+ * carry: the hands moved, and nothing said anything while they were moving.
+ *
+ * A stop states the time it lands on, in the same `{ h, m }` words a step's
+ * `show` uses, so an author thinking "pause at half past" does not have to
+ * convert that into minutes-since-the-start. It must fall strictly inside the
+ * run, and `scripts/check.mjs` fails one that does not — the player can only
+ * drop such a stop, silently, leaving the lesson a caption short.
+ *
+ * The pacing is deliberate and was too fast: 90ms a minute meant a quarter of
+ * an hour went by in 1.35 seconds, long enough to see that something moved and
+ * not long enough to see WHICH hand moved how far. It is 140ms now.
+ *
  * MOVEMENT IS AN ENHANCEMENT, NEVER THE CONTENT
  * Every step reads correctly as a still. `prefers-reduced-motion` turns the
  * transitions off and the lesson becomes a step-through of the same captions
@@ -96,67 +112,106 @@ export const LESSONS = {
         say: 'It is pointing at the 3. So it is 3 o’clock.',
       },
       {
-        /* THE NUMBER 60 IS NAMED HERE, before anything moves, and then the sweep
-           confirms it. It used to appear only as a clause inside the sweep's own
-           caption — "that is what sixty minutes is one hour means" — which is
-           the wrong way round for a six-year-old: they met the fact and the
-           animation at the same moment and had nothing to hold on to. */
-        show: { h: 3, m: 0, focus: 'minute' },
+        /* THE DIGITAL FACE ARRIVES HERE, not at the end. It used to appear in
+           the last two steps as a footnote, which meant the animation — the
+           part that shows an hour going by — ran on the analog dial alone. A
+           child who is going to watch both faces change together has to have
+           been introduced to the second one first. */
+        show: { h: 3, m: 0, focus: 'hour', digital: true },
+        head: 'This clock says it too.',
+        aside: 'Two clocks, one time. I check one against the other.',
+        say: 'That is the same time written down: 3:00. The number before the two dots is the '
+          + 'hour, so it says 3, the same as the short hand. Keep an eye on both clocks — they '
+          + 'always agree.',
+      },
+      {
+        /* THE NUMBER 60 IS NAMED HERE, before anything moves, and then the
+           animation confirms it. It used to appear only as a clause inside the
+           sweep's own caption — "that is what sixty minutes is one hour means" —
+           which is the wrong way round for a six-year-old: they met the fact and
+           the animation at the same moment and had nothing to hold on to. */
+        show: { h: 3, m: 0, focus: 'minute', digital: true },
         head: 'The LONG hand says the minutes.',
         aside: 'I count round the dial in fives: 5, 10, 15, 20. Twelve numbers, sixty minutes.',
         say: 'An hour is made of 60 minutes — every hour, always 60. The long hand is the one '
           + 'that counts them. Right now it points straight up at the 12, which means no minutes '
           + 'have gone by yet. That is what “o’clock” means.',
       },
-      /* TWO SWEEPS, AND THEY ARE WHERE THE LESSON EARNS ITS SCREEN.
-         This was one step — a jump from 3:00 to 4:00 with the caption "watch the
-         long hand go all the way round" — and the hands did move, but nothing
-         counted. A child could watch the whole thing and still not know that the
-         numbers round the dial are worth five minutes each, or why sixty of them
-         make one hour.
-
-         So a sweep step runs as an animation with a readout: minutes gone by,
-         hours gone by, and what the clock says, all three driven from the same
-         number as the hands, every frame. The teaching moment is the CARRY —
-         the minutes reach 60, start again at 0, and the hours go up by one. That
-         is the relationship between the two hands, and it is the one thing no
-         printed sheet and no still picture can show.
-
-         The first sweep stops at a quarter past on purpose: a short run, where
-         the child can still count the numerals the hand passes. The second runs
-         past the hour to 4:05, not to 4:00, so the carry HAPPENS on screen
-         instead of being the frame it lands on. */
       {
-        show: { h: 3, m: 15, focus: 'minute' },
+        /* ONE NUMBER, ON ITS OWN, BEFORE THE HOUR. The lesson used to jump
+           straight to a fifteen-minute run, so the fact that each numeral is
+           worth five arrived as a caption over a hand already in motion. A
+           five-minute move is short enough to watch the whole way and long
+           enough to see the digits change, and it is the unit everything after
+           it counts in. */
+        show: { h: 3, m: 5, focus: 'minute', digital: true },
         sweep: true, count: true,
-        head: 'Watch the long hand count the minutes.',
-        aside: 'Three numbers past the 12 is three fives, so 15.',
-        say: 'Every number it passes is worth 5 minutes. Past the 1 is 5, past the 2 is 10, past '
-          + 'the 3 is 15. The counter says 15 of 60 — fifteen minutes gone, and 60 is the whole '
-          + 'hour, so there is a long way to go.',
+        head: 'One number is 5 minutes.',
+        aside: 'One step of the long hand, five minutes. Always five.',
+        say: 'The long hand has moved on by one number, from the 12 to the 1. That is 5 minutes. '
+          + 'Look at the other clock: it went from 3:00 to 3:05.',
       },
       {
-        /* THE SWEEP STOPS ON 60 rather than running past it, and that is the
-           point of the step. An earlier version ran on to 4:05 so the carry
-           would happen on screen; the counter then never displayed 60 at all —
-           it went 59, 0 — which hid the exact fact the lesson is trying to
-           teach. Landing on the lap boundary makes the last frame read
-           "60 of 60" beside "1 hour gone by", which is the identity, held still
-           and readable for as long as the child wants to look at it. */
-        show: { h: 4, m: 0, focus: 'both' },
+        /* THE ONE THAT EARNS THE SCREEN, and it is now a run with pauses rather
+           than a single dash to the hour.
+
+           It was two sweeps and a caption, and a first grader watched the whole
+           thing and pressed on without meeting the carry. The hands did move;
+           nothing said anything while they were moving. So the run stops four
+           times — at each quarter and again just before the hour — and holds up
+           one short sentence about the number that has just changed. The child
+           who waits gets the count narrated; the child who presses Next still
+           gets a step that reads correctly as a still, which is the rule every
+           step here keeps.
+
+           A stop states the time it lands on, in the same words `show` uses.
+           The last one is at 3:55 on purpose: the hour changing is the thing to
+           be looking for BEFORE it happens, not a surprise after. */
+        show: { h: 4, m: 0, focus: 'both', digital: true },
         sweep: true, count: true,
+        stops: [
+          { h: 3, m: 15, say: '15 minutes gone. Three numbers past the 12, and three fives make 15.' },
+          { h: 3, m: 30, say: 'Halfway round. 30 minutes — and 30 is half of 60.' },
+          { h: 3, m: 45, say: '45 minutes. The short hand is nearly at the 4 now.' },
+          { h: 3, m: 55, say: '55 minutes. Watch what the hour does when the minutes reach 60.' },
+        ],
+        head: 'Now watch a whole hour go by.',
+        aside: 'I watch the short hand out of the corner of my eye. It creeps.',
+        say: 'The long hand goes all the way round, and every number it passes is another 5 '
+          + 'minutes. The counter keeps the total, and both clocks change together. Watch the '
+          + 'minutes climb towards 60.',
+      },
+      {
+        /* THE LANDING, HELD STILL. The counter reads 60 of 60 beside 1 hour
+           gone by, and the step does nothing else. An earlier version ran on to
+           4:05 so the carry would happen on screen; the counter then never
+           displayed 60 at all — it went 59, 0 — which hid the exact fact the
+           lesson is trying to teach. */
+        show: { h: 4, m: 0, focus: 'minute', digital: true },
+        count: true,
         head: '60 minutes make 1 hour.',
+        aside: 'This is the one I had to learn by heart. Sixty, every time.',
+        say: 'The long hand got back to the 12 and the counter stopped at 60 of 60 — one whole '
+          + 'hour gone by. That is the rule, and it never changes: 60 minutes is 1 hour.',
+      },
+      {
+        /* THE HOUR CHANGING, as its own step. It happened during the run, while
+           the child was watching the long hand and the counter; saying so
+           afterwards, with both faces sitting still on 4:00, is what makes it
+           stick. */
+        show: { h: 4, m: 0, focus: 'hour', digital: true },
+        count: true,
+        head: 'And the hour changed.',
         aside: 'The long hand does all the running. The short one barely moves.',
-        say: 'Keep watching the counter. The long hand went all the way round and got back to the '
-          + '12, and the counter stopped at 60 of 60 — one whole hour gone by. That is the rule: '
-          + '60 minutes is 1 hour. And the short hand crept from the 3 to the 4 while it happened, '
-          + 'which is how you know an hour has passed.',
+        say: 'The short hand crept from the 3 to the 4 while all that was happening, and the other '
+          + 'clock went from 3:00 to 4:00. When the minutes get to 60 they start again at 0, and '
+          + 'the hour goes up by one. That is how the two hands work together.',
       },
       {
         // The readout stays on for one more step, because "30 minutes" beside a
         // hand pointing straight down is the same lesson said twice.
-        show: { h: 4, m: 30, focus: 'minute' },
-        count: true,
+        show: { h: 4, m: 30, focus: 'minute', digital: true },
+        sweep: true, count: true,
         head: 'Halfway round is half past.',
         aside: 'Half of 60 is 30, and half of anything works the same way.',
         say: 'The long hand is pointing straight down at the 6, half of the way round. Half of 60 '
@@ -193,7 +248,7 @@ export const LESSONS = {
       {
         show: { h: 4, m: 30, focus: null, digital: true },
         count: true,
-        head: 'A digital clock says the same thing.',
+        head: 'Two clocks, one time.',
         aside: 'I read the digital one, then say the time out loud the long way.',
         say: '4:30 means 4 o’clock and 30 minutes. The number after the two dots is the minutes, '
           + 'and it never gets past 59 — because at 60 it becomes a whole hour and starts again '
@@ -486,6 +541,17 @@ export const LESSON_LINK = {
   fractions: 'Why are one half and two quarters the same?',
   arrays: 'Why can an array be turned?',
 };
+
+/* THE LAST OFFER, inside the hint box. A first grader reached a clock question,
+   pressed for a hint, read it, and still did not know what to do — and the way
+   back to the lesson was a callout at the top of the page they had scrolled
+   past twenty minutes earlier. A hint is where a stuck child actually is, so
+   that is where the route belongs.
+
+   Generic on purpose: any activity declaring `lesson` gets it, so the next
+   lesson does not need a line of code to be findable from the work it
+   explains. */
+export const LESSON_STUCK = 'Still stuck?';
 
 /* TWO STATES, and the first one is the point. The link started as one line of
    small text above the book, which is the right weight for a second grader

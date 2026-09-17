@@ -745,7 +745,7 @@ const practiceStrip = (id) => {
 };
 
 write('learn/index.html', page({
-  base: b, active: '', title: LESSON_INDEX.title,
+  base: b, active: 'learn', title: LESSON_INDEX.title,
   desc: `${LESSON_INDEX.title} for Izzi Math — ${LESSON_INDEX.lead}`,
   crumbs: [{ label: 'Home', href: '/' }, { label: LESSON_INDEX.title }],
   body: `<section class="wrap">
@@ -786,7 +786,7 @@ write('learn/index.html', page({
    and readable by a screen reader without depending on the player. */
 for (const lesson of Object.values(LESSONS)) {
   write(`learn/${lesson.id}/index.html`, page({
-    base: b, active: '', title: lesson.title,
+    base: b, active: 'learn', title: lesson.title,
     desc: `${lesson.title} — a short animated explanation for Izzi Math. ${lesson.lead}`,
     crumbs: [{ label: 'Home', href: '/' },
       { label: LESSON_INDEX.title, href: '/learn/' }, { label: lesson.title }],

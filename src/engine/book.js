@@ -9,6 +9,7 @@ import { warmUpFor } from '../../content/routines.js';
 import { rng, deriveSeed } from '../lib/rng.js';
 import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter, fill } from '../../content/characters.js';
+import { LESSON_LINK, LESSON_STUCK } from '../../content/lessons.js';
 import { currentCharacter } from '../lib/theme.js';
 import { avatar } from '../lib/sprites.js';
 import { celebrate } from './celebrate.js';
@@ -209,11 +210,32 @@ export function mountBook(activity, root) {
       page++; paint();
     });
     foot.querySelector('[data-retry]')?.addEventListener('click', () => { answered[page] = null; paint(); });
+    /* THE HINT BOX CARRIES THREE THINGS NOW, and the two new ones exist because
+       the words alone were not enough: a first grader pressed for a hint on a
+       clock question, read "count round the dial in fives", and still did not
+       know what to do.
+
+         the words       p.hint, as before
+         a picture       p.hintFigure — the same figure with the scaffold ON.
+                         For a clock that is the minutes written round the
+                         outside, which turns "count in fives" from an
+                         instruction into something to look at. It is not the
+                         default dial, because a figure that answers its own
+                         question is not a question.
+         the way back    a link to the lesson, for any activity that declares
+                         one. The callout at the top of the page is the right
+                         weight for a child arriving; it is no use at all to a
+                         child stuck on page 7 who scrolled past it. */
     foot.querySelector('[data-hint]')?.addEventListener('click', () => {
       if (host.querySelector('[data-hintbox]')) return;
       const h = document.createElement('div');
       h.dataset.hintbox = '1'; h.style.marginTop = '18px';
-      h.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${p.hint}</span></p>`;
+      const fig = p.hintFigure
+        ? `<div class="hintfig" data-hintfig aria-hidden="true">${p.hintFigure}</div>` : '';
+      const back = activity.lesson && LESSON_LINK[activity.lesson]
+        ? `<p class="hintback"><span>${LESSON_STUCK}</span>
+            <a href="${base()}/learn/${activity.lesson}/">${LESSON_LINK[activity.lesson]}</a></p>` : '';
+      h.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${p.hint}</span></p>${fig}${back}`;
       host.querySelector('[data-slot]').appendChild(h);
     });
     foot.querySelector('[data-finish]')?.addEventListener('click', () => { finished = true; paint(); });

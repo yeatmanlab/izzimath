@@ -622,6 +622,9 @@ const clocksAndTime = {
         hint: half
           ? 'The long hand points straight down, so it is half past. The short hand is between two numbers — take the smaller one.'
           : 'The long hand points straight up at the 12, so it is an o’clock. The short hand tells you which one.',
+        /* The same dial with the minutes written round the outside. Only on the
+           hint, because a labelled dial answers the question it is asking. */
+        hintFigure: clockFace(h, m, { size: 200, minutes: true }),
         explain: half
           ? `Half past ${h}. The long hand is halfway round, and the short hand is between the ${h} and the ${nextH} — it has left the ${h} but not reached the ${nextH}, so the hour is still ${h}.`
           : `${h} o’clock. The long hand is straight up, so there are no extra minutes, and the short hand points at the ${h}.`,
@@ -683,6 +686,7 @@ const clocksAndTime = {
         printStem: `The clock says ${said}. Which digital clock says the same?`,
         printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
         hint: 'A digital clock writes the hour, then the minutes. Half an hour is 30 minutes.',
+        hintFigure: clockFace(h, m, { size: 200, minutes: true }),
         explain: `${said} is written ${h}:${String(m).padStart(2, '0')}. The hour comes first, then the minutes — and half an hour is 30 minutes, not 50.`,
       };
     }
@@ -728,6 +732,7 @@ const clocksAndTime = {
         printStem: `Which hand tells you the ${askHour ? 'hour' : 'minutes'}? (short / long)`,
         printVisual: clockFace(h, m, { print: true, size: 66 }),
         hint: 'One hand is short and fat, the other is long and thin. They do different jobs.',
+        hintFigure: clockFace(h, m, { size: 200, minutes: true }),
         explain: askHour
           ? 'The short hand tells you the hour. It moves slowly — all the way round takes twelve hours.'
           : 'The long hand tells you the minutes. It moves quickly — all the way round takes one hour.',

@@ -294,15 +294,102 @@ L.push('');
     }
     ls('every sweep moves the long hand forward', moved === sweeps.length, moved + '/' + sweeps.length);
 
-    // One whole lap across the two sweeps, and one hour on the short hand.
-    api.goto(sweeps[0] - 1); api.settle();
+    /* THE HANDS TURN AT THE RATE THE CLOCK SAYS, over the whole lesson.
+
+       This was two assertions against hard numbers — 360 degrees of long hand
+       and 30 of short, being one lap and one hour — which was true of a lesson
+       with exactly two sweeps from 3:00 to 4:00 and false the moment the run
+       was broken into smaller steps. Wrong for the right reason: the lesson got
+       slower and the check was measuring its old shape.
+
+       The rate is the real property and it cannot drift: six degrees of long
+       hand a minute, half a degree of short, whatever the steps do. */
+    api.goto(0); api.settle();
     const s0 = hand();
-    api.goto(sweeps[sweeps.length - 1]); api.settle();
+    api.goto(steps.length - 1); api.settle();
     const s1 = hand();
-    ls('the sweeps together turn the long hand a full circle',
-      Math.abs((deg(s1.m) - deg(s0.m)) - 360) < 1, 'moved ' + (deg(s1.m) - deg(s0.m)) + 'deg');
-    ls('and creep the short hand one hour',
-      Math.abs((deg(s1.h) - deg(s0.h)) - 30) < 1, 'moved ' + (deg(s1.h) - deg(s0.h)) + 'deg');
+    const spanMin = api.cumAt(steps.length - 1) - api.cumAt(0);
+    ls('the long hand turns 6 degrees a minute',
+      Math.abs((deg(s1.m) - deg(s0.m)) - spanMin * 6) < 1,
+      'moved ' + (deg(s1.m) - deg(s0.m)) + 'deg over ' + spanMin + ' minutes');
+    ls('and the short hand a twelfth of that',
+      Math.abs((deg(s1.h) - deg(s0.h)) - spanMin * 0.5) < 1,
+      'moved ' + (deg(s1.h) - deg(s0.h)) + 'deg');
+    // And a whole hour still happens: 360 degrees by the step that reads 60 of 60.
+    const hourIdx = steps.findIndex((st, k) => k > 0 && api.readAt(api.cumAt(k)).mins === 60);
+    api.goto(0); api.settle();
+    const h0 = deg(hand().m);
+    api.goto(hourIdx); api.settle();
+    ls('a whole lap of the long hand by the hour mark',
+      hourIdx > 0 && Math.abs((deg(hand().m) - h0) - 360) < 1,
+      'step ' + (hourIdx + 1) + ', ' + (deg(hand().m) - h0) + 'deg');
+
+    /* BOTH FACES, ONE NUMBER. The digital clock was rendered from the step's
+       OWN time — `clockDigital(show.h, show.m)` — so for the whole length of a
+       sweep it sat on the answer while the hands travelled to it. Two faces of
+       one clock disagreeing is the exact thing this player exists to prevent,
+       and it was doing it on the step that introduces the digital clock.
+
+       Read SYNCHRONOUSLY after goto, before any frame: the player paints the
+       start of the sweep before the loop begins, so the digital face must read
+       where the hands START, not where they end. No frames needed, which is the
+       only way this can be checked at all — requestAnimationFrame does not run
+       in a hidden tab. */
+    const digits = () => host.querySelector('.lsn-digital text')?.textContent || '';
+    const clockOf = (c) => { const r = api.readAt(c); return r.h12 + ':' + String(r.m60).padStart(2, '0'); };
+    const big = steps.findIndex((st) => (st.stops || []).length > 0);
+    ls('the lesson has a digital face', !!host.querySelector('.lsn-digital text'));
+    api.goto(big);
+    ls('the digital face starts a sweep where the HANDS start',
+      digits() === clockOf(api.cumAt(big - 1)),
+      'reads ' + digits() + ', hands at ' + clockOf(api.cumAt(big - 1)));
+    ls('and not on the time the step ends at',
+      digits() !== clockOf(api.cumAt(big)), 'step ends at ' + clockOf(api.cumAt(big)));
+    api.settle();
+    ls('and settles on the step\u2019s own time', digits() === clockOf(api.cumAt(big)), digits());
+    /* ONE ELEMENT, RE-LETTERED. Re-rendering the face per frame is what made it
+       possible for it to be stale in the first place, and it is the same claim
+       the arrays lesson makes about its squares. */
+    const face0 = host.querySelector('.lsn-digital svg');
+    api.goto(steps.length - 1); api.settle();
+    ls('the digital face is the same element, re-lettered',
+      host.querySelector('.lsn-digital svg') === face0 && digits() === clockOf(api.cumAt(steps.length - 1)),
+      digits());
+
+    /* WHERE THE ANIMATION STOPS TO TALK. A first grader watched an hour go by
+       and pressed on without meeting the carry, because nothing was said while
+       the hands were moving. The plan is asserted rather than the pauses: a
+       stop is a setTimeout inside a frame loop, and neither runs in a hidden
+       tab, but a plan that is wrong is wrong before anything animates. */
+    const legs = api.legsAt(big);
+    ls('the long animation pauses to explain itself', legs.length > 1, legs.length - 1 + ' stops');
+    ls('every stop lands inside the run',
+      legs.every((l) => l.cum > api.cumAt(big - 1) && l.cum <= api.cumAt(big)),
+      legs.map((l) => clockOf(l.cum)).join(' '));
+    ls('the stops are in clock order',
+      legs.every((l, i) => i === 0 || l.cum > legs[i - 1].cum));
+    ls('the run ends at the step\u2019s own time',
+      legs[legs.length - 1].cum === api.cumAt(big) && !legs[legs.length - 1].say);
+    ls('every pause has something to read',
+      legs.slice(0, -1).every((l) => (l.say || '').length > 11),
+      legs.slice(0, -1).map((l) => (l.say || '').split(' ').length + 'w').join(' '));
+    ls('and long enough on screen to read it',
+      legs.slice(0, -1).every((l) => api.dwellFor(l.say) >= 1800),
+      legs.slice(0, -1).map((l) => Math.round(api.dwellFor(l.say)) + 'ms').join(' '));
+    /* A step with no stops still runs as one leg, or breaking the long one into
+       legs would have quietly stopped every other sweep on the site. */
+    const plain = sweeps.find((k) => !(steps[k].stops || []).length);
+    ls('a sweep with no stops is still one run',
+      api.legsAt(plain).length === 1 && api.legsAt(plain)[0].cum === api.cumAt(plain));
+
+    /* The way back to the animation. A child who pressed Next through it had to
+       go Back and then forward again, which reads as undoing rather than
+       replaying. */
+    api.goto(big);
+    ls('an animated step offers to play again',
+      host.querySelector('[data-replay]')?.hidden === false);
+    api.goto(0);
+    ls('and a still one does not', host.querySelector('[data-replay]')?.hidden === true);
 
     /* THE READOUT AND THE HAND MUST AGREE, at every point of every sweep. This
        is the property that matters: a counter reading 30 minutes beside a long
@@ -1688,6 +1775,73 @@ L.push('');
   } catch (e) {
     pk('harness itself', false, 'THREW ' + e.message);
   }
+}
+
+/* ------------------------------------------------------- the hint, on a clock
+   A first grader reached these questions, pressed for a hint, read "count round
+   the dial in fives", and still did not know what to do — the dial is numbered
+   1 to 12 and the answer wanted is 0 to 59, so the instruction asks a six-year-
+   old to hold a second set of numbers in their head. The hint box carries two
+   more things now: the dial with the fives written on it, and the way back to
+   the lesson that explains it.
+
+   Through the real page, because all three parts are rendered at runtime by the
+   book player and scripts/a11y.mjs cannot see any of them. */
+{
+  const hb = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('hint:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  const fr = document.createElement('iframe');
+  fr.style.cssText = 'position:absolute;left:-99999px;top:0;width:1100px;height:1200px';
+  fr.src = '/books/time-to-five-minutes/';
+  document.body.appendChild(fr);
+  await new Promise((r) => { fr.onload = r; setTimeout(r, 8000); });
+  const dd = fr.contentDocument;
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  try {
+    await nap(500);
+    const btn = dd.querySelector('[data-hint]');
+    hb('a clock question offers a hint', !!btn);
+    hb('nothing is shown before it is asked for', !dd.querySelector('[data-hintbox]'));
+    btn.click(); await nap(200);
+    const box = dd.querySelector('[data-hintbox]');
+    hb('pressing it opens a hint', !!box);
+    hb('the hint says something in words',
+      (box.querySelector('.fb.hint')?.textContent || '').trim().length > 12);
+    /* THE PICTURE. The padded viewBox is the marker for the minute ring: it is
+       drawn outside the dial, so the figure has to open its box up to fit. */
+    const fig = box.querySelector('[data-hintfig] svg');
+    hb('and shows the dial with the minutes on it',
+      !!fig && /-13 -13 126 126/.test(fig.getAttribute('viewBox') || ''),
+      fig?.getAttribute('viewBox') || 'no figure');
+    hb('the minute ring has all twelve numbers',
+      [...(fig?.querySelectorAll('text') || [])].filter((t) => /^(0|5|10|15|20|25|30|35|40|45|50|55)$/.test(t.textContent)).length >= 12,
+      [...(fig?.querySelectorAll('text') || [])].length + ' labels in all');
+    /* Drawn, not merely present. A figure in the markup at 7px tall passes
+       every DOM assertion and is invisible on the page — that has happened here
+       before, and the padded viewBox made this one come out SMALLER than the
+       question's dial on the first attempt. */
+    const fb = fig?.getBoundingClientRect();
+    const asked = dd.querySelector('.qprompt svg, [data-slot] svg')?.getBoundingClientRect();
+    hb('the hint dial is drawn at a readable size', (fb?.width ?? 0) >= 150,
+      Math.round(fb?.width ?? 0) + 'px wide');
+    hb('and is no smaller than the one being asked about',
+      (fb?.width ?? 0) >= (asked?.width ?? 0) - 1,
+      Math.round(fb?.width ?? 0) + 'px vs ' + Math.round(asked?.width ?? 0) + 'px');
+    hb('the figure is hidden from a screen reader, which has the words',
+      box.querySelector('[data-hintfig]')?.getAttribute('aria-hidden') === 'true');
+    /* THE WAY BACK. The callout at the top of the page is the right weight for
+       a child arriving and no use to one stuck on question seven. */
+    const back = box.querySelector('.hintback a');
+    hb('and offers the lesson that explains it', !!back && /\/learn\/time\//.test(back.getAttribute('href') || ''),
+      back?.getAttribute('href') || 'no link');
+    hb('named so a child knows what it is',
+      /clock/i.test(back?.textContent || ''), back?.textContent?.trim());
+    hb('pressing again does not stack a second box',
+      (() => { btn.click(); return dd.querySelectorAll('[data-hintbox]').length === 1; })(),
+      dd.querySelectorAll('[data-hintbox]').length + ' boxes');
+  } catch (e) {
+    hb('harness itself', false, 'THREW ' + e.message);
+  }
+  fr.remove();
 }
 
 /* ---------------------------------------------------------- the character cup

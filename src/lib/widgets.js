@@ -421,7 +421,20 @@ function handWords(h, m) {
   return `the short hand ${short}, the long hand ${long}`;
 }
 
-export function clockFace(h, m = 0, { print = false, size = 112, numerals = true, ticks = true } = {}) {
+/* `minutes: true` writes the MINUTE count outside the dial — 5, 10, 15 … 55 —
+   which is the scaffold the hint button hands a child who is stuck.
+
+   The gap it closes is specific. The numerals on a clock say 1 to 12 and the
+   thing being asked for is 0 to 59, so "count round in fives" asks a six-year-
+   old to hold a second set of numbers in their head while reading the first. A
+   first grader reached these questions, was told to count in fives, and did not
+   know what to do. With the fives printed on, "the long hand is pointing at the
+   6" and "30 minutes" are the same fact in one picture.
+
+   It is deliberately NOT the default: a dial that shows the answer to its own
+   question is no longer a question, which is the figure rule in CLAUDE.md. This
+   is the version a reader asks for. */
+export function clockFace(h, m = 0, { print = false, size = 112, numerals = true, ticks = true, minutes = false } = {}) {
   const ink = print ? '#111' : 'var(--a1)';
   /* TWO GREYS, because the numerals are content and the ticks are not. A child
      is asked "the long hand is pointing at the 7" — reading the dial IS the
@@ -434,12 +447,21 @@ export function clockFace(h, m = 0, { print = false, size = 112, numerals = true
      and this is an SVG <text>. */
   const faint = print ? '#555' : 'var(--txt3)';
   const numInk = print ? '#333' : 'var(--txt2)';
+  /* The minute ring is a SECOND set of numbers on the same dial, so it is
+     inked differently on purpose — the accent, not the body grey, so a child can
+     see at a glance which set is the extra help. 4.5:1 is checked by the
+     responsive audit's SVG-text pass like every other label here. */
+  const minInk = print ? '#555' : 'var(--ok)';
   const hAng = ((h % 12) * 30) + (m / 60) * 30;    // the hour hand CREEPS, which is the misconception
   const mAng = (m / 60) * 360;
   const [hx, hy] = clockPt(hAng, 24);
   const [mx, my] = clockPt(mAng, 34);
-  let t = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img"
-    aria-label="clock with ${handWords(h, m)}">
+  /* The minute ring sits at radius 54, outside the 45 the dial is drawn at, so
+     the viewBox has to open up or the numbers are clipped to nothing — present
+     in the markup, invisible on the page, and passing every DOM assertion. */
+  const pad = minutes ? 13 : 0;
+  let t = `<svg viewBox="${-pad} ${-pad} ${100 + pad * 2} ${100 + pad * 2}" width="${size}" height="${size}" role="img"
+    aria-label="clock with ${handWords(h, m)}${minutes ? ', and the minutes written round the outside' : ''}">
     <circle cx="50" cy="50" r="45" fill="none" stroke="${ink}" stroke-width="3"/>`;
   if (ticks) {
     /* Sixty ticks would be a grey ring at this size, so the five-minute marks
@@ -457,6 +479,22 @@ export function clockFace(h, m = 0, { print = false, size = 112, numerals = true
       const [x, y] = clockPt(k * 30, 31);
       t += `<text x="${x.toFixed(1)}" y="${(y + 3.4).toFixed(1)}" text-anchor="middle"
         font-size="10" font-weight="600" fill="${numInk}">${k}</text>`;
+    }
+  }
+  if (minutes) {
+    /* Outside the ring, so the hour numerals keep their place and the two sets
+       cannot be read as one. 0 rather than 60 at the top: the minutes a clock
+       shows run 0 to 59, and a dial labelled 60 at the twelve would teach the
+       one thing the lesson spends a whole animation correcting. */
+    for (let k = 0; k < 12; k++) {
+      const [x, y] = clockPt(k * 30, 54);
+      /* 8.4 rather than 7.6, and the callers ask for a bigger box than the
+         question's dial. The padded viewBox means `size` no longer maps 1:1 to
+         the drawn dial — 126 units in the same pixels — so a hint figure
+         requested at the question's size came out SMALLER than the question,
+         with 9px minute labels on it. Measured on the page, not computed. */
+      t += `<text x="${x.toFixed(1)}" y="${(y + 2.8).toFixed(1)}" text-anchor="middle"
+        font-size="8.4" font-weight="600" fill="${minInk}">${k * 5}</text>`;
     }
   }
   // short hand thick and short, long hand thin and long: the only cue that says which is which
