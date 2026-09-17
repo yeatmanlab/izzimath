@@ -845,6 +845,8 @@ footer.foot a:hover { color: var(--txt) }
   border-left: 2px solid var(--amber); padding-left: 11px;
 }
 .lsn-why.right { border-left-color: var(--ok); color: var(--txt) }
+/* The way out of a wrong answer. Only ever under a wrong one. */
+.lsn-again { margin: 0 }
 
 /* The coin tray and the pile. A tap is the whole gesture — dragging between two
    boxes on a tablet is fiddly enough to become the lesson. */

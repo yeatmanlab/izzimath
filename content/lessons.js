@@ -204,7 +204,7 @@ export const LESSONS = {
           options: [
             { say: 'The short fat one', right: true,
               why: 'Yes. The short fat hand always says the hour.' },
-            { say: 'The long thin one',
+            { say: 'The long thin one', back: 2,
               why: 'That is the one that counts the minutes. The hour is the short fat hand.' },
           ],
         },
@@ -384,7 +384,7 @@ export const LESSONS = {
           options: [
             { say: '7 o\u2019clock', right: true,
               why: 'Yes. It has left the 7 and not reached the 8. So the hour is 7.' },
-            { say: '8 o\u2019clock',
+            { say: '8 o\u2019clock', back: 15,
               why: 'Not yet. The hand has not got to the 8. Take the smaller number.' },
           ],
         },
@@ -518,7 +518,7 @@ export const LESSONS = {
           options: [
             { say: 'One half', right: true,
               why: 'Yes. More pieces means each piece is thinner, not bigger.' },
-            { say: 'One eighth, because 8 is bigger',
+            { say: 'One eighth, because 8 is bigger', back: 8,
               why: 'The 8 is the bigger number, but the piece is smaller. Cutting into more pieces makes each one thinner.' },
           ],
         },
@@ -640,7 +640,7 @@ export const LESSONS = {
           options: [
             { say: '54', right: true,
               why: 'Yes. It is the same array turned round, so the total is the same.' },
-            { say: 'You have to work it out',
+            { say: 'You have to work it out', back: 3,
               why: 'You do not. Turn the array and no square moves, so it is 54 as well.' },
           ],
         },
@@ -758,7 +758,7 @@ export const LESSONS = {
           options: [
             { say: 'The dime', right: true,
               why: 'Yes. The dime is smaller and worth twice as much.' },
-            { say: 'The nickel, it is bigger',
+            { say: 'The nickel, it is bigger', back: 6,
               why: 'Size is no help here. The dime is smaller and still worth more.' },
           ],
         },
@@ -843,27 +843,36 @@ export const LESSON_STUCK = 'Still stuck?';
    fresh device both get the loud version; src/mount/lesson.js records the visit
    and the activity page collapses it on the next load. Getting that the wrong
    way round would hide the lesson from exactly the child who needs it. */
+/* `{time}` IS SUBSTITUTED, NOT WRITTEN, and that is the whole reason it is a
+   placeholder. This copy said "it takes a minute" about the clock lesson. It
+   was true when there were ten steps and no widgets; the lesson is now
+   eighteen steps with three turns at the clock and two questions, and the
+   sentence had quietly become a lie that nothing could catch. The duration
+   comes from src/lib/pace.js at the call site, so it cannot drift again, and
+   scripts/check.mjs fails a hard-coded one coming back. */
 export const LESSON_CALL = {
   time: {
     head: 'New to clocks? Start here.',
-    say: 'A short lesson with a clock you can watch move. Nothing to get wrong, and it takes a minute.',
+    say: 'A short lesson with a clock you can watch move, and then move yourself. Nothing to get '
+      + 'wrong, and it takes {time}.',
     cta: 'Show me how a clock works',
   },
   money: {
     head: 'New to coins? Start here.',
-    say: 'A short lesson on what each coin is worth — including why the small one beats the big one.',
+    say: 'A short lesson on what each coin is worth — including why the small one beats the big '
+      + 'one. About {time}.',
     cta: 'Show me how coins work',
   },
   fractions: {
     head: 'New to fractions? Start here.',
     say: 'A short lesson where one bar gets cut up while you watch, so you can see for yourself '
-      + 'that one half and two quarters are the same amount.',
+      + 'that one half and two quarters are the same amount. About {time}.',
     cta: 'Show me how fractions work',
   },
   arrays: {
     head: 'Rows and columns muddling you up? Start here.',
     say: 'A short lesson where an array turns a quarter turn, so you can see why 3 × 8 and 8 × 3 '
-      + 'have to come out the same.',
+      + 'have to come out the same. About {time}.',
     cta: 'Show me why it can be turned',
   },
 };
@@ -890,9 +899,72 @@ export const LESSON_CALL = {
    `how` is scaffolding rather than decoration: a first grader shown a clock
    does not know that the hands can be touched, and there is nothing about a
    drawing of a clock that says so. */
+/* ------------------------------------------------- what a run actually does
+   WHERE AN ANIMATED STEP STARTS AND ENDS, and the points it pauses at, as a
+   pure function of the content.
+
+   Here rather than in the player because it is a fact about the LESSON, and
+   because two things need it: the player, to walk the legs, and src/lib/pace.js,
+   to say how long the lesson takes. Two copies of this would drift, and the
+   drift would show up as a time estimate that quietly disagreed with the thing
+   being timed.
+
+   `scripts/check.mjs` deliberately does NOT use it. It re-derives the same
+   arithmetic independently, because a checker that asks the content to agree
+   with itself proves only that one function is self-consistent — and a stop
+   silently dropped for being outside its run is exactly the bug it exists to
+   catch.
+
+   Every stage sweeps along one number and it is a different number per kind:
+   the clock walks minutes, the coin lesson walks the count of pennies it is
+   laying down. The bar and array animate one continuous CSS move with no loop,
+   so they have no legs. */
+const dialMinsOf = (o) => ((o.h % 12) * 60) + (o.m || 0);
+
+export function lessonSpan(lesson, k) {
+  const st = lesson.steps[k];
+  if (!st || k < 1) return null;
+  if (lesson.kind === 'clock') {
+    let cum = dialMinsOf(lesson.steps[0].show);
+    for (let i = 1; i <= k; i++) {
+      let d = dialMinsOf(lesson.steps[i].show) - dialMinsOf(lesson.steps[i - 1].show);
+      if (d < 0) d += 720;
+      cum += d;
+    }
+    let prev = dialMinsOf(lesson.steps[0].show);
+    for (let i = 1; i <= k - 1; i++) {
+      let d = dialMinsOf(lesson.steps[i].show) - dialMinsOf(lesson.steps[i - 1].show);
+      if (d < 0) d += 720;
+      prev += d;
+    }
+    return [prev, cum];
+  }
+  if (lesson.kind === 'coins') return [0, st.show.pennies || 0];
+  return [0, 0];
+}
+
+export function lessonLegs(lesson, k) {
+  const st = lesson.steps[k];
+  if (!st || k < 1) return [];
+  const span = lessonSpan(lesson, k);
+  if (!span) return [];
+  const [from, to] = span;
+  const place = (sp) => (lesson.kind === 'clock'
+    ? from + (((dialMinsOf(sp) - (from % 720)) + 720) % 720)
+    : sp.at);
+  const stops = (st.stops || [])
+    .map((sp) => ({ say: sp.say, dwell: sp.dwell, cum: place(sp) }))
+    .filter((sp) => Number.isFinite(sp.cum) && sp.cum > from && sp.cum < to)
+    .sort((a, b) => a.cum - b.cum);
+  return [...stops, { cum: to, say: null }];
+}
+
 export const LESSON_TRY = {
   goal: 'Make it say',
   how: 'Put your finger on a hand and slide it round the clock.',
+  /* The way out of a wrong answer, and the way back from it. */
+  again: 'Show me that again',
+  backToQ: 'Back to the question \u2192',
   howCoin: 'Tap a coin to take one. Tap it again in the row below to put it back.',
   trayLab: 'Tap a coin to take it',
   empty: 'Nothing taken yet.',
@@ -906,17 +978,21 @@ export const LESSON_TRY = {
 
 export const LESSON_INDEX = {
   title: 'Short lessons',
-  lead: 'Two things a printed sheet cannot do: show you a clock’s hands moving, and lay pennies '
-    + 'against a nickel.',
+  /* `{n}` for the same reason `{time}` exists on the callouts: this read "Two
+     things a printed sheet cannot do" for as long as there were two lessons,
+     and went on reading it after there were four. */
+  lead: '{n} things a printed sheet cannot do. A clock’s hands moving. Ten pennies against a '
+    + 'dime. One bar cut into quarters. An array turned on its side.',
   glyph: '▶',
   head: 'What these are for',
   /* Says out loud why there are only two, because the site answers that kind of
      question rather than leaving a thin page looking unfinished. */
-  say: 'Not a course, and not organised by grade — you get here from an activity when something '
-    + 'is not landing, and every time and money activity links back. There are two because '
-    + 'movement is only worth it where a still picture genuinely cannot do the job: the fix for '
-    + 'reading 2:30 as “half past three” is watching the short hand creep, and the fix for '
-    + '“the bigger coin is worth more” is seeing ten pennies against one dime.',
+  say: 'Not a course, and not organised by grade. You get here from an activity when something '
+    + 'is not landing, and every activity that has a lesson links back to it. Each one is here '
+    + 'because movement earns the screen: the fix for reading 2:30 as “half past three” is '
+    + 'watching the short hand creep, and the fix for “the bigger coin is worth more” is seeing '
+    + 'ten pennies against one dime. Every lesson also hands the figure over and asks you to '
+    + 'make something with it.',
   practice: 'Practice it in',
   empty: 'No activity links here yet.',
 };

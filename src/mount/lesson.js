@@ -33,7 +33,8 @@
  * hand move too?" is followed by one that states where it ended up.
  */
 
-import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT, LESSON_TRY } from '../../content/lessons.js';
+import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT, LESSON_TRY, lessonLegs } from '../../content/lessons.js';
+import { sweepMs as paceSweep, coinMs as paceCoin, dwellFor as paceDwell } from '../lib/pace.js';
 import { clockFace, clockDigital, coin, COINS, coinsValue, money, array2d } from '../lib/widgets.js';
 import { currentCharacter } from '../lib/theme.js';
 import { getCharacter, fill } from '../../content/characters.js';
@@ -272,6 +273,8 @@ export function renderLesson(host, id) {
              it except Back-then-Next, which re-reads as going backwards. On the
              steps that move, the move itself is the content. -->
         <button class="btn" type="button" data-replay hidden>&#9655; Watch it again</button>
+        <!-- Only while a check sent the reader here. -->
+        <button class="btn" type="button" data-toask hidden></button>
         <!-- READ IT TO ME. The lesson is pitched at grade 1 and all of its
              content is text, so the child it was built for may not be able to
              read it — and narration beside an animation beats text beside the
@@ -365,8 +368,13 @@ export function renderLesson(host, id) {
      seconds, which is long enough to see that something moved and not long
      enough to watch WHICH hand moved how far — and watching the short hand
      creep is the entire reason this lesson is animated. A first grader went
-     through it and came out still reading the hour off the wrong number. */
-  const sweepMs = (units) => Math.max(1400, Math.min(7000, Math.abs(units) * 140));
+     through it and came out still reading the hour off the wrong number.
+
+     IMPORTED rather than written here, because the lessons index advertises how
+     long each lesson takes and src/lib/pace.js works that out from these very
+     numbers. Two copies would drift, and the drift would show as a page
+     confidently disagreeing with the thing it was timing. */
+  const sweepMs = paceSweep;
 
   /* WHERE THE RUN PAUSES, as a plain list, computed from the step rather than
      from anything the animation is doing.
@@ -385,47 +393,20 @@ export function renderLesson(host, id) {
      not strictly inside the sweep is dropped here and failed by check.mjs —
      silently skipping one would leave the lesson a caption short with nothing
      to show it. */
-  const dialMins = (o) => ((o.h % 12) * 60) + (o.m || 0);
+  /* MOVED TO content/lessons.js, because src/lib/pace.js needs the same plan to
+     say how long a lesson takes and two copies would drift. What is left here
+     is the wrapper the harness drives.
 
-  /* EVERY STAGE SWEEPS ALONG ONE NUMBER, and which number it is depends on the
-     kind: the clock walks minutes-since-the-first-step, the coin lesson walks
-     the count of pennies it is laying down. So the span comes from the kind and
-     a stop names a point in that kind's own units — a clock stop says
-     `{ h, m }` because that is how an author thinks about a clock, and a coin
-     stop says `{ at: 5 }` because that is how you think about five pennies.
-
-     The bar and array stages are deliberately absent. They animate one CSS
-     property in one continuous move — a shaded width, a rotation — and for the
-     fractions lesson the continuity IS the argument: the shaded part not moving
-     while the cuts multiply around it is the whole proof. Pausing that would
-     mean rebuilding it as a frame loop to make it less convincing, so
-     `scripts/check.mjs` fails a `stops` declared on either of them rather than
-     letting it sit there doing nothing. */
-  function spanAt(k) {
-    const st = lesson.steps[k];
-    if (kind === 'clock') return [elapsedAt(k - 1), elapsedAt(k)];
-    if (kind === 'coins') return [0, st.show.pennies || 0];
-    return [0, 0];
-  }
-
-  function legsAt(k) {
-    const st = lesson.steps[k];
-    if (!st || k < 1) return [];
-    const [from, to] = spanAt(k);
-    const place = (sp) => (kind === 'clock'
-      ? from + (((dialMins(sp) - (from % 720)) + 720) % 720)
-      : sp.at);
-    const stops = (st.stops || [])
-      .map((sp) => ({ say: sp.say, dwell: sp.dwell, cum: place(sp) }))
-      .filter((sp) => Number.isFinite(sp.cum) && sp.cum > from && sp.cum < to)
-      .sort((a, b) => a.cum - b.cum);
-    return [...stops, { cum: to, say: null }];
-  }
+     scripts/check.mjs deliberately keeps its OWN arithmetic for validating
+     stops: a checker that asks the content to agree with itself proves only
+     that one function is self-consistent, and a stop silently dropped for
+     falling outside its run is exactly the bug it exists to catch. */
+  const legsAt = (k) => lessonLegs(lesson, k);
 
   /* How long a stop stays up. From the length of what it says, because the only
      thing the reader is doing is reading it — a fixed delay is either too long
      for "60 minutes!" or too short for a sentence. */
-  const dwellFor = (say) => Math.max(1800, Math.min(4200, 400 + String(say || '').split(/\s+/).length * 260));
+  const dwellFor = paceDwell;
 
   /* ONE RUNNER FOR BOTH LESSONS. The clock sweeps its hands and the coin lesson
      lays out its pennies one at a time; they are the same shape of thing — a
@@ -649,6 +630,13 @@ export function renderLesson(host, id) {
      whole point of asking: the child who picks "8 o'clock" needs to hear that
      the hand has not reached the 8 yet, not that they are wrong. */
   let asked = null;
+  /* WHERE TO COME BACK TO. A check that says "wrong, and here is why" is still
+     a dead end: the child who needed the explaining is the one least likely to
+     go hunting for the step that teaches it. So a wrong answer can carry `back`
+     — the step that explains it — and pressing it goes there and remembers the
+     question, so there is a way home rather than a walk forward through
+     everything in between. */
+  let returnTo = null;
 
   function paintAsk(step) {
     const box = host.querySelector('[data-ask]');
@@ -660,14 +648,26 @@ export function renderLesson(host, id) {
         <button type="button" class="lsn-opt${asked === i ? (o.right ? ' right' : ' wrong') : ''}"
           data-opt="${i}" aria-pressed="${asked === i}">${esc(o.say)}</button>`).join('')}</div>
       ${asked != null ? `<p class="lsn-why${a.options[asked].right ? ' right' : ''}">${
-        esc(a.options[asked].why)}</p>` : ''}`;
+        esc(a.options[asked].why)}</p>` : ''}
+      ${asked != null && a.options[asked].back
+        ? `<p class="lsn-again"><button type="button" class="btn sm" data-reteach="${
+          a.options[asked].back}">${LESSON_TRY.again}</button></p>` : ''}`;
   }
 
   if (host) {
     host.querySelector('[data-ask]').addEventListener('click', (e) => {
       const b = e.target.closest?.('[data-opt]');
       const step = lesson.steps[at];
-      if (!b || !step?.ask) return;
+      if (!step?.ask) return;
+      if (!b && !e.target.closest?.('[data-reteach]')) return;
+      const again = e.target.closest?.('[data-reteach]');
+      if (again) {
+        returnTo = at;
+        at = Math.max(0, Number(again.dataset.reteach) - 1);
+        dir = 1;
+        paint();
+        return;
+      }
       asked = Number(b.dataset.opt);
       paintAsk(step);
       /* Read the reason out, not the verdict. The words a child needs are the
@@ -941,7 +941,7 @@ export function renderLesson(host, id) {
       walkLegs(at, 0,
         (v) => { draw(Math.min(show.pennies, Math.floor(v) + 1)); return paintCoinRead(v, show); },
         (r) => sayCoinRead(r),
-        (n) => Math.max(1000, Math.abs(n) * 260));
+        paceCoin);
     } else {
       draw(show.pennies || 0);
       if (!read.hidden) sayCoinRead(paintCoinRead(show.pennies || 0, show));
@@ -1175,6 +1175,13 @@ export function renderLesson(host, id) {
        where the sweep deliberately did not run. That is the case a child is
        most likely to want it in. */
     host.querySelector('[data-replay]').hidden = !(step.sweep && at > 0);
+    /* The way home from a re-teach. Cleared once the reader is back at the
+       question, or has walked past it themselves — a button offering to return
+       to a question they have already answered and moved on from is clutter. */
+    if (returnTo != null && at >= returnTo) returnTo = null;
+    const home = host.querySelector('[data-toask]');
+    home.hidden = returnTo == null;
+    home.textContent = returnTo == null ? '' : LESSON_TRY.backToQ;
     const next = host.querySelector('[data-next]');
     const last = at === lesson.steps.length - 1;
     next.textContent = last ? 'Done' : 'Next →';
@@ -1196,6 +1203,12 @@ export function renderLesson(host, id) {
      press is what unlocks the rest of the lesson. */
   wireVoiceButtons(host, (on) => { if (on) sayStep(); else stopSpeaking(); });
 
+  host.querySelector('[data-toask]').addEventListener('click', () => {
+    if (returnTo == null) return;
+    const k = returnTo;
+    returnTo = null;
+    at = k; dir = 1; paint();
+  });
   host.querySelector('[data-replay]').addEventListener('click', () => {
     const step = lesson.steps[at];
     if (!step.sweep || at === 0) return;

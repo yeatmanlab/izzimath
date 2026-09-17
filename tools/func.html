@@ -581,6 +581,46 @@ L.push('');
       ls('a check that asks for a time hides the digital face',
         host.querySelector('.lsn-digital')?.hidden === true);
     }
+    /* THE WAY OUT OF A WRONG ANSWER, AND THE WAY BACK FROM IT. A check that
+       says "wrong, and here is why" is still a dead end: the child who needed
+       the explaining is the one least likely to go hunting for the step that
+       teaches it. */
+    api.goto(askIdx);
+    opts()[wrongAt].click();
+    const reteach = host.querySelector('[data-reteach]');
+    ls('a wrong answer offers the step that explains it', !!reteach,
+      reteach ? 'back to step ' + reteach.dataset.reteach : 'no way back');
+    /* GUARDED, not assumed. Breaking the re-teach on purpose threw here and
+       took the remaining 47 checks of this block with it — a harness that stops
+       measuring because one thing is broken hides everything after it, which is
+       the same failure as a check that cannot fail. */
+    const target = Number(reteach?.dataset.reteach ?? -1);
+    ls('and that step comes before the question', target > 0 && target < askIdx + 1,
+      'step ' + target + ' of a question at ' + (askIdx + 1));
+    reteach?.click();
+    ls('pressing it goes there', api.step === target - 1, 'landed on step ' + (api.step + 1));
+    const home = host.querySelector('[data-toask]');
+    ls('and a way back to the question appears', home.hidden === false, home.textContent);
+    home.click();
+    ls('which returns to the question, still asked',
+      api.step === askIdx && !!host.querySelector('.lsn-q'),
+      'step ' + (api.step + 1));
+    ls('and then puts itself away',
+      host.querySelector('[data-toask]').hidden === true);
+    /* Walking forward past the question clears it too: a button offering to
+       return to something already answered and left behind is clutter. */
+    api.goto(askIdx);
+    opts()[wrongAt].click();
+    host.querySelector('[data-reteach]')?.click();
+    api.goto(askIdx + 1 <= steps.length - 1 ? askIdx + 1 : askIdx);
+    ls('walking past the question clears the way back',
+      host.querySelector('[data-toask]').hidden === true);
+    /* A RIGHT answer never offers one. */
+    api.goto(askIdx);
+    opts()[rightAt].click();
+    ls('a right answer is not offered a re-teach',
+      !host.querySelector('[data-reteach]'));
+
     api.goto(0);
     ls('and the question goes away on a step that is not asking',
       host.querySelector('[data-ask]')?.hidden === true

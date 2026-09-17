@@ -12,7 +12,8 @@ import { FEEDBACK, KIND_IDS, REPO, MAX_CHARS, ROUTES, enabledRoutes, issueUrl, p
 import { characters, characterList, getCharacter } from '../content/characters.js';
 import { standings, playerStandings, playerRowFrom, CUP, CUP_CHARACTERS } from '../content/leaderboard.js';
 import { coin, COINS, COIN_KINDS, money, clockFace, addMinutes } from '../src/lib/widgets.js';
-import { LESSONS } from '../content/lessons.js';
+import { LESSONS, LESSON_CALL, LESSON_INDEX } from '../content/lessons.js';
+import { lessonMinutes, lessonTime } from '../src/lib/pace.js';
 import { CHAR_MERGE } from '../src/lib/profile.js';
 import { allSubscales, tasks, roamLabel } from '../content/roam.js';
 import { isCorrect, answerText, TYPES } from '../content/types.js';
@@ -425,7 +426,7 @@ console.log('\n=== clocks and coins ===');
      right-or-wrong is worth about a tenth of elaborated feedback and the gap is
      widest in maths. A wrong option whose reason is "No" would be the whole
      value of asking, thrown away. */
-  let checksFor = 0;
+  let checksFor = 0, backs = 0;
   for (const [id, l] of Object.entries(LESSONS)) {
     (l.steps || []).forEach((st, k) => {
       if (!st.ask) return;
@@ -457,11 +458,76 @@ console.log('\n=== clocks and coins ===');
          that flags good content is as much of a problem as one that misses bad
          content; what makes the digital face a leak is an option like
          "7 o'clock". */
+      /* AND A WRONG ANSWER CAN CARRY THE WAY BACK. It must point at a step that
+         EXISTS and that comes BEFORE the question: you cannot re-teach a child
+         with a step they have not reached, and a `back` off the end of the
+         lesson would send them nowhere. */
+      for (const [j, o] of opts.entries()) {
+        if (o.back == null) continue;
+        backs++;
+        if (!Number.isInteger(o.back) || o.back < 1 || o.back > l.steps.length) {
+          fail(w, `step ${k + 1} answer ${j + 1} sends the reader back to step ${o.back}, which does not exist`);
+        } else if (o.back >= k + 1) {
+          fail(w, `step ${k + 1} answer ${j + 1} sends the reader FORWARD to step ${o.back}; a re-teach has to be something they have already seen`);
+        } else if (o.right) {
+          fail(w, `step ${k + 1} answer ${j + 1} is the right answer and still offers to explain it again`);
+        }
+      }
       const timeAnswer = opts.some((o) => /\d\s*:\s*\d\d|o\u2019clock|o'clock|past\b/i.test(o.say || ''));
       if (l.kind === 'clock' && st.show.digital && timeAnswer) {
         fail(w, `step ${k + 1} asks for a time with the digital face showing, which prints the answer beside the question`);
       }
     });
+  }
+
+  /* HOW LONG IT TAKES, STATED AND NOT TYPED.
+
+     The clock lesson's callout said "it takes a minute". True at ten steps and
+     no widgets; the lesson is eighteen steps with three turns at the clock and
+     two questions, so the sentence had become a lie and nothing could catch it.
+     The index said "Two things a printed sheet cannot do" for as long after the
+     third lesson landed as anyone failed to notice.
+
+     So both numbers are placeholders filled from src/lib/pace.js at the call
+     site, and this fails a hard-coded one coming back. Also a cap: these are
+     advertised as SHORT lessons, and a twenty-minute one would make the page
+     title false however honest the estimate was. */
+  const NUM = '(an?|one|two|three|four|five|six|seven|eight|nine|ten|\\d+)';
+  const UNIT = '(minute|minutes|second|seconds)';
+  /* The MARKETING copy has no business naming a duration at all. */
+  const TYPED_DURATION = new RegExp(`\\b${NUM}[\\s-]+${UNIT}\\b`, 'i');
+  /* A LESSON'S OWN prose is different, and this is the second check today to
+     fire on correct content before it fired on a bug: the clock lesson's close
+     says "60 minutes is 1 hour", which is the thing being taught and not a
+     claim about how long the lesson lasts. So inside a lesson the rule looks
+     for the CLAIM — a verb of taking in front of the number — rather than for
+     the noun, which a lesson about time is going to use on every step. */
+  const CLAIMED_DURATION = new RegExp(`\\b(takes?|lasts?|runs?|only|about|under|over)\\s+${NUM}[\\s-]+${UNIT}\\b`, 'i');
+  const SHORT_ENOUGH = 10;
+  let timed = 0;
+  for (const [id, call] of Object.entries(LESSON_CALL)) {
+    if (!LESSONS[id]) { fail('lesson-time', `LESSON_CALL has an entry for "${id}", which is not a lesson`); continue; }
+    timed++;
+    if (!call.say.includes('{time}')) {
+      fail('lesson-time', `${id}'s callout never says how long it takes — a parent deciding whether to press it has no idea`);
+    }
+    for (const [field, text] of Object.entries(call)) {
+      const hit = String(text).replace('{time}', '').match(TYPED_DURATION);
+      if (hit) fail('lesson-time', `${id}'s callout ${field} types a duration ("${hit[0]}") instead of taking it from pace.js, so it will drift`);
+    }
+  }
+  for (const [id, l] of Object.entries(LESSONS)) {
+    const mins = lessonMinutes(l);
+    if (mins > SHORT_ENOUGH) {
+      fail('lesson-time', `${id} now runs about ${mins} minutes, and the page it sits on is called "${LESSON_INDEX.title}" — over ${SHORT_ENOUGH} it is a course, not a detour`);
+    }
+    for (const [field, text] of [['lead', l.lead], ['close', l.close]]) {
+      const hit = String(text).match(CLAIMED_DURATION);
+      if (hit) fail('lesson-time', `${id}'s ${field} claims a duration ("${hit[0]}") instead of taking it from pace.js, so it will drift`);
+    }
+  }
+  if (!LESSON_INDEX.lead.includes('{n}')) {
+    fail('lesson-time', 'the index lead states its own count in words, which is what made it say "Two" with four lessons on the page');
   }
 
   /* And the words themselves, on every piece of prose a child is shown or read. */
@@ -523,7 +589,9 @@ console.log('\n=== clocks and coins ===');
     animated += sweeps;
   }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain, ${tries} handed to the child, ${checksFor} checking it landed`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain, ${tries} handed to the child, ${checksFor} checking it landed, ${backs} with a way back`);
+  console.log(`  ${timed} callouts state a generated duration · ${Object.entries(LESSONS)
+    .map(([id, l]) => `${id} ${lessonTime(l).replace('about ', '')}`).join(', ')}`);
   console.log(`  ${proseBits} pieces of prose · longest sentence ${worstSentence} words (cap ${
     MAX_SENTENCE}) · worst mean ${worstMean.toFixed(1)} of ${MAX_MEAN} allowed · hardest paragraph reads as grade ${worstFk.toFixed(1)}`);
 }

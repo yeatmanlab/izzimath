@@ -18,6 +18,7 @@ import { CUP } from './content/leaderboard.js';
 import { BADGES, BADGE_COUNT, CATEGORIES } from './content/badges.js';
 import { badgeTable } from './src/lib/badgeart.js';
 import { LESSONS, LESSON_LINK, LESSON_CALL, LESSON_INDEX } from './content/lessons.js';
+import { lessonTime } from './src/lib/pace.js';
 import { tasks, bands, bandOrder, allSubscales, roamLabel, ROAM_URL, recommend } from './content/roam.js';
 
 const BASE = (process.env.BASE ?? '').replace(/\/$/, '');
@@ -337,7 +338,7 @@ for (const a of activities) {
         <span class="lsncall-ic" aria-hidden="true">${esc(LESSONS[a.lesson].glyph)}</span>
         <div class="lsncall-body">
           <b>${esc(LESSON_CALL[a.lesson].head)}</b>
-          <span>${esc(LESSON_CALL[a.lesson].say)}</span>
+          <span>${esc(LESSON_CALL[a.lesson].say.replace('{time}', lessonTime(LESSONS[a.lesson])))}</span>
         </div>
         <a class="btn pri lsncall-go" href="${b}/learn/${a.lesson}/">${esc(LESSON_CALL[a.lesson].cta)} &rarr;</a>
         <a class="lsncall-quiet" href="${b}/learn/${a.lesson}/">${esc(LESSON_LINK[a.lesson])}</a>
@@ -744,14 +745,19 @@ const practiceStrip = (id) => {
     ${used.map((a) => activityCard(b, a)).join('')}</div>`;
 };
 
+/* Generated, not typed. See the note on `{n}` in content/lessons.js. */
+const LESSON_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
+const indexLead = LESSON_INDEX.lead.replace('{n}',
+  LESSON_WORDS[Object.keys(LESSONS).length] ?? String(Object.keys(LESSONS).length));
+
 write('learn/index.html', page({
   base: b, active: 'learn', title: LESSON_INDEX.title,
-  desc: `${LESSON_INDEX.title} for Izzi Math — ${LESSON_INDEX.lead}`,
+  desc: `${LESSON_INDEX.title} for Izzi Math — ${indexLead}`,
   crumbs: [{ label: 'Home', href: '/' }, { label: LESSON_INDEX.title }],
   body: `<section class="wrap">
     <div class="ahead"><div class="gbadge" aria-hidden="true">${esc(LESSON_INDEX.glyph)}</div>
       <div><h1>${esc(LESSON_INDEX.title)}</h1>
-        <p>${esc(LESSON_INDEX.lead)}</p></div></div>
+        <p>${esc(indexLead)}</p></div></div>
     <div class="roam" style="margin:18px 0 26px">
       <h2 style="font-size:16px">${esc(LESSON_INDEX.head)}</h2>
       <p>${esc(LESSON_INDEX.say)}</p>
@@ -762,7 +768,11 @@ write('learn/index.html', page({
         return `<a class="card lsncard" href="${b}/learn/${lesson.id}/">
           <div class="lsnfig" aria-hidden="true">${lessonFigure(lesson.id)}</div>
           <div class="cbody">
-            <div class="ctag">${esc(lesson.topic)} · ${lesson.steps.length} steps</div>
+            <!-- MINUTES, NOT STEPS. "Time · 18 steps" is true and useless: it
+                 tells a parent nothing about whether this is a detour or a
+                 course, and on a page headed "Short lessons" a count of 18
+                 reads as the second one. -->
+            <div class="ctag">${esc(lesson.topic)} · ${esc(lessonTime(lesson))}</div>
             <h3>${esc(lesson.title)}</h3>
             <p>${esc(lesson.lead)}</p>
             ${used.length ? `<p class="lsnuse">${esc(LESSON_INDEX.practice)}
