@@ -355,14 +355,21 @@ console.log('\n=== clocks and coins ===');
          cuts multiply is the whole proof. So a stop there is not a thing that
          could be built; it is a field that would sit in the content doing
          nothing, which is why this is an error rather than a shrug. */
-      if (l.kind !== 'clock' && l.kind !== 'coins') {
+      /* Each stage sweeps along its own number, and this re-derives the span
+         independently of content/lessons.js on purpose — see the note on
+         `lessonLegs` there. The line carries on from where it was; the coins
+         lay out n pennies from nothing every time. */
+      const PAUSABLE = { clock: 1, coins: 1, line: 1 };
+      if (!PAUSABLE[l.kind]) {
         fail(w, `step ${k + 1} declares stops, but a ${l.kind} lesson animates one continuous move with no loop to pause — the field would do nothing`);
         return;
       }
       const clockish = l.kind === 'clock';
-      const from = clockish ? dialAt(l.steps[k - 1]) : 0;
+      const from = clockish ? dialAt(l.steps[k - 1])
+        : l.kind === 'line' ? (l.steps[k - 1].show.at || 0) : 0;
       const span = clockish
         ? (((dialAt(st) - from) % 720) + 720) % 720
+        : l.kind === 'line' ? ((st.show.at || 0) - from)
         : (st.show.pennies || 0);
       let last = 0;
       for (const [j, sp] of st.stops.entries()) {
@@ -373,7 +380,9 @@ console.log('\n=== clocks and coins ===');
           fail(w, `step ${k + 1} stop ${j + 1} does not say where it stops — a ${l.kind} stop needs ${clockish ? 'an h and m' : 'an `at` count'}`);
           continue;
         }
-        const d = clockish ? (((dialAt({ show: sp }) - from) % 720) + 720) % 720 : sp.at;
+        const d = clockish ? (((dialAt({ show: sp }) - from) % 720) + 720) % 720
+          : l.kind === 'line' ? sp.at - from
+          : sp.at;
         if (d <= 0 || d >= span) {
           fail(w, `step ${k + 1} stop ${j + 1} is at ${clockish
             ? `${sp.h}:${String(sp.m || 0).padStart(2, '0')}`

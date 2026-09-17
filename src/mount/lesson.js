@@ -35,7 +35,8 @@
 
 import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT, LESSON_TRY, lessonLegs } from '../../content/lessons.js';
 import { sweepMs as paceSweep, coinMs as paceCoin, dwellFor as paceDwell } from '../lib/pace.js';
-import { clockFace, clockDigital, coin, COINS, coinsValue, money, array2d } from '../lib/widgets.js';
+import { clockFace, clockDigital, coin, COINS, coinsValue, money, array2d,
+  numberLine, numberLinePos } from '../lib/widgets.js';
 import { currentCharacter } from '../lib/theme.js';
 import { getCharacter, fill } from '../../content/characters.js';
 import { speechAvailable, audioOn, audioEverUsed, speak, stopSpeaking,
@@ -187,6 +188,90 @@ function barStage() {
   return wrap;
 }
 
+/* --------------------------------------------------------- the number line
+   DRAWN ONCE, AND ONE MARKER SLIDES ALONG IT — the same trick as the clock's
+   hands, and for the same reason: what the lesson claims is that a jump of ten
+   is the same size wherever you make it, and the only way to show that is to
+   move the same marker the same distance twice. Two drawings of two markers
+   would be asking the child to trust two pictures, which is the thing this
+   format exists to avoid.
+
+   The axis, the ticks and the labels come from numberLine() so the line looks
+   like every other number line on the site; the marker is stripped out of it
+   and replaced with one this stage keeps hold of. */
+const LINE_W = 560, LINE_LO = 0, LINE_HI = 100;
+const linePos = numberLinePos({ lo: LINE_LO, hi: LINE_HI, width: LINE_W });
+
+function lineStage() {
+  const wrap = document.createElement('div');
+  wrap.className = 'lsn-line';
+  const ticks = Array.from({ length: 101 }, (_, i) => i).filter((v) => v % 5 === 0 && v % 10 !== 0);
+  const majors = Array.from({ length: 11 }, (_, i) => i * 10);
+  const svg = numberLine({
+    lo: LINE_LO, hi: LINE_HI, ticks, majors,
+    labels: majors.map((v) => [v, String(v)]),
+    width: LINE_W, marker: null,
+  }).replace('</svg>', `
+    <g class="lsn-mark">
+      <line x1="0" y1="30" x2="0" y2="74" stroke="var(--a1)" stroke-width="2.5"/>
+      <circle cx="0" cy="52" r="12" fill="var(--a2)" stroke="#fff" stroke-opacity=".35" stroke-width="2"/>
+    </g></svg>`);
+  wrap.innerHTML = svg;
+  wrap.querySelector('svg')?.setAttribute('aria-hidden', 'true');
+  return wrap;
+}
+
+/* ------------------------------------------------------------- the balance
+   THE BEAM TIPS, AND THAT IS THE WHOLE LESSON. A printed page can draw a
+   balanced scale or a tipping one; only a screen can tip it in response to a
+   number the child chose, and that feedback is the argument. The misconception
+   is the operational reading of the equals sign — that it means "the answer
+   comes next" rather than "the same as" — which is why `8 + 4 = __ + 5` gets
+   12 from most children who have only ever seen sums written left to right.
+
+   Drawn once and rotated, like the array: the same beam, the same two pans, so
+   what changes is the tilt and nothing else. The pans are counter-moved
+   vertically rather than rotated with the beam, because a real pan hangs level
+   and a tilted box full of numbers is harder to read at the moment a child is
+   trying to read it. */
+const BEAM_W = 460, BEAM_H = 200, BEAM_ARM = 168, BEAM_Y = 58, PAN_DROP = 44;
+
+function scaleStage() {
+  const wrap = document.createElement('div');
+  wrap.className = 'lsn-scale';
+  const cx = BEAM_W / 2;
+  const pan = (side) => `
+    <g class="lsn-pan" data-pan="${side}">
+      <line x1="0" y1="${BEAM_Y}" x2="0" y2="${BEAM_Y + PAN_DROP}" stroke="var(--line2)" stroke-width="2"/>
+      <rect x="-54" y="${BEAM_Y + PAN_DROP}" width="108" height="56" rx="10"
+        fill="var(--glass)" stroke="var(--line2)" stroke-width="2"/>
+      <text class="lsn-pantxt" x="0" y="${BEAM_Y + PAN_DROP + 36}" text-anchor="middle"
+        font-size="22" font-weight="700" fill="var(--txt)"
+        font-family="'Space Grotesk',sans-serif"></text>
+    </g>`;
+  wrap.innerHTML = `<svg viewBox="0 0 ${BEAM_W} ${BEAM_H}" width="100%" height="${BEAM_H}" aria-hidden="true">
+    <g class="lsn-beam">
+      <line x1="${cx - BEAM_ARM}" y1="${BEAM_Y}" x2="${cx + BEAM_ARM}" y2="${BEAM_Y}"
+        stroke="var(--a1)" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <path d="M${cx} ${BEAM_Y} L${cx - 26} ${BEAM_H - 18} L${cx + 26} ${BEAM_H - 18} Z"
+      fill="none" stroke="var(--line2)" stroke-width="2.5"/>
+    <circle cx="${cx}" cy="${BEAM_Y}" r="6" fill="var(--a1)"/>
+    <g transform="translate(${cx - BEAM_ARM} 0)">${pan('left')}</g>
+    <g transform="translate(${cx + BEAM_ARM} 0)">${pan('right')}</g>
+  </svg>`;
+  return wrap;
+}
+
+/* How far it tips, from the difference. Capped so a difference of twenty does
+   not stand the beam on end, and PURE so the harness can assert the direction
+   without waiting for a transition: left heavier tips left down, which is
+   negative in SVG's clockwise-positive world. */
+export function tiltOf(leftSum, rightSum) {
+  const d = leftSum - rightSum;
+  return Math.max(-13, Math.min(13, d * 1.7));
+}
+
 /* Words for the amount, so the counter can say "one half" three times over
    while the pieces and the shaded count both change underneath it. Reduced
    first, because that is the point being made. */
@@ -310,6 +395,10 @@ export function renderLesson(host, id) {
     g.hidden = true;
     host.querySelector('[data-read]').before(g);
   }
+  const scale = kind === 'scale' ? scaleStage() : null;
+  if (scale) stage.appendChild(scale);
+  const line = kind === 'line' ? lineStage() : null;
+  if (line) stage.appendChild(line);
   const bar = kind === 'bar' ? barStage() : null;
   if (bar) stage.appendChild(bar);
 
@@ -595,25 +684,32 @@ export function renderLesson(host, id) {
      `said` is what the goal looks like written down — a time, an amount, a
      fraction, an array — because the goal has to be stated in the units the
      child is working in. */
-  function showGoal(said) {
+  /* `lead` is overridable because "Make it say 7" is the wrong sentence for a
+     balance — the number that balances it is the answer, and printing it above
+     the beam would be printing the answer. There the goal is the condition. */
+  function showGoal(said, lead = LESSON_TRY.goal) {
     const goalEl = host.querySelector('[data-goal]');
     if (!goalEl) return;
-    goalEl.textContent = `${LESSON_TRY.goal} ${said}`;
+    goalEl.textContent = `${lead} ${said}`.trim();
     goalEl.hidden = false;
   }
 
-  function showTry(hit, said, how) {
+  /* `gotText` overrides the success line. "Yes — that is 7:00" is right for a
+     clock and nonsense for a balance, where what was achieved is a condition
+     rather than a value: passing the sentence through LESSON_TRY.got produced
+     "Yes — that is Balanced. Both sides are the same, so the two are equal.." */
+  function showTry(hit, said, how, gotText = null) {
     const box = host.querySelector('[data-try]');
     if (box) {
       box.hidden = false;
-      box.textContent = hit ? LESSON_TRY.got(said) : how;
+      box.textContent = hit ? (gotText ?? LESSON_TRY.got(said)) : how;
       box.classList.toggle('done', hit);
     }
     /* Said once, on the transition into being right. Repeating it on every
        further nudge would talk over a child still playing. */
     if (hit && !solved) {
       solved = true;
-      if (audioOn()) speak(LESSON_TRY.got(said), currentCharacter());
+      if (audioOn()) speak(gotText ?? LESSON_TRY.got(said), currentCharacter());
     }
     if (!hit) solved = false;
   }
@@ -948,6 +1044,172 @@ export function renderLesson(host, id) {
     }
   }
 
+  /* ------------------------------------------------------- the line's paint
+     The marker goes where the value says, and the readout says the same value.
+     One number, two places to read it, which is the rule every stage here
+     keeps. */
+  function markAt(v, ms = 0) {
+    const g = line?.querySelector('.lsn-mark');
+    if (!g) return;
+    g.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+    g.style.transform = `translateX(${linePos(v).toFixed(2)}px)`;
+  }
+
+  const lineCells = (v, jumps = null) => [
+    { label: LESSON_COUNT.youAre, value: Math.round(v) },
+    ...(jumps == null ? [] : [{ label: LESSON_COUNT.jumps, value: jumps }]),
+  ];
+
+  function paintLine(show, { sweep = false } = {}) {
+    const read = host.querySelector('[data-read]');
+    const holdEl = host.querySelector('[data-hold]');
+    stopSweep();
+    read.hidden = !lesson.steps[at].count;
+    holdEl.hidden = true;
+    holdEl.textContent = '';
+    const to = show.at || 0;
+    if (sweep && !reduced() && at > 0) {
+      const from = lesson.steps[at - 1].show.at || 0;
+      markAt(from, 0);
+      paintCells(lineCells(from));
+      walkLegs(at, from,
+        (v) => { markAt(v, 0); paintCells(lineCells(v)); return lineCells(v); },
+        () => {},
+        (units) => sweepMs(Math.abs(units) * 3));
+    } else {
+      markAt(to, reduced() ? 0 : 700);
+      if (!read.hidden) paintCells(lineCells(to));
+    }
+  }
+
+  /* ----------------------------------------------------- the balance's paint
+     Both sums, the tilt and the two pans all come from one pair of numbers, so
+     a beam that leans left cannot sit above a readout claiming the sides match.
+
+     `null` in a side is the blank the child is filling. Before they touch it the
+     pan shows a question mark rather than a zero — a zero is an answer, and it
+     would be a wrong one sitting there looking deliberate. */
+  const sideSum = (side, fill) => (side || [])
+    .reduce((n, v) => n + (v === null ? (fill ?? 0) : v), 0);
+  const sideText = (side, fill) => (side || [])
+    .map((v) => (v === null ? (fill == null ? '?' : String(fill)) : String(v))).join(' + ');
+
+  function paintScale(show, { sweep = false, fill = null, cells = null } = {}) {
+    const read = host.querySelector('[data-read]');
+    stopSweep();
+    /* `cells` is forced on in try mode. Without it the readout was HIDDEN while
+       this function ran — a try step declares no `count` — so paintCells was
+       skipped, and then the widget un-hid the row a moment later revealing the
+       PREVIOUS step's numbers. The beam went level above a readout still
+       claiming 12 against 17. */
+    read.hidden = cells == null ? !lesson.steps[at].count : !cells;
+    const l = sideSum(show.left, fill);
+    const r = sideSum(show.right, fill);
+    const tilt = tiltOf(l, r);
+    const beam = scale.querySelector('.lsn-beam');
+    const ms = sweep && !reduced() ? 900 : 0;
+    beam.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+    beam.style.transformOrigin = `${BEAM_W / 2}px ${BEAM_Y}px`;
+    beam.style.transform = `rotate(${(-tilt).toFixed(2)}deg)`;
+    /* The pans hang level rather than tilting with the beam: a real pan does,
+       and a tilted box of numbers is harder to read at exactly the moment a
+       child is trying to read it. */
+    for (const [side, sum, dir] of [['left', l, 1], ['right', r, -1]]) {
+      const pan = scale.querySelector(`[data-pan="${side}"]`);
+      pan.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+      pan.style.transform = `translateY(${(dir * tilt * 2.1).toFixed(2)}px)`;
+      pan.querySelector('.lsn-pantxt').textContent = sideText(show[side], fill);
+      void sum;
+    }
+    if (!read.hidden) {
+      paintCells([
+        { label: LESSON_COUNT.thisSide, value: l },
+        { label: LESSON_COUNT.thatSide, value: r },
+        { label: LESSON_COUNT.same, value: l === r ? LESSON_COUNT.yes : LESSON_COUNT.no },
+      ]);
+    }
+  }
+
+  /* ----------------------------------------- YOUR TURN, ON THE BALANCE
+     Steppers rather than a keypad. The number wanted is always small, the child
+     is watching the beam rather than the button, and every press gives the
+     feedback the lesson is made of: it tips a little less. */
+  let fillAt = null;
+
+  function paintScaleTry() {
+    const goal = tryGoal();
+    if (!goal) return;
+    const show = lesson.steps[at].show;
+    paintScale(show, { sweep: false, fill: fillAt, cells: true });
+    let pad = host.querySelector('[data-step-pad]');
+    if (!pad) {
+      pad = document.createElement('div');
+      pad.className = 'lsn-jumps';
+      pad.dataset.stepPad = '';
+      stage.appendChild(pad);
+    }
+    pad.innerHTML = `<button type="button" class="lsn-jump" data-fill="-1">\u2212 1</button>
+      <span class="lsn-fillnow">${fillAt == null ? '?' : fillAt}</span>
+      <button type="button" class="lsn-jump" data-fill="1">+ 1</button>`;
+    const hit = sideSum(show.left, fillAt) === sideSum(show.right, fillAt);
+    showGoal(LESSON_TRY.balance, '');
+    showTry(hit, '', LESSON_TRY.howFill, LESSON_TRY.balanced);
+  }
+
+  if (kind === 'scale') {
+    stage.addEventListener('click', (e) => {
+      const b = e.target.closest?.('[data-fill]');
+      if (!b || !tryGoal()) return;
+      const next = Math.max(0, Math.min(20, (fillAt ?? 0) + Number(b.dataset.fill)));
+      fillAt = next;
+      paintScaleTry();
+    });
+  }
+
+  /* -------------------------------------------- YOUR TURN, ON THE LINE
+     JUMP BUTTONS, NOT A DRAGGABLE MARKER, and that is the pedagogy rather than
+     the easy way out. Dragging a marker to 47 teaches a child to aim; the thing
+     being learned is that 47 is four tens and seven ones, so the widget only
+     offers jumps of ten and jumps of one and lets them count what it took.
+
+     The jump counter is the point of the readout: getting to 40 in four jumps
+     and in forty jumps both land on 40, and only one of them is the lesson. */
+  let lineAt = 0;
+  let jumps = 0;
+
+  function paintLineTry() {
+    const goal = tryGoal();
+    if (!goal) return;
+    markAt(lineAt, 260);
+    let pad = host.querySelector('[data-jumps]');
+    if (!pad) {
+      pad = document.createElement('div');
+      pad.className = 'lsn-jumps';
+      pad.dataset.jumps = '';
+      stage.appendChild(pad);
+    }
+    pad.innerHTML = [['+10', 10], ['+1', 1], ['\u22121', -1], ['\u221210', -10]]
+      .map(([lab, d]) => `<button type="button" class="lsn-jump" data-jump="${d}">${lab}</button>`).join('');
+    paintCells(lineCells(lineAt, jumps));
+    host.querySelector('[data-read]').hidden = false;
+    const said = String(goal.at);
+    showGoal(said);
+    showTry(lineAt === goal.at, said, LESSON_TRY.howJump);
+  }
+
+  if (kind === 'line') {
+    stage.addEventListener('click', (e) => {
+      const b = e.target.closest?.('[data-jump]');
+      if (!b || !tryGoal()) return;
+      const d = Number(b.dataset.jump);
+      const next = Math.max(LINE_LO, Math.min(LINE_HI, lineAt + d));
+      if (next === lineAt) return;
+      lineAt = next;
+      jumps += 1;
+      paintLineTry();
+    });
+  }
+
   /* ------------------------------------------------- YOUR TURN, WITH COINS
      "Make 25 cents." A tray of the four coins to tap from, a pile of what has
      been taken, and a running total against the goal.
@@ -1136,9 +1398,13 @@ export function renderLesson(host, id) {
       if (kind === 'coins') { purse = []; paintCoinTry(); return; }
       if (kind === 'bar') { shaded = new Set(); paintBar(step.show, { sweep: false }); paintBarTry(); return; }
       if (kind === 'array') { arrAt = { rows: step.show.rows, cols: step.show.cols }; paintArrayTry(); return; }
+      if (kind === 'line') { lineAt = step.show.at || 0; jumps = 0; paintLineTry(); return; }
+      if (kind === 'scale') { fillAt = null; paintScaleTry(); return; }
     }
     if (kind === 'clock') paintClock(step.show, { sweep });
     else if (kind === 'coins') paintCoins(step.show, { sweep });
+    else if (kind === 'line') paintLine(step.show, { sweep });
+    else if (kind === 'scale') paintScale(step.show, { sweep });
     else if (kind === 'bar') { paintBar(step.show, { sweep }); if (step.count) paintCells(barCells(step.show)); }
     else if (kind === 'array') { paintArray(step.show, { sweep }); if (step.count) paintCells(arrayCells(step.show)); }
   }
@@ -1164,6 +1430,8 @@ export function renderLesson(host, id) {
       const tb = host.querySelector('[data-try]');
       if (tb) { tb.hidden = true; tb.textContent = ''; tb.classList.remove('done'); }
       bar?.querySelector('.lsn-pieces')?.remove();
+      stage.querySelector('[data-jumps]')?.remove();
+      stage.querySelector('[data-step-pad]')?.remove();
       bar?.querySelector('.lsn-shade')?.setAttribute('opacity', '1');
     }
     drawStep(step, { sweep });

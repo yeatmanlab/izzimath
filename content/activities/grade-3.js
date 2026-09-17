@@ -212,6 +212,7 @@ const areaAndPerimeter = {
 /* ------------------------------------------------------------ GAME: fact family forge */
 const factFamilyForge = {
   id: 'fact-family-forge', title: 'Fact Family Forge', kind: 'game', grade: '3', strand: S[0],
+  lesson: 'balance',
   glyph: '⟷',
   lesson: 'arrays',
   skill: 'Linking multiplication and division as the same fact seen two ways.',

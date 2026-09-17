@@ -848,6 +848,33 @@ footer.foot a:hover { color: var(--txt) }
 /* The way out of a wrong answer. Only ever under a wrong one. */
 .lsn-again { margin: 0 }
 
+/* The balance. The beam and the two pans are the only things that move, and the
+   pans stay level while the beam tips — a real pan hangs level, and a tilted box
+   of numbers is hard to read at the moment a child is trying to read it. */
+.lsn-scale { width: 100%; max-width: 460px }
+.lsn-scale .lsn-beam, .lsn-scale .lsn-pan { transition: transform .9s cubic-bezier(.32,.06,.24,1) }
+.lsn-fillnow {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 52px; min-height: 42px; padding: 0 12px;
+  font: 700 19px/1 var(--fdisp); color: var(--a1);
+  border: 1px solid color-mix(in srgb, var(--a1) 45%, transparent); border-radius: 11px;
+  background: var(--glass);
+}
+.lsncardsc { display: block; font: 700 19px/1.2 var(--fdisp); color: var(--txt2); text-align: center }
+.lsncardsc b { color: var(--a1); margin: 0 6px }
+
+/* The number line, and the jump pad under it. */
+.lsn-line { width: 100%; max-width: 560px }
+.lsn-line .lsn-mark { transition: transform .7s cubic-bezier(.32,.06,.24,1) }
+.lsn-jumps { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; width: 100% }
+.lsn-jump {
+  font: 700 15px/1 var(--fdisp); color: var(--txt);
+  background: var(--glass); border: 1px solid var(--line2); border-radius: 11px;
+  padding: 11px 16px; min-width: 56px; min-height: 42px; cursor: pointer;
+}
+.lsn-jump:hover { border-color: var(--a2); color: var(--txt) }
+.lsncardline { display: block; width: 100% }
+
 /* The coin tray and the pile. A tap is the whole gesture — dragging between two
    boxes on a tablet is fiddly enough to become the lesson. */
 .lsn-tray { display: grid; gap: 7px; justify-items: center }

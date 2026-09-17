@@ -28,6 +28,7 @@ const S = STRANDS['2'];
    the circles in 8 = 5 + 3. */
 const takeItApart = {
   id: 'take-it-apart', title: 'Take It Apart', kind: 'book', grade: '2', strand: S[1],
+  lesson: 'balance',
   glyph: '○',
   skill: 'Splitting a number into parts that make the next step easy, and reading a total-first equation.',
   trick: 'A number can come apart more than one way. 34 is 30 and 4, but it is also 20 and 14 — and when you need to take away 6, the second way is the useful one.',
@@ -364,6 +365,7 @@ const arraysAndEqualGroups = {
 /* ------------------------------------------------------------ GAME: hundred line hop */
 const hundredLineHop = {
   id: 'hundred-line-hop', title: 'Hundred Line Hop', kind: 'game', grade: '2', strand: S[2],
+  lesson: 'jumps',
   glyph: '⇥',
   skill: 'Estimating where a number sits on a 0–100 line.',
   goal: 'Drag the number to where it belongs between 0 and 100. Close counts.',
@@ -625,6 +627,7 @@ const measureAndChart = {
    62 − 48 easy and the borrowing algorithm unnecessary. */
 const countUpToTheTarget = {
   id: 'count-up-to-the-target', title: 'Count Up to the Target', kind: 'game', grade: '2', strand: S[1],
+  lesson: 'jumps',
   glyph: '⤒',
   skill: 'Finding a difference by counting up from the smaller number in friendly jumps.',
   goal: 'You are on one number and you want to reach another. Work out how far it is.',

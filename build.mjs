@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { page, activityCard, lookCard, lookColumn, tourDoor, esc, GRADES, gradeName, gradeNum, roamBadges, grownUpsNote } from './scripts/templates.mjs';
 import { sheet, ssddSheet, maxPagesFor } from './src/lib/printsheet.js';
-import { clockFace, coin, fractionBar, array2d } from './src/lib/widgets.js';
+import { clockFace, coin, fractionBar, array2d, numberLine } from './src/lib/widgets.js';
 import { rng } from './src/lib/rng.js';
 import { ssddSets, ssddForGrade } from './content/ssdd.js';
 import { plans, planById, plansForGrade, FOUR_PART } from './content/plans.js';
@@ -731,6 +731,12 @@ function lessonFigure(id) {
   if (l.kind === 'coins') return `<span class="lsncoins">${c.coins.map((k) => coin(k, { size: 44 })).join('')}</span>`;
   if (l.kind === 'bar') return `<span class="lsncardbar">${fractionBar(c.num, c.den, { width: 210, height: 38 })}</span>`;
   if (l.kind === 'array') return `<span class="lsncardarr">${array2d(c.rows, c.cols, { cell: 11, gap: 2 })}</span>`;
+  /* The card is the lesson's punchline in one line: two sides that look
+     different and are the same. */
+  if (l.kind === 'scale') return `<span class="lsncardsc">${c.left.join(' + ')} <b>=</b> ${c.right.join(' + ')}</span>`;
+  if (l.kind === 'line') return `<span class="lsncardline">${numberLine({
+    lo: 0, hi: 100, majors: [0, 50, 100], labels: [[0, '0'], [50, '50'], [100, '100']],
+    marker: c.at, width: 240, height: 74 })}</span>`;
   return clockFace(c.h, c.m ?? 0, { size: 92 });
 }
 

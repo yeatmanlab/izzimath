@@ -398,6 +398,240 @@ export const LESSONS = {
       + 'two numbers, take the smaller one.',
   },
 
+  /* --------------------------------------------------------- THE BALANCE
+     WHY THIS ONE EARNS A SCREEN. A printed page can draw a balanced scale or a
+     tipping one. Only a screen can tip it in RESPONSE to a number the child
+     chose, and that response is the whole argument: they are not told the sides
+     are unequal, they watch it happen.
+
+     THE MISCONCEPTION IS THE EQUALS SIGN ITSELF. Children who only ever meet it
+     at the end of a sum read it as "the answer comes next" rather than "the
+     same as", and the classic evidence is `8 + 4 = __ + 5`, where the common
+     answer is 12 — the answer to the left-hand side, written in the box. It is
+     one of the best-documented misconceptions in early algebra, it persists for
+     years if nothing challenges it, and nothing on this site challenged it.
+
+     The `truefalse` problem type touches the same ground — see
+     `content/types.js` — which is why this lesson links to the activities that
+     use it rather than needing new ones. */
+  balance: {
+    id: 'balance',
+    kind: 'scale',
+    title: 'What the equals sign means',
+    topic: 'Equals',
+    glyph: '=',
+    card: { left: [8, 4], right: [12] },
+    lead: 'It means “the same as”, not “the answer comes next”.',
+    steps: [
+      {
+        show: { left: [6], right: [6] },
+        count: true,
+        head: 'This is a balance.',
+        aside: 'Same on both sides, so it sits level. Like a see-saw.',
+        say: 'There is a 6 in each pan. The two sides are the same, so the beam sits level.',
+      },
+      {
+        show: { left: [6], right: [4] },
+        sweep: true, count: true,
+        head: 'Change one side and it tips.',
+        aside: 'The heavier side goes down. It cannot help itself.',
+        say: 'Now there is a 4 on that side instead of a 6. The sides are not the same any more, '
+          + 'so the beam tips. The bigger side goes down.',
+      },
+      {
+        show: { left: [8, 4], right: [12] },
+        sweep: true, count: true,
+        head: '8 + 4 balances 12.',
+        aside: 'I work out each side, then compare them.',
+        say: '8 and 4 in one pan. 12 in the other. 8 plus 4 is 12, so the sides are the same and '
+          + 'the beam is level again.',
+      },
+      {
+        show: { left: [8, 4], right: [12] },
+        count: true,
+        head: 'That is what the equals sign means.',
+        aside: 'Equals means balanced. It does not mean “here comes the answer”.',
+        say: 'When we write 8 + 4 = 12, the equals sign is doing the job of this beam. It says '
+          + 'the two sides are THE SAME. It does not mean “the answer comes next”.',
+      },
+      {
+        /* THE MISCONCEPTION, PUT ON THE BEAM. 12 in the box is the answer to the
+           left-hand side, which is exactly what a child reading = as "the answer
+           comes next" will write — and here the beam tips instead of a red
+           cross appearing. */
+        show: { left: [8, 4], right: [12, 5] },
+        sweep: true, count: true,
+        head: 'Here is the one that catches people.',
+        aside: 'I fell for this. I put the answer in the box and the beam tipped.',
+        say: 'Someone has written 12 in the box of 8 + 4 = ? + 5. Now that side is 12 and 5, '
+          + 'which is 17. Look at the beam. 17 is not the same as 12.',
+      },
+      {
+        show: { left: [8, 4], right: [null, 5] },
+        try: { fill: 7 },
+        head: 'Your turn. Make it balance.',
+        aside: 'I need something that makes that side add up to 12.',
+        say: 'The box is empty. Press the buttons to change it. Find the number that makes both '
+          + 'sides the same, and the beam will go level.',
+      },
+      {
+        show: { left: [8, 4], right: [7, 5] },
+        count: true,
+        head: '7 is the one that balances.',
+        aside: '7 and 5 is 12, the same as 8 and 4. That is why it is level.',
+        say: '7 and 5 is 12. 8 and 4 is 12. Both sides are the same, so the beam is level and the '
+          + 'equals sign is telling the truth.',
+      },
+      {
+        /* THE SAME SHAPE, DIFFERENT NUMBERS, asked rather than shown. A child who
+           has understood the beam gets this; a child still reading = as "the
+           answer next" reaches for 8. */
+        show: { left: [5, 3], right: [6, 2] },
+        count: true,
+        ask: {
+          q: '5 + 3 = ? + 2. What goes in the box?',
+          options: [
+            { say: '6', right: true,
+              why: 'Yes. 6 and 2 is 8, the same as 5 and 3, so it balances.' },
+            { say: '8', back: 5,
+              why: 'That is the answer to 5 + 3. Put it in the box and that side becomes 10, which is heavier.' },
+          ],
+        },
+        head: 'Last check.',
+        aside: 'Both sides the same. That is the only thing the box has to do.',
+        say: 'Same puzzle, new numbers. Think about what makes the two sides the same.',
+      },
+    ],
+    close: 'The equals sign means the two sides are the same. It is not a sign saying “the answer '
+      + 'comes next”. So in 8 + 4 = ? + 5 the box is 7, because 7 and 5 is 12 as well.',
+  },
+
+  /* -------------------------------------------------------- JUMPS OF TEN
+     WHY THIS ONE EARNS A SCREEN. The claim is that a jump of ten is the same
+     size wherever you make it, and the only honest way to show it is to move
+     the SAME marker the same distance twice. On paper that is two arcs drawn in
+     two places and a request to believe they match; here it is one marker, and
+     the child watches it cover the same ground from 10 and from 60.
+
+     WHY IT IS WORTH TEACHING AT ALL. Number line placement is one of the few
+     things with a replicated link to later maths achievement — see
+     `im-scope-sequence` and the Geary finding in content/references.js, where
+     the unique predictors were set size, numerals, counting procedures and
+     number line placement. A child who counts on in ones to add ten has not
+     got ten as a unit yet, and this is where that shows.
+
+     AND THE WIDGET USES JUMP BUTTONS RATHER THAN A DRAGGABLE MARKER, which is
+     the pedagogy and not the easy way out: dragging to 47 teaches a child to
+     aim. The thing being learned is that 47 is four tens and seven ones, so the
+     only moves offered are ten and one, and the counter says how many it took. */
+  jumps: {
+    id: 'jumps',
+    kind: 'line',
+    title: 'Jumps of ten',
+    topic: 'Counting on',
+    glyph: '\u21e5',
+    card: { at: 40 },
+    lead: 'A jump of ten is the same size wherever you make it.',
+    steps: [
+      {
+        show: { at: 0 },
+        count: true,
+        head: 'This is a number line.',
+        aside: 'I find the tens first. They are the tall marks.',
+        say: 'It runs from 0 to 100. The tall marks are the tens. The marker is sitting on 0.',
+      },
+      {
+        show: { at: 10 },
+        sweep: true, count: true,
+        head: 'One jump of ten.',
+        aside: 'One jump, not ten little steps. That is the whole idea.',
+        say: 'Watch the marker move. It went from 0 to 10 in one go. That is a jump of ten.',
+      },
+      {
+        show: { at: 20 },
+        sweep: true, count: true,
+        head: 'Another one, the same size.',
+        aside: 'Same size jump, every time. I can trust it.',
+        say: 'From 10 to 20 now. Look at how far it travelled. It is exactly the same distance as '
+          + 'the first jump.',
+      },
+      {
+        /* THREE MORE, WITH PAUSES, because the claim is about sameness and one
+           pause per landing is what lets a child check it. */
+        show: { at: 50 },
+        sweep: true, count: true,
+        stops: [
+          { at: 30, say: 'On 30. The same size jump again.' },
+          { at: 40, say: 'On 40. Still the same size.' },
+        ],
+        head: 'Keep jumping.',
+        aside: 'Five jumps of ten and I am halfway along.',
+        say: 'Three more jumps of ten. Every one covers the same ground. Count them as they go: '
+          + '30, 40, 50.',
+      },
+      {
+        show: { at: 0 },
+        try: { at: 40 },
+        head: 'Your turn. Get to 40.',
+        aside: 'Four jumps of ten. I would not do it in ones.',
+        say: 'The marker is back on 0. Press a jump to move it. Get to 40, and watch how many '
+          + 'jumps it takes you.',
+      },
+      {
+        show: { at: 40 },
+        count: true,
+        head: 'Here is 40 again.',
+        aside: 'Four tens. Now for the ones.',
+        say: 'Four jumps of ten got us here. Now for a different size of jump.',
+      },
+      {
+        show: { at: 43 },
+        sweep: true, count: true,
+        head: 'A jump of one is small.',
+        aside: 'Tiny jumps. Three of them barely move the marker.',
+        say: 'Three jumps of one, from 40 to 43. Look how little the marker moved. A jump of ten '
+          + 'goes ten times as far.',
+      },
+      {
+        show: { at: 47 },
+        sweep: true, count: true,
+        head: 'Four more ones makes 47.',
+        aside: 'Four tens and seven ones. That is what 47 is made of.',
+        say: 'From 43 to 47. So 47 is four jumps of ten and seven jumps of one. That is what the '
+          + '4 and the 7 in 47 are telling you.',
+      },
+      {
+        show: { at: 0 },
+        try: { at: 47 },
+        head: 'Your turn. Get to 47.',
+        aside: 'Tens first, then ones. Eleven jumps altogether.',
+        say: 'Back to 0. Get the marker to 47. Do the tens first and the ones after, and it will '
+          + 'take you eleven jumps.',
+      },
+      {
+        /* THE MISCONCEPTION, ASKED STRAIGHT OUT. A child who adds ten by
+           counting on in ones has not got ten as a unit, and landing on 31 is
+           exactly what that looks like. */
+        show: { at: 30 },
+        count: true,
+        ask: {
+          q: 'You are on 30 and you jump ten. Where do you land?',
+          options: [
+            { say: '40', right: true,
+              why: 'Yes. A jump of ten takes you from 30 to 40 in one go.' },
+            { say: '31', back: 2,
+              why: 'That is a jump of ONE. A jump of ten is much bigger, and it lands on 40.' },
+          ],
+        },
+        head: 'Last check.',
+        aside: 'Ten at a time. I do not count them one by one.',
+        say: 'The marker is on 30. Think about the size of a jump of ten.',
+      },
+    ],
+    close: 'A jump of ten is the same size wherever you make it. Four tens and seven ones is 47. '
+      + 'And jumping in tens is much quicker than counting in ones.',
+  },
+
   /* ------------------------------------------------------- EQUIVALENT FRACTIONS
      WHY THIS ONE EARNS A SCREEN. The misconception is the whole-number bias:
      eight is a bigger number than two, so one eighth must be bigger than one
@@ -776,6 +1010,16 @@ export const LESSONS = {
    they are copy, and because the player should not have to know that the thing
    being counted is time. */
 export const LESSON_COUNT = {
+  /* The balance's three. "The same?" rather than "equal", because the whole
+     lesson is about what that word means. */
+  thisSide: 'this side',
+  thatSide: 'that side',
+  yes: 'yes',
+  no: 'not yet',
+  /* The line's two. `jumps` is the point of it: getting to 40 in four jumps and
+     in forty jumps both land on 40, and only one of them is the lesson. */
+  youAre: 'you are on',
+  jumps: 'jumps taken',
   /* The two the coin widget counts. `worth` rather than "total" on purpose: the
      whole point of the step is that four coins can be worth less than one. */
   coinsTaken: 'coins taken',
@@ -817,6 +1061,8 @@ export const lessonById = (id) => LESSONS[id] ?? null;
    leaving the book. */
 export const LESSON_LINK = {
   time: 'How does a clock work again?',
+  jumps: 'How do jumps of ten work again?',
+  balance: 'What does the equals sign mean again?',
   money: 'How much is each coin again?',
   fractions: 'Why are one half and two quarters the same?',
   arrays: 'Why can an array be turned?',
@@ -868,6 +1114,18 @@ export const LESSON_CALL = {
     say: 'A short lesson where one bar gets cut up while you watch, so you can see for yourself '
       + 'that one half and two quarters are the same amount. About {time}.',
     cta: 'Show me how fractions work',
+  },
+  balance: {
+    head: 'Is the equals sign muddling you up? Start here.',
+    say: 'A short lesson with a balance that tips, so you can see that the equals sign means '
+      + '“the same as” and not “the answer comes next”. About {time}.',
+    cta: 'Show me what equals means',
+  },
+  jumps: {
+    head: 'Counting on in ones? Start here.',
+    say: 'A short lesson on a number line, where one marker jumps ten at a time so you can see '
+      + 'that every jump of ten is the same size. About {time}.',
+    cta: 'Show me jumps of ten',
   },
   arrays: {
     head: 'Rows and columns muddling you up? Start here.',
@@ -921,9 +1179,15 @@ export const LESSON_CALL = {
    so they have no legs. */
 const dialMinsOf = (o) => ((o.h % 12) * 60) + (o.m || 0);
 
+/* The stages that WALK A VALUE through a frame loop, and so can pause. The bar,
+   the array and the balance animate one continuous CSS move instead: there is
+   no loop to stop, and for the fractions lesson the continuity is itself the
+   argument. */
+const WALKS = new Set(['clock', 'coins', 'line']);
+
 export function lessonSpan(lesson, k) {
   const st = lesson.steps[k];
-  if (!st || k < 1) return null;
+  if (!st || k < 1 || !WALKS.has(lesson.kind)) return null;
   if (lesson.kind === 'clock') {
     let cum = dialMinsOf(lesson.steps[0].show);
     for (let i = 1; i <= k; i++) {
@@ -940,7 +1204,10 @@ export function lessonSpan(lesson, k) {
     return [prev, cum];
   }
   if (lesson.kind === 'coins') return [0, st.show.pennies || 0];
-  return [0, 0];
+  /* The line carries on from where it was, unlike the coins, which lay out n
+     pennies from nothing every time. */
+  if (lesson.kind === 'line') return [lesson.steps[k - 1].show.at || 0, st.show.at || 0];
+  return null;
 }
 
 export function lessonLegs(lesson, k) {
@@ -972,6 +1239,10 @@ export const LESSON_TRY = {
   /* The bar and array lessons move one thing rather than two, so they get
      their own nudge; the clock's mentions hands it does not have. */
   howTap: 'Tap the pieces to shade them.',
+  balance: 'Make both sides the same.',
+  balanced: 'Balanced. Both sides are the same, so the two are equal.',
+  howFill: 'Press \u2212 and + to change the number. Watch the beam.',
+  howJump: 'Press a jump. Ten at a time is quicker than one at a time.',
   howArr: 'Drag across the squares to change the array — sideways for a longer row, up and down for more rows.',
   of: 'of',
 };

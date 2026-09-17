@@ -27,7 +27,15 @@ export function doubleFrame(n, { print = false } = {}) {
 
 /* ---------------- number line ----------------
    Used for: MagPI number line estimation (0-20, 0-100, 0-1, 0-2), fraction
-   placement, and skip counting. */
+   placement, and skip counting.
+
+   `numberLinePos` is the same mapping the drawing uses, exported so a caller
+   that needs to MOVE a marker can put it where the line says. The jumps lesson
+   draws the line once and slides one marker along it — the same trick the clock
+   stage uses on its hands — and a second copy of this arithmetic there would be
+   a marker that drifted off the ticks at some widths and not others. */
+export const numberLinePos = ({ lo = 0, hi = 100, width = 640, padX = 34 } = {}) =>
+  (v) => padX + ((v - lo) / (hi - lo)) * (width - padX * 2);
 export function numberLine({
   lo = 0, hi = 100, ticks = null, majors = null, labels = null,
   marker = null, markerLabel = null, width = 640, print = false, height = null,

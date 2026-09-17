@@ -704,6 +704,167 @@ L.push('');
     ls('one dime is ten cents as well', mDone(), worth());
     host2.remove();
 
+    /* ---------------------------------------------- the balance lesson
+       ITS CLAIM IS THAT THE EQUALS SIGN MEANS "THE SAME AS", and the beam is
+       the argument: it goes level exactly when the two sides match and tips the
+       heavier side down. So that is what gets asserted, and the direction
+       matters — a beam that tipped the lighter side down would teach the
+       opposite with total conviction. */
+    ls('the tilt is level only when the sides match',
+      LB.tiltOf(12, 12) === 0 && LB.tiltOf(12, 17) !== 0 && LB.tiltOf(17, 12) !== 0);
+    ls('and the heavier side goes down',
+      LB.tiltOf(17, 12) > 0 && LB.tiltOf(12, 17) < 0,
+      'left-heavy ' + LB.tiltOf(17, 12) + ', right-heavy ' + LB.tiltOf(12, 17));
+    ls('a huge difference does not stand the beam on end',
+      Math.abs(LB.tiltOf(100, 0)) <= 13, LB.tiltOf(100, 0) + ' degrees');
+    const hostB = document.createElement('div');
+    document.body.appendChild(hostB);
+    const apiB = LB.renderLesson(hostB, 'balance');
+    const bsteps = LESSONS.balance.steps;
+    const beamDeg = () => Number((hostB.querySelector('.lsn-beam')?.style.transform || '')
+      .match(/-?[\d.]+/)?.[0] ?? NaN);
+    const sums = (st, fill) => ['left', 'right'].map((k) => (st.show[k] || [])
+      .reduce((n, v) => n + (v === null ? (fill ?? 0) : v), 0));
+    ls('the balance is drawn with a beam and two pans',
+      !!hostB.querySelector('.lsn-beam') && hostB.querySelectorAll('.lsn-pan').length === 2);
+    let wrongWay = 0;
+    for (let k = 0; k < bsteps.length; k++) {
+      if (bsteps[k].try) continue;
+      apiB.goto(k); apiB.settle();
+      const [l, r] = sums(bsteps[k]);
+      const deg = beamDeg();
+      /* Level when equal, and the heavier side lower. The rendered rotation is
+         the NEGATIVE of the tilt, because SVG counts clockwise. */
+      if (l === r ? deg !== 0 : Math.sign(-deg) !== Math.sign(l - r)) wrongWay++;
+    }
+    ls('every step leans the way its numbers say', wrongWay === 0, wrongWay + ' steps leaning wrong');
+
+    /* YOUR TURN. The bug this block exists for: the readout was hidden while
+       the widget painted, so it showed the PREVIOUS step's numbers — a beam
+       going level above a readout still claiming 12 against 17. */
+    const bTry = bsteps.findIndex((st) => st.try);
+    apiB.goto(bTry);
+    const bRead = () => (hostB.querySelector('[data-read]')?.textContent || '').replace(/\s+/g, '');
+    const bDone = () => hostB.querySelector('[data-try]')?.classList.contains('done');
+    const nudge = (d) => hostB.querySelector('[data-fill="' + d + '"]')?.click();
+    ls('the balance step offers a way to change the number',
+      hostB.querySelectorAll('[data-fill]').length === 2 && !!hostB.querySelector('.lsn-fillnow'));
+    ls('and asks for the condition, not the answer',
+      /same/i.test(hostB.querySelector('[data-goal]')?.textContent || '')
+      && !/\d/.test(hostB.querySelector('[data-goal]')?.textContent || ''),
+      hostB.querySelector('[data-goal]')?.textContent);
+    ls('the empty box shows a question mark, not a zero',
+      /\?/.test([...hostB.querySelectorAll('.lsn-pantxt')].map((t) => t.textContent).join(' ')),
+      [...hostB.querySelectorAll('.lsn-pantxt')].map((t) => t.textContent).join(' | '));
+    /* `balances`, not `want`: the arrays block already owns that name in this
+       scope, and a duplicate const is a SyntaxError that takes the whole module
+       with it — the harness rendered nothing at all and reported no CHECKS_RUN,
+       which is the one output this repo treats as "did not run". */
+    const balances = bsteps[bTry].try.fill;
+    let stale = 0;
+    for (let i = 1; i <= balances + 1; i++) {
+      nudge(1);
+      const [l, r] = sums(bsteps[bTry], i);
+      if (!new RegExp('thisside' + l + 'thatside' + r).test(bRead())) stale++;
+    }
+    ls('the readout tracks the number being changed', stale === 0,
+      stale + ' of ' + (balances + 1) + ' presses out of step — "' + bRead() + '"');
+    nudge(-1);
+    ls('and the beam is level at the number that balances',
+      bDone() && beamDeg() === 0 && (() => { const [l, r] = sums(bsteps[bTry], balances); return l === r; })(),
+      'beam ' + beamDeg() + 'deg at ' + balances);
+    /* The success line, which came out as "Yes — that is Balanced. Both sides
+       are the same, so the two are equal.." when the sentence was pushed
+       through the template built for a value. */
+    const bSaid = hostB.querySelector('[data-try]')?.textContent || '';
+    ls('the success line is one clean sentence',
+      !/\.\./.test(bSaid) && !/that is Balanced/i.test(bSaid), '"' + bSaid + '"');
+    nudge(1);
+    ls('one too many is not balanced', !bDone() && beamDeg() !== 0, 'beam ' + beamDeg() + 'deg');
+    apiB.goto(0); apiB.settle();
+    ls('the stepper goes away off the try step',
+      hostB.querySelectorAll('[data-fill]').length === 0);
+    hostB.remove();
+
+    /* ------------------------------------------ the number line lesson
+       ITS CLAIM IS THAT A JUMP OF TEN IS THE SAME SIZE WHEREVER YOU MAKE IT, so
+       that is what gets asserted: the same marker, moved the same distance from
+       two different places. Measured against the line's own coordinate mapping
+       rather than against a number typed in here, because a marker that drifts
+       off the ticks at some widths is the bug this shares one mapping to avoid. */
+    const hostJ = document.createElement('div');
+    document.body.appendChild(hostJ);
+    const apiJ = LB.renderLesson(hostJ, 'jumps');
+    const jsteps = LESSONS.jumps.steps;
+    const W = await import('/assets/src/lib/widgets.js');
+    const pos = W.numberLinePos({ lo: 0, hi: 100, width: 560 });
+    const markX = () => Number((hostJ.querySelector('.lsn-mark')?.style.transform || '')
+      .match(/-?[\d.]+/)?.[0] ?? NaN);
+    ls('the number line is drawn with one marker',
+      hostJ.querySelectorAll('.lsn-mark').length === 1 && !!hostJ.querySelector('.lsn-line svg'));
+    let offLine = 0;
+    for (let k = 0; k < jsteps.length; k++) {
+      if (jsteps[k].try) continue;
+      apiJ.goto(k); apiJ.settle();
+      if (Math.abs(markX() - pos(jsteps[k].show.at || 0)) > 0.5) offLine++;
+    }
+    ls('the marker sits where the line says, on every step', offLine === 0,
+      offLine + ' steps off the ticks');
+    /* THE SAME JUMP, TWICE, FROM DIFFERENT PLACES. */
+    const tens = jsteps.map((st, k) => (st.sweep && (st.show.at - (jsteps[k - 1]?.show.at ?? 0)) === 10 ? k : -1))
+      .filter((k) => k > 0);
+    ls('the lesson makes more than one jump of ten', tens.length >= 2, tens.length + ' of them');
+    const widths = tens.map((k) => {
+      apiJ.goto(k - 1); apiJ.settle();
+      const a = markX();
+      apiJ.goto(k); apiJ.settle();
+      return markX() - a;
+    });
+    ls('and every jump of ten covers the same ground',
+      widths.length > 1 && widths.every((w) => Math.abs(w - widths[0]) < 0.5),
+      widths.map((w) => w.toFixed(1)).join(', ') + ' units');
+    /* A JUMP OF ONE IS A TENTH OF IT — the comparison the lesson makes out loud. */
+    const ones = jsteps.findIndex((st, k) => st.sweep && (st.show.at - (jsteps[k - 1]?.show.at ?? 0)) > 0
+      && (st.show.at - (jsteps[k - 1]?.show.at ?? 0)) < 10);
+    if (ones > 0) {
+      apiJ.goto(ones - 1); apiJ.settle();
+      const a = markX();
+      apiJ.goto(ones); apiJ.settle();
+      const per = (markX() - a) / (jsteps[ones].show.at - jsteps[ones - 1].show.at);
+      ls('a jump of one is a tenth of a jump of ten',
+        Math.abs(per * 10 - widths[0]) < 0.5, per.toFixed(2) + ' vs ' + (widths[0] / 10).toFixed(2));
+    }
+    /* YOUR TURN: JUMP BUTTONS, NOT A DRAGGABLE MARKER. Dragging to 47 teaches a
+       child to aim; the thing being learned is that 47 is four tens and seven
+       ones, so the counter counts the jumps it took. */
+    const jTry = jsteps.findIndex((st) => st.try);
+    apiJ.goto(jTry);
+    const jRead = () => (hostJ.querySelector('[data-read]')?.textContent || '').replace(/\s+/g, ' ');
+    const jDone = () => hostJ.querySelector('[data-try]')?.classList.contains('done');
+    const press = (d) => hostJ.querySelector('[data-jump="' + d + '"]')?.click();
+    ls('the line step offers jumps rather than a drag',
+      hostJ.querySelectorAll('[data-jump]').length === 4
+      && !hostJ.querySelector('.lsn-line [data-grab]'),
+      [...hostJ.querySelectorAll('[data-jump]')].map((b) => b.textContent).join(' '));
+    ls('and states where to get to', /\d/.test(hostJ.querySelector('[data-goal]')?.textContent || ''),
+      hostJ.querySelector('[data-goal]')?.textContent);
+    ls('it starts somewhere other than the goal', !jDone(), jRead());
+    const goalAt = jsteps[jTry].try.at;
+    for (let i = 0; i < goalAt / 10; i++) press(10);
+    ls('jumps of ten reach a multiple of ten', jDone(), jRead());
+    ls('and the counter counted them, not the distance',
+      new RegExp('jumpstaken' + (goalAt / 10) + '$').test(jRead().replace(/\s/g, '')), jRead());
+    press(1);
+    ls('one more is no longer the goal', !jDone(), jRead());
+    press(-1);
+    ls('and coming back is right again', jDone(), jRead());
+    ls('the marker followed the jumps',
+      Math.abs(markX() - pos(goalAt)) < 0.5, markX().toFixed(1) + ' vs ' + pos(goalAt).toFixed(1));
+    apiJ.goto(0); apiJ.settle();
+    ls('the jump pad goes away when the line is not being driven',
+      hostJ.querySelectorAll('[data-jump]').length === 0);
+    hostJ.remove();
+
     /* ----------------------------------------------- the fractions lesson
        ITS WHOLE CLAIM IS THAT THE SHADED PART DOES NOT MOVE, so that is what
        gets asserted: every step showing the same amount must hand the element

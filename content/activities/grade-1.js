@@ -78,6 +78,7 @@ const addingToTwenty = {
 /* --------------------------------------------------------------- BOOK: tens and ones */
 const tensAndOnes = {
   id: 'tens-and-ones', title: 'Tens and Ones', kind: 'book', grade: '1', strand: S[2],
+  lesson: 'jumps',
   /* Every defence in this one is a place-value observation — a round ten, a
      repeated digit, more ones than tens — which is exactly what the book is
      about, argued rather than answered. */
@@ -490,6 +491,7 @@ const doubleFrameFlash = {
    one alignment the board exists to show. */
 const hundredBoard = {
   id: 'hundred-board', title: 'The Hundred Board', kind: 'game', grade: '1', strand: S[2],
+  lesson: 'jumps',
   glyph: '⊞',
   skill: 'Counting on across a ten, on a board where the tens are rows and the ones are columns.',
   goal: 'You are on a square. Spin a number, then tap the squares you move through.',

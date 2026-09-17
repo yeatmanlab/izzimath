@@ -87,6 +87,7 @@ const countingCrew = {
 /* -------------------------------------------------------------- BOOK: number friends */
 const numberFriends = {
   id: 'number-friends', title: 'Number Friends', kind: 'book', grade: 'K', strand: S[1],
+  lesson: 'balance',
   glyph: '◐',
   skill: 'Number bonds to 10 — the two parts that make a whole, in both directions.',
   trick: 'Hold the whole in your head. Count the part you can see, then count on up to the whole — what you counted is the missing part.',
