@@ -806,8 +806,34 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-hand { transition: transform .9s cubic-bezier(.32,.06,.24,1) }
 .lsn-hand.on { stroke: var(--ok); stroke-width: 6 }
 .lsn-min.on { stroke-width: 3.6 }
-.lsn-digital { display: flex; align-items: center }
+/* A column now, because the goal sits directly above the digital face — the
+   two numbers a child compares should be one glance apart. */
+.lsn-digital { display: flex; flex-direction: column; align-items: center; gap: 6px }
 .lsn-digital[hidden] { display: none }
+.lsn-goal {
+  font: 700 13px/1.2 var(--fdisp); color: var(--amber); margin: 0;
+  letter-spacing: .02em; text-align: center;
+}
+.lsn-goal[hidden] { display: none }
+/* Grabbable only while a step asks for it: the same dial is a picture on every
+   other step and a cursor promising otherwise would be a lie. */
+.lsn-clock .lsn-grab { pointer-events: none }
+.lsn-clock.can-grab .lsn-grab { pointer-events: stroke; cursor: grab }
+.lsn-clock.can-grab { touch-action: none }
+.lsn-clock.can-grab .lsn-hand { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--a1) 55%, transparent)) }
+/* How to move the hands, then whether it worked. */
+.lsn-try {
+  margin: 2px 0 4px; min-height: 40px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 14.5px; line-height: 1.45; color: var(--txt2);
+  border: 1px dashed var(--line2); border-radius: 11px; padding: 8px 12px;
+}
+.lsn-try[hidden] { display: none }
+.lsn-try.done {
+  color: var(--txt); border-style: solid;
+  border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+  background: color-mix(in srgb, var(--ok) 9%, transparent);
+}
 .lsn-step {
   font: 600 11px/1 var(--fdisp); letter-spacing: .12em; text-transform: uppercase;
   color: var(--txt3); margin-bottom: 8px;
@@ -882,6 +908,40 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-arraywrap { height: 240px; display: grid; place-items: center }
 .lsn-array { transform-origin: center; line-height: 0 }
 .lsn-array svg { display: block }
+
+/* ------------------------------------------------------- read it to me
+   A face with a speech bubble, because the face says whose voice you will hear
+   without a word of explanation, and a toggle rather than a play button because
+   a child who wants the words read wants that for the whole lesson.
+
+   The pulse runs only until the device has used it once — a control nobody has
+   noticed is worth a nudge, and one they have tried and switched off is not. */
+.vbtn {
+  display: inline-flex; align-items: center; gap: 9px;
+  border: 1px solid var(--line2); background: var(--glass); color: var(--txt2);
+  border-radius: 99px; padding: 5px 14px 5px 5px; cursor: pointer;
+  font-family: var(--fdisp); font-size: 13.5px; font-weight: 600;
+  min-height: 34px;
+}
+.vbtn:hover { color: var(--txt); border-color: var(--txt3) }
+.vbtn-face { position: relative; display: block; width: 26px; height: 26px }
+.vbtn-face svg { width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,.06); display: block }
+/* The bubble is the affordance: a face alone is a portrait, a face with a
+   speech bubble is a thing that talks. */
+.vbtn-bub {
+  position: absolute; right: -4px; bottom: -3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--line2); color: var(--txt);
+  font-size: 8px; line-height: 14px; text-align: center;
+}
+.vbtn.on { color: var(--txt); border-color: var(--a2); background: var(--glass2) }
+.vbtn.on .vbtn-bub { background: var(--sp); color: var(--onsp) }
+@keyframes vpulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--a2) 55%, transparent) }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--a2) 0%, transparent) }
+}
+.vbtn.pulse { animation: vpulse 2.1s ease-out infinite; border-color: var(--a2); color: var(--txt) }
+@media (prefers-reduced-motion: reduce) { .vbtn.pulse { animation: none } }
 
 /* The hint box's figure and its way out. The figure is centred and capped so a
    148px dial does not become the biggest thing on the page; the link sits under

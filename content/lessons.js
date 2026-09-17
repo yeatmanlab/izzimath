@@ -152,6 +152,20 @@ export const LESSONS = {
           + 'Look at the other clock: it went from 3:00 to 3:05.',
       },
       {
+        /* THE FIRST TASTE OF THE INTERACTION, and the smallest possible one:
+           the long hand has just moved on by one number, so move it on by one
+           more. Placed here rather than later because a child should find out
+           that the hands can be touched BEFORE being asked to set a whole time
+           — and because doing it once makes the animation that follows about
+           something they have already felt. */
+        show: { h: 3, m: 5, focus: 'minute', digital: true },
+        try: { h: 3, m: 10 },
+        head: 'Your turn. Move it on one more number.',
+        aside: 'Slide the long hand. It is the thin one.',
+        say: 'Put your finger on the long thin hand and slide it round to the 2. Watch the other '
+          + 'clock while you do it — it should change to 3:10.',
+      },
+      {
         /* THE ONE THAT EARNS THE SCREEN, and it is now a run with pauses rather
            than a single dash to the hour.
 
@@ -208,6 +222,18 @@ export const LESSONS = {
           + 'the hour goes up by one. That is how the two hands work together.',
       },
       {
+        /* AN O'CLOCK, SET BY HAND, straight after the hour changed on screen.
+           Both hands have to move: the long one to the 12 and the short one to
+           the 7 — which is the pair of facts the first four steps taught, asked
+           for together for the first time. */
+        show: { h: 4, m: 0, focus: null, digital: true },
+        try: { h: 7, m: 0 },
+        head: 'Your turn. Make it 7 o’clock.',
+        aside: 'Short hand to the 7, long hand straight up. That is an o’clock.',
+        say: 'Slide the short fat hand round to the 7, and put the long thin hand straight up at '
+          + 'the 12. The clock beside it should say 7:00.',
+      },
+      {
         // The readout stays on for one more step, because "30 minutes" beside a
         // hand pointing straight down is the same lesson said twice.
         show: { h: 4, m: 30, focus: 'minute', digital: true },
@@ -244,6 +270,22 @@ export const LESSONS = {
         say: 'The short hand has left the 4 but has not got to the 5, so the hour is still 4. That is '
           + 'the one thing to remember: when the short hand is between two numbers, take the '
           + 'SMALLER one.',
+      },
+      {
+        /* HALF PAST, SET BY HAND, and this is the one that catches people out —
+           so it is the one worth doing with a finger. Getting 9:30 means
+           leaving the short hand BETWEEN the 9 and the 10, which the player
+           does by itself once there are 30 minutes on the clock. A child who
+           drags the long hand round to the 6 and watches the short hand slide
+           off the number has been shown the misconception's answer rather than
+           told it. */
+        show: { h: 4, m: 30, focus: null, digital: true },
+        try: { h: 9, m: 30 },
+        head: 'Your turn. Make it half past 9.',
+        aside: 'Long hand straight down. Then nudge the short one until it says 9:30.',
+        say: 'Half past means the long hand points straight down at the 6. Slide it there, then '
+          + 'move the short hand until the other clock says 9:30. Notice the short hand does not '
+          + 'sit ON the 9 — it sits just past it.',
       },
       {
         show: { h: 4, m: 30, focus: null, digital: true },
@@ -604,6 +646,22 @@ export const LESSON_CALL = {
    rather than through here), one footer link on every page, the tour's "Short
    lessons" door, and the breadcrumb on a lesson page — which is how you find out
    the other lesson exists while you are reading one. */
+/* YOUR TURN — the words a try step uses. One set for all four lessons and all
+   five friends, same as every other caption here.
+
+   `how` is scaffolding rather than decoration: a first grader shown a clock
+   does not know that the hands can be touched, and there is nothing about a
+   drawing of a clock that says so. */
+export const LESSON_TRY = {
+  goal: 'Make it say',
+  how: 'Put your finger on a hand and slide it round the clock.',
+  got: (t) => `Yes — that is ${t}.`,
+  /* The bar and array lessons move one thing rather than two, so they get
+     their own nudge; the clock's mentions hands it does not have. */
+  howTap: 'Tap the pieces to shade them.',
+  howArr: 'Drag the edge to change the array.',
+};
+
 export const LESSON_INDEX = {
   title: 'Short lessons',
   lead: 'Two things a printed sheet cannot do: show you a clock’s hands moving, and lay pennies '

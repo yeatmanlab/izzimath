@@ -382,6 +382,113 @@ L.push('');
     ls('a sweep with no stops is still one run',
       api.legsAt(plain).length === 1 && api.legsAt(plain)[0].cum === api.cumAt(plain));
 
+    /* ------------------------------------------------------------ YOUR TURN
+       The lesson hands the clock over and asks for a time. Two halves worth
+       checking and they need different tools.
+
+       THE ARITHMETIC, pure: a pointer gesture is the one thing a test cannot
+       fake convincingly, so the sums a drag does are exported and walked round
+       the dial here without a pointer, a frame or a layout. */
+    ls('a drag snaps the long hand to five minutes',
+      LB.dragTo({ h: 3, m: 0 }, 'minute', 182).m === 30
+      && LB.dragTo({ h: 3, m: 0 }, 'minute', 88).m === 15,
+      '182deg -> ' + LB.dragTo({ h: 3, m: 0 }, 'minute', 182).m + ', 88deg -> ' + LB.dragTo({ h: 3, m: 0 }, 'minute', 88).m);
+    ls('and never off the five-minute grid',
+      [...Array(360).keys()].every((d) => LB.dragTo({ h: 3, m: 0 }, 'minute', d).m % 5 === 0),
+      'every degree of the dial');
+    ls('the short hand snaps to whole hours',
+      [...Array(360).keys()].every((d) => {
+        const h = LB.dragTo({ h: 3, m: 20 }, 'hour', d).h;
+        return h >= 1 && h <= 12;
+      }) && LB.dragTo({ h: 3, m: 20 }, 'hour', 200).h === 7,
+      '200deg -> ' + LB.dragTo({ h: 3, m: 20 }, 'hour', 200).h);
+    ls('and dragging it leaves the minutes alone',
+      LB.dragTo({ h: 3, m: 20 }, 'hour', 200).m === 20);
+    /* THE CARRY, BY FINGER. Dragging the long hand past the 12 takes the hour
+       with it, which is the relationship the whole lesson is about — and here
+       the child finds it rather than being told. Detected from the direction of
+       travel, because at the boundary 55-to-0 and 5-to-0 are the same minute
+       values arrived at from opposite sides. */
+    ls('dragging past the 12 carries the hour',
+      LB.dragTo({ h: 3, m: 55 }, 'minute', 5, 330).h === 4,
+      '3:55 -> ' + JSON.stringify(LB.dragTo({ h: 3, m: 55 }, 'minute', 5, 330)));
+    ls('and dragging back past it takes one off',
+      LB.dragTo({ h: 4, m: 0 }, 'minute', 330, 10).h === 3,
+      '4:00 -> ' + JSON.stringify(LB.dragTo({ h: 4, m: 0 }, 'minute', 330, 10)));
+    ls('crossing nowhere near the 12 carries nothing',
+      LB.dragTo({ h: 3, m: 20 }, 'minute', 150, 120).h === 3);
+    ls('and 12 wraps to 1, never to 13',
+      LB.dragTo({ h: 12, m: 55 }, 'minute', 5, 330).h === 1,
+      JSON.stringify(LB.dragTo({ h: 12, m: 55 }, 'minute', 5, 330)));
+
+    /* THE WIDGET ITSELF, through real pointer events on the real clock. */
+    const tryIdx = steps.findIndex((st) => st.try);
+    const dial = () => host.querySelector('.lsn-clock svg');
+    const fireAt = (sel, type, degAt, frac) => {
+      const r = dial().getBoundingClientRect();
+      const rad = (degAt - 90) * Math.PI / 180;
+      const p = { x: r.left + r.width / 2 + Math.cos(rad) * r.width * frac,
+        y: r.top + r.height / 2 + Math.sin(rad) * r.height * frac };
+      host.querySelector(sel).dispatchEvent(new PointerEvent(type,
+        { bubbles: true, cancelable: true, pointerId: 1, clientX: p.x, clientY: p.y }));
+    };
+    api.goto(tryIdx);
+    const goalEl = host.querySelector('[data-goal]');
+    ls('a try step states the goal', tryIdx >= 0 && goalEl?.hidden === false
+      && /\d:\d\d/.test(goalEl.textContent), goalEl?.textContent);
+    /* ASKED FOR BY NAME: the goal goes directly above the digital face, because
+       the two numbers a child is comparing should be one glance apart. */
+    ls('and it sits directly above the digital face',
+      goalEl?.nextElementSibling?.tagName.toLowerCase() === 'svg'
+      && goalEl.parentElement === host.querySelector('.lsn-digital'),
+      goalEl?.nextElementSibling?.tagName);
+    ls('the digital face starts where the hands do, not on the answer',
+      digits() === clockOf(api.cumAt(tryIdx)) && digits() !== (steps[tryIdx].try.h + ':' + String(steps[tryIdx].try.m).padStart(2, '0')),
+      'reads ' + digits());
+    ls('the hands are grabbable only now',
+      host.querySelector('.lsn-clock').classList.contains('can-grab')
+      && host.querySelectorAll('[data-grab]').length === 2);
+    ls('and it says how to move them',
+      /finger|slide|drag/i.test(host.querySelector('[data-try]')?.textContent || ''),
+      host.querySelector('[data-try]')?.textContent?.slice(0, 40));
+
+    // DRAGGING MOVES THE DIGITAL FACE. This is the ask: the child turns the
+    // hands and the numbers change under their hand.
+    const before = digits();
+    fireAt('[data-grab="minute"]', 'pointerdown', 0, 0.35);
+    fireAt('[data-grab="minute"]', 'pointermove', 180, 0.35);
+    fireAt('[data-grab="minute"]', 'pointerup', 180, 0.35);
+    ls('dragging a hand changes the digital clock', digits() !== before,
+      before + ' -> ' + digits());
+    ls('and the hands follow the same numbers',
+      Math.abs(deg(hand().m) - 180) < 1, 'long hand at ' + deg(hand().m) + 'deg');
+    /* THE MISCONCEPTION, FELT. With 30 minutes on the clock the short hand must
+       sit BETWEEN two numbers, because it is drawn from the hour AND the
+       minutes — that is the whole reason this lesson exists, and a drag that
+       let the short hand sit on the number would teach the error. */
+    ls('and the short hand sits between two numbers at half past',
+      Math.abs(deg(hand().h) % 30 - 15) < 1, 'short hand at ' + deg(hand().h) + 'deg');
+    ls('a wrong time is not called right',
+      !host.querySelector('[data-try]').classList.contains('done'), digits());
+
+    // and setting the goal exactly does say so
+    const goal = steps[tryIdx].try;
+    fireAt('[data-grab="minute"]', 'pointerdown', goal.m * 6, 0.35);
+    fireAt('[data-grab="minute"]', 'pointermove', goal.m * 6, 0.35);
+    fireAt('[data-grab="minute"]', 'pointerup', goal.m * 6, 0.35);
+    fireAt('[data-grab="hour"]', 'pointerdown', (goal.h % 12) * 30, 0.15);
+    fireAt('[data-grab="hour"]', 'pointermove', (goal.h % 12) * 30, 0.15);
+    fireAt('[data-grab="hour"]', 'pointerup', (goal.h % 12) * 30, 0.15);
+    ls('reaching the goal says so',
+      host.querySelector('[data-try]').classList.contains('done')
+      && digits() === goal.h + ':' + String(goal.m).padStart(2, '0'),
+      digits() + ' — "' + host.querySelector('[data-try]').textContent + '"');
+    // and the dial goes back to being a picture on the next step
+    api.goto(tryIdx + 1); api.settle();
+    ls('the next step takes the clock back',
+      !host.querySelector('.lsn-clock').classList.contains('can-grab')
+      && host.querySelector('[data-goal]').hidden === true);
+
     /* The way back to the animation. A child who pressed Next through it had to
        go Back and then forward again, which reads as undoing rather than
        replaying. */

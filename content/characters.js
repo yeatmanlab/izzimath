@@ -1,6 +1,17 @@
 // Character packs. A character changes the SKIN — palette, world nouns, voice,
 // motif — and never the math. Activities are authored character-agnostic with
 // named slots; these fill them.
+//
+// TWO KINDS OF VOICE, and they are different things. `voice` is what the friend
+// SAYS — the reaction lines a book plays back after an answer. `speech` is what
+// the friend SOUNDS LIKE when the browser reads the site out loud: a pitch, a
+// rate, and a list of preferred system voice names.
+//
+// `speech` holds no audio. There is nothing to record, nothing to host, and
+// nothing to re-record when a caption is edited — see the header of
+// src/lib/speech.js for why that is the design rather than a shortcut, and for
+// the limit: pitch and rate distinguish the friends on every device, while
+// `prefer` only pays off where the device has several voices installed.
 
 export const characters = {
   none: {
@@ -19,6 +30,9 @@ export const characters = {
     collectible: { one: 'counter', many: 'counters' },
     container: { one: 'box', many: 'boxes' },
     unit: { one: 'step', many: 'steps' },
+    /* Neutral on purpose. "Just math" is a first-class choice and takes the
+       character off; a read-aloud that still performed would put one back. */
+    speech: { pitch: 1, rate: 0.92, prefer: ['Samantha', 'Google US English', 'Microsoft Aria'] },
     voice: {
       correct: ['Correct.', 'That’s right.', 'Yes — correct.'],
       close: ['Not quite. Try again.', 'Close. Have another go.'],
@@ -44,6 +58,8 @@ export const characters = {
     collectible: { one: 'cricket', many: 'crickets' },
     container: { one: 'cup', many: 'cups' },
     unit: { one: 'ledge', many: 'ledges' },
+    // Unhurried, which is the whole of Kiwi's tagline: "Nice. No rush."
+    speech: { pitch: 1.06, rate: 0.84, prefer: ['Karen', 'Moira', 'Google UK English Female'] },
     voice: {
       correct: ['Nice. No rush.', 'That’s it. Steady.', 'Good — warm and right.'],
       close: ['Close. Take your time.', 'Nearly. No hurry.'],
@@ -70,6 +86,8 @@ export const characters = {
     collectible: { one: 'treat', many: 'treats' },
     container: { one: 'bag', many: 'bags' },
     unit: { one: 'lap', many: 'laps' },
+    // Quick and bright. Georgie races; the voice should sound like it.
+    speech: { pitch: 1.28, rate: 1.0, prefer: ['Tessa', 'Google UK English Female', 'Samantha'] },
     voice: {
       correct: ['YES! Got it!', 'That’s IT!', 'Again again again!'],
       close: ['Ooh so close! Again!', 'Almost! One more go!'],
@@ -98,6 +116,8 @@ export const characters = {
     collectible: { one: 'berry', many: 'berries' },
     container: { one: 'basket', many: 'baskets' },
     unit: { one: 'branch', many: 'branches' },
+    // Lower and firmer, matching a character whose lines are short.
+    speech: { pitch: 0.84, rate: 0.94, prefer: ['Daniel', 'Google UK English Male', 'Alex'] },
     voice: {
       correct: ['Ooh — nice route.', 'That’s the trick.', 'Clever. That works.'],
       close: ['Hmm — nearly. Try another way.', 'Close. What if you climbed higher?'],
@@ -138,6 +158,9 @@ export const characters = {
        line between those two is entirely in this copy. Distinct from Kiwi, who
        is unhurried rather than half-asleep — Kiwi says "no rush", so Ash never
        does. */
+    // Slowest and lowest. Ash is the calm one, and for a child who needs the
+    // words read to them slowly this is the pack to choose.
+    speech: { pitch: 0.9, rate: 0.78, prefer: ['Alex', 'Daniel', 'Google US English'] },
     voice: {
       correct: ['Mm. That’s the one.', 'Yes — that one’s good.', 'Good. Back to resting.'],
       close: ['Nearly — have another look.', 'Almost. One more.'],

@@ -33,14 +33,64 @@
  * hand move too?" is followed by one that states where it ended up.
  */
 
-import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT } from '../../content/lessons.js';
+import { LESSONS, lessonById, lessonSeenKey, LESSON_COUNT, LESSON_TRY } from '../../content/lessons.js';
 import { clockFace, clockDigital, coin, COINS, coinsValue, money, array2d } from '../lib/widgets.js';
 import { currentCharacter } from '../lib/theme.js';
 import { getCharacter, fill } from '../../content/characters.js';
+import { speechAvailable, audioOn, audioEverUsed, speak, stopSpeaking,
+  voiceButton, wireVoiceButtons } from '../lib/speech.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduced = () => typeof matchMedia === 'function'
   && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ------------------------------------------------- setting the clock by hand
+   THE ARITHMETIC OF A DRAG, as a pure function, and that is deliberate: it is
+   the part that can be wrong, and a pointer gesture is the one thing a test
+   cannot fake convincingly. Given where the clock is, which hand is held, and
+   where the pointer has got to, this says where the clock is now.
+
+   `snap` is five minutes because that is the dial's own granularity and because
+   a six-year-old aiming a finger at one minute in sixty will never hit it. It
+   is also the unit the lesson has just spent an animation teaching.
+
+   THE HOUR CARRIES WHEN THE LONG HAND PASSES THE 12, forwards or backwards,
+   which is the whole relationship the lesson is about — and here the child
+   discovers it with a finger rather than being told. Detected from the previous
+   angle rather than from the minute value: at the boundary the minutes go 55 to
+   0, which is indistinguishable from dragging backwards from 5 to 0 unless you
+   know which way the pointer travelled.
+
+   Exported for the harness, where it can be walked round the dial without a
+   pointer, a frame or a layout. */
+export function dragTo(state, grab, angle, prevAngle = null) {
+  const wrap = ((angle % 360) + 360) % 360;
+  if (grab === 'hour') {
+    /* Whole hours only. The hour hand's DISPLAYED position still comes from
+       h + m/60, so it sits between two numbers whenever there are minutes on
+       the clock — which is the misconception this lesson exists for, and it
+       would be lost if a drag could put the hand anywhere it liked. */
+    const h = Math.round(wrap / 30) % 12;
+    return { h: h === 0 ? 12 : h, m: state.m };
+  }
+  const m = (Math.round(wrap / 6 / 5) * 5) % 60;
+  let h = state.h;
+  if (prevAngle != null) {
+    const prev = ((prevAngle % 360) + 360) % 360;
+    if (prev > 270 && wrap < 90) h = h === 12 ? 1 : h + 1;        // forward past the 12
+    else if (prev < 90 && wrap > 270) h = h === 1 ? 12 : h - 1;   // and back again
+  }
+  return { h, m };
+}
+
+/* Where a pointer is, as an angle from the 12, clockwise. The rect is the
+   drawn box of the dial, so this works whatever size it has been laid out at. */
+export function angleOf(rect, x, y) {
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const deg = Math.atan2(x - cx, cy - y) * 180 / Math.PI;
+  return ((deg % 360) + 360) % 360;
+}
 
 /* ---------------------------------------------------------------- the clock
    Built by hand rather than through clockFace(), because that returns a string
@@ -57,6 +107,15 @@ function clockStage() {
         stroke="var(--a1)" stroke-width="4.6" stroke-linecap="round"/>
       <line class="lsn-hand lsn-min" x1="50" y1="50" x2="50" y2="16"
         stroke="var(--a1)" stroke-width="2.4" stroke-linecap="round"/>
+      <!-- GRAB TARGETS, invisible and fat. A hand drawn at 2.4 units is about
+           six pixels on screen, which no six-year-old is going to hit with a
+           finger; these are 14 units wide, transparent, and sit on top. They
+           are only pointer targets while the step is interactive, which is what
+           the .can-grab class on the wrapper decides. -->
+      <line class="lsn-grab" data-grab="hour" x1="50" y1="50" x2="50" y2="26"
+        stroke="transparent" stroke-width="15" stroke-linecap="round"/>
+      <line class="lsn-grab" data-grab="minute" x1="50" y1="50" x2="50" y2="16"
+        stroke="transparent" stroke-width="13" stroke-linecap="round"/>
       <circle cx="50" cy="50" r="3" fill="var(--a1)"/></svg>`);
   wrap.innerHTML = face;
   /* The dial's own label described hands this SVG no longer has. The live time
@@ -83,7 +142,11 @@ function clockStage() {
 function digitalStage() {
   const wrap = document.createElement('div');
   wrap.className = 'lsn-digital';
-  wrap.innerHTML = clockDigital(12, 0, { size: 150 });
+  /* THE GOAL SITS DIRECTLY ABOVE THE DIGITAL FACE, which is where it was asked
+     for and where it belongs: the two numbers a child is comparing — what I am
+     aiming for, what the clock says now — should be one glance apart, not one
+     at the top of the page and one at the bottom. */
+  wrap.innerHTML = `<p class="lsn-goal" data-goal hidden></p>${clockDigital(12, 0, { size: 150 })}`;
   wrap.querySelector('svg')?.setAttribute('aria-hidden', 'true');
   wrap.querySelector('svg')?.removeAttribute('role');
   wrap.querySelector('svg')?.removeAttribute('aria-label');
@@ -165,6 +228,10 @@ export function renderLesson(host, id) {
            A live region: unlike the counter, it changes a handful of times per
            step rather than sixty times a second, so it is safe to announce. -->
       <p class="lsn-hold" data-hold aria-live="polite" hidden></p>
+      <!-- YOUR TURN. How to move the hands, and then whether it worked. A live
+           region because the answer to "have I done it" must reach a reader who
+           cannot see the hands they just moved. -->
+      <p class="lsn-try" data-try aria-live="polite" hidden></p>
       <p class="lsn-step" data-count></p>
       <h2 class="lsn-head" data-head></h2>
       <!-- THE LESSON IS SPOKEN BY THE CHOSEN FRIEND. One voice, not a narrator
@@ -192,6 +259,14 @@ export function renderLesson(host, id) {
              it except Back-then-Next, which re-reads as going backwards. On the
              steps that move, the move itself is the content. -->
         <button class="btn" type="button" data-replay hidden>&#9655; Watch it again</button>
+        <!-- READ IT TO ME. The lesson is pitched at grade 1 and all of its
+             content is text, so the child it was built for may not be able to
+             read it — and narration beside an animation beats text beside the
+             same animation, because text and picture compete for one channel.
+             A toggle with the chosen friend's face on it, off until pressed.
+             Absent entirely where the browser cannot speak, rather than
+             present and dead. -->
+        ${speechAvailable() ? voiceButton({ pulse: !audioEverUsed() }) : ''}
       </div>
       <p class="lsn-close" data-close hidden></p>
     </div>`;
@@ -375,6 +450,29 @@ export function renderLesson(host, id) {
     return text;
   }
 
+  /* Hands straight from a clock time rather than from accumulated minutes.
+     Try mode needs this: `anglesAt` accumulates so a sweep always runs forward,
+     and 7:00 through that lens is seven full turns of the long hand. Under a
+     child's finger the hands should point where the clock says and nowhere
+     else. The hour hand still comes from h AND m, so it sits between two
+     numbers the moment there are minutes on the clock. */
+  function pointHandsAt(h, m, ms = 0) {
+    const hour = clock.querySelector('.lsn-hour');
+    const min = clock.querySelector('.lsn-min');
+    for (const [el, ang] of [[hour, (h % 12) * 30 + m * 0.5], [min, m * 6]]) {
+      el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
+      el.style.transformOrigin = '50px 50px';
+      el.style.transform = `rotate(${ang.toFixed(2)}deg)`;
+    }
+  }
+
+  const timeText = (h, m) => `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`;
+
+  function setDigits(h, m) {
+    const t = digital?.querySelector('text');
+    if (t) t.textContent = timeText(h, m);
+  }
+
   function paintRead(cum) {
     const r = readAt(cum);
     const cell = (label, v, sub) => `<span class="lsn-cell"><small>${esc(label)}</small>`
@@ -404,6 +502,83 @@ export function renderLesson(host, id) {
     return paintRead(c);
   }
 
+  /* ------------------------------------------------------------ YOUR TURN
+     A step may declare `try: { h, m }` — a time for the child to SET, by
+     dragging the hands. The lesson so far has been something to watch; this is
+     the same clock with the child's hand on it, which is the difference between
+     being shown that the hour hand creeps and feeling it creep.
+
+     `show` is where the hands start, `try` is where they are asked to get to.
+     Nothing about the lesson's timeline changes: the next step still comes from
+     its own `show`, so Back and Next stay reproducible however long a child
+     plays with it.
+
+     Deliberately NOT scored and NOT a gate. Getting it right says so and that
+     is all; Next is available throughout, because a child who cannot manage the
+     drag must not be stuck in a lesson. */
+  let tryAt = null;        // the clock the child is holding, while a try step is up
+  let grab = null;         // 'hour' | 'minute'
+  let lastAngle = null;
+  let wasTry = false;      // so the step AFTER a try step does not animate from nowhere
+  let solved = false;
+
+  const tryGoal = () => lesson.steps[at]?.try || null;
+
+  function paintTry() {
+    const goal = tryGoal();
+    if (!goal || !tryAt) return;
+    pointHandsAt(tryAt.h, tryAt.m, 0);
+    setDigits(tryAt.h, tryAt.m);
+    const goalEl = host.querySelector('[data-goal]');
+    if (goalEl) {
+      goalEl.textContent = `${LESSON_TRY.goal} ${timeText(goal.h, goal.m)}`;
+      goalEl.hidden = false;
+    }
+    const hit = tryAt.h === goal.h && tryAt.m === goal.m;
+    const box = host.querySelector('[data-try]');
+    if (box) {
+      box.hidden = false;
+      box.textContent = hit ? LESSON_TRY.got(timeText(goal.h, goal.m)) : LESSON_TRY.how;
+      box.classList.toggle('done', hit);
+    }
+    /* Said once, on the transition into being right. Repeating it on every
+       further nudge of the hands would talk over a child still playing. */
+    if (hit && !solved) {
+      solved = true;
+      if (audioOn()) speak(LESSON_TRY.got(timeText(goal.h, goal.m)), currentCharacter());
+    }
+    if (!hit) solved = false;
+  }
+
+  /* ONE HANDLER SET, INSTALLED ONCE, and it does nothing unless a try step is
+     on screen. Pointer events rather than mouse or touch: one code path covers
+     a finger, a stylus and a mouse, which is the whole reason they exist. */
+  if (clock) {
+    const dial = () => clock.querySelector('svg');
+    clock.addEventListener('pointerdown', (e) => {
+      if (!tryGoal()) return;
+      const g = e.target.closest?.('[data-grab]');
+      if (!g) return;
+      grab = g.dataset.grab;
+      lastAngle = angleOf(dial().getBoundingClientRect(), e.clientX, e.clientY);
+      /* Captured so the drag survives the pointer leaving the hand — which it
+         does immediately, because the hand moves out from under the finger. */
+      try { g.setPointerCapture(e.pointerId); } catch { /* not supported: still works */ }
+      e.preventDefault();
+    });
+    clock.addEventListener('pointermove', (e) => {
+      if (!grab || !tryGoal() || !tryAt) return;
+      const a = angleOf(dial().getBoundingClientRect(), e.clientX, e.clientY);
+      tryAt = dragTo(tryAt, grab, a, lastAngle);
+      lastAngle = a;
+      paintTry();
+      e.preventDefault();
+    });
+    for (const done of ['pointerup', 'pointercancel']) {
+      clock.addEventListener(done, () => { grab = null; lastAngle = null; });
+    }
+  }
+
   function paintClock(show, { sweep = false } = {}) {
     const hour = clock.querySelector('.lsn-hour');
     const min = clock.querySelector('.lsn-min');
@@ -415,6 +590,27 @@ export function renderLesson(host, id) {
     holdEl.hidden = true;
     holdEl.textContent = '';
     if (digital) digital.hidden = !show.digital;
+
+    const goal = tryGoal();
+    const goalEl = host.querySelector('[data-goal]');
+    const tryBox = host.querySelector('[data-try]');
+    clock.classList.toggle('can-grab', !!goal);
+    if (!goal) {
+      if (goalEl) { goalEl.hidden = true; goalEl.textContent = ''; }
+      if (tryBox) { tryBox.hidden = true; tryBox.textContent = ''; tryBox.classList.remove('done'); }
+      tryAt = null;
+    }
+    if (goal) {
+      /* The hands start where the step says and stay wherever the child leaves
+         them — repainting on every nudge would undo the drag. */
+      tryAt = { h: show.h, m: show.m };
+      solved = false;
+      wasTry = true;
+      paintTry();
+      hour.classList.toggle('on', show.focus === 'hour' || show.focus === 'both');
+      min.classList.toggle('on', show.focus === 'minute' || show.focus === 'both');
+      return;
+    }
 
     if (sweep && !reduced() && at > 0) {
       const from = elapsedAt(at - 1);
@@ -439,15 +635,24 @@ export function renderLesson(host, id) {
             if (last) { holdEl.hidden = true; return; }
             holdEl.textContent = leg.say || '';
             holdEl.hidden = !leg.say;
+            /* The pause reads its own line. This is the moment the feature is
+               for: the hands have stopped, there is one sentence on screen, and
+               a child who cannot read it is otherwise looking at a still
+               clock. */
+            if (leg.say && audioOn()) speak(leg.say, currentCharacter());
             hold = setTimeout(() => { hold = null; walk(i + 1, leg.cum); },
               leg.dwell ?? dwellFor(leg.say));
           });
       };
       walk(0, from);
     } else {
-      pointHands(cum, reduced() ? 0 : 900);
+      /* No transition on the step straight after a try step. The hands are
+         wherever the child put them, and the lesson's own angles accumulate, so
+         a transition there is a long unexplained spin rather than a move. */
+      pointHands(cum, reduced() || wasTry ? 0 : 900);
       pointDigital(cum);
       if (!read.hidden) sayRead(paintRead(cum));
+      wasTry = false;
     }
     hour.classList.toggle('on', show.focus === 'hour' || show.focus === 'both');
     min.classList.toggle('on', show.focus === 'minute' || show.focus === 'both');
@@ -608,6 +813,26 @@ export function renderLesson(host, id) {
       cells.map((c) => `${c.label}: ${c.value}${c.sub ? ' ' + c.sub : ''}`).join(', ');
   }
 
+  /* WHAT A STEP SOUNDS LIKE. The heading, the sentence, and the friend's second
+     beat — which is the same order they are read in, and the same words. There
+     is no separate audio script: one set of words was the decision the printed
+     sheet's trick box made and the captions kept, and a third version that
+     could drift from both is the one thing not to build.
+
+     The aside is dropped for Just math on screen, because it is written in the
+     third person about a named friend; it is dropped here for the same reason. */
+  function stepWords(step) {
+    const ch = getCharacter(currentCharacter());
+    const named = ch.id !== 'none';
+    return [step.head, step.say, named && step.aside ? step.aside : '']
+      .filter(Boolean).join(' ');
+  }
+
+  function sayStep() {
+    if (!audioOn()) return null;
+    return speak(stepWords(lesson.steps[at]), currentCharacter());
+  }
+
   function paint() {
     const step = lesson.steps[at];
     host.querySelector('[data-count]').textContent = `Step ${at + 1} of ${lesson.steps.length}`;
@@ -635,11 +860,21 @@ export function renderLesson(host, id) {
     const close = host.querySelector('[data-close]');
     close.hidden = !last;
     close.textContent = last ? lesson.close : '';
+    /* Said last, after the step is on the page. Speaking first would narrate a
+       step the reader cannot see yet, and `speak` cancels whatever was being
+       said — so stepping quickly through reads only the step you land on. */
+    sayStep();
   }
 
   host.querySelector('[data-next]').addEventListener('click', () => {
     if (at < lesson.steps.length - 1) { at++; dir = 1; paint(); }
   });
+  /* Turning it ON says the step you are looking at, immediately. Two reasons:
+     a toggle that lights up and stays silent reads as broken, and on iOS Safari
+     speech does not work at all until a user gesture has happened — so this
+     press is what unlocks the rest of the lesson. */
+  wireVoiceButtons(host, (on) => { if (on) sayStep(); else stopSpeaking(); });
+
   host.querySelector('[data-replay]').addEventListener('click', () => {
     const step = lesson.steps[at];
     if (!step.sweep || at === 0) return;

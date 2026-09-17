@@ -193,6 +193,32 @@ already exist, and a routine only needs a `ui` the registry knows.
   sat on the answer while the hands travelled to it — two faces of one clock
   disagreeing, on the step that introduces the digital clock.
 
+  **A lesson hands the figure over.** A step may declare `try` — a goal for the
+  child to reach by dragging the figure themselves, with the target shown right
+  above the readout it has to match. The clock's three are a nudge of the long
+  hand, an o'clock, and half past; dragging the long hand past the 12 carries
+  the hour, so the child finds the relationship with a finger instead of being
+  told it. The arithmetic of a drag is a pure exported function (`dragTo`),
+  because a pointer gesture is the one thing a test cannot fake convincingly.
+  Never scored and never a gate: getting it right says so and that is all, and
+  Next stays available, because a child who cannot manage the drag must not be
+  stuck in a lesson. `check.mjs` fails a goal that is already met on arrival,
+  one the five-minute snap cannot reach, a step that both animates and asks the
+  child to drive, and a step that hands the figure over without saying so.
+
+  **The words can be read out loud, and a friend's voice is data rather than a
+  file.** `speech` in each character pack is a pitch, a rate and a list of
+  preferred system voice names, played through the browser's own synthesiser by
+  `src/lib/speech.js` — so there is nothing to record, nothing to host, and
+  nothing to re-record when a caption is edited. What that buys is real but
+  limited and the limit is worth stating: pitch and rate distinguish the friends
+  on every device, while `prefer` only pays off where the device has several
+  voices installed. Everything that speaks goes through `speak()`, which is the
+  one place a future backend's recorded clips would slot in. A TOGGLE, never
+  autoplay — a face with a speech bubble, off until pressed, because iOS Safari
+  will not speak before a user gesture and a page that talks on arrival is one a
+  parent silences at the device level.
+
   A sweep is also the one place the player runs a frame loop, and the reason is
   the counter rather than the movement: hands on a CSS transition with a
   separately animated readout can disagree, and a counter saying 30 minutes

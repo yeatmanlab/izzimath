@@ -333,6 +333,40 @@ console.log('\n=== clocks and coins ===');
     });
   }
 
+  /* YOUR TURN — a step that hands the figure to the child.
+
+     `try` states what to make; `show` states where it starts. Three ways to get
+     that wrong and all three are silent on the page: a goal already met on
+     arrival (nothing to do, and the success line greets them), a goal that
+     cannot be reached because the drag snaps to fives and the target is not a
+     multiple of five, and a step that both animates and asks the child to
+     drive — where the sweep would move the hands out from under their
+     finger. */
+  let tries = 0;
+  for (const [id, l] of Object.entries(LESSONS)) {
+    (l.steps || []).forEach((st, k) => {
+      if (!st.try) return;
+      tries++;
+      const w = `lesson:${id}`;
+      if (st.sweep) fail(w, `step ${k + 1} both animates and asks the child to set it; the sweep would move the figure out from under their finger`);
+      if (l.kind === 'clock') {
+        const g = st.try;
+        if (!(g.h >= 1 && g.h <= 12)) fail(w, `step ${k + 1} asks for hour ${g.h}, which is not on a clock`);
+        if (!(g.m >= 0 && g.m < 60)) fail(w, `step ${k + 1} asks for ${g.m} minutes`);
+        /* The drag snaps to five minutes, which is the dial's own granularity
+           and the only way a six-year-old's finger ever lands exactly. A goal
+           off that grid is a goal that cannot be reached. */
+        if (g.m % 5 !== 0) fail(w, `step ${k + 1} asks for ${g.h}:${String(g.m).padStart(2, '0')}, which the five-minute snap cannot reach`);
+        if (g.h === st.show.h && g.m === st.show.m) {
+          fail(w, `step ${k + 1} starts on its own answer, so there is nothing to do`);
+        }
+      }
+      if (!/your turn|make it|slide|drag|tap/i.test(`${st.head} ${st.say}`)) {
+        fail(w, `step ${k + 1} hands the figure to the child and never says so — a drawing of a clock does not look touchable`);
+      }
+    });
+  }
+
   /* RULE 1: every lesson animates something. The format's whole justification is
      movement that a printed sheet cannot carry, so a lesson with no animated
      step is a page of prose at a URL — see the header of content/lessons.js. */
@@ -345,7 +379,7 @@ console.log('\n=== clocks and coins ===');
     animated += sweeps;
   }
   console.log(`  ${COIN_KINDS.length} coins in real size order · ${clocks} clock labels describe hands not times · ${
-    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain`);
+    handfulsSeen} handfuls worth counting · ${Object.keys(LESSONS).length} lessons, ${lessonSteps} steps that read as words, ${animated} that animate, ${stopCount} pausing to explain, ${tries} handed to the child`);
 }
 
 /* ------------------------------------------------------------- the character cup
