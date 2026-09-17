@@ -627,6 +627,7 @@ const clocksAndTime = {
         /* The same dial with the minutes written round the outside. Only on the
            hint, because a labelled dial answers the question it is asking. */
         hintFigure: clockFace(h, m, { size: 200, minutes: true }),
+        hintTry: true,
         explain: half
           ? `Half past ${h}. The long hand is halfway round, and the short hand is between the ${h} and the ${nextH} — it has left the ${h} but not reached the ${nextH}, so the hour is still ${h}.`
           : `${h} o’clock. The long hand is straight up, so there are no extra minutes, and the short hand points at the ${h}.`,
@@ -689,6 +690,7 @@ const clocksAndTime = {
         printVisual: pickRow(opts.map(({ id, printFigure }) => ({ id, figure: printFigure })), { print: true }),
         hint: 'A digital clock writes the hour, then the minutes. Half an hour is 30 minutes.',
         hintFigure: clockFace(h, m, { size: 200, minutes: true }),
+        hintTry: true,
         explain: `${said} is written ${h}:${String(m).padStart(2, '0')}. The hour comes first, then the minutes — and half an hour is 30 minutes, not 50.`,
       };
     }
@@ -735,6 +737,7 @@ const clocksAndTime = {
         printVisual: clockFace(h, m, { print: true, size: 66 }),
         hint: 'One hand is short and fat, the other is long and thin. They do different jobs.',
         hintFigure: clockFace(h, m, { size: 200, minutes: true }),
+        hintTry: true,
         explain: askHour
           ? 'The short hand tells you the hour. It moves slowly — all the way round takes twelve hours.'
           : 'The long hand tells you the minutes. It moves quickly — all the way round takes one hour.',

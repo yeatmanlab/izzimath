@@ -41,119 +41,19 @@ import { currentCharacter } from '../lib/theme.js';
 import { getCharacter, fill } from '../../content/characters.js';
 import { speechAvailable, audioOn, audioEverUsed, speak, stopSpeaking,
   voiceButton, wireVoiceButtons } from '../lib/speech.js';
+import { clockStage, digitalStage, dragTo, angleOf,
+  pointHandsAt as pointHandsOn, timeText } from '../lib/clockdial.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduced = () => typeof matchMedia === 'function'
   && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ------------------------------------------------- setting the clock by hand
-   THE ARITHMETIC OF A DRAG, as a pure function, and that is deliberate: it is
-   the part that can be wrong, and a pointer gesture is the one thing a test
-   cannot fake convincingly. Given where the clock is, which hand is held, and
-   where the pointer has got to, this says where the clock is now.
-
-   `snap` is five minutes because that is the dial's own granularity and because
-   a six-year-old aiming a finger at one minute in sixty will never hit it. It
-   is also the unit the lesson has just spent an animation teaching.
-
-   THE HOUR CARRIES WHEN THE LONG HAND PASSES THE 12, forwards or backwards,
-   which is the whole relationship the lesson is about — and here the child
-   discovers it with a finger rather than being told. Detected from the previous
-   angle rather than from the minute value: at the boundary the minutes go 55 to
-   0, which is indistinguishable from dragging backwards from 5 to 0 unless you
-   know which way the pointer travelled.
-
-   Exported for the harness, where it can be walked round the dial without a
-   pointer, a frame or a layout. */
-export function dragTo(state, grab, angle, prevAngle = null) {
-  const wrap = ((angle % 360) + 360) % 360;
-  if (grab === 'hour') {
-    /* Whole hours only. The hour hand's DISPLAYED position still comes from
-       h + m/60, so it sits between two numbers whenever there are minutes on
-       the clock — which is the misconception this lesson exists for, and it
-       would be lost if a drag could put the hand anywhere it liked. */
-    const h = Math.round(wrap / 30) % 12;
-    return { h: h === 0 ? 12 : h, m: state.m };
-  }
-  const m = (Math.round(wrap / 6 / 5) * 5) % 60;
-  let h = state.h;
-  if (prevAngle != null) {
-    const prev = ((prevAngle % 360) + 360) % 360;
-    if (prev > 270 && wrap < 90) h = h === 12 ? 1 : h + 1;        // forward past the 12
-    else if (prev < 90 && wrap > 270) h = h === 1 ? 12 : h - 1;   // and back again
-  }
-  return { h, m };
-}
-
-/* Where a pointer is, as an angle from the 12, clockwise. The rect is the
-   drawn box of the dial, so this works whatever size it has been laid out at. */
-export function angleOf(rect, x, y) {
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const deg = Math.atan2(x - cx, cy - y) * 180 / Math.PI;
-  return ((deg % 360) + 360) % 360;
-}
-
-/* ---------------------------------------------------------------- the clock
-   Built by hand rather than through clockFace(), because that returns a string
-   and this needs to keep hold of the two hand elements to re-point them. The
-   face itself is clockFace with its hands stripped, so the dial, the ticks and
-   the numerals stay in one place. */
-function clockStage() {
-  const wrap = document.createElement('div');
-  wrap.className = 'lsn-clock';
-  const face = clockFace(12, 0, { size: 240 })
-    .replace(/<line x1="50" y1="50"[\s\S]*?\/>/g, '')          // drop the two hands
-    .replace('</svg>', `
-      <line class="lsn-hand lsn-hour" x1="50" y1="50" x2="50" y2="26"
-        stroke="var(--a1)" stroke-width="4.6" stroke-linecap="round"/>
-      <line class="lsn-hand lsn-min" x1="50" y1="50" x2="50" y2="16"
-        stroke="var(--a1)" stroke-width="2.4" stroke-linecap="round"/>
-      <!-- GRAB TARGETS, invisible and fat. A hand drawn at 2.4 units is about
-           six pixels on screen, which no six-year-old is going to hit with a
-           finger; these are 14 units wide, transparent, and sit on top. They
-           are only pointer targets while the step is interactive, which is what
-           the .can-grab class on the wrapper decides. -->
-      <line class="lsn-grab" data-grab="hour" x1="50" y1="50" x2="50" y2="26"
-        stroke="transparent" stroke-width="15" stroke-linecap="round"/>
-      <line class="lsn-grab" data-grab="minute" x1="50" y1="50" x2="50" y2="16"
-        stroke="transparent" stroke-width="13" stroke-linecap="round"/>
-      <circle cx="50" cy="50" r="3" fill="var(--a1)"/></svg>`);
-  wrap.innerHTML = face;
-  /* The dial's own label described hands this SVG no longer has. The live time
-     is announced from the caption region instead, which is where a reader is
-     already being told what to look at. */
-  wrap.querySelector('svg')?.setAttribute('aria-hidden', 'true');
-  return wrap;
-}
-
-/* ------------------------------------------------------------- the digital face
-   Built ONCE and re-lettered, for exactly the reason the analog dial is: during
-   a sweep it has to change every frame from the same number as the hands, and
-   re-rendering the SVG sixty times a second to move four characters is waste
-   that also throws away the element every test holds on to.
-
-   It used to be rendered from `show.h`/`show.m` — the step's FINAL time — so
-   through the whole sweep the digital clock sat on the answer while the hands
-   travelled to it. Two faces of one clock disagreeing is the precise thing this
-   player exists to prevent, and it was doing it on the step that shows a child
-   what a digital clock is.
-
-   `aria-hidden`, like the dial, because the label would be a frame behind the
-   digits it describes. The settled time is announced from [data-readsay]. */
-function digitalStage() {
-  const wrap = document.createElement('div');
-  wrap.className = 'lsn-digital';
-  /* THE GOAL SITS DIRECTLY ABOVE THE DIGITAL FACE, which is where it was asked
-     for and where it belongs: the two numbers a child is comparing — what I am
-     aiming for, what the clock says now — should be one glance apart, not one
-     at the top of the page and one at the bottom. */
-  wrap.innerHTML = `<p class="lsn-goal" data-goal hidden></p>${clockDigital(12, 0, { size: 150 })}`;
-  wrap.querySelector('svg')?.setAttribute('aria-hidden', 'true');
-  wrap.querySelector('svg')?.removeAttribute('role');
-  wrap.querySelector('svg')?.removeAttribute('aria-label');
-  return wrap;
-}
+/* THE DIAL AND THE DRAG ARITHMETIC MOVED to src/lib/clockdial.js, because the
+   hint button on a clock question now offers the same object — see that file's
+   header. Re-exported here because tools/func.html drives them through this
+   module, and because they are still this lesson's arithmetic as much as the
+   widget's. */
+export { dragTo, angleOf } from '../lib/clockdial.js';
 
 /* ------------------------------------------------------------------ the bar
    ONE BAR, BUILT ONCE, and that is the entire argument of the fractions lesson.
@@ -379,9 +279,9 @@ export function renderLesson(host, id) {
      loud. */
   const kind = lesson.kind || 'clock';
   const isClock = kind === 'clock';
-  const clock = isClock ? clockStage() : null;
+  const clock = isClock ? clockStage({ size: 240 }) : null;
   if (clock) stage.appendChild(clock);
-  const digital = isClock ? digitalStage() : null;
+  const digital = isClock ? digitalStage({ size: 150 }) : null;
   if (digital) { digital.hidden = true; stage.appendChild(digital); }
   /* THE GOAL GOES NEXT TO THE NUMBER IT HAS TO MATCH. For a clock that is the
      digital face, which is where it was asked for and where it belongs — the
@@ -569,23 +469,8 @@ export function renderLesson(host, id) {
     return text;
   }
 
-  /* Hands straight from a clock time rather than from accumulated minutes.
-     Try mode needs this: `anglesAt` accumulates so a sweep always runs forward,
-     and 7:00 through that lens is seven full turns of the long hand. Under a
-     child's finger the hands should point where the clock says and nowhere
-     else. The hour hand still comes from h AND m, so it sits between two
-     numbers the moment there are minutes on the clock. */
-  function pointHandsAt(h, m, ms = 0) {
-    const hour = clock.querySelector('.lsn-hour');
-    const min = clock.querySelector('.lsn-min');
-    for (const [el, ang] of [[hour, (h % 12) * 30 + m * 0.5], [min, m * 6]]) {
-      el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
-      el.style.transformOrigin = '50px 50px';
-      el.style.transform = `rotate(${ang.toFixed(2)}deg)`;
-    }
-  }
-
-  const timeText = (h, m) => `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`;
+  /* From the shared dial module, bound to this stage's wrapper. */
+  const pointHandsAt = (h, m, ms = 0) => pointHandsOn(clock, h, m, ms);
 
   function setDigits(h, m) {
     const t = digital?.querySelector('text');

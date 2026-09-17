@@ -281,6 +281,18 @@ already exist, and a routine only needs a `ui` the registry knows.
   marker there, and `scripts/a11y.mjs` fails any page with a print button that is
   not a sheet and does not carry it. Print SHEETS are not this: their greys are
   chosen for paper and must not be flattened.
+- **The lesson's widget is offered as a hint, not only as a lesson.** The
+  activities are where a child actually gets stuck, so `hintTry` mounts a
+  working dial in the hint box — the same object `/learn/time/` hands over, out
+  of `src/lib/clockdial.js`, which holds the dial, the grab targets and the drag
+  arithmetic once for both callers. It is FREE PLAY: no goal and no verdict,
+  because the question on the page already has an answer and a widget with its
+  own target would be a second question asked of a child who just said they were
+  stuck. It starts at 12:00 rather than at the question's time, so the first
+  thing it does is not hand over the answer, and it SUPERSEDES the still figure
+  rather than sitting beside it — two dials in one box with one of them dead is
+  a worse hint than either. The still one stays in the data as the fallback, and
+  `check.mjs` fails a handover without one.
 - **A scaffold belongs on the hint and nowhere else.** `clockFace({ minutes:
   true })` writes the minute count round the outside of the dial, which is the
   help a first grader asked for — being told to "count round in fives" on a dial

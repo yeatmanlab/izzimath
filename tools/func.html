@@ -2292,9 +2292,15 @@ L.push('');
     hb('pressing it opens a hint', !!box);
     hb('the hint says something in words',
       (box.querySelector('.fb.hint')?.textContent || '').trim().length > 12);
-    /* THE PICTURE. The padded viewBox is the marker for the minute ring: it is
-       drawn outside the dial, so the figure has to open its box up to fit. */
-    const fig = box.querySelector('[data-hintfig] svg');
+    /* THE PICTURE, whichever dial the box is showing. These four assertions
+       were written when the hint held a STILL figure and only a still figure;
+       the interactive dial supersedes it now, so they look for the scaffolded
+       dial rather than for one particular element — the claim was always "the
+       hint shows a dial with the fives on it, drawn big enough to read", and
+       that is still the claim. The padded viewBox is the marker for the minute
+       ring: it is drawn outside the dial, so the figure has to open its box up
+       to fit. */
+    const fig = box.querySelector('[data-hinttry] .lsn-clock svg, [data-hintfig] svg');
     hb('and shows the dial with the minutes on it',
       !!fig && /-13 -13 126 126/.test(fig.getAttribute('viewBox') || ''),
       fig?.getAttribute('viewBox') || 'no figure');
@@ -2313,7 +2319,7 @@ L.push('');
       (fb?.width ?? 0) >= (asked?.width ?? 0) - 1,
       Math.round(fb?.width ?? 0) + 'px vs ' + Math.round(asked?.width ?? 0) + 'px');
     hb('the figure is hidden from a screen reader, which has the words',
-      box.querySelector('[data-hintfig]')?.getAttribute('aria-hidden') === 'true');
+      (box.querySelector('[data-hintfig]') ?? fig)?.getAttribute('aria-hidden') === 'true');
     /* THE WAY BACK. The callout at the top of the page is the right weight for
        a child arriving and no use to one stuck on question seven. */
     const back = box.querySelector('.hintback a');
@@ -2321,6 +2327,57 @@ L.push('');
       back?.getAttribute('href') || 'no link');
     hb('named so a child knows what it is',
       /clock/i.test(back?.textContent || ''), back?.textContent?.trim());
+    /* AND THE CLOCK IT HANDS OVER. The labelled dial closed half the gap — a
+       stuck child could see that the 6 means thirty minutes — and nothing
+       connected a hand position to the digits being asked for. This is the same
+       object the lesson hands over on three of its steps. */
+    const tryBox = box.querySelector('[data-hinttry]');
+    hb('the hint hands over a clock to move', !!tryBox?.querySelector('.lsn-clock'));
+    hb('with two hands to grab', box.querySelectorAll('[data-hinttry] [data-grab]').length === 2);
+    hb('and the fives written round it',
+      /-13 -13 126 126/.test(tryBox?.querySelector('.lsn-clock svg')?.getAttribute('viewBox') || ''));
+    /* It SUPERSEDES the still figure rather than sitting beside it: two dials in
+       one box with one of them dead is a worse hint than either. */
+    hb('which replaces the still dial rather than joining it',
+      !box.querySelector('[data-hintfig]')
+      && box.querySelectorAll('[data-hinttry] .lsn-clock').length === 1,
+      box.querySelectorAll('svg.bd, .lsn-clock, [data-hintfig]').length + ' figures in the box');
+    /* AND IT DOES NOT START ON THE ANSWER. A dial handed over already showing
+       the question's time would be the answer, delivered by a widget. */
+    const digits = tryBox?.querySelector('.lsn-digital text')?.textContent || '';
+    hb('it starts at 12:00, not on the time being asked about',
+      digits === '12:00', 'reads ' + digits);
+    /* GUARDED. Breaking the mount on purpose threw here and took the last four
+       checks of this block with it — the same shape of hole the lesson block
+       had. A harness that stops measuring because one thing is broken hides
+       everything after it. */
+    const dsvg = tryBox?.querySelector('.lsn-clock svg');
+    const dr = dsvg ? dsvg.getBoundingClientRect() : { left: 0, top: 0, width: 1, height: 1 };
+    const dAt = (deg, f) => { const rad = (deg - 90) * Math.PI / 180;
+      return { x: dr.left + dr.width / 2 + Math.cos(rad) * dr.width * f,
+        y: dr.top + dr.height / 2 + Math.sin(rad) * dr.height * f }; };
+    const dFire = (sel, t, p) => tryBox?.querySelector(sel)?.dispatchEvent(new PointerEvent(t,
+      { bubbles: true, cancelable: true, pointerId: 1, clientX: p.x, clientY: p.y }));
+    dFire('[data-grab="hour"]', 'pointerdown', dAt(0, 0.12));
+    dFire('[data-grab="hour"]', 'pointermove', dAt(240, 0.12));
+    dFire('[data-grab="hour"]', 'pointerup', dAt(240, 0.12));
+    const after = tryBox?.querySelector('.lsn-digital text')?.textContent ?? '';
+    hb('dragging a hand moves the digits', after !== digits, digits + ' -> ' + after);
+    dFire('[data-grab="minute"]', 'pointerdown', dAt(0, 0.35));
+    dFire('[data-grab="minute"]', 'pointermove', dAt(150, 0.35));
+    dFire('[data-grab="minute"]', 'pointerup', dAt(150, 0.35));
+    hb('and the minutes follow the long hand',
+      /:25$/.test(tryBox?.querySelector('.lsn-digital text')?.textContent ?? ''),
+      tryBox?.querySelector('.lsn-digital text')?.textContent ?? 'no digits');
+    hb('it says what to do with it',
+      /drag/i.test(box.querySelector('.trycl-say')?.textContent || ''),
+      box.querySelector('.trycl-say')?.textContent?.slice(0, 40));
+    /* No goal and no verdict: the question on the page already has an answer,
+       and a widget with its own target would be a second question asked of a
+       child who has just said they are stuck. */
+    hb('and sets no target of its own',
+      !!tryBox && !tryBox.querySelector('[data-goal]') && !tryBox.querySelector('[data-try]'));
+
     hb('pressing again does not stack a second box',
       (() => { btn.click(); return dd.querySelectorAll('[data-hintbox]').length === 1; })(),
       dd.querySelectorAll('[data-hintbox]').length + ' boxes');

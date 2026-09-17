@@ -2100,8 +2100,34 @@ console.log('\n=== figures tell the truth ===');
       if (!p.hint) fail('figures', `${a.id} item ${i + 1} has a hint figure and no hint words; the box would open on a picture alone`);
     }
   }
+  /* AND THE CLOCK THE HINT HANDS OVER. `hintTry` mounts a working dial in the
+     hint box — the same object the lesson hands over on three of its steps —
+     and it SUPERSEDES the static figure rather than sitting beside it, because
+     two dials in one box with one of them dead is a worse hint than either.
+
+     So the static figure has to still be there: it is what a browser that
+     cannot mount the widget falls back to, and dropping it on the grounds that
+     the widget replaces it would leave those items with no picture at all. */
+  let handovers = 0;
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (let i = 0; i < n; i++) {
+      let p;
+      try { p = a.generate(deriveSeed(8817, `p${i}`), i, getCharacter('kiwi'), rng(deriveSeed(8817, `p${i}`)), 8817); } catch { continue; }
+      if (!p?.hintTry) continue;
+      handovers++;
+      if (!p.hintFigure) {
+        fail('figures', `${a.id} item ${i + 1} hands over a clock in its hint with no still figure behind it — a browser that cannot mount the widget gets no picture at all`);
+      }
+      if (!p.hint) fail('figures', `${a.id} item ${i + 1} hands over a clock and says nothing`);
+      if (!a.lesson) {
+        fail('figures', `${a.id} hands over a clock in a hint but declares no lesson, so the box offers a widget and no way to the explanation`);
+      }
+    }
+  }
   console.log(`  ${scaffolds} hint figures carrying a scaffold · ${misplaced + weak
-    ? `${misplaced} on the question side, ${weak} adding nothing` : 'none of them on the question side'}`);
+    ? `${misplaced} on the question side, ${weak} adding nothing` : 'none of them on the question side'} · ${
+    handovers} handing over a clock to move`);
 }
 
 /* ------------------------------------------- the same question, the same options

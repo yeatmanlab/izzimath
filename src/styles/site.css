@@ -1029,6 +1029,12 @@ footer.foot a:hover { color: var(--txt) }
    it in small type, because it is the third thing offered and not the first. */
 .hintfig { display: flex; justify-content: center; margin: 12px 0 2px }
 .hintfig svg { max-width: 100%; height: auto }
+/* The clock the hint hands over: dial and digits side by side, the same pair
+   the lesson shows. */
+.hinttry { margin: 12px 0 2px }
+.trycl { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap }
+.trycl .lsn-clock svg { max-width: 100%; height: auto }
+.trycl-say { margin: 8px 0 0; font-size: 13px; color: var(--txt3); text-align: center }
 .hintback { margin: 10px 0 0; font-size: 13.5px; color: var(--txt3) }
 .hintback span { margin-right: 6px }
 .hintback a { color: var(--a1) }

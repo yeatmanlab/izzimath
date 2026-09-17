@@ -1079,6 +1079,14 @@ export const LESSON_LINK = {
    explains. */
 export const LESSON_STUCK = 'Still stuck?';
 
+/* THE HINT'S OWN CLOCK. The labelled dial closed half the gap — a stuck child
+   could see that the 6 means thirty minutes — and nothing connected a hand
+   position to the digits they were being asked for. So the hint hands over a
+   working clock: drag the hands, watch the numbers. Free play, because the
+   question on the page already has an answer and a widget with its own target
+   would be a second question asked of a child who just said they were stuck. */
+export const HINT_TRY = 'Have a go on this one. Drag either hand and watch the numbers change.';
+
 /* TWO STATES, and the first one is the point. The link started as one line of
    small text above the book, which is the right weight for a second grader
    coming back for a reminder and the wrong weight entirely for a first grader

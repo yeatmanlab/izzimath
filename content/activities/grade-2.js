@@ -995,6 +995,7 @@ const timeToFiveMinutes = {
            "count round in fives", and a first grader who was told that on a
            dial numbered 1 to 12 did not know what to do with it. */
         hintFigure: clockFace(h, m, { size: 200, minutes: true }),
+        hintTry: true,
         hint: `Count round in fives to the long hand. Then check the short hand: which number has it gone PAST?`,
         explain: `${said}. The long hand is on the ${five}, and ${five} fives is ${m} minutes. The short hand has gone past the ${h} but has not reached the ${nextH}, so the hour is ${h}.`,
       };
@@ -1011,6 +1012,7 @@ const timeToFiveMinutes = {
         printStem: `The long hand points at the ${five}. How many minutes past the hour?`,
         printVisual: clockFace(h, m, { print: true, size: 68 }),
         hintFigure: clockFace(h, m, { size: 200, minutes: true }),
+        hintTry: true,
         hint: 'Every number round the dial is five minutes. Count them in fives from the 12.',
         explain: `${m} minutes. Counting in fives from the 12: ${Array.from({ length: five }, (_, k) => (k + 1) * 5).join(', ')}.`,
       };
@@ -1077,6 +1079,7 @@ const timeToFiveMinutes = {
         printVisual: clockFace(h, m, { print: true, size: 62 }),
         hint: `Count on in fives from ${m} minutes.`,
         hintFigure: clockFace(h, m, { size: 200, minutes: true }),
+        hintTry: true,
         explain: `${then.h}:${String(then.m).padStart(2, '0')}. ${m} minutes and ${add} more is ${then.m} minutes past ${then.h}.`,
       };
     }

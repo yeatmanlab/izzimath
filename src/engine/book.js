@@ -9,7 +9,8 @@ import { warmUpFor } from '../../content/routines.js';
 import { rng, deriveSeed } from '../lib/rng.js';
 import { readSeed, writeSeed, newSeed, base } from '../lib/url.js';
 import { getCharacter, fill } from '../../content/characters.js';
-import { LESSON_LINK, LESSON_STUCK } from '../../content/lessons.js';
+import { LESSON_LINK, LESSON_STUCK, HINT_TRY } from '../../content/lessons.js';
+import { mountTryClock } from '../lib/clockdial.js';
 import { currentCharacter } from '../lib/theme.js';
 import { avatar } from '../lib/sprites.js';
 import { celebrate } from './celebrate.js';
@@ -237,6 +238,26 @@ export function mountBook(activity, root) {
             <a href="${base()}/learn/${activity.lesson}/">${LESSON_LINK[activity.lesson]}</a></p>` : '';
       h.innerHTML = `<p class="fb hint"><span aria-hidden="true">◆</span><span>${p.hint}</span></p>${fig}${back}`;
       host.querySelector('[data-slot]').appendChild(h);
+      /* AND A CLOCK THEY CAN MOVE, where the item asks for one. The labelled
+         dial above closed half the gap — a stuck child could see that the 6
+         means thirty minutes — and nothing connected a hand position to the
+         digits being asked for. This is the same object the lesson hands over
+         on three of its steps, from src/lib/clockdial.js.
+
+         It SUPERSEDES the static figure rather than sitting beside it: two
+         dials in one box, one of them dead, is a worse hint than either. The
+         static one stays in the markup as the fallback for a browser that
+         cannot run this. */
+      if (p.hintTry) {
+        try {
+          const spot = document.createElement('div');
+          spot.className = 'hinttry';
+          spot.dataset.hinttry = '1';
+          h.querySelector('[data-hintfig]')?.remove();
+          h.insertBefore(spot, h.querySelector('.hintback'));
+          mountTryClock(spot, { h: 12, m: 0, say: HINT_TRY });
+        } catch { /* the static figure is still there */ }
+      }
     });
     foot.querySelector('[data-finish]')?.addEventListener('click', () => { finished = true; paint(); });
     /* This said "Show me and move on" and did only the moving on: the handler
