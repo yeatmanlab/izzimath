@@ -282,6 +282,18 @@ export function renderLesson(host, id) {
   if (clock) stage.appendChild(clock);
   const digital = isClock ? digitalStage() : null;
   if (digital) { digital.hidden = true; stage.appendChild(digital); }
+  /* THE GOAL GOES NEXT TO THE NUMBER IT HAS TO MATCH. For a clock that is the
+     digital face, which is where it was asked for and where it belongs — the
+     two numbers a child compares should be one glance apart. Every other stage
+     compares against its counter, so there it goes above the counter. One
+     element either way, placed rather than duplicated. */
+  if (!isClock) {
+    const g = document.createElement('p');
+    g.className = 'lsn-goal lsn-goal-read';
+    g.dataset.goal = '';
+    g.hidden = true;
+    host.querySelector('[data-read]').before(g);
+  }
   const bar = kind === 'bar' ? barStage() : null;
   if (bar) stage.appendChild(bar);
 
@@ -361,14 +373,38 @@ export function renderLesson(host, id) {
      silently skipping one would leave the lesson a caption short with nothing
      to show it. */
   const dialMins = (o) => ((o.h % 12) * 60) + (o.m || 0);
+
+  /* EVERY STAGE SWEEPS ALONG ONE NUMBER, and which number it is depends on the
+     kind: the clock walks minutes-since-the-first-step, the coin lesson walks
+     the count of pennies it is laying down. So the span comes from the kind and
+     a stop names a point in that kind's own units — a clock stop says
+     `{ h, m }` because that is how an author thinks about a clock, and a coin
+     stop says `{ at: 5 }` because that is how you think about five pennies.
+
+     The bar and array stages are deliberately absent. They animate one CSS
+     property in one continuous move — a shaded width, a rotation — and for the
+     fractions lesson the continuity IS the argument: the shaded part not moving
+     while the cuts multiply around it is the whole proof. Pausing that would
+     mean rebuilding it as a frame loop to make it less convincing, so
+     `scripts/check.mjs` fails a `stops` declared on either of them rather than
+     letting it sit there doing nothing. */
+  function spanAt(k) {
+    const st = lesson.steps[k];
+    if (kind === 'clock') return [elapsedAt(k - 1), elapsedAt(k)];
+    if (kind === 'coins') return [0, st.show.pennies || 0];
+    return [0, 0];
+  }
+
   function legsAt(k) {
     const st = lesson.steps[k];
     if (!st || k < 1) return [];
-    const from = elapsedAt(k - 1);
-    const to = elapsedAt(k);
+    const [from, to] = spanAt(k);
+    const place = (sp) => (kind === 'clock'
+      ? from + (((dialMins(sp) - (from % 720)) + 720) % 720)
+      : sp.at);
     const stops = (st.stops || [])
-      .map((sp) => ({ say: sp.say, dwell: sp.dwell, cum: from + (((dialMins(sp) - (from % 720)) + 720) % 720) }))
-      .filter((sp) => sp.cum > from && sp.cum < to)
+      .map((sp) => ({ say: sp.say, dwell: sp.dwell, cum: place(sp) }))
+      .filter((sp) => Number.isFinite(sp.cum) && sp.cum > from && sp.cum < to)
       .sort((a, b) => a.cum - b.cum);
     return [...stops, { cum: to, say: null }];
   }
@@ -492,6 +528,40 @@ export function renderLesson(host, id) {
       + `the clock says ${r.h12}:${String(r.m60).padStart(2, '0')}`;
   }
 
+  /* WALKED LEG BY LEG. With no stops declared this is one leg and behaves
+     exactly as a single sweep did. With stops it runs, holds a sentence up, and
+     carries on — which is the difference between an hour going by and a child
+     being told what happened while it did.
+
+     Shared by the clock and the coins rather than copied, because the two were
+     already sharing `runSweep` for the same reason: they are the same shape of
+     thing, a value walked from one number to another with a picture and a
+     readout drawn from it. */
+  function walkLegs(k, from, onFrame, onSettled, msFor) {
+    const legs = legsAt(k);
+    const holdEl = host.querySelector('[data-hold]');
+    const walk = (i, at0) => {
+      const leg = legs[i];
+      runSweep(at0, leg.cum, msFor(leg.cum - at0),
+        (c) => onFrame(c),
+        (c) => {
+          onSettled(onFrame(c));
+          const last = i === legs.length - 1;
+          if (last) { holdEl.hidden = true; return; }
+          holdEl.textContent = leg.say || '';
+          holdEl.hidden = !leg.say;
+          /* The pause reads its own line. This is the moment the feature is
+             for: the picture has stopped, there is one sentence on screen, and
+             a child who cannot read it is otherwise looking at a still
+             figure. */
+          if (leg.say && audioOn()) speak(leg.say, currentCharacter());
+          hold = setTimeout(() => { hold = null; walk(i + 1, leg.cum); },
+            leg.dwell ?? dwellFor(leg.say));
+        });
+    };
+    walk(0, from);
+  }
+
   /* One frame of the clock: both faces and the counter, all three from `c`. The
      reason they are in one function is that it is impossible to call one and
      forget another — which is how the digital face came to sit on the step's
@@ -524,30 +594,44 @@ export function renderLesson(host, id) {
 
   const tryGoal = () => lesson.steps[at]?.try || null;
 
+  /* THE TWO THINGS EVERY TRY STEP SHOWS, whatever the stage: what to make, and
+     whether you have made it. Shared so the four stages cannot drift into four
+     different ways of saying "yes, that's it".
+
+     `said` is what the goal looks like written down — a time, an amount, a
+     fraction, an array — because the goal has to be stated in the units the
+     child is working in. */
+  function showGoal(said) {
+    const goalEl = host.querySelector('[data-goal]');
+    if (!goalEl) return;
+    goalEl.textContent = `${LESSON_TRY.goal} ${said}`;
+    goalEl.hidden = false;
+  }
+
+  function showTry(hit, said, how) {
+    const box = host.querySelector('[data-try]');
+    if (box) {
+      box.hidden = false;
+      box.textContent = hit ? LESSON_TRY.got(said) : how;
+      box.classList.toggle('done', hit);
+    }
+    /* Said once, on the transition into being right. Repeating it on every
+       further nudge would talk over a child still playing. */
+    if (hit && !solved) {
+      solved = true;
+      if (audioOn()) speak(LESSON_TRY.got(said), currentCharacter());
+    }
+    if (!hit) solved = false;
+  }
+
   function paintTry() {
     const goal = tryGoal();
     if (!goal || !tryAt) return;
     pointHandsAt(tryAt.h, tryAt.m, 0);
     setDigits(tryAt.h, tryAt.m);
-    const goalEl = host.querySelector('[data-goal]');
-    if (goalEl) {
-      goalEl.textContent = `${LESSON_TRY.goal} ${timeText(goal.h, goal.m)}`;
-      goalEl.hidden = false;
-    }
-    const hit = tryAt.h === goal.h && tryAt.m === goal.m;
-    const box = host.querySelector('[data-try]');
-    if (box) {
-      box.hidden = false;
-      box.textContent = hit ? LESSON_TRY.got(timeText(goal.h, goal.m)) : LESSON_TRY.how;
-      box.classList.toggle('done', hit);
-    }
-    /* Said once, on the transition into being right. Repeating it on every
-       further nudge of the hands would talk over a child still playing. */
-    if (hit && !solved) {
-      solved = true;
-      if (audioOn()) speak(LESSON_TRY.got(timeText(goal.h, goal.m)), currentCharacter());
-    }
-    if (!hit) solved = false;
+    const said = timeText(goal.h, goal.m);
+    showGoal(said);
+    showTry(tryAt.h === goal.h && tryAt.m === goal.m, said, LESSON_TRY.how);
   }
 
   /* ONE HANDLER SET, INSTALLED ONCE, and it does nothing unless a try step is
@@ -619,32 +703,7 @@ export function renderLesson(host, id) {
          reader who switches away mid-sweep and comes back finds an empty
          counter under a still clock. */
       frameAt(from);
-      /* WALKED LEG BY LEG. With no stops declared this is one leg and behaves
-         exactly as the single sweep did. With stops it runs, holds a sentence
-         up, and carries on — which is the difference between an hour going by
-         and a child being told what happened while it did. */
-      const legs = legsAt(at);
-      const walk = (i, at0) => {
-        const leg = legs[i];
-        runSweep(at0, leg.cum, sweepMs(leg.cum - at0),
-          (c) => frameAt(c),
-          (c) => {
-            const r = frameAt(c);
-            sayRead(r);
-            const last = i === legs.length - 1;
-            if (last) { holdEl.hidden = true; return; }
-            holdEl.textContent = leg.say || '';
-            holdEl.hidden = !leg.say;
-            /* The pause reads its own line. This is the moment the feature is
-               for: the hands have stopped, there is one sentence on screen, and
-               a child who cannot read it is otherwise looking at a still
-               clock. */
-            if (leg.say && audioOn()) speak(leg.say, currentCharacter());
-            hold = setTimeout(() => { hold = null; walk(i + 1, leg.cum); },
-              leg.dwell ?? dwellFor(leg.say));
-          });
-      };
-      walk(0, from);
+      walkLegs(at, from, (c) => frameAt(c), (r) => sayRead(r), (ms) => sweepMs(ms));
     } else {
       /* No transition on the step straight after a try step. The hands are
          wherever the child put them, and the lesson's own angles accumulate, so
@@ -656,6 +715,112 @@ export function renderLesson(host, id) {
     }
     hour.classList.toggle('on', show.focus === 'hour' || show.focus === 'both');
     min.classList.toggle('on', show.focus === 'minute' || show.focus === 'both');
+  }
+
+  /* -------------------------------------------- YOUR TURN, WITH THE BAR
+     "Shade one half" — on a bar already cut into quarters, so the only way to
+     do it is to shade two of them. That is the lesson's own claim turned into a
+     task: the child cannot succeed by believing that more pieces means more,
+     and they cannot succeed by counting to one either.
+
+     Tap a piece to shade or unshade it. The pieces are plain rectangles laid
+     over the bar rather than a second drawing of it, so what is being tapped is
+     the figure the lesson has been using all along. */
+  let shaded = new Set();
+
+  function paintBarTry() {
+    const goal = tryGoal();
+    if (!goal) return;
+    const den = lesson.steps[at].show.den;
+    const seg = BAR_W / den;
+    bar.querySelector('.lsn-shade')?.setAttribute('opacity', '0');
+    /* Drawn as one rect per piece, in place, so a piece that is shaded is
+       exactly the piece that was tapped. */
+    let cells = '';
+    for (let k = 0; k < den; k++) {
+      cells += `<rect class="lsn-piece${shaded.has(k) ? ' on' : ''}" data-piece="${k}"
+        x="${(k * seg).toFixed(2)}" y="0" width="${seg.toFixed(2)}" height="${BAR_H}"/>`;
+    }
+    let layer = bar.querySelector('.lsn-pieces');
+    if (!layer) {
+      layer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      layer.setAttribute('class', 'lsn-pieces');
+      bar.querySelector('svg').appendChild(layer);
+    }
+    layer.innerHTML = cells;
+    const want = goal.num / goal.den;
+    const got = shaded.size / den;
+    paintCells([
+      { label: LESSON_COUNT.pieces, value: den },
+      { label: LESSON_COUNT.shaded, value: shaded.size },
+      { label: LESSON_COUNT.howMuch, value: fracWords(shaded.size, den) },
+    ]);
+    host.querySelector('[data-read]').hidden = false;
+    const said = fracWords(goal.num, goal.den);
+    showGoal(said);
+    showTry(Math.abs(got - want) < 1e-9, said, LESSON_TRY.howTap);
+  }
+
+  /* -------------------------------------------- YOUR TURN, WITH THE ARRAY
+     "Make 4 rows of 6." Drag on the array and it grows or shrinks: sideways
+     changes the row length, up and down changes the number of rows. One gesture
+     doing two things is a real risk with a six-year-old, so whichever axis the
+     finger has moved furthest along is the one that wins — a diagonal drag does
+     one thing at a time rather than both at once. */
+  let arrAt = null;
+  let dragFrom = null;
+
+  function paintArrayTry() {
+    const goal = tryGoal();
+    if (!goal || !arrAt) return;
+    paintArray({ ...arrAt, turn: 0 }, { sweep: false });
+    paintCells(arrayCells({ ...arrAt, turn: 0 }));
+    host.querySelector('[data-read]').hidden = false;
+    const said = `${goal.rows} ${LESSON_COUNT.rows} ${LESSON_TRY.of} ${goal.cols}`;
+    showGoal(said);
+    showTry(arrAt.rows === goal.rows && arrAt.cols === goal.cols, said, LESSON_TRY.howArr);
+  }
+
+  if (kind === 'array') {
+    /* The cell pitch the array is drawn at, so a finger moving one square's
+       width changes the array by one square. */
+    const PITCH = 30;
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    stage.addEventListener('pointerdown', (e) => {
+      if (!tryGoal() || !arrAt) return;
+      dragFrom = { x: e.clientX, y: e.clientY, rows: arrAt.rows, cols: arrAt.cols, axis: null };
+      e.preventDefault();
+    });
+    stage.addEventListener('pointermove', (e) => {
+      if (!dragFrom || !tryGoal() || !arrAt) return;
+      const dx = e.clientX - dragFrom.x, dy = e.clientY - dragFrom.y;
+      /* THE AXIS LOCKS ON THE FIRST REAL MOVEMENT. Deciding it per event meant
+         a wobbly finger flipped between changing rows and changing columns,
+         which reads as the array fighting back. */
+      if (!dragFrom.axis && Math.max(Math.abs(dx), Math.abs(dy)) > 8) {
+        dragFrom.axis = Math.abs(dx) >= Math.abs(dy) ? 'cols' : 'rows';
+      }
+      if (!dragFrom.axis) return;
+      const next = { ...arrAt };
+      if (dragFrom.axis === 'cols') next.cols = clamp(dragFrom.cols + Math.round(dx / PITCH), 1, 10);
+      else next.rows = clamp(dragFrom.rows + Math.round(dy / PITCH), 1, 10);
+      if (next.rows !== arrAt.rows || next.cols !== arrAt.cols) { arrAt = next; paintArrayTry(); }
+      e.preventDefault();
+    });
+    for (const d of ['pointerup', 'pointercancel']) {
+      stage.addEventListener(d, () => { dragFrom = null; });
+    }
+  }
+
+  if (kind === 'bar' && bar) {
+    bar.addEventListener('click', (e) => {
+      if (!tryGoal()) return;
+      const p = e.target.closest?.('[data-piece]');
+      if (!p) return;
+      const k = Number(p.dataset.piece);
+      if (shaded.has(k)) shaded.delete(k); else shaded.add(k);
+      paintBarTry();
+    });
   }
 
   /* THE COIN READOUT, and it is the money lesson's answer to the clock's
@@ -691,8 +856,11 @@ export function renderLesson(host, id) {
   function paintCoins(show, { sweep = false } = {}) {
     const total = coinsValue(show.coins);
     const read = host.querySelector('[data-read]');
+    const holdEl = host.querySelector('[data-hold]');
     stopSweep();
     read.hidden = !lesson.steps[at].count;
+    holdEl.hidden = true;
+    holdEl.textContent = '';
 
     /* The equivalence step: the pennies are shown BESIDE the coin they add up
        to, because that is the comparison, not a sum to be worked out. On a
@@ -718,13 +886,74 @@ export function renderLesson(host, id) {
       draw(1);                      // never a blank frame; see the note above
       paintCoinRead(1, show);
       // 260ms a penny, so five is brisk and ten is still watchable.
-      runSweep(0, show.pennies, Math.max(1200, show.pennies * 260),
-        (v) => { draw(Math.min(show.pennies, Math.floor(v) + 1)); paintCoinRead(v, show); },
-        (v) => { draw(show.pennies); sayCoinRead(paintCoinRead(v, show)); });
+      walkLegs(at, 0,
+        (v) => { draw(Math.min(show.pennies, Math.floor(v) + 1)); return paintCoinRead(v, show); },
+        (r) => sayCoinRead(r),
+        (n) => Math.max(1000, Math.abs(n) * 260));
     } else {
       draw(show.pennies || 0);
       if (!read.hidden) sayCoinRead(paintCoinRead(show.pennies || 0, show));
     }
+  }
+
+  /* ------------------------------------------------- YOUR TURN, WITH COINS
+     "Make 25 cents." A tray of the four coins to tap from, a pile of what has
+     been taken, and a running total against the goal.
+
+     The interesting part pedagogically is that there is more than one right
+     answer — a quarter, or two dimes and a nickel, or five nickels — and the
+     widget says yes to all of them, because the thing being learned is that
+     value is not the same as the number of coins. That is the same
+     misconception the lesson's sweep is about, from the other side.
+
+     Tap to add, tap a coin in the pile to put it back. No dragging: a tap is
+     the whole gesture a five-year-old needs, and a drag between two boxes on a
+     tablet is fiddly enough to become the lesson. */
+  let purse = [];
+
+  function coinsTotal() { return purse.reduce((n, k) => n + (COINS[k]?.value || 0), 0); }
+
+  function paintCoinTry() {
+    const goal = tryGoal();
+    if (!goal) return;
+    const total = coinsTotal();
+    const tray = ['quarter', 'dime', 'nickel', 'penny'];
+    stage.innerHTML = `
+      <div class="lsn-tray">
+        <p class="lsn-traylab">${LESSON_TRY.trayLab}</p>
+        <div class="lsn-trayrow">${tray.map((k) =>
+          `<button type="button" class="lsn-take" data-take="${k}"
+            aria-label="add a ${COINS[k].name}">${coin(k, { size: 62 })}</button>`).join('')}</div>
+      </div>
+      <div class="lsn-purse" data-purse>
+        ${purse.length
+          ? purse.map((k, i) => `<button type="button" class="lsn-drop" data-drop="${i}"
+              aria-label="put the ${COINS[k].name} back">${coin(k, { size: 54 })}</button>`).join('')
+          : `<p class="lsn-empty">${LESSON_TRY.empty}</p>`}
+      </div>`;
+    paintCells([
+      { label: LESSON_COUNT.coinsTaken, value: purse.length },
+      { label: LESSON_COUNT.worth, value: money(total) },
+    ]);
+    host.querySelector('[data-read]').hidden = false;
+    const said = money(goal.cents);
+    showGoal(said);
+    showTry(total === goal.cents, said, LESSON_TRY.howCoin);
+  }
+
+  /* Delegated, because the tray is rebuilt on every tap. */
+  if (kind === 'coins') {
+    stage.addEventListener('click', (e) => {
+      if (!tryGoal()) return;
+      const take = e.target.closest?.('[data-take]');
+      if (take) { purse = [...purse, take.dataset.take]; paintCoinTry(); return; }
+      const drop = e.target.closest?.('[data-drop]');
+      if (drop) {
+        const i = Number(drop.dataset.drop);
+        purse = purse.filter((_, k) => k !== i);
+        paintCoinTry();
+      }
+    });
   }
 
   /* Just math takes the frame off rather than showing a blank face — the same
@@ -833,6 +1062,30 @@ export function renderLesson(host, id) {
     return speak(stepWords(lesson.steps[at]), currentCharacter());
   }
 
+  /* ONE DISPATCHER. paint(), settle() and the replay button all drew the step
+     themselves, each with its own copy of the four-way branch — so a try step
+     reached through settle() came out as a picture rather than as something to
+     touch, and adding a stage meant remembering three places. */
+  function drawStep(step, { sweep = false } = {}) {
+    /* STOP WHATEVER WAS MOVING, first and unconditionally. The individual
+       painters each did this, but the try branch below goes straight to the
+       widget and skipped it — so arriving on "Make 10 cents" from the step that
+       lays ten pennies down left the previous sweep running, and it painted its
+       pennies over the coin tray a moment later. Found on the page. */
+    stopSweep();
+    if (step.try) {
+      solved = false;
+      if (kind === 'clock') { paintClock(step.show, { sweep: false }); return; }
+      if (kind === 'coins') { purse = []; paintCoinTry(); return; }
+      if (kind === 'bar') { shaded = new Set(); paintBar(step.show, { sweep: false }); paintBarTry(); return; }
+      if (kind === 'array') { arrAt = { rows: step.show.rows, cols: step.show.cols }; paintArrayTry(); return; }
+    }
+    if (kind === 'clock') paintClock(step.show, { sweep });
+    else if (kind === 'coins') paintCoins(step.show, { sweep });
+    else if (kind === 'bar') { paintBar(step.show, { sweep }); if (step.count) paintCells(barCells(step.show)); }
+    else if (kind === 'array') { paintArray(step.show, { sweep }); if (step.count) paintCells(arrayCells(step.show)); }
+  }
+
   function paint() {
     const step = lesson.steps[at];
     host.querySelector('[data-count]').textContent = `Step ${at + 1} of ${lesson.steps.length}`;
@@ -845,10 +1098,18 @@ export function renderLesson(host, id) {
     const sweep = !!step.sweep && dir > 0;
     const read = host.querySelector('[data-read]');
     read.hidden = !step.count;
-    if (kind === 'clock') paintClock(step.show, { sweep });
-    else if (kind === 'coins') paintCoins(step.show, { sweep });
-    else if (kind === 'bar') { paintBar(step.show, { sweep }); if (step.count) paintCells(barCells(step.show)); }
-    else if (kind === 'array') { paintArray(step.show, { sweep }); if (step.count) paintCells(arrayCells(step.show)); }
+    /* A try step's goal and feedback are cleared here for every OTHER step, so
+       a goal cannot be left hanging over a figure nobody is being asked to
+       touch. The stage's own paint puts them back when there is one. */
+    if (!step.try) {
+      const g = host.querySelector('[data-goal]');
+      if (g) { g.hidden = true; g.textContent = ''; }
+      const tb = host.querySelector('[data-try]');
+      if (tb) { tb.hidden = true; tb.textContent = ''; tb.classList.remove('done'); }
+      bar?.querySelector('.lsn-pieces')?.remove();
+      bar?.querySelector('.lsn-shade')?.setAttribute('opacity', '1');
+    }
+    drawStep(step, { sweep });
     host.querySelector('[data-back]').disabled = at === 0;
     /* Offered on every step that moves, including one reached by going Back —
        where the sweep deliberately did not run. That is the case a child is
@@ -881,10 +1142,7 @@ export function renderLesson(host, id) {
     /* Runs the step's own animation again from its start. `dir` is left alone:
        this is not a move through the lesson, and setting it would change what
        Back does next. */
-    if (kind === 'clock') paintClock(step.show, { sweep: true });
-    else if (kind === 'coins') paintCoins(step.show, { sweep: true });
-    else if (kind === 'bar') { paintBar(step.show, { sweep: true }); if (step.count) paintCells(barCells(step.show)); }
-    else if (kind === 'array') { paintArray(step.show, { sweep: true }); if (step.count) paintCells(arrayCells(step.show)); }
+    drawStep(step, { sweep: true });
   });
   host.querySelector('[data-back]').addEventListener('click', () => {
     /* Going back re-points the hands backwards, which is honest: the reader
@@ -910,11 +1168,7 @@ export function renderLesson(host, id) {
        animating too, settling it left one penny on the table. */
     settle() {
       stopSweep();
-      const st = lesson.steps[at];
-      if (kind === 'clock') paintClock(st.show, { sweep: false });
-      else if (kind === 'coins') paintCoins(st.show, { sweep: false });
-      else if (kind === 'bar') { paintBar(st.show, { sweep: false }); if (st.count) paintCells(barCells(st.show)); }
-      else if (kind === 'array') { paintArray(st.show, { sweep: false }); if (st.count) paintCells(arrayCells(st.show)); }
+      drawStep(lesson.steps[at], { sweep: false });
     },
     // For assertions: what a stage's counter would read for a given state.
     cells(show) {

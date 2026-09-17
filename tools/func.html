@@ -574,6 +574,50 @@ L.push('');
     ls('and the highlight does not resize them',
       shown.length === 2 && Math.abs(Math.max(...shown) / Math.min(...shown) - 1.184) < 0.03,
       'ratio ' + (Math.max(...shown) / Math.min(...shown)).toFixed(3) + ' (real 1.184)');
+
+    /* THE COIN SWEEP PAUSES TOO, and in its own units: a coin stop names a
+       point in the COUNT ("after the fifth penny"), not a time. The shared
+       walker is what makes that possible, so this is the check that the two
+       stages really are sharing it rather than the clock having grown a private
+       feature. */
+    const mBig = msteps.findIndex((st) => (st.stops || []).length > 0);
+    const mLegs = api2.legsAt(mBig);
+    ls('the coin sweep pauses to explain itself too', mLegs.length > 1, mLegs.length - 1 + ' stops');
+    ls('and its stops are counted in pennies, not minutes',
+      mLegs.every((l) => l.cum > 0 && l.cum <= msteps[mBig].show.pennies),
+      mLegs.map((l) => l.cum).join(' of ' + msteps[mBig].show.pennies + ', '));
+    ls('ending on the last penny', mLegs[mLegs.length - 1].cum === msteps[mBig].show.pennies
+      && !mLegs[mLegs.length - 1].say);
+
+    /* YOUR TURN, WITH COINS. The interesting property is that there is MORE
+       THAN ONE right answer — a dime, or two nickels, or ten pennies — because
+       the thing being learned is that a handful of coins and an amount of money
+       are different questions. A widget that only accepted the dime would be
+       teaching the opposite. */
+    const mTry = msteps.findIndex((st) => st.try);
+    api2.goto(mTry);
+    const took = (k) => host2.querySelector('[data-take="' + k + '"]')?.click();
+    const worth = () => (host2.querySelector('[data-read]')?.textContent || '').replace(/\s+/g, ' ');
+    const mDone = () => host2.querySelector('[data-try]')?.classList.contains('done');
+    ls('the coin step offers a tray to take from',
+      host2.querySelectorAll('[data-take]').length === 4,
+      host2.querySelectorAll('[data-take]').length + ' coins');
+    ls('and states the amount to make',
+      /\d/.test(host2.querySelector('[data-goal]')?.textContent || ''),
+      host2.querySelector('[data-goal]')?.textContent);
+    ls('nothing is taken to start with',
+      !host2.querySelector('[data-drop]') && !mDone());
+    took('nickel');
+    ls('tapping a coin takes it', !!host2.querySelector('[data-drop]'), worth());
+    ls('and a nickel alone is not ten cents', !mDone(), worth());
+    took('nickel');
+    ls('two nickels ARE ten cents', mDone(), worth());
+    host2.querySelector('[data-drop="0"]').click();
+    ls('and putting one back stops being right', !mDone(), worth());
+    /* The other route to the same answer, which is the whole point. */
+    host2.querySelector('[data-drop="0"]').click();
+    took('dime');
+    ls('one dime is ten cents as well', mDone(), worth());
     host2.remove();
 
     /* ----------------------------------------------- the fractions lesson
@@ -616,6 +660,47 @@ L.push('');
       const cells = api3.cells(fsteps[trap].show).map((c) => String(c.value));
       ls('and the counter says so in words', cells.some((v) => /eighth/.test(v)), cells.join(' | '));
     }
+
+    /* YOUR TURN, WITH THE BAR. The bar is cut into QUARTERS and the goal is one
+       half, so the only way through is to shade two pieces — the lesson's claim
+       turned into a task. A child who thinks one half means one piece cannot do
+       it, and neither can one who thinks more pieces means more. */
+    const fTry = fsteps.findIndex((st) => st.try);
+    api3.goto(fTry);
+    const piece = (k) => host3.querySelector('[data-piece="' + k + '"]')
+      ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const fWords = () => (host3.querySelector('[data-read]')?.textContent || '').replace(/\s+/g, ' ');
+    const fDone = () => host3.querySelector('[data-try]')?.classList.contains('done');
+    ls('the bar step offers its pieces to tap',
+      host3.querySelectorAll('[data-piece]').length === fsteps[fTry].show.den,
+      host3.querySelectorAll('[data-piece]').length + ' of ' + fsteps[fTry].show.den);
+    ls('and asks for an amount, not a number of pieces',
+      /half|quarter|eighth/.test(host3.querySelector('[data-goal]')?.textContent || ''),
+      host3.querySelector('[data-goal]')?.textContent);
+    piece(0);
+    ls('one quarter is not one half', !fDone(), fWords());
+    piece(1);
+    ls('two quarters ARE one half', fDone(), fWords());
+    piece(2);
+    ls('and three is not', !fDone(), fWords());
+    piece(2);
+    ls('untapping comes back to right', fDone(), fWords());
+    /* The SECOND try step asks for the same amount on eighths, which is the
+       lesson's whole argument: the same shaded length, a different name for the
+       pieces. Two pieces must NOT be enough there. */
+    const fTry2 = fsteps.findIndex((st, k) => k > fTry && st.try);
+    if (fTry2 > 0) {
+      api3.goto(fTry2);
+      piece(0); piece(1);
+      ls('two eighths is not one half', !fDone(), fWords());
+      piece(2); piece(3);
+      ls('but four eighths is', fDone(), fWords());
+    }
+    // and the pieces go away when the bar stops being something to touch
+    api3.goto(0); api3.settle();
+    ls('the bar goes back to being a picture',
+      host3.querySelectorAll('[data-piece]').length === 0
+      && host3.querySelector('[data-goal]')?.hidden === true);
     host3.remove();
 
     /* ------------------------------------------------- the arrays lesson
@@ -649,6 +734,55 @@ L.push('');
       sq1 + ' squares, same element: ' + (host4.querySelector('.lsn-array svg') === el1));
     ls('and it is an odd quarter turn, which is the only kind that transposes',
       asteps.filter((st) => st.sweep).every((st) => ((st.show.turn / 90) % 2) !== 0));
+
+    /* YOUR TURN, WITH THE ARRAY. Dragging sideways lengthens the row, up and
+       down adds rows, and the axis LOCKS on the first real movement — deciding
+       it per event meant a wobbly finger flipped between the two and the array
+       read as fighting back. */
+    const aTry = asteps.findIndex((st) => st.try);
+    api4.goto(aTry);
+    const aRead = () => (host4.querySelector('[data-read]')?.textContent || '').replace(/\s+/g, ' ');
+    const aDone = () => host4.querySelector('[data-try]')?.classList.contains('done');
+    const st4 = host4.querySelector('[data-stage]');
+    const drag = (dx, dy) => {
+      const r = st4.getBoundingClientRect();
+      const fire = (t, x, y) => st4.dispatchEvent(new PointerEvent(t,
+        { bubbles: true, cancelable: true, pointerId: 1, clientX: x, clientY: y }));
+      fire('pointerdown', r.left + 40, r.top + 40);
+      fire('pointermove', r.left + 40 + dx, r.top + 40 + dy);
+      fire('pointerup', r.left + 40 + dx, r.top + 40 + dy);
+    };
+    ls('the array step states the array to build',
+      /\d/.test(host4.querySelector('[data-goal]')?.textContent || ''),
+      host4.querySelector('[data-goal]')?.textContent);
+    ls('and starts somewhere else', !aDone(), aRead());
+    const want = asteps[aTry].try;
+    drag((want.cols - asteps[aTry].show.cols) * 30, 2);
+    ls('dragging sideways changes the row length', /in each row/.test(aRead()), aRead());
+    drag(2, (want.rows - asteps[aTry].show.rows) * 30);
+    ls('and up and down changes the number of rows', aDone(), aRead());
+    ls('the total is right because the array is right',
+      new RegExp('altogether' + (want.rows * want.cols)).test(aRead().replace(/\s/g, '')),
+      aRead());
+    /* THE SHAPE, NOT JUST THE TOTAL. 6 rows of 4 has the same 24 squares as 4
+       rows of 6 — that is the lesson's own point — so a widget checking the
+       total would accept the transpose and the step would stop asking for
+       anything. */
+    api4.goto(aTry);
+    drag((want.rows - asteps[aTry].show.cols) * 30, 2);
+    drag(2, (want.cols - asteps[aTry].show.rows) * 30);
+    ls('the transpose has the same total and is NOT the array asked for',
+      !aDone(), aRead() + ' vs goal ' + want.rows + 'x' + want.cols);
+
+    /* A diagonal drag must do ONE thing, not both. */
+    api4.goto(aTry);
+    const before4 = aRead();
+    drag(60, 58);
+    const after4 = aRead();
+    ls('a diagonal drag changes one axis, not both',
+      (after4.match(/rows(\d+)/)?.[1] === before4.match(/rows(\d+)/)?.[1])
+      !== (after4.match(/row(\d+)/)?.[1] === before4.match(/row(\d+)/)?.[1]),
+      before4 + ' -> ' + after4);
     host4.remove();
   } catch (e) {
     ls('harness itself', false, 'THREW ' + e.message);

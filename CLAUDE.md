@@ -188,23 +188,30 @@ already exist, and a routine only needs a `ui` the registry knows.
   whole hour go by and pressed on without meeting the carry: the hands moved and
   nothing said anything while they were moving. A stop must fall strictly inside
   its run or the player can only drop it silently, so `check.mjs` fails one that
-  does not. **And both faces come from one number**: the digital clock beside the
+  does not — and only the clock and the coins can pause at all, because they
+  walk a value through a frame loop; the bar and array animate one continuous
+  CSS move where the continuity is itself the argument. **And both faces come
+  from one number**: the digital clock beside the
   dial used to be drawn from the step's own time, so through the whole sweep it
   sat on the answer while the hands travelled to it — two faces of one clock
   disagreeing, on the step that introduces the digital clock.
 
-  **A lesson hands the figure over.** A step may declare `try` — a goal for the
-  child to reach by dragging the figure themselves, with the target shown right
-  above the readout it has to match. The clock's three are a nudge of the long
-  hand, an o'clock, and half past; dragging the long hand past the 12 carries
-  the hour, so the child finds the relationship with a finger instead of being
-  told it. The arithmetic of a drag is a pure exported function (`dragTo`),
-  because a pointer gesture is the one thing a test cannot fake convincingly.
-  Never scored and never a gate: getting it right says so and that is all, and
-  Next stays available, because a child who cannot manage the drag must not be
-  stuck in a lesson. `check.mjs` fails a goal that is already met on arrival,
-  one the five-minute snap cannot reach, a step that both animates and asks the
-  child to drive, and a step that hands the figure over without saying so.
+  **A lesson hands the figure over.** A step may declare `try` — a goal to reach
+  by moving the figure themselves, with what to make shown right beside the
+  number it has to match. All four stages have one: set the clock, build an
+  amount out of coins, shade part of the bar, build an array. Each is chosen so
+  the lesson's own claim is the only way through — the bar is cut into quarters
+  and asks for one half; the coin goal has several right answers, because a
+  handful of coins and an amount of money are different questions; the array
+  asks for a shape, since 6 rows of 4 has the same 24 squares; and dragging the
+  clock's long hand past the 12 carries the hour. The arithmetic of a drag is a
+  pure exported function (`dragTo`), because a pointer gesture is the one thing
+  a test cannot fake convincingly. Never scored and never a gate: getting it
+  right says so and that is all, and Next stays available, because a child who
+  cannot manage the drag must not be stuck in a lesson. `check.mjs` fails a goal
+  already met on arrival, one the five-minute snap cannot reach, a step that
+  both animates and asks the child to drive, and a step that hands the figure
+  over without saying so.
 
   **The words can be read out loud, and a friend's voice is data rather than a
   file.** `speech` in each character pack is a pitch, a rate and a list of

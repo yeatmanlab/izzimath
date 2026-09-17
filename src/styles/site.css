@@ -821,6 +821,33 @@ footer.foot a:hover { color: var(--txt) }
 .lsn-clock.can-grab .lsn-grab { pointer-events: stroke; cursor: grab }
 .lsn-clock.can-grab { touch-action: none }
 .lsn-clock.can-grab .lsn-hand { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--a1) 55%, transparent)) }
+/* The coin tray and the pile. A tap is the whole gesture — dragging between two
+   boxes on a tablet is fiddly enough to become the lesson. */
+.lsn-tray { display: grid; gap: 7px; justify-items: center }
+.lsn-traylab { font: 600 10.5px/1 var(--fdisp); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--txt3); margin: 0 }
+.lsn-trayrow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center }
+.lsn-take, .lsn-drop {
+  background: none; border: 1px solid transparent; border-radius: 50%;
+  padding: 3px; cursor: pointer; line-height: 0;
+}
+.lsn-take:hover, .lsn-drop:hover { border-color: var(--a2) }
+.lsn-purse {
+  display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; align-items: center;
+  min-height: 62px; min-width: 210px; padding: 7px 10px;
+  border: 1px dashed var(--line2); border-radius: 14px;
+}
+.lsn-empty { font-size: 13px; color: var(--txt3); margin: 0 }
+
+/* The bar's pieces, while the child is shading them. Transparent until tapped,
+   so what is being tapped is the figure the lesson has been using all along. */
+.lsn-pieces .lsn-piece { fill: transparent; cursor: pointer }
+.lsn-pieces .lsn-piece:hover { fill: rgba(255,255,255,.07) }
+.lsn-pieces .lsn-piece.on { fill: var(--a2) }
+/* The array, while it is being resized. */
+.lsn-array { touch-action: none }
+.lsn-goal-read { margin: 0 0 4px }
+
 /* How to move the hands, then whether it worked. */
 .lsn-try {
   margin: 2px 0 4px; min-height: 40px;

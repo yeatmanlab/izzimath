@@ -314,19 +314,41 @@ console.log('\n=== clocks and coins ===');
       const w = `lesson:${id}`;
       if (!st.sweep) { fail(w, `step ${k + 1} declares stops but does not animate, so nothing would ever pause`); return; }
       if (k === 0) { fail(w, 'step 1 declares stops, but the first step has nothing to sweep from'); return; }
-      const from = dialAt(l.steps[k - 1]);
-      const span = (((dialAt(st) - from) % 720) + 720) % 720;
+      /* EVERY STAGE SWEEPS ALONG ONE NUMBER and a stop names a point in that
+         stage's own units: a clock stop says `{ h, m }`, a coin stop says
+         `{ at: 5 }` for "after the fifth penny".
+
+         The bar and array stages animate one CSS property in one continuous
+         move, with no frame loop to pause — and for the fractions lesson the
+         continuity IS the argument, since the shaded part not moving while the
+         cuts multiply is the whole proof. So a stop there is not a thing that
+         could be built; it is a field that would sit in the content doing
+         nothing, which is why this is an error rather than a shrug. */
+      if (l.kind !== 'clock' && l.kind !== 'coins') {
+        fail(w, `step ${k + 1} declares stops, but a ${l.kind} lesson animates one continuous move with no loop to pause — the field would do nothing`);
+        return;
+      }
+      const clockish = l.kind === 'clock';
+      const from = clockish ? dialAt(l.steps[k - 1]) : 0;
+      const span = clockish
+        ? (((dialAt(st) - from) % 720) + 720) % 720
+        : (st.show.pennies || 0);
       let last = 0;
       for (const [j, sp] of st.stops.entries()) {
         stopCount++;
         if (!sp.say || sp.say.length < 12) fail(w, `step ${k + 1} stop ${j + 1} pauses the animation and says nothing worth reading`);
-        if (typeof sp.h !== 'number') { fail(w, `step ${k + 1} stop ${j + 1} does not say what time it stops at`); continue; }
-        const d = (((dialAt({ show: sp }) - from) % 720) + 720) % 720;
+        const where = clockish ? sp.h : sp.at;
+        if (typeof where !== 'number') {
+          fail(w, `step ${k + 1} stop ${j + 1} does not say where it stops — a ${l.kind} stop needs ${clockish ? 'an h and m' : 'an `at` count'}`);
+          continue;
+        }
+        const d = clockish ? (((dialAt({ show: sp }) - from) % 720) + 720) % 720 : sp.at;
         if (d <= 0 || d >= span) {
-          fail(w, `step ${k + 1} stop ${j + 1} is at ${sp.h}:${String(sp.m || 0).padStart(2, '0')}, which is not inside a run from ${
-            Math.floor(from / 60) || 12}:${String(from % 60).padStart(2, '0')} to ${st.show.h}:${String(st.show.m).padStart(2, '0')} — the player drops it`);
+          fail(w, `step ${k + 1} stop ${j + 1} is at ${clockish
+            ? `${sp.h}:${String(sp.m || 0).padStart(2, '0')}`
+            : `${sp.at} of ${span}`}, which is not inside the run — the player drops it`);
         } else if (d <= last) {
-          fail(w, `step ${k + 1} stop ${j + 1} comes before the one in front of it; the clock does not go backwards mid-run`);
+          fail(w, `step ${k + 1} stop ${j + 1} comes before the one in front of it; a run does not go backwards`);
         }
         last = d;
       }
@@ -617,6 +639,12 @@ console.log('\n=== character packs are complete ===');
     unit: ['one', 'many'],
   };
   const VOICE = ['correct', 'close', 'wrong', 'done'];
+  /* `speech` is what the friend sounds like when the site is read out loud —
+     see src/lib/speech.js. A pack without it falls back to the neutral voice,
+     silently, which is the half-finished-pack failure this section exists to
+     catch. Ranges rather than presence: a rate of 3 is unintelligible and a
+     pitch of 0 is not a voice. */
+  const SPEECH = { pitch: [0.6, 1.6], rate: [0.6, 1.2] };
   const themeSrc = fs.readFileSync(new URL('../src/lib/theme.js', import.meta.url), 'utf8');
   const celebSrc = fs.readFileSync(new URL('../src/engine/celebrate.js', import.meta.url), 'utf8');
   const valid = (themeSrc.match(/const VALID = \[([^\]]*)\]/) || [, ''])[1];
@@ -631,6 +659,18 @@ console.log('\n=== character packs are complete ===');
     for (const [f, keys] of Object.entries(SHAPES)) {
       if (!ch[f]) continue;
       for (const k of keys) if (!ch[f][k]) fail(`pack:${id}`, `${f}.${k} is missing`);
+    }
+    if (!ch.speech) fail(`pack:${id}`, 'no speech — the read-aloud would fall back to the neutral voice with no error anywhere');
+    else {
+      for (const [k, [lo, hi]] of Object.entries(SPEECH)) {
+        const v = ch.speech[k];
+        if (typeof v !== 'number' || v < lo || v > hi) {
+          fail(`pack:${id}`, `speech.${k} is ${v}; it has to be a number between ${lo} and ${hi} to be a voice a child can follow`);
+        }
+      }
+      if (!Array.isArray(ch.speech.prefer) || !ch.speech.prefer.length) {
+        fail(`pack:${id}`, 'speech.prefer is empty, so every device with a choice of voices gives this character the default one');
+      }
     }
     // book.js and game.js index these unguarded, so empty is a crash not a gap
     for (const v of VOICE) {

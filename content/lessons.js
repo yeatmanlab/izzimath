@@ -68,6 +68,33 @@
  * an hour went by in 1.35 seconds, long enough to see that something moved and
  * not long enough to see WHICH hand moved how far. It is 140ms now.
  *
+ * Only the clock and the coins can pause: they walk a value through a frame
+ * loop, so there is something to stop. The bar and the array animate one CSS
+ * property in one continuous move, and for the fractions lesson the continuity
+ * IS the argument — the shaded part not moving while the cuts multiply is the
+ * whole proof. So `scripts/check.mjs` fails a `stops` declared on either of
+ * them rather than letting the field sit there doing nothing.
+ *
+ * AND THEN THE CHILD HAS A GO
+ * A step may declare `try` — a goal to reach by moving the figure themselves,
+ * with what to make shown right beside the number it has to match. Every stage
+ * has one: set the clock, build an amount out of coins, shade part of the bar,
+ * build an array. The goal is stated in that stage's own units, because the
+ * child is working in them.
+ *
+ * Each is chosen so the lesson's own claim is the only way through. The bar is
+ * cut into quarters and asks for one half, so a child who thinks one half means
+ * one piece cannot do it. The coin goal has SEVERAL right answers — a dime, two
+ * nickels, ten pennies — because the thing being learned is that a handful of
+ * coins and an amount of money are different questions. The array asks for a
+ * shape rather than a total, since 6 rows of 4 has the same 24 squares. And
+ * dragging the clock's long hand past the 12 carries the hour, which is the
+ * relationship the whole lesson is about, found with a finger.
+ *
+ * Never scored, never a gate. Getting it right says so and that is all; Next
+ * stays available throughout, because a child who cannot manage the drag must
+ * not be stuck in a lesson.
+ *
  * MOVEMENT IS AN ENHANCEMENT, NEVER THE CONTENT
  * Every step reads correctly as a still. `prefers-reduced-motion` turns the
  * transitions off and the lesson becomes a step-through of the same captions
@@ -359,6 +386,18 @@ export const LESSONS = {
         aside: 'One half, two quarters, four eighths. The shading stops on the same line every time.',
       },
       {
+        /* YOUR TURN, and the bar is already cut into QUARTERS — so the only way
+           to shade one half is to shade two of them. The lesson's claim turned
+           into a task: a child who believes more pieces means more cannot do
+           it, and neither can one who thinks "one half" means shade one piece. */
+        show: { den: 4, num: 0 },
+        try: { num: 1, den: 2 },
+        head: 'Your turn. Shade one half.',
+        aside: 'The bar is in quarters. How many quarters make a half?',
+        say: 'Tap the pieces to shade them. The bar is cut into quarters this time, so you will '
+          + 'need more than one piece — keep going until the counter says one half.',
+      },
+      {
         show: { den: 8, num: 4 },
         count: true,
         head: 'So those are three names for one amount.',
@@ -383,6 +422,19 @@ export const LESSONS = {
           + 'Eight is a bigger number than two, but one eighth is a smaller piece than one half \u2014 '
           + 'because cutting the bar into more pieces makes every piece thinner.',
         aside: 'A bigger bottom number means smaller pieces, not more of them.',
+      },
+      {
+        /* THE SAME GOAL, ON EIGHTHS. Half of a bar in eighths is four pieces
+           rather than two, and the amount shaded is identical — which is the
+           lesson's whole argument, asked for rather than shown. A child who did
+           the quarters one and reaches for two pieces here will see the counter
+           say one quarter and have to think again. */
+        show: { den: 8, num: 0 },
+        try: { num: 1, den: 2 },
+        head: 'Your turn again. Shade one half of this one.',
+        aside: 'Eighths this time. It will take more pieces for the same amount.',
+        say: 'Same job, but the bar is cut into eighths now. Shade one half of it. You will need '
+          + 'more pieces than last time, and the shaded part will come out exactly the same size.',
       },
     ],
     close: 'Double the top and the bottom together and the amount stays the same \u2014 one half, two '
@@ -446,6 +498,16 @@ export const LESSONS = {
         aside: 'Two facts for the price of one.',
       },
       {
+        /* YOUR TURN. Building 4 rows of 6 means finding 24 a second way, by
+           hand, right after watching 3 rows of 8 turn into 8 rows of 3. */
+        show: { rows: 2, cols: 3, turn: 0 },
+        try: { rows: 4, cols: 6 },
+        head: 'Your turn. Make 4 rows of 6.',
+        aside: 'Drag sideways for a longer row, up and down for more rows.',
+        say: 'Drag across the squares to change the array. Make it 4 rows with 6 in each row, and '
+          + 'watch what the total does on the way.',
+      },
+      {
         show: { rows: 4, cols: 7, turn: 0 },
         count: true,
         head: 'It is not a trick of that one array.',
@@ -469,6 +531,17 @@ export const LESSONS = {
         say: 'Every fact comes with a twin. Learn 4 \u00d7 7 = 28 and you have been given 7 \u00d7 4 = 28 '
           + 'for nothing, and that is true of every pair in the whole times table.',
         aside: 'I learn the easier one of each pair and turn it round for the other.',
+      },
+      {
+        /* AND NOW ITS TURN, by hand. 6 rows of 4 is the array they just built
+           stood on its end, and building it deliberately is a different act
+           from watching one rotate. The total does not move either way. */
+        show: { rows: 2, cols: 2, turn: 0 },
+        try: { rows: 6, cols: 4 },
+        head: 'Your turn. Now make 6 rows of 4.',
+        aside: 'Same 24 squares, standing up instead of lying down.',
+        say: 'Build the turn of the one you just made: 6 rows with 4 in each. The total will be '
+          + 'the same 24, because turning an array never adds or takes away a square.',
       },
     ],
     close: 'Turning an array cannot add a square or lose one, so 3 \u00d7 8 and 8 \u00d7 3 have to be '
@@ -499,8 +572,14 @@ export const LESSONS = {
           + 'start from.',
       },
       {
+        /* A STOP PART WAY, because five pennies arriving in under two seconds
+           is a thing that happened rather than a thing that was counted. A coin
+           stop names a point in the count — `at: 3` is after the third penny. */
         show: { coins: ['nickel'], focus: 'nickel', pennies: 5 },
         sweep: true, count: true,
+        stops: [
+          { at: 3, say: 'Three pennies so far. That is 3 cents — not a nickel yet.' },
+        ],
         head: 'A nickel is 5 cents.',
         aside: 'A nickel is five pennies squashed into one.',
         say: 'Five pennies are worth the same as one nickel. Count them: 1, 2, 3, 4, 5.',
@@ -508,9 +587,30 @@ export const LESSONS = {
       {
         show: { coins: ['dime'], focus: 'dime', pennies: 10 },
         sweep: true, count: true,
+        /* TWO STOPS, and the first is the one that teaches: at five pennies the
+           pile is worth a nickel and the dime is still only half paid for. That
+           is the equivalence the whole lesson is about, caught halfway. */
+        stops: [
+          { at: 5, say: 'Five pennies. That is a nickel’s worth — and only HALF of the dime.' },
+          { at: 8, say: 'Eight. Nearly there, and still smaller than the dime.' },
+        ],
+        
         head: 'A dime is 10 cents.',
         aside: 'Ten pennies, one dime. The same swap as ten ones for a ten.',
         say: 'Ten pennies are worth the same as one dime.',
+      },
+      {
+        /* YOUR TURN, and the first one is deliberately the easy sort: there is
+           more than one right answer. A dime, or two nickels, or ten pennies —
+           the widget says yes to all of them, because the thing being learned
+           is that a handful of coins and an amount of money are different
+           questions. */
+        show: { coins: ['dime'], focus: null, pennies: 0 },
+        try: { cents: 10 },
+        head: 'Your turn. Make 10 cents.',
+        aside: 'More than one way to do this one. Any of them counts.',
+        say: 'Tap coins to take them. You can do it with one dime, or two nickels, or ten '
+          + 'pennies — they are all 10 cents, and that is the point.',
       },
       {
         show: { coins: ['nickel', 'dime'], focus: 'dime' },
@@ -524,6 +624,17 @@ export const LESSONS = {
         head: 'A quarter is 25 cents.',
         aside: 'This is the only coin whose size tells the truth.',
         say: 'It is the biggest of the four, and it is worth the most. This one does match its size.',
+      },
+      {
+        /* THE HARDER ONE, after the quarter. 25 cents needs either the quarter
+           or a real count, and the running total makes the difference visible
+           while they build it. */
+        show: { coins: ['quarter'], focus: null, pennies: 0 },
+        try: { cents: 25 },
+        head: 'Your turn. Make 25 cents.',
+        aside: 'I go biggest first. One quarter and I am done.',
+        say: 'Tap coins until the total says 25 cents. One quarter does it in one go — but two '
+          + 'dimes and a nickel is 25 cents too. Watch the total as you tap.',
       },
       {
         show: { coins: ['quarter', 'dime', 'nickel', 'penny'], focus: null, running: true },
@@ -542,6 +653,10 @@ export const LESSONS = {
    they are copy, and because the player should not have to know that the thing
    being counted is time. */
 export const LESSON_COUNT = {
+  /* The two the coin widget counts. `worth` rather than "total" on purpose: the
+     whole point of the step is that four coins can be worth less than one. */
+  coinsTaken: 'coins taken',
+  worth: 'worth',
   minutes: 'minutes gone by',
   hours: 'whole hours gone by',
   // The cell label is a column heading and stays plural whatever the number.
@@ -655,11 +770,15 @@ export const LESSON_CALL = {
 export const LESSON_TRY = {
   goal: 'Make it say',
   how: 'Put your finger on a hand and slide it round the clock.',
+  howCoin: 'Tap a coin to take one. Tap it again in the row below to put it back.',
+  trayLab: 'Tap a coin to take it',
+  empty: 'Nothing taken yet.',
   got: (t) => `Yes — that is ${t}.`,
   /* The bar and array lessons move one thing rather than two, so they get
      their own nudge; the clock's mentions hands it does not have. */
   howTap: 'Tap the pieces to shade them.',
-  howArr: 'Drag the edge to change the array.',
+  howArr: 'Drag across the squares to change the array — sideways for a longer row, up and down for more rows.',
+  of: 'of',
 };
 
 export const LESSON_INDEX = {

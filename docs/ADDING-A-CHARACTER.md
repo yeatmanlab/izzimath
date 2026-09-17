@@ -12,7 +12,7 @@ to "Just math". Neither looks like a bug; both look like nothing happening.
 
 Most of that is now caught. `scripts/check.mjs` has a **`=== character packs are
 complete ===`** section that reads every entry in `characterList` and fails on a
-missing field, an empty voice array, an absent sprite, an absent `theme.js`
+missing field, an empty voice array, a missing `speech`, an absent sprite, an absent `theme.js`
 entry, an absent `celebrate.js` motif, or a pack that exists but is not in
 `characterList`. Run `npm run verify` first and let it tell you what is left —
 but read this anyway for the parts a checker cannot judge.
@@ -80,6 +80,15 @@ The pack, plus the id in **`characterList`** — which is what renders the picke
 so a pack missing from it is invisible. Required fields are enforced; copy an
 existing pack's shape. `printAccent` must be a hex and wants to be dark, because
 it is ink on white paper.
+
+**Two kinds of voice, and they are different fields.** `voice` is what the
+friend SAYS — the reaction lines a book plays back. `speech` is what the friend
+SOUNDS LIKE when the site is read out loud: `{ pitch, rate, prefer: [...] }`,
+holding no audio at all. Pitch and rate are what actually distinguish the
+friends, because they work on every device; `prefer` is a list of system voice
+names and only pays off where the device has several installed. Pick a pitch and
+rate that match the character the copy already has — Ash is slow and low, Georgie
+quick and high — and check it against the others rather than in isolation.
 
 ### 2. `src/styles/site.css`
 - `html[data-ch="<id>"] { --a1 … --ok; --gA; --gB; --grid1; --grid2 }`. Every hex
