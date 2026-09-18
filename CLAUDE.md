@@ -78,6 +78,18 @@ thing, restore. If the bug only appears under some condition — a narrow viewpo
 a particular character, private browsing — force that condition inside the
 harness rather than hoping the default reproduces it.
 
+**A real mouse is a stream of samples; a synthetic drag is one jump.** That
+difference hides a whole class of bug. The clock's long hand carried the hour by
+watching for the angle to cross zero, which cannot tell a pointer drifting a
+hair LEFT of the vertical — 0 degrees to 359.1 — from a full lap backwards, so
+dragging from twelve o'clock came out an hour behind. It is tracked as TRAVEL
+now: minutes since twelve, moved by the shortest arc between consecutive
+samples, so a wobble nets to nothing and a real lap carries exactly once. When
+simulating a drag, emit the samples along the path — and make the assertion one
+a SYMMETRIC gesture cannot satisfy, because a wobble out and back nets to zero
+under the broken code too. The discriminating test is a drift that does not
+return.
+
 **Dispatching an event at an element never tests whether a finger could reach
 it.** `el.dispatchEvent(new PointerEvent(...))` skips hit-testing entirely, so
 an assertion built that way passes on a target that is the wrong size, buried
@@ -323,7 +335,14 @@ already exist, and a routine only needs a `ui` the registry knows.
   two angles, one loop, because the bug was two of them being left behind while
   the hands travelled. The hour hand owns the inner half of the dial and the
   minute the outer, so neither is buried under the other when they point the
-  same way. It is FREE PLAY: no goal and no verdict,
+  same way — with **butt caps, not round**, because a round cap extends a line by
+  half its stroke width past each endpoint and left the two overlapping by nine
+  units at the join, where the minute target won. **And nothing else on the dial
+  takes the pointer**: the numerals sit at radius 31, so the "12" was squarely
+  on the minute hand's grab zone and won the hit test. One controller
+  (`makeDrag`) holds the travel and the pivot lift for both callers, because the
+  logic that was wrong lived in two copies of a handler and the second copy is
+  always the one that keeps a bug. It is FREE PLAY: no goal and no verdict,
   because the question on the page already has an answer and a widget with its
   own target would be a second question asked of a child who just said they were
   stuck. It starts at 12:00 rather than at the question's time, so the first
