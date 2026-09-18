@@ -212,9 +212,8 @@ const areaAndPerimeter = {
 /* ------------------------------------------------------------ GAME: fact family forge */
 const factFamilyForge = {
   id: 'fact-family-forge', title: 'Fact Family Forge', kind: 'game', grade: '3', strand: S[0],
-  lesson: 'balance',
   glyph: '⟷',
-  lesson: 'arrays',
+  lesson: 'division',
   skill: 'Linking multiplication and division as the same fact seen two ways.',
   goal: 'One number is missing from the fact. Work out which one it is.',
   adaptive: {},   // graded item space — see docs/next/04-adaptive-and-spacing.md
@@ -577,6 +576,7 @@ const timeAndData = {
    read one before you invert one, and only then judge somebody else's. */
 const drawTheStory = {
   id: 'draw-the-story', title: 'Draw the Story', kind: 'book', grade: '3', strand: S[5],
+  lesson: 'division',
   glyph: '▤',
   skill: 'Drawing and reading a tape diagram for equal-groups and sharing stories.',
   trick: 'One box for each group. Write the group size inside every box. The brace underneath holds the total.',

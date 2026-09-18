@@ -776,6 +776,107 @@ L.push('');
     ls('one dime is ten cents as well', mDone(), worth());
     host2.remove();
 
+    /* ------------------------------------------- the division lesson
+       ITS CLAIM IS THAT ONE SUM ANSWERS TWO QUESTIONS, so what gets asserted is
+       that the same twelve counters land differently in the two modes and that
+       the readout names the right number each time. The arithmetic is pure, so
+       the whole deal can be walked without a frame.
+
+       Sharing goes ROUND the plates one at a time — which is what makes the
+       group size unknown until the last counter. Grouping FILLS one before
+       starting the next — which is what makes the count unknown. If either lost
+       that, the animation would stop being the argument. */
+    const shareShow = { total: 12, plates: 3, mode: 'share' };
+    const groupShow = { total: 12, per: 3, mode: 'group' };
+    ls('sharing deals round the plates one at a time',
+      LB.shareOut(shareShow, 1).piles.join('') === '100'
+      && LB.shareOut(shareShow, 2).piles.join('') === '110'
+      && LB.shareOut(shareShow, 4).piles.join('') === '211',
+      '1 -> ' + LB.shareOut(shareShow, 1).piles.join(',') + ', 4 -> ' + LB.shareOut(shareShow, 4).piles.join(','));
+    ls('grouping fills one before starting another',
+      LB.shareOut(groupShow, 2).piles.join(',') === '2'
+      && LB.shareOut(groupShow, 4).piles.join(',') === '3,1',
+      '2 -> ' + LB.shareOut(groupShow, 2).piles.join(',') + ', 4 -> ' + LB.shareOut(groupShow, 4).piles.join(','));
+    ls('the same twelve come out four each, and four groups',
+      LB.shareOut(shareShow, 12).each === 4 && LB.shareOut(groupShow, 12).full === 4,
+      'each ' + LB.shareOut(shareShow, 12).each + ', groups ' + LB.shareOut(groupShow, 12).full);
+    /* AND IT TELLS THE TRUTH ABOUT A REMAINDER rather than hiding it, because
+       the stepper can reach a number that does not divide. */
+    ls('a share that does not divide says what is left over',
+      LB.shareOut({ total: 12, plates: 5, mode: 'share' }, 12).over === 2,
+      '12 between 5 leaves ' + LB.shareOut({ total: 12, plates: 5, mode: 'share' }, 12).over);
+    ls('and no counter is ever lost or invented',
+      [...Array(13).keys()].every((n) =>
+        LB.shareOut(shareShow, n).piles.reduce((a, b) => a + b, 0) === n
+        && LB.shareOut(groupShow, n).piles.reduce((a, b) => a + b, 0) === n),
+      'every count from 0 to 12, both ways');
+
+    const hostD = document.createElement('div');
+    document.body.appendChild(hostD);
+    const apiD = LB.renderLesson(hostD, 'division');
+    const dsteps = LESSONS.division.steps;
+    const onTable = () => [...hostD.querySelectorAll('.lsn-plate')]
+      .map((p) => p.querySelectorAll('.lsn-cnt').length);
+    const inPool = () => hostD.querySelectorAll('.lsn-pool .lsn-cnt').length;
+    const dRead = () => (hostD.querySelector('[data-read]')?.textContent || '').replace(/\s+/g, '');
+    /* THE OPENING STEP SHOWS AN UNDEALT PILE. It drew the finished arrangement
+       under a caption reading "the counters are all still in the pile" — the
+       picture and the readout agreed with each other and both contradicted the
+       words. Nothing but looking at it would have caught that, so it is pinned
+       here now. */
+    apiD.goto(0); apiD.settle();
+    ls('the lesson opens with every counter still in the pile',
+      onTable().every((n) => n === 0) && inPool() === dsteps[0].show.total,
+      'plates ' + onTable().join(',') + ', pool ' + inPool());
+    /* A DEAL AND ITS READOUT COME FROM ONE STATE, at every count — the rule
+       every stage here keeps. */
+    let apart = 0;
+    for (const [k, st] of dsteps.entries()) {
+      if (st.try || st.sweep) continue;
+      apiD.goto(k); apiD.settle();
+      const want = LB.shareOut(st.show, st.show.dealt ?? st.show.total);
+      if (onTable().join(',') !== want.piles.join(',')) apart++;
+    }
+    ls('every still step draws the arrangement its own numbers describe', apart === 0,
+      apart + ' steps drawing something else');
+    /* YOUR TURN. The stepper changes the number the goal does NOT name, so
+       neither task can be done by reading the control. */
+    const dTry = dsteps.findIndex((st) => st.try);
+    apiD.goto(dTry);
+    const dDone = () => hostD.querySelector('[data-try]')?.classList.contains('done');
+    const bump = (d) => hostD.querySelector('[data-share="' + d + '"]')?.click();
+    ls('the share step offers a stepper', hostD.querySelectorAll('[data-share]').length === 2);
+    ls('and asks for the number it does NOT control',
+      /in each plate/.test(hostD.querySelector('[data-goal]')?.textContent || ''),
+      hostD.querySelector('[data-goal]')?.textContent);
+    ls('it does not start solved', !dDone(), dRead());
+    bump(-1);
+    ls('fewer plates puts more on each one', dDone() && onTable().join(',') === '6,6',
+      onTable().join(',') + ' — ' + dRead());
+    bump(1); bump(1);
+    ls('and four plates is three each, not the goal',
+      !dDone() && onTable().join(',') === '3,3,3,3', onTable().join(','));
+    /* A count the total does not divide by: the remainder shows and the goal is
+       not met. Hiding it would teach that division always comes out even. */
+    bump(1);
+    ls('five plates leaves a remainder and is not accepted',
+      !dDone() && /leftover2/.test(dRead()), dRead());
+    // and the grouping try asks for the other number entirely
+    const dTry2 = dsteps.findIndex((st, k) => k > dTry && st.try);
+    apiD.goto(dTry2);
+    ls('the grouping step asks for a number of groups',
+      /groups/.test(hostD.querySelector('[data-goal]')?.textContent || '')
+      && !/each/.test(hostD.querySelector('[data-goal]')?.textContent || ''),
+      hostD.querySelector('[data-goal]')?.textContent);
+    ls('and it does not start solved either', !dDone(), dRead());
+    bump(-1);
+    ls('groups of two make six of them', dDone() && onTable().length === 6,
+      onTable().length + ' groups — ' + dRead());
+    apiD.goto(0); apiD.settle();
+    ls('the stepper goes away off the try step',
+      hostD.querySelectorAll('[data-share]').length === 0);
+    hostD.remove();
+
     /* ---------------------------------------------- the balance lesson
        ITS CLAIM IS THAT THE EQUALS SIGN MEANS "THE SAME AS", and the beam is
        the argument: it goes level exactly when the two sides match and tips the

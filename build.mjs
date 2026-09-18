@@ -731,6 +731,12 @@ function lessonFigure(id) {
   if (l.kind === 'coins') return `<span class="lsncoins">${c.coins.map((k) => coin(k, { size: 44 })).join('')}</span>`;
   if (l.kind === 'bar') return `<span class="lsncardbar">${fractionBar(c.num, c.den, { width: 210, height: 38 })}</span>`;
   if (l.kind === 'array') return `<span class="lsncardarr">${array2d(c.rows, c.cols, { cell: 11, gap: 2 })}</span>`;
+  /* Three plates of four, which is the lesson's first half in one picture. */
+  if (l.kind === 'share') {
+    const per = Math.floor(c.total / c.plates);
+    return `<span class="lsncardsh">${Array.from({ length: c.plates }, () =>
+      `<span class="lsncardpl">${'<i></i>'.repeat(per)}</span>`).join('')}</span>`;
+  }
   /* The card is the lesson's punchline in one line: two sides that look
      different and are the same. */
   if (l.kind === 'scale') return `<span class="lsncardsc">${c.left.join(' + ')} <b>=</b> ${c.right.join(' + ')}</span>`;

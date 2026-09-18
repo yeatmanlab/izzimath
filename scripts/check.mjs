@@ -359,7 +359,7 @@ console.log('\n=== clocks and coins ===');
          independently of content/lessons.js on purpose — see the note on
          `lessonLegs` there. The line carries on from where it was; the coins
          lay out n pennies from nothing every time. */
-      const PAUSABLE = { clock: 1, coins: 1, line: 1 };
+      const PAUSABLE = { clock: 1, coins: 1, line: 1, share: 1 };
       if (!PAUSABLE[l.kind]) {
         fail(w, `step ${k + 1} declares stops, but a ${l.kind} lesson animates one continuous move with no loop to pause — the field would do nothing`);
         return;
@@ -370,6 +370,7 @@ console.log('\n=== clocks and coins ===');
       const span = clockish
         ? (((dialAt(st) - from) % 720) + 720) % 720
         : l.kind === 'line' ? ((st.show.at || 0) - from)
+        : l.kind === 'share' ? (st.show.total || 0)
         : (st.show.pennies || 0);
       let last = 0;
       for (const [j, sp] of st.stops.entries()) {
@@ -395,6 +396,25 @@ console.log('\n=== clocks and coins ===');
     });
   }
 
+  /* A DEAL STARTS FROM AN EMPTY TABLE, so the step before it must not be
+     showing a finished one — the picture would jump backwards on Next, from
+     three plates of four to an untouched pile, with nothing saying why.
+
+     Found by looking at the page: the opening step drew the finished
+     arrangement under a caption reading "the counters are all still in the
+     pile". `show.dealt` is how a still step says otherwise. */
+  for (const [id, l] of Object.entries(LESSONS)) {
+    if (l.kind !== 'share') continue;
+    (l.steps || []).forEach((st, k) => {
+      if (!st.sweep || k === 0) return;
+      const before = l.steps[k - 1].show;
+      if ((before.dealt ?? before.total ?? 0) !== 0) {
+        fail(`lesson:${id}`, `step ${k + 1} deals from an empty table, but step ${k} is showing ${
+          before.dealt ?? before.total} counters already dealt — the picture jumps backwards on Next`);
+      }
+    });
+  }
+
   /* YOUR TURN — a step that hands the figure to the child.
 
      `try` states what to make; `show` states where it starts. Three ways to get
@@ -411,6 +431,28 @@ console.log('\n=== clocks and coins ===');
       tries++;
       const w = `lesson:${id}`;
       if (st.sweep) fail(w, `step ${k + 1} both animates and asks the child to set it; the sweep would move the figure out from under their finger`);
+      /* NOTHING TO DO IS NOT A TASK, whatever the stage. The clock rule below
+         has caught this once; the share lesson's closing step shipped past this
+         loop showing six groups of two under a goal of six groups, already
+         solved before the child touched it.
+
+         Re-derived here rather than importing shareOut, for the same reason the
+         stop arithmetic is: a checker that asks the content to agree with
+         itself proves only that one function is self-consistent. */
+      if (l.kind === 'share') {
+        const total = st.show.total ?? 0;
+        const grouping = st.show.mode === 'group';
+        const n = grouping ? (st.show.per ?? 1) : (st.show.plates ?? 1);
+        const at = { over: total % n, each: Math.floor(total / n), full: Math.floor(total / n) };
+        const met = at.over === 0 && (grouping ? at.full === st.try.groups : at.each === st.try.each);
+        if (met) {
+          fail(w, `step ${k + 1} starts on its own answer — ${total} ${
+            grouping ? `in groups of ${n}` : `between ${n} plates`} already meets the goal, so there is nothing to do`);
+        }
+        if (grouping ? st.try.groups == null : st.try.each == null) {
+          fail(w, `step ${k + 1} is ${grouping ? 'grouping' : 'sharing'} but its goal names the wrong number`);
+        }
+      }
       if (l.kind === 'clock') {
         const g = st.try;
         if (!(g.h >= 1 && g.h <= 12)) fail(w, `step ${k + 1} asks for hour ${g.h}, which is not on a clock`);
@@ -2676,6 +2718,50 @@ console.log('\n=== badge legibility ===');
     }
   }
   console.log(`  ${n} character x category pairs · worst ${worst.r.toFixed(2)}:1 (${worst.where})`);
+}
+
+/* --------------------------------------------- no field is declared twice
+   A DUPLICATE KEY IN AN OBJECT LITERAL IS SILENT. The later one wins, the
+   earlier one vanishes, and nothing anywhere says so — not the build, not the
+   checkers, not the browser.
+
+   It happened here: a `lesson: 'balance'` was inserted at the top of
+   `fact-family-forge`, which already carried `lesson: 'arrays'` further down.
+   The activity kept pointing at the arrays lesson and the commit message said
+   otherwise. Every field an activity has is load-bearing, so this reads the
+   SOURCE — the imported object cannot tell you a key was written twice. */
+console.log('\n=== no field declared twice ===');
+{
+  const root = new URL('../', import.meta.url).pathname;
+  let acts = 0, dupes = 0;
+  const files = fs.readdirSync(root + 'content/activities')
+    .filter((f) => /^grade-.*\.js$/.test(f)).sort();
+  for (const f of files) {
+    const src = fs.readFileSync(`${root}content/activities/${f}`, 'utf8');
+    /* Sliced from each `id:` line to the `};` that CLOSES ITS OBJECT, not to
+       the next activity's id. Running to the next id swept up the module-level
+       code in between — grade-k.js declares a shape map at two spaces there,
+       and this check reported "number-friends declares circle twice" on its
+       first run. Top-level fields sit at exactly two spaces inside the object;
+       the generator's own code is indented deeper. */
+    const starts = [...src.matchAll(/\n  id: '([a-z0-9-]+)'/g)];
+    for (const [i, m] of starts.entries()) {
+      acts++;
+      const close = src.slice(m.index).search(/\n\};?\s*$|\n\};?\n/);
+      const body = src.slice(m.index, close > 0 ? m.index + close : src.length);
+      const seen = new Map();
+      for (const k of body.matchAll(/^ {2}([A-Za-z_$][\w$]*): /gm)) {
+        seen.set(k[1], (seen.get(k[1]) ?? 0) + 1);
+      }
+      for (const [field, n] of seen) {
+        if (n < 2) continue;
+        dupes++;
+        fail(`${f}:${m[1]}`, `declares "${field}" ${n} times — the last one wins and the others vanish with no error anywhere`);
+      }
+    }
+  }
+  console.log(`  ${acts} activity objects read from source · ${dupes
+    ? `${dupes} DUPLICATE FIELDS` : 'no field declared twice'}`);
 }
 
 /* ------------------------------------------------ the client modules parse

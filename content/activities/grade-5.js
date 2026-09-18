@@ -359,6 +359,7 @@ const coordinateQuest = {
 /* ------------------------------------------- BOOK: the standard algorithm (G5 S3) */
 const standardAlgorithm = {
   id: 'standard-algorithm', title: 'The Standard Algorithm', kind: 'book', grade: '5', strand: S[2],
+  lesson: 'division',
   glyph: '⟌',
   skill: 'Multiplying multi-digit numbers and dividing by two digits, fluently.',
   trick: 'One column at a time, and write every composed ten down where you can see it. Slow is fast here.',

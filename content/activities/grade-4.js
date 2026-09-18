@@ -778,6 +778,7 @@ const anglesAndLines = {
 /* ------------------------------------------------------------- GAME: division descent */
 const divisionDescent = {
   id: 'division-descent', title: 'Division Descent', kind: 'game', grade: '4', strand: S[0],
+  lesson: 'division',
   glyph: '÷',
   skill: 'Dividing a two- or three-digit number by a single digit.',
   goal: 'Share the big number into equal groups, and say how many are in each group.',

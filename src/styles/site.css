@@ -848,6 +848,37 @@ footer.foot a:hover { color: var(--txt) }
 /* The way out of a wrong answer. Only ever under a wrong one. */
 .lsn-again { margin: 0 }
 
+/* Sharing out counters. The counters are PLAIN for everyone — a themed counter
+   would penalise the child most attached to the character, which is the
+   manipulative rule in CLAUDE.md. */
+.lsn-share { width: 100%; display: grid; gap: 14px; justify-items: center }
+.lsn-plates { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center }
+.lsn-plate {
+  min-width: 62px; min-height: 62px; padding: 7px;
+  border: 1.5px solid var(--line2); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+/* A group is a box rather than a plate, because the two are different actions
+   and the picture should not pretend otherwise. */
+.lsn-plate.grp { border-radius: 12px; border-style: dashed }
+.lsn-cnts { display: flex; flex-wrap: wrap; gap: 3px; max-width: 48px; justify-content: center }
+.lsn-cnt, .lsncardpl i {
+  display: block; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--txt2);
+}
+/* What is left in the pile, so a child can see the deal is not finished. */
+.lsn-pool {
+  display: flex; flex-wrap: wrap; gap: 4px; justify-content: center;
+  max-width: 260px; padding: 7px 10px;
+  border: 1px dashed var(--line); border-radius: 12px;
+}
+.lsncardsh { display: flex; gap: 7px; justify-content: center }
+.lsncardpl {
+  display: flex; flex-wrap: wrap; gap: 2px; max-width: 28px; justify-content: center;
+  padding: 5px; border: 1px solid var(--line2); border-radius: 50%;
+}
+.lsncardpl i { width: 8px; height: 8px }
+
 /* The balance. The beam and the two pans are the only things that move, and the
    pans stay level while the beam tips — a real pan hangs level, and a tilted box
    of numbers is hard to read at the moment a child is trying to read it. */

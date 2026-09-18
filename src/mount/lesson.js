@@ -88,6 +88,57 @@ function barStage() {
   return wrap;
 }
 
+/* ------------------------------------------------------- sharing out counters
+   WHY DIVISION EARNS A SCREEN, and it is the strongest case of the six: one
+   expression, two completely different actions.
+
+   `12 ÷ 3 = 4` can mean "share 12 between 3 plates, how many each" or "put 12
+   into groups of 3, how many groups". Both give 4 and the 4 means different
+   things — four counters in the second case is a GROUP COUNT, not a group size.
+   A child who has only ever met sharing is stuck the moment a problem says "how
+   many bags of 3", which is the documented split between partitive and
+   quotitive division.
+
+   A printed page can show the end state of each and ask a child to believe both
+   were the same twelve counters. Here they ARE the same twelve, dealt out twice
+   in front of you — and the dealing is the argument, because in sharing nobody
+   knows how many they will get until the last counter lands, while in grouping
+   you know the size from the start and are waiting to find out how many groups.
+   That asymmetry is invisible in two finished pictures.
+
+   The counters are plain, like every manipulative here: a themed counter would
+   penalise the child most attached to the character. */
+const SHARE_MAX = 12;
+
+function shareStage() {
+  const wrap = document.createElement('div');
+  wrap.className = 'lsn-share';
+  return wrap;
+}
+
+/* How the counters sit, from the count dealt so far. PURE, so the harness can
+   ask what the table looks like at any point of the deal without waiting for a
+   frame — and so the readout and the picture cannot come from two different
+   sums.
+
+   SHARING goes round the plates one at a time, which is what makes the group
+   size unknown until the end. GROUPING fills a group before starting the next,
+   which is what makes the number of groups unknown until the end. */
+export function shareOut(show, dealt) {
+  const total = show.total ?? 0;
+  const n = Math.max(0, Math.min(total, Math.floor(dealt)));
+  if (show.mode === 'group') {
+    const per = Math.max(1, show.per ?? 1);
+    const groups = [];
+    for (let i = 0; i < Math.ceil(n / per); i++) groups.push(Math.min(per, n - i * per));
+    return { piles: groups, per, full: Math.floor(n / per), over: n - Math.floor(n / per) * per };
+  }
+  const plates = Math.max(1, show.plates ?? 1);
+  const piles = Array.from({ length: plates }, (_, i) =>
+    Math.floor(n / plates) + (i < n % plates ? 1 : 0));
+  return { piles, each: Math.floor(n / plates), over: n % plates };
+}
+
 /* --------------------------------------------------------- the number line
    DRAWN ONCE, AND ONE MARKER SLIDES ALONG IT — the same trick as the clock's
    hands, and for the same reason: what the lesson claims is that a jump of ten
@@ -295,6 +346,8 @@ export function renderLesson(host, id) {
     g.hidden = true;
     host.querySelector('[data-read]').before(g);
   }
+  const share = kind === 'share' ? shareStage() : null;
+  if (share) stage.appendChild(share);
   const scale = kind === 'scale' ? scaleStage() : null;
   if (scale) stage.appendChild(scale);
   const line = kind === 'line' ? lineStage() : null;
@@ -1092,6 +1145,114 @@ export function renderLesson(host, id) {
     });
   }
 
+  /* ------------------------------------------------------ the deal, painted
+     One state, two readings. The plates and the counter beside them come from
+     the same `shareOut`, so a readout claiming four each cannot sit above three
+     plates of three. */
+  const shareCells = (show, dealt) => {
+    const o = shareOut(show, dealt);
+    const done = dealt >= (show.total ?? 0);
+    const cells = [{ label: LESSON_COUNT.dealt, value: Math.floor(dealt),
+      sub: `${LESSON_COUNT.of} ${show.total}` }];
+    if (show.mode === 'group') {
+      cells.push({ label: LESSON_COUNT.inEach, value: o.per });
+      cells.push({ label: LESSON_COUNT.groupsMade, value: o.full });
+    } else {
+      cells.push({ label: LESSON_COUNT.plates, value: o.piles.length });
+      cells.push({ label: LESSON_COUNT.eachPlate, value: o.each });
+    }
+    /* Only at the end. Mid-deal the remainder is just the round in progress,
+       and calling that "left over" would be a lie told three times a second. */
+    if (done && o.over > 0) cells.push({ label: LESSON_COUNT.leftOver, value: o.over });
+    return cells;
+  };
+
+  function drawShare(show, dealt) {
+    const o = shareOut(show, dealt);
+    const dot = '<span class="lsn-cnt"></span>';
+    share.innerHTML = `<div class="lsn-plates">${o.piles.map((n, i) => `
+      <div class="lsn-plate${show.mode === 'group' ? ' grp' : ''}">
+        <div class="lsn-cnts">${dot.repeat(n)}</div>
+      </div>`).join('')}</div>
+      ${dealt < (show.total ?? 0)
+        ? `<div class="lsn-pool">${dot.repeat((show.total ?? 0) - Math.floor(dealt))}</div>` : ''}`;
+  }
+
+  function paintShare(show, { sweep = false } = {}) {
+    const read = host.querySelector('[data-read]');
+    const holdEl = host.querySelector('[data-hold]');
+    stopSweep();
+    read.hidden = !lesson.steps[at].count;
+    holdEl.hidden = true;
+    holdEl.textContent = '';
+    const total = show.total ?? 0;
+    /* `dealt` lets a still step show an UNDEALT table. Without it every
+       non-sweep step drew the finished arrangement, so the opening step sat
+       there with three plates of four under a caption reading "the counters are
+       all still in the pile". The picture and the readout agreed with each
+       other and both contradicted the words. */
+    const still = show.dealt ?? total;
+    if (sweep && !reduced() && at > 0) {
+      drawShare(show, 0);
+      paintCells(shareCells(show, 0));
+      walkLegs(at, 0,
+        (v) => { drawShare(show, v); const c = shareCells(show, v); paintCells(c); return c; },
+        () => {},
+        (units) => Math.max(1200, Math.abs(units) * 300));
+    } else {
+      drawShare(show, still);
+      if (!read.hidden) paintCells(shareCells(show, still));
+    }
+  }
+
+  /* ------------------------------------------ YOUR TURN, SHARING OUT
+     ONE STEPPER, AND WHICH NUMBER IT CHANGES IS THE WHOLE POINT. Sharing it
+     changes how many plates there are and the child works out the group size;
+     grouping it changes the group size and they work out how many groups. The
+     goal always names the OTHER number, so neither task can be done by reading
+     the stepper. */
+  let shareAt = null;
+
+  function paintShareTry() {
+    const goal = tryGoal();
+    if (!goal) return;
+    const show = lesson.steps[at].show;
+    const live = show.mode === 'group'
+      ? { ...show, per: shareAt } : { ...show, plates: shareAt };
+    drawShare(live, live.total);
+    paintCells(shareCells(live, live.total));
+    host.querySelector('[data-read]').hidden = false;
+    let pad = host.querySelector('[data-share-pad]');
+    if (!pad) {
+      pad = document.createElement('div');
+      pad.className = 'lsn-jumps';
+      pad.dataset.sharePad = '';
+      stage.appendChild(pad);
+    }
+    pad.innerHTML = `<button type="button" class="lsn-jump" data-share="-1">\u2212 1</button>
+      <span class="lsn-fillnow">${shareAt}</span>
+      <button type="button" class="lsn-jump" data-share="1">+ 1</button>`;
+    const o = shareOut(live, live.total);
+    const hit = o.over === 0 && (show.mode === 'group'
+      ? o.full === goal.groups : o.each === goal.each);
+    const said = show.mode === 'group'
+      ? `${goal.groups} ${LESSON_COUNT.groups}`
+      : `${goal.each} ${LESSON_COUNT.eachPlate}`;
+    showGoal(said, LESSON_TRY.make);
+    showTry(hit, said, show.mode === 'group' ? LESSON_TRY.howGroup : LESSON_TRY.howShare);
+  }
+
+  if (kind === 'share') {
+    stage.addEventListener('click', (e) => {
+      const b = e.target.closest?.('[data-share]');
+      if (!b || !tryGoal()) return;
+      const next = Math.max(2, Math.min(6, shareAt + Number(b.dataset.share)));
+      if (next === shareAt) return;
+      shareAt = next;
+      paintShareTry();
+    });
+  }
+
   /* ------------------------------------------------- YOUR TURN, WITH COINS
      "Make 25 cents." A tray of the four coins to tap from, a pile of what has
      been taken, and a running total against the goal.
@@ -1282,11 +1443,16 @@ export function renderLesson(host, id) {
       if (kind === 'array') { arrAt = { rows: step.show.rows, cols: step.show.cols }; paintArrayTry(); return; }
       if (kind === 'line') { lineAt = step.show.at || 0; jumps = 0; paintLineTry(); return; }
       if (kind === 'scale') { fillAt = null; paintScaleTry(); return; }
+      if (kind === 'share') {
+        shareAt = step.show.mode === 'group' ? (step.show.per ?? 2) : (step.show.plates ?? 2);
+        paintShareTry(); return;
+      }
     }
     if (kind === 'clock') paintClock(step.show, { sweep });
     else if (kind === 'coins') paintCoins(step.show, { sweep });
     else if (kind === 'line') paintLine(step.show, { sweep });
     else if (kind === 'scale') paintScale(step.show, { sweep });
+    else if (kind === 'share') paintShare(step.show, { sweep });
     else if (kind === 'bar') { paintBar(step.show, { sweep }); if (step.count) paintCells(barCells(step.show)); }
     else if (kind === 'array') { paintArray(step.show, { sweep }); if (step.count) paintCells(arrayCells(step.show)); }
   }
@@ -1314,6 +1480,7 @@ export function renderLesson(host, id) {
       bar?.querySelector('.lsn-pieces')?.remove();
       stage.querySelector('[data-jumps]')?.remove();
       stage.querySelector('[data-step-pad]')?.remove();
+      stage.querySelector('[data-share-pad]')?.remove();
       bar?.querySelector('.lsn-shade')?.setAttribute('opacity', '1');
     }
     drawStep(step, { sweep });

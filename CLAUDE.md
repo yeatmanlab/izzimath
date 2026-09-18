@@ -22,7 +22,7 @@ engine, live in [`tools/`](tools/README.md). The build copies them to
 `dist/_tools/` for local runs and **deliberately does not in CI**
 (`build.mjs` guards on `!process.env.CI`), so `izzimath.com/_tools/` is a 404 on
 purpose — run them against a local `dist`, which is also the only place they can
-measure a build you are still changing: a **responsive audit** (44 pages × 5 widths, checking overflow,
+measure a build you are still changing: a **responsive audit** (45 pages × 5 widths, checking overflow,
 tap-target size, text size and SVG text contrast), a **problem-type test** (all ten types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
@@ -91,6 +91,15 @@ collapsed window makes every hit test return nothing and look like agreement.
 
 Read each harness's **own** verdict line (`no failures` / `N FAILURES`) rather
 than grepping for a marker you assume it uses.
+
+**A duplicate key in an object literal is silent.** The later one wins, the
+earlier one vanishes, and nothing says so — not the build, not the checkers, not
+the browser. A `lesson: 'balance'` was inserted at the top of an activity that
+already carried `lesson: 'arrays'` further down; the activity went on pointing at
+arrays and the commit message said otherwise. `check.mjs` reads the activity
+sources for it now, sliced to each object's own closing brace — running to the
+next `id:` swept up the module-level code between activities and reported a
+shape map's keys as duplicates.
 
 And make a check's summary line agree with its own failures. Three checks here
 printed a cheerful count — "no field lost inside a comment", "none repeating
@@ -171,11 +180,11 @@ already exist, and a routine only needs a `ui` the registry knows.
   whose answers differ. That last one is the only mechanical way to ask "is this
   answerable?", and it earned its place immediately: the kite's two diagonals
   both run corner to corner and only one is a fold line.
-- **A lesson animates, and the chosen friend speaks it.** The six animated
+- **A lesson animates, and the chosen friend speaks it.** The seven animated
   lessons at `/learn/` are the one place on this site that does not print, so
   each one earns the screen twice over. The player dispatches on a declared
-  `lesson.kind` — clock, coins, bar, array, line, scale — and what a stage owes
-  it is small:
+  `lesson.kind` — clock, coins, bar, array, line, scale, share — and what a
+  stage owes it is small:
   build its DOM once, paint a step, say what its counter reads. Adding a fifth
   is a stage, not a branch. **At least one step animates**, and the movement
   has to carry something a still picture cannot: the clock sweeps because the
@@ -185,7 +194,12 @@ already exist, and a routine only needs a `ui` the registry knows.
   twice so a jump of ten is visibly the same size in two places, and the balance
   tips in response to a number the child chose — which is the only way to answer
   "the equals sign means the answer comes next" with something other than a red
-  cross. Not decoration. **And
+  cross. And the division lesson deals the SAME twelve counters out twice,
+  because `12 ÷ 3 = 4` means "four in each plate" one way round and "four
+  groups" the other, and the DEALING is what separates them: sharing goes round
+  the plates one at a time so nobody knows their share until the last counter
+  lands, while grouping fills one before starting the next so the size is known
+  and the count is not. Two finished pictures cannot show that. Not decoration. **And
   every step's words are spoken by the chosen friend** — avatar, name and accent
   around the caption, with an optional second beat in the same voice. **One set
   of words for all five**: the friend is the frame, not the author, because

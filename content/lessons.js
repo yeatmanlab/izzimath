@@ -398,6 +398,143 @@ export const LESSONS = {
       + 'two numbers, take the smaller one.',
   },
 
+  /* -------------------------------------------------------- TWO WAYS TO DIVIDE
+     THE STRONGEST CASE OF THE SIX for putting something on a screen: one
+     expression, two completely different actions.
+
+     `12 / 3 = 4` can mean "share 12 between 3 plates, how many each" or "put 12
+     into groups of 3, how many groups". Both give 4 and the 4 MEANS different
+     things — a group size one way round, a group count the other. A child who
+     has only ever met sharing is stuck the moment a question says "how many
+     bags of 3", which is the documented split between partitive and quotitive
+     division and the reason 3.OA asks for both.
+
+     A printed page can show the finished state of each and ask a child to
+     believe both were the same twelve counters. Here they ARE the same twelve,
+     dealt out twice in front of them. And the DEALING is the argument, not the
+     result: sharing goes round the plates one at a time, so nobody knows how
+     many they will get until the last counter lands, while grouping fills a
+     group before starting the next, so the size is known from the start and the
+     number of groups is what you are waiting for. Two finished pictures cannot
+     show that difference at all.
+
+     PITCHED AT GRADE 3, where the standard lives, and reachable from grade 4
+     and 5 activities for the same reason the clock lesson is reachable from
+     grade 3: a child coming back for a reminder is better served by the version
+     that assumes nothing. */
+  division: {
+    id: 'division',
+    kind: 'share',
+    title: 'Two ways to divide',
+    topic: 'Dividing',
+    glyph: '\u00f7',
+    card: { total: 12, plates: 3, mode: 'share' },
+    lead: 'The answer comes out the same. What the answer MEANS does not.',
+    steps: [
+      {
+        show: { total: 12, plates: 3, mode: 'share', dealt: 0 },
+        count: true,
+        head: 'Twelve counters and three plates.',
+        aside: 'I count the counters first. Twelve of them, and nothing shared yet.',
+        say: 'The counters are all still in the pile. There are three empty plates waiting.',
+      },
+      {
+        /* THE DEAL, AND THE PAUSES ARE THE POINT. Stopping at three says the
+           thing a finished picture cannot: one each so far, and nobody knows
+           what they will end up with. */
+        show: { total: 12, plates: 3, mode: 'share' },
+        sweep: true, count: true,
+        stops: [
+          { at: 3, say: 'One each so far. Nobody knows how many they will get yet.' },
+          { at: 9, say: 'Three each. There are still counters in the pile.' },
+        ],
+        head: 'Share them out, one at a time.',
+        aside: 'Round and round the plates. That is the fair way to do it.',
+        say: 'One counter to each plate, then round again. Keep going until the pile is empty.',
+      },
+      {
+        show: { total: 12, plates: 3, mode: 'share' },
+        count: true,
+        head: 'Four each. So 12 \u00f7 3 = 4.',
+        aside: 'Twelve shared between three. Four each, and none left over.',
+        say: 'Every plate got four. That is what 12 \u00f7 3 means here. The 4 is how many are in '
+          + 'each plate.',
+      },
+      {
+        show: { total: 12, plates: 3, mode: 'share' },
+        try: { each: 6 },
+        head: 'Your turn. Make it 6 in each plate.',
+        aside: 'Fewer plates means more on each one. I would try two.',
+        say: 'Change how many plates there are. Keep going until every plate has 6 counters and '
+          + 'nothing is left over.',
+      },
+      {
+        show: { total: 12, per: 3, mode: 'group', dealt: 0 },
+        count: true,
+        head: 'Now the same twelve, a different question.',
+        aside: 'Same counters. This time I know the size and not the number.',
+        say: 'This time nobody says how many groups to make. The rule is 3 counters in every '
+          + 'group. Watch what that changes.',
+      },
+      {
+        /* THE SAME COUNTERS, THE OTHER WAY. The stop at 6 names the asymmetry
+           out loud: the size is known and the count is not. */
+        show: { total: 12, per: 3, mode: 'group' },
+        sweep: true, count: true,
+        stops: [
+          { at: 6, say: 'Two groups of 3 so far. We know the size. We do not know how many groups.' },
+        ],
+        head: 'Fill a group, then start another.',
+        aside: 'Three, then three, then three. I stop when the pile runs out.',
+        say: 'Three counters go into a group. Then the next three start a new group. Keep going '
+          + 'until the pile is empty.',
+      },
+      {
+        show: { total: 12, per: 3, mode: 'group' },
+        count: true,
+        head: 'Four groups. So 12 \u00f7 3 = 4 again.',
+        aside: 'The same sum came out. It is answering a different question though.',
+        say: 'There are four groups. The sum is the same as before: 12 \u00f7 3 = 4. But the 4 is '
+          + 'not a group size now. It is how many groups there are.',
+      },
+      {
+        show: { total: 12, per: 3, mode: 'group' },
+        count: true,
+        ask: {
+          q: 'You have 12 stickers and put 3 in each bag. What does 12 \u00f7 3 tell you?',
+          options: [
+            { say: 'How many bags', right: true,
+              why: 'Yes. You already know 3 go in a bag, so dividing tells you the number of bags.' },
+            { say: 'How many stickers in each bag', back: 6,
+              why: 'You know that one already \u2014 it is 3. Dividing tells you how many bags you get.' },
+          ],
+        },
+        head: 'Quick check.',
+        aside: 'I ask myself which number I already know. Dividing finds the other one.',
+        say: 'Same sum, and the words decide what it means. Read the question carefully.',
+      },
+      {
+        show: { total: 12, per: 3, mode: 'group' },
+        try: { groups: 6 },
+        head: 'Your turn. Make 6 groups.',
+        aside: 'Smaller groups means more of them. I would make them small.',
+        say: 'Change the size of a group. Keep going until there are 6 groups and nothing is '
+          + 'left over.',
+      },
+      {
+        show: { total: 12, plates: 4, mode: 'share' },
+        count: true,
+        head: 'One sum, two questions.',
+        aside: 'I read the words first, then I know which answer I am looking for.',
+        say: 'Dividing answers two questions. How many in each group, or how many groups. The '
+          + 'sum looks the same either way, so the words are what tell you which.',
+      },
+    ],
+    close: 'Dividing answers two questions. Share 12 between 3 plates and the 4 is what each '
+      + 'plate gets. Put 12 into groups of 3 and the 4 is how many groups there are. Read the '
+      + 'words to know which one you want.',
+  },
+
   /* --------------------------------------------------------- THE BALANCE
      WHY THIS ONE EARNS A SCREEN. A printed page can draw a balanced scale or a
      tipping one. Only a screen can tip it in RESPONSE to a number the child
@@ -1010,6 +1147,18 @@ export const LESSONS = {
    they are copy, and because the player should not have to know that the thing
    being counted is time. */
 export const LESSON_COUNT = {
+  /* The deal's five. `eachPlate` and `groupsMade` are the two readings of one
+     division, and keeping them separately named is the whole lesson: the 4 in
+     12 ÷ 3 = 4 is a group SIZE one way round and a group COUNT the other. */
+  dealt: 'counters dealt',
+  plates: 'plates',
+  eachPlate: 'in each plate',
+  inEach: 'in each group',
+  groupsMade: 'groups made',
+  /* The readout says "groups made"; a goal says "6 groups". Reusing the label
+     produced "Make 6 groups made". */
+  groups: 'groups',
+  leftOver: 'left over',
   /* The balance's three. "The same?" rather than "equal", because the whole
      lesson is about what that word means. */
   thisSide: 'this side',
@@ -1063,6 +1212,7 @@ export const LESSON_LINK = {
   time: 'How does a clock work again?',
   jumps: 'How do jumps of ten work again?',
   balance: 'What does the equals sign mean again?',
+  division: 'What does dividing actually do again?',
   money: 'How much is each coin again?',
   fractions: 'Why are one half and two quarters the same?',
   arrays: 'Why can an array be turned?',
@@ -1122,6 +1272,12 @@ export const LESSON_CALL = {
     say: 'A short lesson where one bar gets cut up while you watch, so you can see for yourself '
       + 'that one half and two quarters are the same amount. About {time}.',
     cta: 'Show me how fractions work',
+  },
+  division: {
+    head: 'New to dividing? Start here.',
+    say: 'A short lesson where the same twelve counters get dealt out twice, so you can see the '
+      + 'two different questions that dividing answers. About {time}.',
+    cta: 'Show me what dividing does',
   },
   balance: {
     head: 'Is the equals sign muddling you up? Start here.',
@@ -1191,7 +1347,7 @@ const dialMinsOf = (o) => ((o.h % 12) * 60) + (o.m || 0);
    the array and the balance animate one continuous CSS move instead: there is
    no loop to stop, and for the fractions lesson the continuity is itself the
    argument. */
-const WALKS = new Set(['clock', 'coins', 'line']);
+const WALKS = new Set(['clock', 'coins', 'line', 'share']);
 
 export function lessonSpan(lesson, k) {
   const st = lesson.steps[k];
@@ -1215,6 +1371,9 @@ export function lessonSpan(lesson, k) {
   /* The line carries on from where it was, unlike the coins, which lay out n
      pennies from nothing every time. */
   if (lesson.kind === 'line') return [lesson.steps[k - 1].show.at || 0, st.show.at || 0];
+  /* The deal walks the counters, from an empty table every time — the same
+     shape as the coins laying out pennies. */
+  if (lesson.kind === 'share') return [0, st.show.total || 0];
   return null;
 }
 
@@ -1250,6 +1409,11 @@ export const LESSON_TRY = {
   balance: 'Make both sides the same.',
   balanced: 'Balanced. Both sides are the same, so the two are equal.',
   howFill: 'Press \u2212 and + to change the number. Watch the beam.',
+  /* The clock's goal is a reading — "make it say 7:00". A plate count is a
+     thing you DO. */
+  make: 'Make',
+  howShare: 'Press \u2212 and + to change how many plates. Watch what each plate gets.',
+  howGroup: 'Press \u2212 and + to change the size of a group. Watch how many groups you get.',
   howJump: 'Press a jump. Ten at a time is quicker than one at a time.',
   howArr: 'Drag across the squares to change the array — sideways for a longer row, up and down for more rows.',
   of: 'of',
