@@ -261,6 +261,10 @@ L.push('');
   const ls = (n, ok, note) => { checks++; L.push((ok ? '\u00b7 ' : '\u2717 ') + ('lesson:' + n).padEnd(36) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
   try {
     const LB = await import('/assets/src/mount/lesson.js');
+    /* The dial and its arithmetic live in their own module now, shared with the
+       hint widget — see src/lib/clockdial.js. Imported directly rather than
+       widening the lesson mount's export surface to suit a test. */
+    const CD = await import('/assets/src/lib/clockdial.js');
     const { LESSONS } = await import('/assets/content/lessons.js');
     const host = document.createElement('div');
     document.body.appendChild(host);
@@ -488,6 +492,74 @@ L.push('');
     ls('the next step takes the clock back',
       !host.querySelector('.lsn-clock').classList.contains('can-grab')
       && host.querySelector('[data-goal]').hidden === true);
+
+    /* CAN YOU ACTUALLY HIT THE HAND WHERE IT IS POINTING?
+
+       Every assertion above this one dispatches its pointer events STRAIGHT AT
+       the grab element, which never asks the browser to do any hit-testing —
+       and that is how the widget shipped with its targets nailed to the 12. The
+       grab lines were drawn pointing straight up and only the visible hands
+       were ever rotated, so a mouse worked at twelve o'clock and nowhere else. A
+       reader found it in a minute; 501 checks did not.
+
+       So this one goes through elementFromPoint, at an angle that is NOT zero,
+       which is the only version of the question that could have failed. */
+    const geom = () => host.querySelector('.lsn-clock svg').getBoundingClientRect();
+    const ptOn = (deg, frac) => {
+      const r = geom();
+      const rad = (deg - 90) * Math.PI / 180;
+      return { x: r.left + r.width / 2 + Math.cos(rad) * r.width * frac,
+        y: r.top + r.height / 2 + Math.sin(rad) * r.height * frac };
+    };
+    const grabAt = (deg, frac) => {
+      const p = ptOn(deg, frac);
+      const el = host.ownerDocument.elementFromPoint(p.x, p.y);
+      return el?.dataset?.grab ?? (el ? el.tagName.toLowerCase() : 'nothing');
+    };
+    api.goto(tryIdx);
+    host.scrollIntoView({ block: 'center' });
+    /* GUARDED LOUDLY. A dial measuring nothing would make every hit test below
+       return "nothing" and there would be no way to tell a broken widget from a
+       collapsed window — the exact shape of a check that measures nothing and
+       reports a pass. */
+    const dialBox = geom();
+    ls('the dial is actually laid out, so the hit tests below mean something',
+      dialBox.width > 80 && dialBox.top > -dialBox.height && dialBox.top < innerHeight,
+      Math.round(dialBox.width) + 'px wide at y=' + Math.round(dialBox.top) + ' in a ' + innerHeight + 'px window');
+    /* Move each hand somewhere that is not twelve o'clock, then try to grab it
+       there. The hour hand's own angle comes from h AND m, so it is asked for
+       rather than assumed. */
+    const fireOn = (sel, ty, p) => host.querySelector(sel).dispatchEvent(new PointerEvent(ty,
+      { bubbles: true, cancelable: true, pointerId: 1, clientX: p.x, clientY: p.y }));
+    fireOn('[data-grab="minute"]', 'pointerdown', ptOn(0, 0.30));
+    fireOn('[data-grab="minute"]', 'pointermove', ptOn(210, 0.30));
+    fireOn('[data-grab="minute"]', 'pointerup', ptOn(210, 0.30));
+    fireOn('[data-grab="hour"]', 'pointerdown', ptOn(0, 0.12));
+    fireOn('[data-grab="hour"]', 'pointermove', ptOn(120, 0.12));
+    fireOn('[data-grab="hour"]', 'pointerup', ptOn(120, 0.12));
+    const nowAt = { h: Number(digits().split(':')[0]), m: Number(digits().split(':')[1]) };
+    const wantAng = CD.handAngles(nowAt.h, nowAt.m);
+    ls('the long hand can be grabbed where it now points',
+      grabAt(wantAng.minute, 0.30) === 'minute',
+      'at ' + Math.round(wantAng.minute) + 'deg the pointer finds "' + grabAt(wantAng.minute, 0.30) + '"');
+    ls('and the short hand can be grabbed where IT now points',
+      grabAt(wantAng.hour, 0.12) === 'hour',
+      'at ' + Math.round(wantAng.hour) + 'deg the pointer finds "' + grabAt(wantAng.hour, 0.12) + '"');
+    /* And the two targets do not sit on top of each other. Both used to start at
+       the centre, so the minute hand's target lay over the hour hand's along its
+       whole length and the short hand was unhittable whenever they pointed the
+       same way. */
+    fireOn('[data-grab="minute"]', 'pointerdown', ptOn(wantAng.minute, 0.30));
+    fireOn('[data-grab="minute"]', 'pointermove', ptOn(wantAng.hour, 0.30));
+    fireOn('[data-grab="minute"]', 'pointerup', ptOn(wantAng.hour, 0.30));
+    const both = CD.handAngles(Number(digits().split(':')[0]), Number(digits().split(':')[1]));
+    ls('with both hands pointing the same way, each is still reachable',
+      grabAt(both.hour, 0.12) === 'hour' && grabAt(both.minute, 0.30) === 'minute',
+      'inner "' + grabAt(both.hour, 0.12) + '", outer "' + grabAt(both.minute, 0.30) + '"');
+    ls('and empty dial is not covered by a grab target',
+      !['hour', 'minute'].includes(grabAt(both.minute + 90, 0.30)),
+      'finds "' + grabAt(both.minute + 90, 0.30) + '" a quarter turn away');
+
 
     /* The way back to the animation. A child who pressed Next through it had to
        go Back and then forward again, which reads as undoing rather than
@@ -2369,6 +2441,33 @@ L.push('');
     hb('and the minutes follow the long hand',
       /:25$/.test(tryBox?.querySelector('.lsn-digital text')?.textContent ?? ''),
       tryBox?.querySelector('.lsn-digital text')?.textContent ?? 'no digits');
+    /* AND CAN YOU HIT THE HANDS IN HERE. This is the box a reader actually
+       reported: the targets were nailed to the 12, so a mouse grabbed a hand at
+       twelve o'clock and nowhere else. Through elementFromPoint, at an angle
+       that is not zero, because that is the only version that could fail. */
+    const hitOn = (deg, frac) => {
+      const rr = dsvg.getBoundingClientRect();
+      const rad = (deg - 90) * Math.PI / 180;
+      const x = rr.left + rr.width / 2 + Math.cos(rad) * rr.width * frac;
+      const y = rr.top + rr.height / 2 + Math.sin(rad) * rr.height * frac;
+      const el = dd.elementFromPoint(x, y);
+      return el?.dataset?.grab ?? (el ? el.tagName.toLowerCase() : 'nothing');
+    };
+    const dBox = dsvg?.getBoundingClientRect() ?? { width: 0, top: 0 };
+    hb('the hint dial is laid out, so the hit tests below mean something',
+      dBox.width > 80 && dBox.top < (fr.contentWindow?.innerHeight ?? 0),
+      Math.round(dBox.width) + 'px wide at y=' + Math.round(dBox.top));
+    const CDH = await import('/assets/src/lib/clockdial.js');
+    const nowH = Number((tryBox?.querySelector('.lsn-digital text')?.textContent || '0:0').split(':')[0]);
+    const nowM = Number((tryBox?.querySelector('.lsn-digital text')?.textContent || '0:0').split(':')[1]);
+    const ang = CDH.handAngles(nowH, nowM);
+    hb('the long hand is grabbable where it points',
+      hitOn(ang.minute, 0.30) === 'minute',
+      'at ' + Math.round(ang.minute) + 'deg the pointer finds "' + hitOn(ang.minute, 0.30) + '"');
+    hb('and the short hand where IT points',
+      hitOn(ang.hour, 0.12) === 'hour',
+      'at ' + Math.round(ang.hour) + 'deg the pointer finds "' + hitOn(ang.hour, 0.12) + '"');
+
     hb('it says what to do with it',
       /drag/i.test(box.querySelector('.trycl-say')?.textContent || ''),
       box.querySelector('.trycl-say')?.textContent?.slice(0, 40));

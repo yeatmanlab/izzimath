@@ -41,7 +41,7 @@ import { currentCharacter } from '../lib/theme.js';
 import { getCharacter, fill } from '../../content/characters.js';
 import { speechAvailable, audioOn, audioEverUsed, speak, stopSpeaking,
   voiceButton, wireVoiceButtons } from '../lib/speech.js';
-import { clockStage, digitalStage, dragTo, angleOf,
+import { clockStage, digitalStage, dragTo, angleOf, setHandAngles,
   pointHandsAt as pointHandsOn, timeText } from '../lib/clockdial.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -415,15 +415,12 @@ export function renderLesson(host, id) {
     raf = requestAnimationFrame(tick);
   }
 
+  /* Through the shared setter, which moves each hand's GRAB TARGET with it.
+     Rotating the hands alone is what left the targets at the 12 while the hands
+     travelled — a mouse could grab a hand at twelve o'clock and nowhere else. */
   function pointHands(cum, ms) {
-    const hour = clock.querySelector('.lsn-hour');
-    const min = clock.querySelector('.lsn-min');
     const a = anglesAt(cum);
-    for (const [el, ang] of [[hour, a.hour], [min, a.minute]]) {
-      el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
-      el.style.transformOrigin = '50px 50px';
-      el.style.transform = `rotate(${ang.toFixed(2)}deg)`;
-    }
+    setHandAngles(clock, a.hour, a.minute, ms);
   }
 
   /* The readout, from the same `cum` the hands just used. `gone` is measured

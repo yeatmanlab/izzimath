@@ -87,13 +87,32 @@ export function clockStage({ size = 240, minutes = false } = {}) {
         stroke="var(--a1)" stroke-width="2.4" stroke-linecap="round"/>
       <!-- GRAB TARGETS, invisible and fat. A hand drawn at 2.4 units is about
            six pixels on screen, which no six-year-old is going to hit with a
-           finger; these are 14 units wide, transparent, and sit on top. They
-           are only pointer targets while the step is interactive, which is what
-           the .can-grab class on the wrapper decides. -->
-      <line class="lsn-grab" data-grab="hour" x1="50" y1="50" x2="50" y2="26"
-        stroke="transparent" stroke-width="15" stroke-linecap="round"/>
-      <line class="lsn-grab" data-grab="minute" x1="50" y1="50" x2="50" y2="16"
-        stroke="transparent" stroke-width="13" stroke-linecap="round"/>
+           finger, so these are 18 units wide and transparent.
+
+           THEY ROTATE WITH THEIR HANDS, and the first version did not: they
+           were drawn pointing at the 12 and only the visible hands ever got a
+           transform, so the hands moved and the targets stayed at the top of
+           the dial. A mouse worked on the 12 and nowhere else. See
+           setHandAngles, which moves a hand and its target together for exactly
+           this reason.
+
+           NO BACKTICKS IN HERE. This comment is inside a template literal, so a
+           backtick ends the string and turns whatever follows into an
+           expression — which is how this very comment broke the widget the
+           first time, with node --check perfectly happy because the result is
+           still valid JavaScript. It is the second time that trap has been hit
+           in this repo.
+
+           AND THEY DO NOT OVERLAP. Both used to start at the centre, so the
+           minute hand's target lay on top of the hour hand's along its whole
+           length and the short hand was almost unhittable whenever the two
+           pointed the same way. The hour owns the inner half of the dial, the
+           minute owns the outer — which is also the intuitive split, because
+           beyond the short hand's tip the long hand is the only one there. -->
+      <line class="lsn-grab" data-grab="hour" x1="50" y1="50" x2="50" y2="25"
+        stroke="transparent" stroke-width="18" stroke-linecap="round"/>
+      <line class="lsn-grab" data-grab="minute" x1="50" y1="25" x2="50" y2="9"
+        stroke="transparent" stroke-width="18" stroke-linecap="round"/>
       <circle cx="50" cy="50" r="3" fill="var(--a1)"/></svg>`);
   wrap.innerHTML = face;
   /* The dial's own label described hands this SVG no longer has. The live time
@@ -138,15 +157,36 @@ export function digitalStage({ size = 150 } = {}) {
    point where the clock says and nowhere else. The hour hand still comes from
    h AND m, so it sits between two numbers the moment there are minutes on it —
    the misconception, kept. */
-export function pointHandsAt(wrap, h, m, ms = 0) {
-  const hour = wrap.querySelector('.lsn-hour');
-  const min = wrap.querySelector('.lsn-min');
-  if (!hour || !min) return;
-  for (const [el, ang] of [[hour, (h % 12) * 30 + m * 0.5], [min, m * 6]]) {
+/* THE ONE PLACE A HAND MOVES, and it moves the hand's GRAB TARGET with it.
+
+   Four elements, two angles, one loop — because the bug this exists to prevent
+   was two of those elements being left behind. The targets were drawn pointing
+   at the 12 and only the visible hands were ever rotated, so a mouse could
+   grab a hand at twelve o'clock and nowhere else. Anything that re-points a
+   hand goes through here; the lesson's accumulating sweep calls it with its own
+   angles. */
+export function setHandAngles(wrap, hourAng, minAng, ms = 0) {
+  if (!wrap) return;
+  const pairs = [
+    ['.lsn-hour', hourAng], ['[data-grab="hour"]', hourAng],
+    ['.lsn-min', minAng], ['[data-grab="minute"]', minAng],
+  ];
+  for (const [sel, ang] of pairs) {
+    const el = wrap.querySelector(sel);
+    if (!el) continue;
     el.style.transition = ms ? `transform ${ms}ms cubic-bezier(.32,.06,.24,1)` : 'none';
     el.style.transformOrigin = '50px 50px';
     el.style.transform = `rotate(${ang.toFixed(2)}deg)`;
   }
+}
+
+/* The hour hand's angle comes from h AND m, so it sits between two numbers the
+   moment there are minutes on the clock — the misconception, kept. */
+export const handAngles = (h, m) => ({ hour: (h % 12) * 30 + m * 0.5, minute: m * 6 });
+
+export function pointHandsAt(wrap, h, m, ms = 0) {
+  const a = handAngles(h, m);
+  setHandAngles(wrap, a.hour, a.minute, ms);
 }
 
 export const timeText = (h, m) => `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`;

@@ -2708,6 +2708,23 @@ console.log('\n=== the client modules parse ===');
         fail(`${d}/${f}`, `does not parse: ${msg.trim()}`);
         broken++;
       }
+      /* AND A BACKTICK INSIDE AN HTML COMMENT, which `node --check` cannot see
+         and which has now broken this codebase twice.
+
+         Every `<!-- -->` in these files is inside a template literal building
+         markup. A backtick in one ENDS the string, and what follows becomes an
+         expression — so the module still parses perfectly and throws at
+         runtime instead, on a line that looks like prose. The second time it
+         cost a working widget and a silent `catch`: the hint box rendered with
+         no clock in it and said nothing about why. */
+      const body = fs.readFileSync(`${root}${d}/${f}`, 'utf8');
+      for (const c of body.matchAll(/<!--[\s\S]*?-->/g)) {
+        if (!c[0].includes('`')) continue;
+        const line = body.slice(0, c.index).split('\n').length;
+        const snip = c[0].split('\n').find((l) => l.includes('`'))?.trim().slice(0, 56);
+        fail(`${d}/${f}`, `line ${line}: a backtick inside an HTML comment ends the template literal it sits in — node --check cannot see this, and it has broken this repo twice: "${snip}"`);
+        broken++;
+      }
     }
   }
   if (!seen) fail('client modules', 'none were found to parse — an empty result is not a pass');

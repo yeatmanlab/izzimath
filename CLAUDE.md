@@ -78,6 +78,17 @@ thing, restore. If the bug only appears under some condition — a narrow viewpo
 a particular character, private browsing — force that condition inside the
 harness rather than hoping the default reproduces it.
 
+**Dispatching an event at an element never tests whether a finger could reach
+it.** `el.dispatchEvent(new PointerEvent(...))` skips hit-testing entirely, so
+an assertion built that way passes on a target that is the wrong size, buried
+under something else, or — as shipped — nailed to the wrong place. The
+interactive clock's grab targets were drawn pointing at the 12 and never rotated
+with the hands, so a mouse worked at twelve o'clock and nowhere else. 501 checks
+were green; a reader found it in a minute. Where the question is *can this be
+grabbed*, go through `document.elementFromPoint` at a position that is **not**
+the default one, and assert the figure has real size first — otherwise a
+collapsed window makes every hit test return nothing and look like agreement.
+
 Read each harness's **own** verdict line (`no failures` / `N FAILURES`) rather
 than grepping for a marker you assume it uses.
 
@@ -87,6 +98,14 @@ themselves", "3 files agree" — on the same run as the `FAIL` lines proving
 otherwise, because the summary was written as a constant. If the summary can
 only say the good news, it is not a summary. Two helpers in `func.html` had the
 same shape and printed `ok` beside a failing `✗`.
+
+**No backticks inside an HTML comment in `src/`.** Every one of those comments
+sits inside a template literal building markup, so a backtick ends the string
+and what follows becomes an expression — the module still parses and throws at
+runtime instead, on a line that looks like prose. `node --check` is perfectly
+happy with it. It has broken this codebase twice: once silently killing the
+lesson player, once leaving the hint box with no clock in it behind a `catch`
+that said nothing. `check.mjs` reads the comments for it now.
 
 And render the thing and look at it. Contrast, overlap and a figure that is
 present in the markup but 7px tall on the page all pass every DOM assertion.
@@ -285,7 +304,12 @@ already exist, and a routine only needs a `ui` the registry knows.
   activities are where a child actually gets stuck, so `hintTry` mounts a
   working dial in the hint box — the same object `/learn/time/` hands over, out
   of `src/lib/clockdial.js`, which holds the dial, the grab targets and the drag
-  arithmetic once for both callers. It is FREE PLAY: no goal and no verdict,
+  arithmetic once for both callers. **A hit target moves with the thing it
+  targets**, and `setHandAngles` is the one place that happens — four elements,
+  two angles, one loop, because the bug was two of them being left behind while
+  the hands travelled. The hour hand owns the inner half of the dial and the
+  minute the outer, so neither is buried under the other when they point the
+  same way. It is FREE PLAY: no goal and no verdict,
   because the question on the page already has an answer and a widget with its
   own target would be a second question asked of a child who just said they were
   stuck. It starts at 12:00 rather than at the question's time, so the first
