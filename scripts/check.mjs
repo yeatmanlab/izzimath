@@ -2142,6 +2142,41 @@ console.log('\n=== figures tell the truth ===');
       if (!p.hint) fail('figures', `${a.id} item ${i + 1} has a hint figure and no hint words; the box would open on a picture alone`);
     }
   }
+  /* EVERY CLOCK A CHILD IS SHOWN HAS ITS NUMBERS ON.
+
+     Kindergarten's `longer-and-shorter` drew sixteen numberless dials, and it
+     is the FIRST clock a child meets on this site — exactly the wrong place to
+     take the landmarks away. The task there is "find the long hand and see
+     where it points", which the numbers cost nothing, and a five-year-old who
+     starts noticing that the top one is the 12 has gained what grade 1 asks
+     for next.
+
+     Detected from the figure's own text rather than from the call: a dial
+     carries the numerals 1 to 12 as <text> nodes, so counting them asks the
+     drawing rather than trusting the arguments. */
+  let dials = 0, bareDials = 0;
+  for (const a of activities) {
+    const n = a.pages ?? a.rounds ?? 10;
+    for (let i = 0; i < n; i++) {
+      let p;
+      try { p = a.generate(deriveSeed(8817, `p${i}`), i, getCharacter('kiwi'), rng(deriveSeed(8817, `p${i}`)), 8817); } catch { continue; }
+      if (!p) continue;
+      const shown = [p.prompt, p.printVisual, p.figure, p.printFigure, p.hintFigure,
+        ...(p.options || []).flatMap((o) => [o.figure, o.printFigure])].filter(Boolean).join(' ');
+      for (const dial of shown.matchAll(/<svg[^>]*aria-label="clock with[\s\S]*?<\/svg>/g)) {
+        dials++;
+        const nums = new Set([...dial[0].matchAll(/<text[^>]*>(\d{1,2})<\/text>/g)]
+          .map((m) => Number(m[1])).filter((v) => v >= 1 && v <= 12));
+        if (nums.size < 12) {
+          bareDials++;
+          fail('figures', `${a.id} item ${i + 1} draws a clock with ${nums.size} of its 12 numbers — a child reading a dial needs the landmarks, and this is often the first clock they meet`);
+        }
+      }
+    }
+  }
+  console.log(`  ${dials} clock dials drawn for children · ${bareDials
+    ? `${bareDials} WITH THEIR NUMBERS MISSING` : 'every one with its numbers on'}`);
+
   /* AND THE CLOCK THE HINT HANDS OVER. `hintTry` mounts a working dial in the
      hint box — the same object the lesson hands over on three of its steps —
      and it SUPERSEDES the static figure rather than sitting beside it, because

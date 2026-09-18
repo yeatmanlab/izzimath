@@ -350,6 +350,16 @@ already exist, and a routine only needs a `ui` the registry knows.
   rather than sitting beside it — two dials in one box with one of them dead is
   a worse hint than either. The still one stays in the data as the fallback, and
   `check.mjs` fails a handover without one.
+- **Every clock a child is shown has its numbers on.** Kindergarten's
+  `longer-and-shorter` drew sixteen numberless dials and they were the only ones
+  on the site — and it is the FIRST clock a child meets here, which is exactly
+  the wrong place to take the landmarks away. Its task is "find the long hand
+  and see where it points", which the numbers cost nothing, and a five-year-old
+  who starts noticing that the top one is the 12 has gained what grade 1 asks
+  for next. `check.mjs` counts the numerals in the emitted SVG rather than
+  trusting the call, so a dial drawn without them fails wherever it came from.
+  The one dial that carries MORE than the twelve is the hint's, and that is the
+  rule below.
 - **A scaffold belongs on the hint and nowhere else.** `clockFace({ minutes:
   true })` writes the minute count round the outside of the dial, which is the
   help a first grader asked for — being told to "count round in fives" on a dial

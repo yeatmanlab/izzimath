@@ -453,8 +453,15 @@ const longerAndShorter = {
     const upH = r.int(1, 12);
     const decoys = [{ h: upH, m: 30 }, { h: upH, m: 15 }, { h: upH, m: 45 }];
     const opts = r.shuffle([{ h: upH, m: 0, right: true }, ...decoys.map((d) => ({ ...d, right: false }))])
-      .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96, numerals: false }),
-        printFigure: clockFace(o.h, o.m, { print: true, size: 66, numerals: false }), right: o.right }));
+      /* WITH THEIR NUMBERS ON. These were the only numberless dials on the site
+         — sixteen of them, and the FIRST clock a child ever meets here, which
+         is exactly the wrong place to take the landmarks away. The numbers cost
+         this item nothing: the task is still "find the long hand and see where
+         it points", and a five-year-old who starts noticing that the top one is
+         the 12 has gained what grade 1 asks for next. scripts/check.mjs fails a
+         clock drawn for a child without them. */
+      .map((o, k) => ({ id: 'abcd'[k], figure: clockFace(o.h, o.m, { size: 96 }),
+        printFigure: clockFace(o.h, o.m, { print: true, size: 66 }), right: o.right }));
     const answer = opts.find((o) => o.right).id;
     return {
       type: 'pick',
