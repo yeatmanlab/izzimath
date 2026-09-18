@@ -41,8 +41,8 @@ import { currentCharacter } from '../lib/theme.js';
 import { getCharacter, fill } from '../../content/characters.js';
 import { speechAvailable, audioOn, audioEverUsed, speak, stopSpeaking,
   voiceButton, wireVoiceButtons } from '../lib/speech.js';
-import { clockStage, digitalStage, dragTo, angleOf, setHandAngles,
-  pointHandsAt as pointHandsOn, timeText } from '../lib/clockdial.js';
+import { clockStage, digitalStage, dragTo, angleOf, setHandAngles, radiusOf,
+  makeDrag, pointHandsAt as pointHandsOn, timeText } from '../lib/clockdial.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduced = () => typeof matchMedia === 'function'
@@ -53,7 +53,8 @@ const reduced = () => typeof matchMedia === 'function'
    header. Re-exported here because tools/func.html drives them through this
    module, and because they are still this lesson's arithmetic as much as the
    widget's. */
-export { dragTo, angleOf } from '../lib/clockdial.js';
+export { dragTo, angleOf, dragMinute, shortestArc, timeOf, totalOf,
+  makeDrag } from '../lib/clockdial.js';
 
 /* ------------------------------------------------------------------ the bar
    ONE BAR, BUILT ONCE, and that is the entire argument of the fractions lesson.
@@ -605,8 +606,10 @@ export function renderLesson(host, id) {
      is all; Next is available throughout, because a child who cannot manage the
      drag must not be stuck in a lesson. */
   let tryAt = null;        // the clock the child is holding, while a try step is up
-  let grab = null;         // 'hour' | 'minute'
-  let lastAngle = null;
+  /* One controller, shared with the hint widget — see src/lib/clockdial.js. It
+     holds the continuous travel and the pivot lift, which is the logic that was
+     wrong in two copies of a handler. */
+  const clockDrag = makeDrag();
   let wasTry = false;      // so the step AFTER a try step does not animate from nowhere
   let solved = false;
 
@@ -726,23 +729,23 @@ export function renderLesson(host, id) {
       if (!tryGoal()) return;
       const g = e.target.closest?.('[data-grab]');
       if (!g) return;
-      grab = g.dataset.grab;
-      lastAngle = angleOf(dial().getBoundingClientRect(), e.clientX, e.clientY);
+      const box = dial().getBoundingClientRect();
+      clockDrag.start(g.dataset.grab, tryAt, angleOf(box, e.clientX, e.clientY));
       /* Captured so the drag survives the pointer leaving the hand — which it
          does immediately, because the hand moves out from under the finger. */
       try { g.setPointerCapture(e.pointerId); } catch { /* not supported: still works */ }
       e.preventDefault();
     });
     clock.addEventListener('pointermove', (e) => {
-      if (!grab || !tryGoal() || !tryAt) return;
-      const a = angleOf(dial().getBoundingClientRect(), e.clientX, e.clientY);
-      tryAt = dragTo(tryAt, grab, a, lastAngle);
-      lastAngle = a;
-      paintTry();
+      if (!clockDrag.grab || !tryGoal() || !tryAt) return;
+      const box = dial().getBoundingClientRect();
+      const next = clockDrag.move(tryAt, angleOf(box, e.clientX, e.clientY),
+        radiusOf(box, e.clientX, e.clientY));
+      if (next) { tryAt = next; paintTry(); }
       e.preventDefault();
     });
     for (const done of ['pointerup', 'pointercancel']) {
-      clock.addEventListener(done, () => { grab = null; lastAngle = null; });
+      clock.addEventListener(done, () => clockDrag.end());
     }
   }
 

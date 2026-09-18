@@ -393,37 +393,94 @@ L.push('');
        THE ARITHMETIC, pure: a pointer gesture is the one thing a test cannot
        fake convincingly, so the sums a drag does are exported and walked round
        the dial here without a pointer, a frame or a layout. */
-    ls('a drag snaps the long hand to five minutes',
-      LB.dragTo({ h: 3, m: 0 }, 'minute', 182).m === 30
-      && LB.dragTo({ h: 3, m: 0 }, 'minute', 88).m === 15,
-      '182deg -> ' + LB.dragTo({ h: 3, m: 0 }, 'minute', 182).m + ', 88deg -> ' + LB.dragTo({ h: 3, m: 0 }, 'minute', 88).m);
-    ls('and never off the five-minute grid',
-      [...Array(360).keys()].every((d) => LB.dragTo({ h: 3, m: 0 }, 'minute', d).m % 5 === 0),
-      'every degree of the dial');
+    /* THE LONG HAND IS TRACKED AS TRAVEL, not as an angle crossing zero.
+       Boundary detection cannot tell a pointer drifting a hair to the left of
+       the vertical — 0 degrees to 359.1 — from a full lap backwards, and a
+       deterministic dial dragged from the top came out an hour behind. So a
+       drag accumulates the shortest arc between samples, a wobble nets to
+       nothing, and a real lap carries exactly once. */
+    /* `walkLap`, not `lap`: the clock block above already owns that name in this
+       scope, and a duplicate const is a SyntaxError that takes the whole module
+       with it — the harness renders nothing and prints no CHECKS_RUN. That is
+       the second time in two sessions, so it is worth a helper: the duplicate
+       check at the bottom of this file now reads its own scopes. */
+    const walkLap = (from, degs, step = 10) => {
+      let t = LB.totalOf(from.h, from.m);
+      let prev = (from.m * 6) % 360;
+      const n = Math.ceil(Math.abs(degs) / step);
+      for (let i = 1; i <= n; i++) {
+        const a = ((prev + Math.sign(degs) * step) % 360 + 360) % 360;
+        t = LB.dragMinute(t, a, prev);
+        prev = a;
+      }
+      return LB.timeOf(t);
+    };
+    ls('the shortest arc is the one the pointer travelled',
+      LB.shortestArc(350, 10) === 20 && LB.shortestArc(10, 350) === -20
+      && LB.shortestArc(0, 180) === 180,
+      '350->10 is ' + LB.shortestArc(350, 10) + ', 10->350 is ' + LB.shortestArc(10, 350));
+    /* THE REPORTED WOBBLE, as arithmetic: a hair to the left of the 12 and back
+       again must leave the clock exactly where it was. */
+    {
+      let t = LB.totalOf(12, 0);
+      t = LB.dragMinute(t, 359.1, 0);
+      const mid = LB.timeOf(t);
+      t = LB.dragMinute(t, 0.9, 359.1);
+      const back = LB.timeOf(t);
+      ls('a wobble across the 12 does not carry the hour',
+        mid.h === 12 && back.h === 12 && back.m === 0,
+        'left of it: ' + mid.h + ':' + String(mid.m).padStart(2, '0')
+        + ', and back: ' + back.h + ':' + String(back.m).padStart(2, '0'));
+    }
+    ls('a whole lap forward carries exactly one hour',
+      walkLap({ h: 3, m: 0 }, 360).h === 4 && walkLap({ h: 3, m: 0 }, 360).m === 0,
+      JSON.stringify(walkLap({ h: 3, m: 0 }, 360)));
+    ls('two laps carry two',
+      walkLap({ h: 3, m: 0 }, 720).h === 5, JSON.stringify(walkLap({ h: 3, m: 0 }, 720)));
+    ls('and going back past the 12 takes one off',
+      walkLap({ h: 4, m: 0 }, -60).h === 3 && walkLap({ h: 4, m: 0 }, -60).m === 50,
+      JSON.stringify(walkLap({ h: 4, m: 0 }, -60)));
+    ls('half a lap moves thirty minutes and no hour',
+      walkLap({ h: 3, m: 0 }, 180).h === 3 && walkLap({ h: 3, m: 0 }, 180).m === 30,
+      JSON.stringify(walkLap({ h: 3, m: 0 }, 180)));
+    ls('and 12 wraps to 1, never to 13',
+      walkLap({ h: 12, m: 0 }, 360).h === 1, JSON.stringify(walkLap({ h: 12, m: 0 }, 360)));
+    /* THE PIVOT IS HANDLED BY BREAKING THE TRAVEL CHAIN, not by capping a
+       sample. Capping it at 150 degrees stopped a fast flick of the mouse from
+       moving the hand at all, which is a worse bug than the one it fixed. */
+    {
+      const d = LB.makeDrag();
+      d.start('minute', { h: 12, m: 0 }, 0);
+      const before = d.move({ h: 12, m: 0 }, 330, 0.30);     // 30 degrees back
+      const inside = d.move({ h: 12, m: 55 }, 200, 0.02);    // through the middle
+      const after = d.move({ h: 12, m: 55 }, 190, 0.30);     // out the other side
+      ls('a sample inside the pivot changes nothing',
+        before !== null && inside === null, 'the pivot sample returned ' + JSON.stringify(inside));
+      ls('and the first sample out the other side only re-seeds',
+        after === null, 'it returned ' + JSON.stringify(after));
+    }
+    /* THE SNAP IS ON THE TOTAL, so 58 minutes rolls the hour rather than
+       rounding to 0 minutes of the same one. */
+    ls('the display snaps to five minutes',
+      LB.timeOf(LB.totalOf(3, 0) + 12).m === 10 && LB.timeOf(LB.totalOf(3, 0) + 13).m === 15,
+      '+12 gives ' + LB.timeOf(LB.totalOf(3, 0) + 12).m + ', +13 gives ' + LB.timeOf(LB.totalOf(3, 0) + 13).m);
+    ls('and snapping 58 minutes rolls the hour, not the minutes',
+      LB.timeOf(LB.totalOf(3, 58)).h === 4 && LB.timeOf(LB.totalOf(3, 58)).m === 0,
+      JSON.stringify(LB.timeOf(LB.totalOf(3, 58))));
     ls('the short hand snaps to whole hours',
-      [...Array(360).keys()].every((d) => {
+      LB.dragTo({ h: 3, m: 20 }, 'hour', 200).h === 7
+      && [...Array(360).keys()].every((d) => {
         const h = LB.dragTo({ h: 3, m: 20 }, 'hour', d).h;
         return h >= 1 && h <= 12;
-      }) && LB.dragTo({ h: 3, m: 20 }, 'hour', 200).h === 7,
+      }),
       '200deg -> ' + LB.dragTo({ h: 3, m: 20 }, 'hour', 200).h);
     ls('and dragging it leaves the minutes alone',
       LB.dragTo({ h: 3, m: 20 }, 'hour', 200).m === 20);
-    /* THE CARRY, BY FINGER. Dragging the long hand past the 12 takes the hour
-       with it, which is the relationship the whole lesson is about — and here
-       the child finds it rather than being told. Detected from the direction of
-       travel, because at the boundary 55-to-0 and 5-to-0 are the same minute
-       values arrived at from opposite sides. */
-    ls('dragging past the 12 carries the hour',
-      LB.dragTo({ h: 3, m: 55 }, 'minute', 5, 330).h === 4,
-      '3:55 -> ' + JSON.stringify(LB.dragTo({ h: 3, m: 55 }, 'minute', 5, 330)));
-    ls('and dragging back past it takes one off',
-      LB.dragTo({ h: 4, m: 0 }, 'minute', 330, 10).h === 3,
-      '4:00 -> ' + JSON.stringify(LB.dragTo({ h: 4, m: 0 }, 'minute', 330, 10)));
-    ls('crossing nowhere near the 12 carries nothing',
-      LB.dragTo({ h: 3, m: 20 }, 'minute', 150, 120).h === 3);
-    ls('and 12 wraps to 1, never to 13',
-      LB.dragTo({ h: 12, m: 55 }, 'minute', 5, 330).h === 1,
-      JSON.stringify(LB.dragTo({ h: 12, m: 55 }, 'minute', 5, 330)));
+    ls('the pivot has a dead zone, so a drag there moves nothing',
+      CD.DEAD_ZONE > 0 && CD.DEAD_ZONE < 0.2
+      && CD.radiusOf({ left: 0, top: 0, width: 100, height: 100 }, 50, 50) === 0
+      && Math.abs(CD.radiusOf({ left: 0, top: 0, width: 100, height: 100 }, 100, 50) - 0.5) < 1e-9,
+      'dead zone ' + CD.DEAD_ZONE);
 
     /* THE WIDGET ITSELF, through real pointer events on the real clock. */
     const tryIdx = steps.findIndex((st) => st.try);
@@ -458,8 +515,15 @@ L.push('');
 
     // DRAGGING MOVES THE DIGITAL FACE. This is the ask: the child turns the
     // hands and the numbers change under their hand.
+    /* GRABBED WHERE THE HAND IS. The long hand now moves by how far the POINTER
+       travels round the dial, which is what makes a wobble across the 12 net to
+       nothing — so a drag that starts somewhere the hand is not moves it by the
+       difference and lands somewhere else entirely. That is right for a finger
+       on a hand and wrong for a test that assumed twelve o'clock. */
     const before = digits();
-    fireAt('[data-grab="minute"]', 'pointerdown', 0, 0.35);
+    const startAng = CD.handAngles(
+      Number(before.split(':')[0]), Number(before.split(':')[1])).minute;
+    fireAt('[data-grab="minute"]', 'pointerdown', startAng, 0.35);
     fireAt('[data-grab="minute"]', 'pointermove', 180, 0.35);
     fireAt('[data-grab="minute"]', 'pointerup', 180, 0.35);
     ls('dragging a hand changes the digital clock', digits() !== before,
@@ -477,7 +541,9 @@ L.push('');
 
     // and setting the goal exactly does say so
     const goal = steps[tryIdx].try;
-    fireAt('[data-grab="minute"]', 'pointerdown', goal.m * 6, 0.35);
+    const nowMin = () => CD.handAngles(
+      Number(digits().split(':')[0]), Number(digits().split(':')[1])).minute;
+    fireAt('[data-grab="minute"]', 'pointerdown', nowMin(), 0.35);
     fireAt('[data-grab="minute"]', 'pointermove', goal.m * 6, 0.35);
     fireAt('[data-grab="minute"]', 'pointerup', goal.m * 6, 0.35);
     fireAt('[data-grab="hour"]', 'pointerdown', (goal.h % 12) * 30, 0.15);
@@ -775,6 +841,138 @@ L.push('');
     took('dime');
     ls('one dime is ten cents as well', mDone(), worth());
     host2.remove();
+
+    /* -------------------------------- A DIAL OF OUR OWN, AT A KNOWN TIME
+       Every hit test above this point aims relative to wherever the previous
+       checks happened to leave the hands, so whether it lands on the thing
+       being tested is luck — and four separate fixes to this widget turned out
+       to be caught by none of them. A dial mounted here at 12:00 makes the
+       geometry arithmetic instead: both hands point up, so along 0 degrees the
+       hour owns radius 0 to 25 of the 126-unit box and the minute owns 25 to
+       41, and every number below is one of those two spans.
+
+       This is the block that has to fail when the widget breaks. */
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:relative;width:260px';
+    document.body.appendChild(probe);
+    const probeClock = CD.mountTryClock(probe, { h: 12, m: 0, size: 210 });
+    probe.scrollIntoView({ block: 'center' });
+    const psvg = probe.querySelector('.lsn-clock svg');
+    const pbox = () => psvg.getBoundingClientRect();
+    const pPt = (deg, f) => {
+      const r = pbox();
+      const rad = (deg - 90) * Math.PI / 180;
+      return { x: r.left + r.width / 2 + Math.cos(rad) * r.width * f,
+        y: r.top + r.height / 2 + Math.sin(rad) * r.height * f };
+    };
+    const pHit = (deg, f) => {
+      const p = pPt(deg, f);
+      const el = document.elementFromPoint(p.x, p.y);
+      return el?.dataset?.grab ?? (el ? el.tagName.toLowerCase() : 'nothing');
+    };
+    ls('the probe dial is laid out', pbox().width > 150 && pbox().top > 0 && pbox().top < innerHeight,
+      Math.round(pbox().width) + 'px at y=' + Math.round(pbox().top));
+    ls('at 12:00 it reads 12:00', probeClock.reads === '12:00', probeClock.reads);
+    /* THE INNER SPAN IS THE HOUR HAND'S. With round stroke caps the minute
+       target reached back to radius 16 and won here, because it is drawn
+       second — a mouse aimed at the short hand got the long one. */
+    ls('the inner half of a hand is the short one',
+      pHit(0, 0.10) === 'hour' && pHit(0, 0.15) === 'hour',
+      'f=0.10 finds "' + pHit(0, 0.10) + '", f=0.15 finds "' + pHit(0, 0.15) + '"');
+    ls('and the outer half is the long one',
+      pHit(0, 0.30) === 'minute', 'f=0.30 finds "' + pHit(0, 0.30) + '"');
+    /* WHERE A NUMERAL SITS. The dial draws its numbers at radius 31, which is
+       inside the minute hand's span, so the "12" sat on top of the target and
+       won the hit test — a pointer aimed at a hand landed on a number. */
+    ls('a numeral does not steal the pointer from the hand under it',
+      pHit(0, 0.246) === 'minute', 'f=0.246 finds "' + pHit(0, 0.246) + '"');
+    ls('and neither does a tick or the centre pin',
+      pHit(0, 0.05) === 'hour' && pHit(30, 0.33) !== 'line',
+      'centre finds "' + pHit(0, 0.05) + '", a tick finds "' + pHit(30, 0.33) + '"');
+    /* THE REPORTED GESTURE, on a dial whose state is known: grab the long hand
+       at the top and drag it to the lower left. The straight path runs close to
+       the pivot, where the angle flips, and that flip used to carry the hour. */
+    /* SWEPT ROUND THE DIAL, which is how a hand is dragged. A straight line from
+       one side to the other is a different gesture: as an ANGLE it travels
+       backwards, and the hand faithfully follows it backwards — 12:00 dragged
+       straight to the lower left really is 11:50, because the pointer went
+       anticlockwise. An earlier version of this check asserted otherwise and
+       was wrong about the clock rather than about the code. */
+    const pDrag = (fromDeg, toDeg, f, steps = 24) => {
+      const a = pPt(fromDeg, f);
+      const el = document.elementFromPoint(a.x, a.y);
+      const t = el?.closest?.('[data-grab]') ?? el;
+      const fire = (ty, q) => t?.dispatchEvent(new PointerEvent(ty,
+        { bubbles: true, cancelable: true, pointerId: 1, clientX: q.x, clientY: q.y }));
+      fire('pointerdown', a);
+      for (let i = 1; i <= steps; i++) {
+        fire('pointermove', pPt(fromDeg + (toDeg - fromDeg) * (i / steps), f));
+      }
+      fire('pointerup', pPt(toDeg, f));
+      return t?.dataset?.grab ?? 'nothing';
+    };
+    const grabbedWas = pDrag(0, 200, 0.30);
+    ls('dragging the long hand round the dial grabs the long hand', grabbedWas === 'minute', grabbedWas);
+    ls('sweeping it two thirds round does not carry the hour',
+      probeClock.at.h === 12, 'reads ' + probeClock.reads + ' (started at 12:00)');
+    ls('and the minutes land where the pointer stopped',
+      probeClock.at.m === 35, 'reads ' + probeClock.reads + ' (200 degrees is 33 minutes, snapped to 35)');
+    /* A WHOLE LAP CARRIES ONCE, and only once. */
+    pDrag(200, 200 + 360, 0.30, 36);
+    ls('a whole lap round carries exactly one hour',
+      probeClock.at.h === 1 && probeClock.at.m === 35,
+      'reads ' + probeClock.reads + ' (was 12:35)');
+    /* AND A WOBBLE AT THE 12 CARRIES NOTHING, which is the bug that started
+       this: a pointer a hair to the left of the vertical took the angle from 0
+       to 359.1, and boundary detection read that as a lap backwards. */
+    probeClock.destroy();
+    probe.innerHTML = '';
+    const probe2 = CD.mountTryClock(probe, { h: 12, m: 0, size: 210 });
+    const p2svg = probe.querySelector('.lsn-clock svg');
+    {
+      const r = p2svg.getBoundingClientRect();
+      const at2 = (deg, f) => { const rad = (deg - 90) * Math.PI / 180;
+        return { x: r.left + r.width / 2 + Math.cos(rad) * r.width * f,
+          y: r.top + r.height / 2 + Math.sin(rad) * r.height * f }; };
+      const el = document.elementFromPoint(at2(0, 0.30).x, at2(0, 0.30).y);
+      const t = el?.closest?.('[data-grab]') ?? el;
+      const fire = (ty, q) => t?.dispatchEvent(new PointerEvent(ty,
+        { bubbles: true, cancelable: true, pointerId: 1, clientX: q.x, clientY: q.y }));
+      /* DRIFTING BACKWARDS A FEW DEGREES AND STOPPING, which is the case that
+         discriminates. A SYMMETRIC wobble nets out under boundary detection
+         too — each crossing is matched by a return — so the first version of
+         this check passed with the bug put back. Three degrees anticlockwise
+         and no return is half a minute of travel: the travel model reads 12:00,
+         and counting boundary crossings reads 11:00, an hour out. */
+      fire('pointerdown', at2(0, 0.30));
+      for (const d of [359.4, 358.6, 357.8, 357]) fire('pointermove', at2(d, 0.30));
+      fire('pointerup', at2(357, 0.30));
+      ls('a hair backwards past the 12 is half a minute, not an hour',
+        probe2.at.h === 12 && probe2.at.m === 0,
+        'reads ' + probe2.reads + ' after drifting 3 degrees anticlockwise from 12:00');
+    }
+    /* And the same forwards, so the rule is not one-sided. */
+    probe2.destroy();
+    probe.innerHTML = '';
+    const probe3 = CD.mountTryClock(probe, { h: 12, m: 0, size: 210 });
+    {
+      const r = probe.querySelector('.lsn-clock svg').getBoundingClientRect();
+      const at3 = (deg, f) => { const rad = (deg - 90) * Math.PI / 180;
+        return { x: r.left + r.width / 2 + Math.cos(rad) * r.width * f,
+          y: r.top + r.height / 2 + Math.sin(rad) * r.height * f }; };
+      const el = document.elementFromPoint(at3(0, 0.30).x, at3(0, 0.30).y);
+      const t = el?.closest?.('[data-grab]') ?? el;
+      const fire = (ty, q) => t?.dispatchEvent(new PointerEvent(ty,
+        { bubbles: true, cancelable: true, pointerId: 1, clientX: q.x, clientY: q.y }));
+      fire('pointerdown', at3(0, 0.30));
+      for (const d of [0.6, 1.4, 2.2, 3]) fire('pointermove', at3(d, 0.30));
+      fire('pointerup', at3(3, 0.30));
+      ls('and a hair forwards is not an hour either',
+        probe3.at.h === 12 && probe3.at.m === 0,
+        'reads ' + probe3.reads + ' after drifting 3 degrees clockwise from 12:00');
+    }
+    probe3.destroy();
+    probe.remove();
 
     /* ------------------------------------------- the division lesson
        ITS CLAIM IS THAT ONE SUM ANSWERS TWO QUESTIONS, so what gets asserted is
@@ -2455,6 +2653,7 @@ L.push('');
   await new Promise((r) => { fr.onload = r; setTimeout(r, 8000); });
   const dd = fr.contentDocument;
   const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  const CDH = await import('/assets/src/lib/clockdial.js');
   try {
     await nap(500);
     const btn = dd.querySelector('[data-hint]');
@@ -2558,7 +2757,6 @@ L.push('');
     hb('the hint dial is laid out, so the hit tests below mean something',
       dBox.width > 80 && dBox.top < (fr.contentWindow?.innerHeight ?? 0),
       Math.round(dBox.width) + 'px wide at y=' + Math.round(dBox.top));
-    const CDH = await import('/assets/src/lib/clockdial.js');
     const nowH = Number((tryBox?.querySelector('.lsn-digital text')?.textContent || '0:0').split(':')[0]);
     const nowM = Number((tryBox?.querySelector('.lsn-digital text')?.textContent || '0:0').split(':')[1]);
     const ang = CDH.handAngles(nowH, nowM);
@@ -2568,6 +2766,80 @@ L.push('');
     hb('and the short hand where IT points',
       hitOn(ang.hour, 0.12) === 'hour',
       'at ' + Math.round(ang.hour) + 'deg the pointer finds "' + hitOn(ang.hour, 0.12) + '"');
+
+    /* A DRAG WITH ITS INTERMEDIATE SAMPLES, which is the whole difference. Every
+       other pointer assertion here jumps from start to end in one move event; a
+       mouse emits a stream of them along the path, and a path from one side of
+       the dial to the other goes near the pivot. That is where the hour used to
+       carry itself by mistake. */
+    const dragThrough = (fromDeg, toDeg, frac, hand = 'minute', steps = 24) => {
+      const rr = dsvg.getBoundingClientRect();
+      const pt = (deg, f) => { const rad = (deg - 90) * Math.PI / 180;
+        return { x: rr.left + rr.width / 2 + Math.cos(rad) * rr.width * f,
+          y: rr.top + rr.height / 2 + Math.sin(rad) * rr.height * f }; };
+      const a = pt(fromDeg, frac);
+      /* THE TARGET IS WHATEVER A MOUSE WOULD HIT AT THE START POINT, resolved
+         by hit-testing rather than named here. Naming it is what made the
+         first version of this check vacuous: it dispatched at the hour target
+         while a real pointer at the same place was landing on the minute one,
+         because round stroke caps left the two overlapping. */
+      const grabbed = dd.elementFromPoint(a.x, a.y);
+      const target = grabbed?.closest?.('[data-grab]') ?? grabbed;
+      hb('the drag grabs the ' + hand + ' hand, which is what is under the pointer',
+        target?.dataset?.grab === hand,
+        'the pointer finds "' + (target?.dataset?.grab ?? target?.tagName?.toLowerCase() ?? 'nothing') + '"');
+      const fire = (ty, p) => target?.dispatchEvent(
+        new PointerEvent(ty, { bubbles: true, cancelable: true, pointerId: 1, clientX: p.x, clientY: p.y }));
+      /* ROUND the dial, not across it. Interpolating the two points draws a
+         straight line through the middle, which as an angle travels backwards —
+         a different gesture, and one the hand now follows faithfully. */
+      fire('pointerdown', a);
+      for (let i = 1; i <= steps; i++) {
+        fire('pointermove', pt(fromDeg + (toDeg - fromDeg) * (i / steps), frac));
+      }
+      fire('pointerup', pt(toDeg, frac));
+    };
+    /* Half a turn round the dial. The hour must not move, because the hand did
+       not pass the 12. */
+    const beforeCross = tryBox?.querySelector('.lsn-digital text')?.textContent ?? '';
+    const crossFrom = CDH.handAngles(
+      Number(beforeCross.split(':')[0]), Number(beforeCross.split(':')[1])).minute;
+    dragThrough(crossFrom, crossFrom + 180, 0.28);
+    const afterCross = tryBox?.querySelector('.lsn-digital text')?.textContent ?? '';
+    hb('half a turn round the dial does not change the hour',
+      beforeCross.split(':')[0] === afterCross.split(':')[0],
+      beforeCross + ' -> ' + afterCross);
+    /* Where it landed, computed rather than typed: the drag now starts at
+       whatever the long hand is showing, so ":30" was only ever right when it
+       happened to start at twelve o'clock. */
+    const wantM = (Math.round((((crossFrom + 180) % 360) / 6) / 5) * 5) % 60;
+    hb('and it does move the minutes to where it landed',
+      afterCross.endsWith(':' + String(wantM).padStart(2, '0')),
+      afterCross + ', expected minutes ' + wantM);
+    /* THE REPORTED GESTURE, REPLAYED. A mouse drag on the SHORT hand from the
+       12 towards the 8 came out as 11:40 instead of 8 o'clock: the path runs
+       close to the pivot and slightly off centre, so one sample read about 10
+       degrees and the next about 350 — a 20-degree step that looks exactly like
+       crossing the 12 backwards, and carried the hour.
+
+       Two guards catch it together, which is why this is asserted as a GESTURE
+       rather than as either of them: the dead zone throws away the samples
+       nearest the pivot, and the plausibility step then rejects the big jump
+       across the gap. Removing either one on its own has to fail here. */
+    const beforeReported = tryBox?.querySelector('.lsn-digital text')?.textContent ?? '';
+    /* Started where the short hand IS, not where it began life. The first
+       version dragged from twelve o'clock regardless of what the earlier checks
+       had left on the dial, so the pointer started on bare SVG and the drag
+       tested nothing. */
+    const nowAng = CDH.handAngles(
+      Number(beforeReported.split(':')[0]), Number(beforeReported.split(':')[1]));
+    dragThrough(nowAng.hour, 240, 0.13, 'hour');
+    const afterReported = tryBox?.querySelector('.lsn-digital text')?.textContent ?? '';
+    hb('the reported drag sets the hour it was aimed at',
+      afterReported.startsWith('8:'),
+      beforeReported + ' -> ' + afterReported + ' (aimed at the 8)');
+    hb('and does not carry the hour on the way past the pivot',
+      !/^(11|7|9):/.test(afterReported), afterReported);
 
     hb('it says what to do with it',
       /drag/i.test(box.querySelector('.trycl-say')?.textContent || ''),

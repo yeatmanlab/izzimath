@@ -41,25 +41,116 @@ import { clockFace, clockDigital } from './widgets.js';
 
    Exported for the harness, where it can be walked round the dial without a
    pointer, a frame or a layout. */
-export function dragTo(state, grab, angle, prevAngle = null) {
+export function dragTo(state, grab, angle) {
   const wrap = ((angle % 360) + 360) % 360;
-  if (grab === 'hour') {
-    /* Whole hours only. The hour hand's DISPLAYED position still comes from
-       h + m/60, so it sits between two numbers whenever there are minutes on
-       the clock — which is the misconception this lesson exists for, and it
-       would be lost if a drag could put the hand anywhere it liked. */
-    const h = Math.round(wrap / 30) % 12;
-    return { h: h === 0 ? 12 : h, m: state.m };
-  }
-  const m = (Math.round(wrap / 6 / 5) * 5) % 60;
-  let h = state.h;
-  if (prevAngle != null) {
-    const prev = ((prevAngle % 360) + 360) % 360;
-    if (prev > 270 && wrap < 90) h = h === 12 ? 1 : h + 1;        // forward past the 12
-    else if (prev < 90 && wrap > 270) h = h === 1 ? 12 : h - 1;   // and back again
-  }
-  return { h, m };
+  /* Whole hours only. The hour hand's DISPLAYED position still comes from
+     h + m/60, so it sits between two numbers whenever there are minutes on the
+     clock — which is the misconception this lesson exists for, and it would be
+     lost if a drag could put the hand anywhere it liked. */
+  const h = Math.round(wrap / 30) % 12;
+  return { h: h === 0 ? 12 : h, m: state.m };
 }
+
+/* How far from the middle the pointer is, as a fraction of the dial's width.
+   Inside the pivot the angle means nothing, so a drag there moves nothing —
+   which is also how a real clock behaves under a finger. */
+export function radiusOf(rect, x, y) {
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  return Math.hypot(x - cx, y - cy) / (rect.width || 1);
+}
+export const DEAD_ZONE = 0.07;
+
+/* ------------------------------------------- the long hand, as TRAVEL
+   THE HOUR CARRIES WHEN THE LONG HAND PASSES THE 12, and working that out by
+   watching for the angle to cross zero does not work. A pointer that drifts a
+   hair to the left of the vertical takes the angle from 0 to 359.1, which is a
+   move of nine tenths of a degree and reads as a full crossing backwards. A
+   deterministic dial at 12:00, dragged from the top to the lower left, came
+   out as 11:35 — and two earlier guards, a dead zone and a plausibility cap on
+   the step size, caught neither that nor each other's cases.
+
+   So the hand is tracked as TRAVEL instead: minutes since twelve o'clock on a
+   12-hour dial, moved by the shortest arc between one pointer sample and the
+   next. A wobble across the 12 contributes +0.9 and then -0.9 and nets to
+   nothing. A real lap accumulates 360 degrees and carries exactly once. There
+   is no boundary to detect, which is why there is nothing left to get wrong.
+
+   The total is kept CONTINUOUS and snapped only for display, or the rounding
+   would eat the accumulated travel a fifth of a minute at a time. */
+export const TOTAL_MAX = 720;              // minutes on a 12-hour dial
+
+export const totalOf = (h, m) => ((((h % 12) * 60 + m) % TOTAL_MAX) + TOTAL_MAX) % TOTAL_MAX;
+
+export function timeOf(total) {
+  const t = ((total % TOTAL_MAX) + TOTAL_MAX) % TOTAL_MAX;
+  /* Snapped on the TOTAL rather than on the minutes, so 58 minutes rounds to
+     the next hour instead of to 0 minutes of the same one. */
+  const snapped = (Math.round(t / 5) * 5) % TOTAL_MAX;
+  const h = Math.floor(snapped / 60) % 12;
+  return { h: h === 0 ? 12 : h, m: snapped % 60 };
+}
+
+/* The shortest way round from one angle to the next, signed. Two samples of a
+   real drag are never more than a few degrees apart, so the shortest arc is
+   always the one the pointer actually travelled. */
+export function shortestArc(from, to) {
+  const d = (((to - from) % 360) + 360) % 360;
+  return d > 180 ? d - 360 : d;
+}
+
+/* One pointer sample's worth of the long hand. Six degrees to the minute. */
+export const dragMinute = (total, angle, prevAngle) =>
+  total + shortestArc(prevAngle, angle) / 6;
+
+/* ------------------------------------------------------------ one drag
+   THE CONTROLLER BOTH CALLERS USE, because the logic that was wrong lived in
+   two copies of a handler and the second copy is always the one that keeps a
+   bug. It holds the continuous total, the last accepted angle, and one more
+   thing that turned out to matter more than either.
+
+   CROSSING THE PIVOT BREAKS THE TRAVEL CHAIN. Ignoring the samples inside the
+   dead zone is not enough: the last angle before the middle and the first one
+   after it are most of a half-turn apart, and read as travel that is thirty
+   spurious minutes. A drag from the top of the dial to the lower left came out
+   an hour and twenty-five minutes behind. So going through the middle LIFTS the
+   drag — the next sample outside re-seeds the angle and contributes no travel
+   at all, which is what passing the pivot actually did.
+
+   That also lets the arc guard go. Capping a sample at 150 degrees stopped a
+   fast flick of the mouse from moving the hand at all, and with the chain
+   broken at the pivot there is nothing left for it to catch. */
+export function makeDrag() {
+  let grab = null, total = 0, last = null, lifted = false;
+  return {
+    get grab() { return grab; },
+    start(which, state, angle) {
+      grab = which;
+      total = totalOf(state.h, state.m);
+      last = angle;
+      lifted = false;
+    },
+    /* Returns the new time, or null when this sample changes nothing. */
+    move(state, angle, radius) {
+      if (!grab) return null;
+      if (radius < DEAD_ZONE) { lifted = true; return null; }
+      if (lifted) { last = angle; lifted = false; return null; }
+      let next;
+      if (grab === 'minute') {
+        total = dragMinute(total, angle, last);
+        next = timeOf(total);
+      } else {
+        next = dragTo(state, grab, angle);
+        total = totalOf(next.h, next.m);
+      }
+      last = angle;
+      return next;
+    },
+    end() { grab = null; last = null; lifted = false; },
+  };
+}
+
+
 
 /* Where a pointer is, as an angle from the 12, clockwise. The rect is the
    drawn box of the dial, so this works whatever size it has been laid out at. */
@@ -108,11 +199,20 @@ export function clockStage({ size = 240, minutes = false } = {}) {
            length and the short hand was almost unhittable whenever the two
            pointed the same way. The hour owns the inner half of the dial, the
            minute owns the outer — which is also the intuitive split, because
-           beyond the short hand's tip the long hand is the only one there. -->
+           beyond the short hand's tip the long hand is the only one there.
+
+           BUTT CAPS, NOT ROUND. A round cap extends a line by HALF ITS STROKE
+           WIDTH past each endpoint, so at 18 units wide these two still
+           overlapped by nine units at the join even after the spans were made
+           adjacent — and the minute target, drawn second, won there. A real
+           mouse aimed at the short hand got the long one, which then carried
+           the hour as the pointer passed the pivot and turned "make it 8
+           o'clock" into 11:40. An invisible target has no use for a rounded
+           end. -->
       <line class="lsn-grab" data-grab="hour" x1="50" y1="50" x2="50" y2="25"
-        stroke="transparent" stroke-width="18" stroke-linecap="round"/>
+        stroke="transparent" stroke-width="18" stroke-linecap="butt"/>
       <line class="lsn-grab" data-grab="minute" x1="50" y1="25" x2="50" y2="9"
-        stroke="transparent" stroke-width="18" stroke-linecap="round"/>
+        stroke="transparent" stroke-width="18" stroke-linecap="butt"/>
       <circle cx="50" cy="50" r="3" fill="var(--a1)"/></svg>`);
   wrap.innerHTML = face;
   /* The dial's own label described hands this SVG no longer has. The live time
@@ -200,8 +300,7 @@ export const timeText = (h, m) => `${((h + 11) % 12) + 1}:${String(m).padStart(2
    test and take the listeners away when the box closes. */
 export function mountTryClock(host, { h = 12, m = 0, size = 210, say = '' } = {}) {
   let at = { h, m };
-  let grab = null;
-  let last = null;
+  const drag = makeDrag();
   const dial = clockStage({ size, minutes: true });
   dial.classList.add('can-grab');
   const digits = digitalStage({ size: 120 });
@@ -230,20 +329,20 @@ export function mountTryClock(host, { h = 12, m = 0, size = 210, say = '' } = {}
   const down = (e) => {
     const g = e.target.closest?.('[data-grab]');
     if (!g) return;
-    grab = g.dataset.grab;
-    last = angleOf(svg().getBoundingClientRect(), e.clientX, e.clientY);
+    const box = svg().getBoundingClientRect();
+    drag.start(g.dataset.grab, at, angleOf(box, e.clientX, e.clientY));
     try { g.setPointerCapture(e.pointerId); } catch { /* unsupported: still works */ }
     e.preventDefault();
   };
   const move = (e) => {
-    if (!grab) return;
-    const a = angleOf(svg().getBoundingClientRect(), e.clientX, e.clientY);
-    at = dragTo(at, grab, a, last);
-    last = a;
-    paint();
+    if (!drag.grab) return;
+    const box = svg().getBoundingClientRect();
+    const next = drag.move(at, angleOf(box, e.clientX, e.clientY),
+      radiusOf(box, e.clientX, e.clientY));
+    if (next) { at = next; paint(); }
     e.preventDefault();
   };
-  const up = () => { grab = null; last = null; };
+  const up = () => drag.end();
   dial.addEventListener('pointerdown', down);
   dial.addEventListener('pointermove', move);
   dial.addEventListener('pointerup', up);

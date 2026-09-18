@@ -816,8 +816,15 @@ footer.foot a:hover { color: var(--txt) }
 }
 .lsn-goal[hidden] { display: none }
 /* Grabbable only while a step asks for it: the same dial is a picture on every
-   other step and a cursor promising otherwise would be a lie. */
+   other step and a cursor promising otherwise would be a lie.
+
+   AND NOTHING ELSE ON THE DIAL TAKES THE POINTER. The numerals are drawn at
+   radius 31 with a 10-unit font, so the "12" sits squarely on top of the minute
+   hand's grab zone near the top of the dial and won the hit test — a pointer
+   aimed at a hand landed on a number. Ticks and the centre pin do the same
+   lower down. Only the two grab lines are targets. */
 .lsn-clock .lsn-grab { pointer-events: none }
+.lsn-clock.can-grab svg * { pointer-events: none }
 .lsn-clock.can-grab .lsn-grab { pointer-events: stroke; cursor: grab }
 .lsn-clock.can-grab { touch-action: none }
 .lsn-clock.can-grab .lsn-hand { filter: drop-shadow(0 0 5px color-mix(in srgb, var(--a1) 55%, transparent)) }
