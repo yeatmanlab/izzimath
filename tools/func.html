@@ -2127,6 +2127,29 @@ L.push('');
   };
   const tall = (e) => (e ? e.getBoundingClientRect().height : 0);
 
+  /* THE ONE A CHILD FOUND. A routine that asks a question and offers only a
+     way PAST it is not a routine, it is a dead end — "there is no clear way to
+     respond here" was the report, on a Number Talk reading "What is 6 + 4?"
+     above a single button saying "Show me".
+
+     Generic over the registry rather than written twice, so an eighth routine
+     is covered on the day it is added. The discriminating part is the second
+     clause: a page always has SOMETHING pressable (Next, Skip, Print), so
+     counting buttons proves nothing. What has to be there is a control that
+     takes the child's own response — a box to put an answer in, or a set of
+     items to choose between — and it has to be inside the routine's own body,
+     not the page furniture around it. */
+  const canRespond = (doc, who) => {
+    const head = doc.querySelector('.rt-head'), body = doc.querySelector('.rt-body');
+    const asked = `${head?.textContent || ''} ${body?.textContent || ''}`.includes('?');
+    const boxes = body ? body.querySelectorAll('input, textarea, [contenteditable]').length : 0;
+    const picks = body ? body.querySelectorAll('.rt-cell').length : 0;
+    rc(who + ' asks something', asked, (body?.querySelector('.rt-ask')?.textContent
+      || head?.querySelector('.rt-intro')?.textContent || 'asks nothing').trim().slice(0, 44));
+    rc(who + ' takes an answer to it', boxes + picks > 0,
+      boxes ? boxes + ' box to type in' : picks ? picks + ' to pick from' : 'NOTHING but a way past it');
+  };
+
   try {
     // ---- Number Talk
     const f = await open('/books/adding-to-twenty/?seed=8817');
@@ -2149,8 +2172,49 @@ L.push('');
     rc('the progress bar has not moved', parseFloat(d.querySelector('.prog i')?.style.width || '0') === 0,
       'width ' + (d.querySelector('.prog i')?.style.width || '0'));
 
-    d.querySelector('[data-show]').click(); await nap(120);
-    rc('asking reveals one answer', d.querySelectorAll('.rt-ans').length === 1);
+    canRespond(d, 'the string');
+    /* The list is a queue of four, not a form. It cannot be asserted that it
+       LOOKS like one — that part was found by eye — but the cue that makes it
+       read as a queue is a real fact: each step says which of the four it is. */
+    rc('and each step says which one it is',
+      steps().map((li) => li.querySelector('.rt-n')?.textContent.trim()).join('') === '1234',
+      steps().map((li) => li.querySelector('.rt-n')?.textContent.trim() || '-').join(' '));
+
+    /* Answer it WRONG on purpose. A Number Talk records every answer and marks
+       none of them: what comes back is what you said, what it comes to, and the
+       method — the same method a right answer gets, because the method is the
+       reason the string exists. */
+    /* Everything from here is reached with `?.` on purpose. The obvious way to
+       write it throws the moment the box is missing, which is the exact
+       mutation these checks exist to catch — and a throw lands in one
+       "harness itself" line and silently takes the other twenty checks with
+       it. Each one has to be able to fail on its own and say what it wanted. */
+    const box = d.querySelector('.rt-body input.ans');
+    const m = d.querySelectorAll('.rt-steps li')[0]?.querySelector('.rt-expr')
+      ?.textContent.trim().match(/^(\d+)\s*([+\u2212-])\s*(\d+)$/) || [];
+    const truth = m[2] === '\u2212' || m[2] === '-'
+      ? Number(m[1]) - Number(m[3]) : Number(m[1]) + Number(m[3]);
+    if (box) box.value = String(truth + 1);
+    d.querySelector('[data-say]')?.click(); await nap(140);
+    const back = d.querySelector('.rt-panel')?.textContent || '';
+    rc('a wrong answer is said back, not marked',
+      back.includes('You said ' + (truth + 1)) && back.includes(String(truth))
+      && !/\b(wrong|incorrect|correct|not quite|try again)\b/i.test(back)
+      && !d.querySelector('.rt-body .bad, .rt-body .wrong'), back.replace(/\s+/g, ' ').trim().slice(0, 62));
+    rc('and it still gets the method', !!d.querySelector('.rt-hidden')?.textContent?.trim(),
+      d.querySelector('.rt-hidden')?.textContent?.slice(0, 42));
+    rc('answering scores nothing', parseFloat(d.querySelector('.prog i')?.style.width || '0') === 0,
+      'width ' + (d.querySelector('.prog i')?.style.width || '0'));
+    rc('and does not block the way on', !!d.querySelector('[data-next]'),
+      d.querySelector('[data-next]')?.textContent?.trim() || 'no way forward');
+
+    /* And the child who cannot get there is not stuck: move on, then take the
+       other door. Nothing typed, and the answer comes anyway. */
+    d.querySelector('[data-next]')?.click(); await nap(120);
+    rc('the next step asks for an answer again', !!d.querySelector('.rt-body input.ans'));
+    d.querySelector('[data-show]')?.click(); await nap(120);
+    rc('asking reveals one answer', d.querySelectorAll('.rt-ans').length === 2,
+      d.querySelectorAll('.rt-ans').length + ' settled');
     rc('and the working with it', !!d.querySelector('.rt-hidden')?.textContent?.trim(),
       d.querySelector('.rt-hidden')?.textContent?.slice(0, 42));
 
@@ -2166,6 +2230,13 @@ L.push('');
     const exprs = steps().map((li) => li.querySelector('.rt-expr').textContent.trim());
     rc('and quotes two of the four in it', exprs.filter((e) => ask.includes(e)).length === 2,
       exprs.filter((e) => ask.includes(e)).join(' and ') || 'quotes none of them');
+    /* The one screen in the routine with no box, because the answer is a
+       sentence and typing one is the barrier rather than the thinking. So it
+       has to SAY that, or it is the dead end again. */
+    rc('and says how to answer a question with no box',
+      /out loud/i.test(d.querySelector('.rt-panel')?.textContent || '')
+      && !d.querySelector('.rt-body input'),
+      (d.querySelector('.rt-panel')?.textContent || '').match(/Say[^.]*\./)?.[0] || 'says nothing');
     rc('the synthesis is withheld until asked', !!d.querySelector('[data-syn]')?.hidden);
     d.querySelector('[data-syn-show]').click(); await nap(120);
     rc('and then given', d.querySelector('[data-syn]')?.hidden === false,
@@ -2186,8 +2257,12 @@ L.push('');
       cells().map((c) => c.textContent.trim()).join(', '));
     rc('cells clear the 24px tap minimum', cells().every((c) => tall(c) >= 24),
       Math.min(...cells().map(tall)).toFixed(0) + 'px smallest');
+    canRespond(gd, 'the grid');
 
-    cells()[0].click(); await nap(120);
+    /* `?.` for the same reason as the string above: a missing cell is the very
+       thing the check beside it is for, and a throw would take the rest of the
+       block with it. */
+    cells()[0]?.click(); await nap(120);
     const said = gd.querySelector('.rt-panel')?.textContent || '';
     rc('picking one gives its reason', /only/.test(said), said.slice(0, 60));
     /* It must never be marked. Three other cells were just as defensible, so
@@ -2200,7 +2275,7 @@ L.push('');
     rc('after all four, it says all four work',
       /all four/i.test(gd.querySelector('.rt-panel')?.textContent || ''),
       (gd.querySelector('.rt-panel')?.textContent || '').slice(-52));
-    gd.querySelector('[data-syn-show]').click(); await nap(120);
+    gd.querySelector('[data-syn-show]')?.click(); await nap(120);
     rc('and answers whether someone else could be right',
       /Yes/.test(gd.querySelector('.rt-panel')?.textContent || ''),
       (gd.querySelector('.rt-panel')?.textContent || '').match(/Yes[^.]*\./)?.[0]?.slice(0, 44));

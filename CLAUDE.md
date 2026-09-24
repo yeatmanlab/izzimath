@@ -102,7 +102,16 @@ the default one, and assert the figure has real size first — otherwise a
 collapsed window makes every hit test return nothing and look like agreement.
 
 Read each harness's **own** verdict line (`no failures` / `N FAILURES`) rather
-than grepping for a marker you assume it uses.
+than grepping for a marker you assume it uses. `func.html` has no such line —
+it prints `✗` per failing check and nothing else, so read the `✗` lines AND
+`CHECKS_RUN`.
+
+**And a throw takes the rest of its block with it.** Each block in `func.html`
+sits in one `try`, so the obvious `d.querySelector('[data-say]').click()` dies
+on the exact mutation the check beside it exists to catch: 23 checks vanished,
+a single `harness itself THREW` line stood in for all of them, and only
+`CHECKS_RUN` dropping from 561 said so. Reach for the control with `?.` and let
+each check fail on its own and name what it wanted.
 
 **A duplicate key in an object literal is silent.** The later one wins, the
 earlier one vanishes, and nothing says so — not the build, not the checkers, not
@@ -318,6 +327,23 @@ already exist, and a routine only needs a `ui` the registry knows.
   is pressable it must say so — the cup's rows switch character and the line
   above them says "Tap a friend to play as them", because they look exactly like
   rows.
+- **A screen that asks a question takes an answer.** The Number Talk asked "What
+  is 6 + 4?" over a single button reading "Show me", so a first grader had
+  nowhere to respond and said so. On paper this routine prints on the ADULT's
+  key, because the adult reads it out and the child answers out loud; on screen
+  there is no adult, so the page has to be both the one who asks and the one who
+  listens. Not scored, not gated, never marked: what comes back is what you
+  said, what it comes to, and the METHOD — the same method a right answer gets,
+  which is the routine's own move of writing every answer up before discussing
+  any of them. And "just show me" stays one press away, because a child who
+  cannot get there must not be stuck in the warm-up. The four expressions above
+  it made it worse: full-width filled boxes holding `·····` with the current one
+  outlined in the accent colour, which is an empty text field beside a focused
+  one, and is where the child tried to type. They are numbered now and a
+  withheld one is a flat dashed rule. `tools/func.html` holds the rule
+  GENERICALLY over the routine registry — a screen that asks must carry a box or
+  a set of items, inside the routine's own body — because counting buttons
+  proves nothing on a page that also has Next, Skip and Print on it.
 - **A prose page that offers to print needs `.prose`.** The print rules force
   `html, body` black on white, which does nothing for a descendant carrying its
   own colour — and on a dark theme nearly every text class does. `/guide/` had a

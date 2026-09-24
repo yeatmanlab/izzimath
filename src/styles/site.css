@@ -617,15 +617,28 @@ footer.foot a:hover { color: var(--txt) }
 .rt-target span[aria-hidden] { color: var(--a2) }
 .rt-body { max-width: 46ch; margin: 0 auto }
 
-/* Number Talk: the string, with everything after the current step withheld. */
+/* Number Talk: the string, with everything after the current step withheld.
+   A withheld step used to be a full-width FILLED box holding "·····", which is
+   the exact shape of an empty text field — and the current step was outlined in
+   the accent colour, which is the exact shape of a focused one. Four of them
+   above a question with nowhere to answer it, and a first grader duly tried to
+   type in the list. So a step is numbered now, and a withheld one is a flat
+   dashed rule with no fill: plainly a place in a queue rather than a place to
+   put something. The one box on this screen you can type in is the answer box,
+   and it is the same `input.ans` the book uses. */
 .rt-steps { list-style: none; display: grid; gap: 7px; margin: 0 0 22px; padding: 0 }
-.rt-steps li { display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+.rt-steps li { display: flex; align-items: baseline; gap: 12px;
   border: 1px solid var(--line); border-radius: 11px; padding: 10px 15px; background: var(--glass) }
 .rt-steps li.now { border-color: var(--a2); background: color-mix(in srgb, var(--a2) 12%, transparent) }
-.rt-steps li.later { opacity: .45 }
+.rt-steps li.later { opacity: .6; border-style: dashed; background: none }
+.rt-n { font-family: var(--fdisp); font-size: 12.5px; font-weight: 700; color: var(--txt3);
+  min-width: 1.1em; text-align: center }
 .rt-expr { font-family: var(--fdisp); font-size: 19px; font-weight: 700; color: var(--txt) }
 .rt-steps li.later .rt-expr { letter-spacing: .2em; color: var(--txt3) }
-.rt-ans { font-family: var(--fdisp); font-size: 19px; font-weight: 700; color: var(--ok) }
+.rt-ans { margin-left: auto; font-family: var(--fdisp); font-size: 19px; font-weight: 700; color: var(--ok) }
+/* What the child said, beside what it comes to. Neither is a mark. */
+.rt-mine { font-size: 15.5px; color: var(--txt2) }
+.rt-mine strong { font-family: var(--fdisp); color: var(--txt) }
 
 /* Which One Doesn't Belong: a 2x2, and no cell is ever marked wrong. */
 .rt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px }
@@ -640,7 +653,11 @@ footer.foot a:hover { color: var(--txt) }
 .rt-ask { font-size: 16.5px; color: var(--txt); margin: 0 0 8px }
 .rt-wait { font-size: 13.5px; color: var(--txt3); margin: 0 }
 .rt-hidden { font-size: 14px; color: var(--txt2); margin: 8px auto 0; max-width: 44ch }
-.rt-foot { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap }
+/* A column, not a row: the button that RECORDS an answer is `.btn.go`, which is
+   full width by design, so anything beside it would be squeezed or wrapped into
+   looking like its equal. The way past a question sits UNDER the way to answer
+   it. */
+.rt-foot { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 18px }
 
 @media (max-width: 560px) {
   .rt-steps li { padding: 9px 13px }

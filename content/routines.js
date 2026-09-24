@@ -145,7 +145,11 @@ export const ROUTINES = {
       const built = make(r.int(lo, hi));
       const [i, j] = built.compare;
       return {
-        intro: 'Do these in your head, one at a time. No writing.',
+        /* "No writing" meant no working it out on paper, and read as "there
+           is nothing for you to do here" beside a screen that took no answer.
+           The rule is the same; the words no longer forbid the one thing the
+           child is being asked for. */
+        intro: 'Do these in your head, one at a time. No working it out on paper.',
         target: built.target,
         steps: built.steps,
         close: {
