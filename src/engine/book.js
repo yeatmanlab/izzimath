@@ -292,6 +292,10 @@ export function mountBook(activity, root) {
     window.__izziProfile?.noteProgress(activity.id, {
       finished: true, pagesDone: worked,
       right: answered.filter((x) => x?.ok).length,
+      /* The same denominator the count above came out of, so the parent report
+         divides two numbers that describe one sitting. `worked` rather than
+         activity.pages: a book left half done asked half the questions. */
+      asked: worked,
       fixes,
     });
     window.__izziProfile?.offerToKeepScore();

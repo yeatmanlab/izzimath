@@ -96,8 +96,8 @@ export const TOUR = {
         'Two of them so far — how a clock works and how coins work. The clock hands actually move, which is the one thing a paper worksheet cannot do. Nothing is timed and there is nothing to get wrong.'],
       ['The character cup', '/cup/',
         'Which of the {characters} friends has been out the most, counted in badges. It ranks the friends, never the children — nobody else is on it.'],
-      ['How to help', '/parents/',
-        'For a grown-up: how long a session should be, how often, and what to say when someone is stuck.'],
+      ['For parents', '/parents/',
+        'For a grown-up: how your child is getting on strand by strand, what to work on next, and how long a session should be.'],
     ],
     said: 'Three ways to a sheet: the Printables page, the Print button on any book or game, '
       + 'or a pack of several sheets at once.',

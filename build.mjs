@@ -935,7 +935,7 @@ for (const lesson of Object.values(LESSONS)) {
     ['Same surface, different depth', `${b}/ssdd/`,
       `${ssddSets.length} sheets of four questions that look alike and need four different methods — one per grade.`],
     ['By skill', `${b}/skills/`, 'If you already know the sticking point, this is the faster way in.'],
-    ['How to help', `${b}/parents/`, 'How long, how often, and what to say when they are stuck.'],
+    ['For parents', `${b}/parents/`, 'How your child is getting on strand by strand, what to work on next, and how long and how often to do it.'],
     ['Keeping score', `${b}/`, 'Optional and never asked for twice: pick a creature, a name and a secret snack, and scores stay in this browser. No account, and nothing is sent anywhere.'],
     ['Badges', `${b}/badges/`,
       `All ${BADGE_COUNT} of them, and what each one takes. A badge says what you did, so there is none for showing up and none for being quick.`],
@@ -1148,14 +1148,37 @@ write('about/index.html', page({
 }));
 
 /* ------------------------------------------------------------------ parents */
-write('parents/index.html', page({
-  base: b, active: 'parents', title: 'How to help', desc: 'Short, practical guidance for parents using Izzi Math at home — how long, how often, and what to say when your child is stuck.',
-  crumbs: [{ label: 'Home', href: '/' }, { label: 'How to help' }],
-  body: `<section class="wrap"><div class="ahead"><div><h1>How to help</h1>
-    <p>Six things that make more difference than which activity you pick.</p></div></div>
+/* Two things a parent wants, on one page, in the order they want them: how is
+   my child getting on, and what do I do about it. They used to be one page and
+   half a question — the guidance was here and the answer to "what should we
+   work on" was nowhere, so a parent had to infer it from a grade list.
 
-    <div class="sec" style="max-width:76ch">
-      <p class="sub">This page exists because of a specific finding. A 2024 review of 25 maths
+   ONE TAB, NOT TWO. The nav is already eight items wide and findability is
+   already a complaint ("add short lessons to the nav bar, it's hard to find"),
+   so this is the same page at the same URL with a new name and a report on top,
+   rather than a ninth entry competing with it.
+
+   The report is client-rendered because the data is in this browser and nowhere
+   else, so the built page ships the host and the guidance. That ordering is
+   also the graceful one: with no profile — the default, and most readers — the
+   host renders an invitation and the six points below carry the page exactly as
+   they always did. */
+write('parents/index.html', page({
+  base: b, active: 'parents', title: 'For parents', desc: 'How your child is getting on, what to work on next, and the six things that make more difference than which activity you pick.',
+  crumbs: [{ label: 'Home', href: '/' }, { label: 'For parents' }],
+  scripts: ['/assets/src/mount/parents.js'],
+  body: `<section class="wrap"><div class="ahead"><div><h1>For parents</h1>
+    <p>How your child is getting on here, and what to do about it.</p></div>
+    <button class="btn sm" type="button" onclick="window.print()">Print this page</button></div>
+
+    <div class="prose" style="max-width:76ch">
+    
+
+    <div data-report class="rphost"></div>
+
+    <h2 id="how-to-help" style="margin-top:38px">How to help</h2>
+      <p class="sub">Six things that make more difference than which activity you pick.
+      This section exists because of a specific finding. A 2024 review of 25 maths
       programmes delivered by parents at home found a modest average benefit &mdash; and that the
       benefit depended on whether the adult got any guidance and follow-up. Handing over good
       materials with no guidance is the version that barely works. So here is the guidance.</p>

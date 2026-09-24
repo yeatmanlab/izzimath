@@ -94,7 +94,7 @@ function nav(b, active) {
     ${link('/learn/', 'Lessons', 'learn')}
     ${link('/printables/', 'Printables', 'printables')}
     ${link('/skills/', 'By skill', 'skills')}
-    ${link('/parents/', 'How to help', 'parents')}
+    ${link('/parents/', 'For parents', 'parents')}
     ${link('/references/', 'Research', 'references')}
     <div class="nav-r">
       <div class="chpick" id="chpick" role="group" aria-label="Choose a character">
@@ -137,7 +137,7 @@ function footer(b) {
   return `<footer class="foot noprint"><div class="wrap fin">
   <span>Izzi Math — free math practice for families.</span>
   <a href="${b}/guide/">Take a tour</a>
-  <a href="${b}/parents/">How to help</a>
+  <a href="${b}/parents/">For parents</a>
   <a href="${b}/references/">Research and references</a>
   <a href="${b}/about/">About &amp; credits</a>
   <a href="${b}/printables/">All printables</a>

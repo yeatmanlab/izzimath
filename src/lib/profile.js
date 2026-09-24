@@ -55,8 +55,18 @@ export const MERGE = {
   bestTier: 'max',
   /* Running totals, not bests. `rightTotal` is what the milestone badges count;
      `fixes` counts going back and correcting a wrong answer, which is the one
-     behaviour in the whole set most worth reinforcing — see docs/BADGES.md. */
+     behaviour in the whole set most worth reinforcing — see docs/BADGES.md.
+
+     `askedTotal` is the DENOMINATOR, and without it nothing here could say how
+     a child is getting on. `rightTotal` alone is a measure of how much they
+     played: 40 right is excellent out of 45 and dismal out of 200, and the
+     store could not tell those apart. The parent report needs the ratio, so
+     both halves are counted, both as sums, so they stay comparable however
+     many sittings they came from. A profile that predates this field has
+     `rightTotal` and no `askedTotal`, which is not zero accuracy — it is no
+     evidence, and content/report.js keeps those two apart. */
   rightTotal: 'sum',
+  askedTotal: 'sum',
   fixes: 'sum',
   finished: 'or',
   lastAt: 'latest',
@@ -178,7 +188,7 @@ export const blankProgress = (activityId) => ({
   v: PROFILE_V, activityId,
   plays: 0, printed: 0, pagesDone: 0,
   bestRight: 0, bestStreak: 0, bestTier: 0,
-  rightTotal: 0, fixes: 0,
+  rightTotal: 0, askedTotal: 0, fixes: 0,
   finished: false, lastAt: null,
 });
 
@@ -319,6 +329,10 @@ export function createStore(driver = localDriver()) {
         next.bestRight = Math.max(next.bestRight || 0, event.right);
         next.rightTotal = (next.rightTotal || 0) + event.right;
       }
+      /* Counted separately from `right` rather than derived from it, because an
+         engine knows how many it asked and the store must never guess. A book
+         the child abandoned halfway asked six, not its authored twelve. */
+      if (Number.isFinite(event.asked)) next.askedTotal = (next.askedTotal || 0) + event.asked;
       if (Number.isFinite(event.fixes)) next.fixes = (next.fixes || 0) + event.fixes;
       if (Number.isFinite(event.streak)) next.bestStreak = Math.max(next.bestStreak || 0, event.streak);
       if (Number.isFinite(event.tier)) next.bestTier = Math.max(next.bestTier || 0, event.tier);

@@ -2075,7 +2075,7 @@ L.push('');
     /* The features a new visitor most needs and least easily finds. /plans/ has
        zero editorial inbound links in the whole site, so a tour that omits it
        leaves it exactly as invisible as it was. */
-    for (const want of ['Grades', 'Books', 'Games', 'Printables', 'Badges', 'By skill', 'Plans', 'How to help']) {
+    for (const want of ['Grades', 'Books', 'Games', 'Printables', 'Badges', 'By skill', 'Plans', 'For parents']) {
       checks++;
       if (!rows.includes(want)) L.push('\u2717 ' + ('tour:names ' + want).padEnd(34) + '  MISSING');
     }
@@ -3098,6 +3098,134 @@ L.push('');
     cb('harness itself', false, 'THREW ' + e.message);
   }
   fr.remove();
+}
+
+/* ------------------------------------------------------------ parent report
+   The report is client-rendered from data in this browser, so a11y.mjs cannot
+   see it and check.mjs can only test the JUDGEMENT — which it does, on invented
+   counts, in its own section. What has to be tested through a real page is what
+   the parent actually reads.
+
+   localStorage is per-origin and this harness shares the iframe's origin, so a
+   profile is written here BEFORE the frame is created and put back afterwards.
+   This block sits last for that reason: a seeded profile leaking into the cup
+   and profile-panel blocks would change their numbers under them. */
+L.push('');
+{
+  const pc = (n, ok, note) => { checks++; L.push((ok ? '· ' : '✗ ') + ('parents:' + n).padEnd(40) + '  ' + (note || (ok ? 'ok' : 'FAILED'))); };
+  const nap = (ms) => new Promise((r) => setTimeout(r, ms));
+  const KEY = 'izzi.profiles.v1';
+  const saved = (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
+
+  const open = async (url) => {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:absolute;left:-99999px;top:0;width:1000px;height:2600px';
+    f.src = url;
+    document.body.appendChild(f);
+    await new Promise((r) => { f.onload = r; setTimeout(r, 8000); });
+    await nap(600);
+    return f;
+  };
+
+  try {
+    /* ---- the DEFAULT state, which is nobody keeping score. Most readers of
+       this page are here, so an empty host is a bug rather than an edge case. */
+    try { localStorage.removeItem(KEY); } catch { /* private mode */ }
+    let f = await open('/parents/');
+    let d = f.contentDocument;
+    pc('the tab is named for a parent', /For parents/.test(d.querySelector('h1')?.textContent || ''),
+      d.querySelector('h1')?.textContent?.trim());
+    const empty = d.querySelector('[data-report]');
+    pc('with no profile it still says something', (empty?.textContent || '').trim().length > 80,
+      (empty?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 52) || 'EMPTY HOST');
+    pc('and offers the way to start one', !!empty?.querySelector('a[href*="/grades/"]'),
+      empty?.querySelector('a')?.getAttribute('href'));
+    pc('and the guidance below it survives', /How to help/.test(d.body.textContent || ''));
+    f.remove();
+
+    /* ---- a child with a history: struggling at a game whose book is unfinished,
+       solid at adding, and a strand never touched. Written straight into the
+       document store the way the local driver shapes it. */
+    const id = 'hxchk1', now = new Date().toISOString();
+    const rec = (a, o) => ['profiles/' + id + '/progress/' + a, Object.assign({
+      v: 1, activityId: a, plays: 0, printed: 0, pagesDone: 0, bestRight: 0,
+      bestStreak: 0, bestTier: 0, rightTotal: 0, askedTotal: 0, fixes: 0,
+      finished: false, lastAt: now }, o)];
+    localStorage.setItem(KEY, JSON.stringify(Object.fromEntries([
+      ['profiles/' + id, { v: 1, id, avatar: 12, name: 'Noodle', food: 'pizza', theme: 'none', createdAt: now, lastSeenAt: now }],
+      ['meta/active', { id }],
+      rec('hundred-board', { plays: 4, rightTotal: 14, askedTotal: 38, bestTier: 1 }),
+      rec('tens-and-ones', { plays: 1, rightTotal: 5, askedTotal: 9 }),
+      rec('adding-to-twenty', { plays: 2, rightTotal: 19, askedTotal: 22, finished: true }),
+      rec('make-ten-race', { plays: 3, rightTotal: 22, askedTotal: 24, bestTier: 3 }),
+    ])));
+
+    f = await open('/parents/');
+    d = f.contentDocument;
+    const host = d.querySelector('[data-report]');
+    const text = (host?.textContent || '').replace(/\s+/g, ' ');
+    pc('it is the child\'s report, by name', /Noodle/.test(text), text.slice(0, 40));
+    const bands = [...d.querySelectorAll('.rpband')].map((b) => b.textContent.trim());
+    pc('every strand carries a band', bands.length >= 3, bands.join(' | ') || 'no bands');
+    pc('and the bands are not all the same word', new Set(bands).size >= 2, [...new Set(bands)].join(' / '));
+
+    /* COUNTS, NOT PERCENTAGES. The design rule from content/report.js: a
+       percentage reads as a mark out of a hundred, gets repeated to the child,
+       and is the most score-like way to say the least useful version of the
+       fact. A number followed by % anywhere in the report breaks it. */
+    pc('no percentage anywhere in the report', !/\d\s*%/.test(text),
+      text.match(/[^.]{0,24}\d\s*%/)?.[0] || 'none');
+    /* And no percentile or grade level, because point 6 of the page underneath
+       says there are none here on purpose.
+
+       Matching the WORD "percentile" was wrong and failed immediately — on the
+       report's own sentence saying there is no percentile here. A rule that
+       cannot tell a claim from its denial is the grep trap, not a check. What is
+       forbidden is a percentile with a NUMBER on it, and a child placed at a
+       grade level. */
+    pc('and no percentile or grade-level claim',
+      !/\d\s*(st|nd|rd|th)?\s*percentile/i.test(text)
+      && !/(working|reading|performing|sitting)\s+at\s+(a\s+)?(grade|year)\b/i.test(text)
+      && !/\bgrade\s+(level|equivalent)\b/i.test(text.replace(/no grade level/gi, '')),
+      text.match(/\d\s*(st|nd|rd|th)?\s*percentile[^.]*/i)?.[0] || 'none');
+    pc('it shows counts out of a total', /\b\d+ of \d+\b/.test(text),
+      text.match(/\b\d+ of \d+ right\b/)?.[0] || 'no counts');
+
+    /* WHAT TO DO NEXT, and the thing that was wrong: every button's words have
+       to name its own destination. One shared string made a step read "Open The
+       Hundred Board" above a link to /learn/jumps/. */
+    const steps = [...d.querySelectorAll('.rpstep')];
+    pc('it says what to work on next', steps.length >= 2, steps.length + ' steps');
+    pc('and never more than it said it would', steps.length <= 4, steps.length + ' steps');
+    let lying = [];
+    for (const st of steps) {
+      const a = st.querySelector('a[href]');
+      const cta = (a?.textContent || '').toLowerCase();
+      const to = a?.getAttribute('href') || '';
+      const ok = /\/learn\//.test(to)
+        ? /lesson/.test(cta)
+        : /\/(books|games)\/([a-z0-9-]+)\//.test(to)
+          && cta.includes((st.querySelector('.rpstep-title')?.textContent || '').toLowerCase().slice(0, 6));
+      if (!ok) lying.push(cta.trim().slice(0, 24) + ' -> ' + to);
+    }
+    pc('every button names where it goes', !lying.length, lying[0] || steps.length + ' checked');
+    pc('and one of them is the book behind a failing game',
+      /Do the book first/i.test(host?.textContent || ''),
+      steps.map((x) => x.querySelector('.rpstep-kind')?.textContent.trim()).join(' | '));
+
+    /* The honesty block is not a footnote — it is the frame the numbers only
+       mean anything inside, so it has to be IN the report. */
+    pc('it says this is not an assessment', /not an assessment/i.test(text),
+      text.match(/It is not a test[^.]*\./)?.[0]?.slice(0, 46) || 'does not say so');
+    pc('and that an untouched activity proves nothing',
+      /gap in the record, not a gap in their maths/i.test(text));
+    f.remove();
+  } catch (e) {
+    pc('harness itself', false, 'THREW ' + e.message);
+  }
+  /* Put the browser back the way it was found, or every block after this one
+     is measuring a child this harness invented. */
+  try { if (saved === null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, saved); } catch { /* private mode */ }
 }
 
 L.push(''); L.push('CHECKS_RUN='+checks);

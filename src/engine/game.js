@@ -305,6 +305,11 @@ export function mountGame(activity, root) {
        that signal only exists in a book, where an answer can be changed. */
     window.__izziProfile?.noteProgress(activity.id, {
       played: true, right: score, streak: best, tier: lad ? deepest : 0,
+      /* `round` is the number ASKED, and it is already correct at both exits:
+         the normal one is reached from paint() after round++, and the timer one
+         fires with a question still on screen that was never answered. It is
+         the same denominator the finish screen's own percentage uses. */
+      asked: round,
     });
     window.__izziProfile?.offerToKeepScore();
     const pct = total ? Math.round((score / Math.max(round, 1)) * 100) : 0;

@@ -664,6 +664,67 @@ footer.foot a:hover { color: var(--txt) }
   .rt-cell { aspect-ratio: 2 / 1.35 }
 }
 
+/* ---------- the parent report ----------
+   A BAND IS A WORD, NEVER A BAR. There is no progress bar, dial or percentage
+   in here on purpose: /parents/ point 6 says there are no percentiles on this
+   site because comparison does not reduce maths anxiety, and a filled bar is a
+   percentage wearing a costume. The colour carries the band and the label says
+   it in words, so the meaning survives being printed in grey. */
+.rphost { margin: 6px 0 10px }
+.rpempty h2, .rpwrap h2 { font-family: var(--fdisp); font-size: 25px; margin: 0 0 8px }
+.rplede { font-size: 15px; margin: 0 0 4px }
+
+.rpnext { margin-top: 30px }
+.rpnext h3, .rpstrands h3, .rpcaveat h3 { font-family: var(--fdisp); font-size: 19px; margin: 0 0 6px }
+.rpsteps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px }
+.rpstep { display: flex; gap: 14px; align-items: flex-start;
+  border: 1px solid var(--line); border-left: 3px solid var(--a2);
+  border-radius: 12px; padding: 14px 16px; background: var(--glass) }
+.rpstep-n { font-family: var(--fdisp); font-size: 15px; font-weight: 700; color: var(--a2);
+  min-width: 1.2em; padding-top: 2px }
+.rpstep-body { flex: 1 }
+.rpstep-kind { font-family: var(--fdisp); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--txt3); margin: 0 0 3px }
+.rpstep-title { font-family: var(--fdisp); font-size: 17px; margin: 0 0 5px }
+.rpstep-why { font-size: 13.5px; color: var(--txt2); margin: 0 0 10px }
+
+.rpstrands { margin-top: 32px }
+.rpgrade { margin-top: 16px }
+.rpgrade-h { font-family: var(--fdisp); font-size: 13px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--txt3); margin: 0 0 9px }
+.rprow { border: 1px solid var(--line); border-radius: 12px; padding: 13px 15px;
+  margin-bottom: 9px; background: var(--glass) }
+.rprow-head { display: flex; gap: 12px; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap }
+.rprow-head h4 { font-family: var(--fdisp); font-size: 16.5px; margin: 0 }
+.rpband { font-family: var(--fdisp); font-size: 11.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 4px 9px; border-radius: 999px; white-space: nowrap;
+  border: 1px solid var(--line2); color: var(--txt2) }
+.rpband-hand { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, transparent) }
+.rpband-coming { color: var(--a1); border-color: color-mix(in srgb, var(--a1) 45%, transparent) }
+.rpband-solid { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent) }
+.rprow-count { font-family: var(--fdisp); font-size: 14.5px; color: var(--txt); margin: 7px 0 0 }
+.rprow-of { font-weight: 400; font-size: 12.5px; color: var(--txt3) }
+.rprow-say { font-size: 13.5px; color: var(--txt2); margin: 6px 0 0 }
+.rprow-dose { font-size: 12.5px; color: var(--txt3); margin: 5px 0 0 }
+.rpacts { list-style: none; margin: 11px 0 0; padding: 10px 0 0; display: grid; gap: 6px;
+  border-top: 1px solid var(--line) }
+.rpacts li { display: flex; gap: 10px; align-items: baseline; font-size: 13.5px }
+.rpacts-kind { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--txt3) }
+.rpacts-n { margin-left: auto; font-family: var(--fdisp); font-size: 13.5px; color: var(--txt2) }
+
+/* Beside the numbers, not in small type underneath them: these sentences are
+   the frame the numbers only mean anything inside. */
+.rpcaveat { margin-top: 30px; border: 1px solid var(--line2); border-radius: 12px;
+  padding: 15px 18px; background: var(--glass2) }
+.rpcaveat ul { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 7px }
+.rpcaveat li { font-size: 13.5px; color: var(--txt2) }
+
+@media (max-width: 560px) {
+  .rpstep { padding: 12px 13px; gap: 10px }
+  .rpacts li { flex-wrap: wrap }
+}
+
 /* ---------- suggestion button ---------- */
 /* Pinned, and clear of the footer links it would otherwise sit on top of at the
    bottom of a short page. Under the tour panel's z-index, above everything

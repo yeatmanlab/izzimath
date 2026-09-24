@@ -22,7 +22,7 @@ engine, live in [`tools/`](tools/README.md). The build copies them to
 `dist/_tools/` for local runs and **deliberately does not in CI**
 (`build.mjs` guards on `!process.env.CI`), so `izzimath.com/_tools/` is a 404 on
 purpose — run them against a local `dist`, which is also the only place they can
-measure a build you are still changing: a **responsive audit** (45 pages × 5 widths, checking overflow,
+measure a build you are still changing: a **responsive audit** (46 pages × 5 widths, checking overflow,
 tap-target size, text size and SVG text contrast), a **problem-type test** (all ten types render,
 verify their own answers, and print — plus the profile panel's dialog and
 keyboard behaviour, driven through a real page in an iframe, since it is
@@ -101,10 +101,23 @@ grabbed*, go through `document.elementFromPoint` at a position that is **not**
 the default one, and assert the figure has real size first — otherwise a
 collapsed window makes every hit test return nothing and look like agreement.
 
-Read each harness's **own** verdict line (`no failures` / `N FAILURES`) rather
-than grepping for a marker you assume it uses. `func.html` has no such line —
-it prints `✗` per failing check and nothing else, so read the `✗` lines AND
-`CHECKS_RUN`.
+**Read a harness with `node tools/read-harness.mjs <dumped-dom.html>`, not with
+a one-liner.** It reads each harness's own verdict line (`no failures` /
+`N FAILURES`) where there is one, counts the `✗` lines where there is not
+(`func.html` and `audit.html` print no summary), and treats a missing
+`CHECKS_RUN` as no result rather than a pass.
+
+It exists because the one-liner has been wrong twice, both times in the
+direction that reads as a pass or invents a failure. The first grepped for `✗`
+or `FAIL` and could not see a page-fill failure at all. The second sliced
+`id="out"` to `</pre>` — but `func.html` and `audit.html` use `<pre id="out">`
+while **`sweep.html` and `pagefill.html` use `<div id="out">`**, so on those two
+the slice ran off the end of the document and swallowed the harness's own
+SOURCE, which contains the words `OVER`, `WIDE`, `COUNT` and `no failures` in
+the code that emits them. It reported pagefill as 4 OVER / 2 WIDE / 1 COUNT on a
+run whose real verdict was the documented 201 THIN and nothing else, and twenty
+minutes went into a regression that did not exist. Strip `<script>` before
+matching anything, or the code that prints a marker gets read as the marker.
 
 **And a throw takes the rest of its block with it.** Each block in `func.html`
 sits in one `try`, so the obvious `d.querySelector('[data-say]').click()` dies
@@ -344,6 +357,39 @@ already exist, and a routine only needs a `ui` the registry knows.
   GENERICALLY over the routine registry — a screen that asks must carry a box or
   a set of items, inside the routine's own body — because counting buttons
   proves nothing on a page that also has Next, Skip and Print on it.
+- **A report about a child says what it saw, and no more.** `/parents/` leads
+  with a strand-by-strand picture built from that browser's own progress
+  records, and every line of it is constrained by what the data can actually
+  support. It is a record of practice, NOT an assessment: an activity nobody
+  opened is reported as untouched and never as a weakness, because "not started"
+  is a gap in the record and not a gap in their maths. No percentile, no grade
+  level and no comparison to another child — point 6 of that same page says
+  there are none here on purpose, because maths anxiety is real and comparison
+  does not reduce it, so a report bolted to the top may not contradict the
+  advice underneath. **Counts, never percentages**: "14 of 20", because a
+  percentage reads as a mark out of a hundred and gets repeated to the child.
+  And **no verdict under `FLOOR` items** — one wrong out of two is fifty per
+  cent and means nothing, so "not enough yet" is a state with its own copy
+  rather than a blank.
+
+  The bands come FROM `src/lib/ladder.js` rather than being a second pair of
+  thresholds: "solid" means exactly "the adaptive difficulty would have stepped
+  this child up", so the report cannot drift from the thing it reports on. The
+  judgement is a pure function in `content/report.js` — (activities, progress)
+  → report — which is what lets `scripts/check.mjs` test it on invented counts
+  with no browser, and `tools/func.html` test only the rendering.
+
+  Two traps, both found rather than reasoned about. **A numerator with no
+  denominator is no evidence, not a perfect score**: profiles written before
+  `askedTotal` existed kept `rightTotal` for the badges and nothing to divide
+  by, and dividing there reported every such child as flawless — the worst thing
+  this page could say. They read as `VERDICTS.old`. And **advice must name its
+  own destination**: one shared string put "Open The Hundred Board" on a button
+  linking to `/learn/jumps/`. Each rule also says WHY, because "do this" with no
+  reason is advice a parent cannot adapt, and the list is capped at four with one
+  slot **reserved** for a gap — five failing activities otherwise filled it and
+  the report answered half the question it exists for.
+
 - **A prose page that offers to print needs `.prose`.** The print rules force
   `html, body` black on white, which does nothing for a descendant carrying its
   own colour — and on a dark theme nearly every text class does. `/guide/` had a
@@ -471,6 +517,7 @@ content/
   activities/       one file per grade; an activity is metadata + a generator
   characters.js     the character packs (palette, world nouns, voice)
   routines.js       the IM warm-up routines, as generators
+  report.js         the parent report — pure (activities, progress) -> report
   feedback.js       the suggestion button's copy, and the GitHub issue URL
   types.js          the ten problem types, and answer checking
   wordproblems.js   word problems, tagged by CGI schema
@@ -484,6 +531,7 @@ src/
   mount/            per-page entry points
   styles/           site.css and print.css
 scripts/            build templates, and the four checkers
+tools/              the browser harnesses, and read-harness.mjs to read them
 static/             favicon.svg + the two PNG sizes; copied verbatim into dist/
 build.mjs           static site generator — plain Node, no dependencies
 docs/

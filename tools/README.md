@@ -55,7 +55,20 @@ your change, and reports a clean pass for code it never loaded.
 
 Then open, or drive headless:
 
-- `http://localhost:8890/_tools/audit.html` — responsive audit. 45 pages ×
+Read a run with the reader rather than a grep:
+
+```
+node tools/read-harness.mjs /tmp/func.html /tmp/pagefill.html
+```
+
+It knows that `func.html` and `audit.html` use `<pre id="out">` while
+`sweep.html` and `pagefill.html` use `<div id="out">`, strips the harness's own
+source before matching (the code contains the words `OVER`, `WIDE`, `COUNT` and
+`no failures`), and treats a missing `CHECKS_RUN` as no result rather than a
+pass. Two hand-rolled extractors got this wrong in the direction of a false
+green; see the note in CLAUDE.md.
+
+- `http://localhost:8890/_tools/audit.html` — responsive audit. 46 pages ×
   5 widths (360, 390, 768, 1024, 1440). Flags unscrolled horizontal overflow,
   tap targets under 24px (inline links in prose are exempt, per WCAG 2.5.8),
   body text under 11px, a control sitting under the pinned suggestion button,

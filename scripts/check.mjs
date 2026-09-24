@@ -2854,6 +2854,245 @@ console.log('\n=== the client modules parse ===');
   console.log(`  ${seen - broken} of ${seen} modules under src/ parse${broken ? `, ${broken} BROKEN` : ''}`);
 }
 
+console.log('\n=== the parent report ===');
+{
+  /* content/report.js is the one piece of JUDGEMENT on this site: it decides
+     whether a child is getting on with something, and a parent makes decisions
+     from the answer. That is exactly why it is a pure function of two counts —
+     it can be tested here, on invented numbers, with no browser and no profile.
+
+     Every case below is a child who could exist. The one that matters most is
+     `legacy`: a profile written before askedTotal existed has a numerator and
+     no denominator, and the first version of this divided by it and reported
+     every such child as flawless. On a page a parent plans a week from, that is
+     the worst thing in here that could be wrong. */
+  const {
+    reportFor, verdictOf, nextSteps, VERDICTS, VERDICT_IDS, readingOrder,
+    FLOOR, SOLID_AT, COMING_AT, NEXT_MAX, GAP_SLOTS, isLegacy, doseFor,
+  } = await import('../content/report.js');
+  const { LADDER_DEFAULTS } = await import('../src/lib/ladder.js');
+  let cases = 0;
+  const is = (label, got, want) => {
+    cases++;
+    if (got !== want) fail(`report:${label}`, `got "${got}", expected "${want}"`);
+  };
+
+  /* The thresholds are the LADDER's, not a second pair that can drift from it.
+     "Solid" has to mean exactly "the adaptive difficulty would have stepped
+     this child up", or the report and the site disagree about the same child. */
+  is('solid threshold is the ladder\'s step-up', SOLID_AT, LADDER_DEFAULTS.up);
+  is('coming threshold is the ladder\'s step-down', COMING_AT, LADDER_DEFAULTS.down);
+
+  /* Boundaries, both sides. A band whose edge is off by one item is a band that
+     labels a child wrong on the run that mattered. */
+  is('exactly at the step-up is solid', verdictOf({ right: 17, asked: 20 }).id, 'solid');
+  is('a hair under it is coming along', verdictOf({ right: 16, asked: 20 }).id, 'coming');
+  is('exactly at the step-down is coming along', verdictOf({ right: 14, asked: 20 }).id, 'coming');
+  is('a hair under it needs a hand', verdictOf({ right: 13, asked: 20 }).id, 'hand');
+  is('the floor itself is judged', verdictOf({ right: FLOOR, asked: FLOOR }).id, 'solid');
+  is('one below the floor is not', verdictOf({ right: FLOOR - 1, asked: FLOOR - 1 }).id, 'thin');
+  is('nothing asked is not started', verdictOf({ right: 0, asked: 0 }).id, 'none');
+
+  /* THE ONE THAT MATTERS. Right answers with no denominator is not a perfect
+     score, it is no evidence. */
+  is('a numerator with no denominator is never solid', verdictOf({ right: 400, asked: 0 }).id, 'none');
+  cases++;
+  if (!isLegacy({ rightTotal: 44, plays: 6, finished: true }))
+    fail('report:legacy', 'a played record with no askedTotal was not recognised as pre-counting');
+  cases++;
+  if (isLegacy({ rightTotal: 44, askedTotal: 50, plays: 6 }))
+    fail('report:legacy', 'a record WITH a denominator was mistaken for a pre-counting one');
+
+  /* Every band says something, both halves. A blank `doNext` is a row that
+     reports a problem and offers nothing. */
+  for (const id of VERDICT_IDS) {
+    cases++;
+    const v = VERDICTS[id];
+    if (!v.means?.trim() || !v.doNext?.trim()) fail(`report:band ${id}`, 'has no means/doNext copy');
+    if (!readingOrder.includes(id)) fail(`report:band ${id}`, 'is not in readingOrder, so it would sort arbitrarily');
+  }
+  cases++;
+  if (readingOrder.length !== VERDICT_IDS.length)
+    fail('report:readingOrder', `lists ${readingOrder.length} bands and there are ${VERDICT_IDS.length}`);
+  /* The dose table is content/roam.js's, so a band naming a row that is not
+     there would silently render no advice at all. */
+  for (const id of ['hand', 'coming', 'solid']) {
+    cases++;
+    const d = doseFor(id);
+    if (!d?.minutesPerDay || !d?.daysPerWeek) fail(`report:dose ${id}`, 'names a DOSE row that does not resolve');
+  }
+
+  /* ------------------------------------------------ the advice, on real children
+     Built from the live catalogue, so a renamed activity or a moved strand
+     breaks this rather than shipping advice that points at nothing. */
+  const g1 = activities.filter((a) => a.grade === '1');
+  const pick = (kind, strand) => g1.find((a) => a.kind === kind && a.strand === strand);
+  const strandOf = (id) => activities.find((a) => a.id === id)?.strand;
+  const rec = (id, o) => [id, { activityId: id, plays: 1, rightTotal: 0, askedTotal: 0, ...o }];
+
+  /* A game going badly whose same-strand book is unfinished. The site's own
+     "games sit downstream of books" invariant, as advice. */
+  {
+    const game = g1.find((a) => a.kind === 'game' && pick('book', a.strand));
+    cases++;
+    if (!game) fail('report:rule1', 'no grade-1 game shares a strand with a book, so this cannot be tested');
+    else {
+      const book = pick('book', game.strand);
+      const r = reportFor({ activities, progress: Object.fromEntries([
+        rec(game.id, { plays: 4, rightTotal: 9, askedTotal: 40 }),
+        rec(book.id, { plays: 1, rightTotal: 4, askedTotal: 9, finished: false }),
+      ]) });
+      const first = r.next[0];
+      is('a bad game with an unfinished book sends you to the book',
+        `${first?.kind}:${first?.activityId}`, `book-before-game:${book.id}`);
+      cases++;
+      if (!first?.why?.includes(game.title))
+        fail('report:rule1', 'the step does not say which game prompted it');
+      cases++;
+      if (!/started and left unfinished/.test(first?.why || ''))
+        fail('report:rule1', `an abandoned book was described as "${first?.why?.slice(-40)}"`);
+
+      /* It must never send a parent back to a book that is DONE, and when it
+         reaches for a different book in the strand instead it must say that
+         book was never opened rather than that it was left unfinished. Those
+         are different facts and the first version told the parent the wrong
+         one. */
+      const r2 = reportFor({ activities, progress: Object.fromEntries([
+        rec(game.id, { plays: 4, rightTotal: 9, askedTotal: 40 }),
+        rec(book.id, { plays: 2, rightTotal: 20, askedTotal: 22, finished: true }),
+      ]) });
+      cases++;
+      if (r2.next.some((n) => n.activityId === book.id))
+        fail('report:rule1', 'sent a parent back to a book that is already finished');
+      for (const n of r2.next.filter((x) => x.kind === 'book-before-game')) {
+        cases++;
+        if (!/has not been opened yet/.test(n.why))
+          fail('report:rule1', `an untouched book is described as unfinished: "${n.why.slice(-46)}"`);
+      }
+    }
+  }
+
+  /* No step may repeat a destination or an activity.
+
+     THE SCENARIO IS THE CHECK. The first version of this fed it five failing
+     books, which cannot produce a duplicate under any of the rules — so it
+     passed with the deduplication deleted, which is the one mutation it
+     existed to catch. What actually collides is a struggling GAME whose
+     same-strand book is also struggling and SHARES ITS LESSON: rule 1a names
+     the book, rule 2 then wants the same lesson twice over (one destination,
+     two steps) and rule 3c wants the book a second time (one activity, two
+     steps). Found from the catalogue rather than hardcoded, so a renamed
+     activity fails here instead of quietly making this untestable again. */
+  {
+    const collide = activities.find((g) => g.kind === 'game' && g.lesson
+      && activities.some((bk) => bk.kind === 'book' && bk.strand === g.strand
+        && bk.grade === g.grade && bk.lesson === g.lesson));
+    cases++;
+    if (!collide) fail('report:dedupe', 'no game shares a strand AND a lesson with a book, so collisions cannot be provoked');
+    else {
+      const book = activities.find((bk) => bk.kind === 'book' && bk.strand === collide.strand
+        && bk.grade === collide.grade && bk.lesson === collide.lesson);
+      const r = reportFor({ activities, progress: Object.fromEntries([
+        rec(collide.id, { plays: 4, rightTotal: 9, askedTotal: 40 }),
+        rec(book.id, { plays: 2, rightTotal: 6, askedTotal: 30, finished: false }),
+      ]) });
+      const hrefs = r.next.map((n) => n.href);
+      cases++;
+      if (new Set(hrefs).size !== hrefs.length)
+        fail('report:dedupe', `two steps send a parent to the same place: ${hrefs.join(', ')}`);
+      const acts = r.next.map((n) => n.activityId);
+      cases++;
+      if (new Set(acts).size !== acts.length)
+        fail('report:dedupe', `the same activity is named twice: ${acts.join(', ')}`);
+      cases++;
+      if (r.next.length > NEXT_MAX) fail('report:cap', `${r.next.length} steps, cap is ${NEXT_MAX}`);
+    }
+  }
+
+  /* And a GAP must survive a long list of things going wrong — a report that
+     only ever says "fix these" answers half the question it exists for. */
+  {
+    const bad = g1.filter((a) => a.kind === 'book').slice(0, 5);
+    const untouched = g1.filter((a) => !bad.includes(a))
+      .filter((a) => !bad.some((b) => b.strand === a.strand));
+    const r = reportFor({ activities, progress: Object.fromEntries(
+      bad.map((a) => rec(a.id, { plays: 3, rightTotal: 4, askedTotal: 30 }))) });
+    cases++;
+    if (r.next.length > NEXT_MAX) fail('report:cap', `${r.next.length} steps, cap is ${NEXT_MAX}`);
+    cases++;
+    if (untouched.length && !r.next.some((n) => n.kind === 'gap'))
+      fail('report:gap slot', `${GAP_SLOTS} slot is reserved for a gap and five failing books took them all`);
+  }
+
+  /* Every destination the report can ever emit has to be a page that exists.
+     Advice is only advice if the link opens something. */
+  {
+    const every = new Set();
+    for (const a of activities) {
+      const r = reportFor({ activities, progress: Object.fromEntries([
+        rec(a.id, { plays: 3, rightTotal: 2, askedTotal: 30 }),
+      ]) });
+      for (const n of r.next) every.add(n.href);
+    }
+    cases++;
+    if (every.size < 10) fail('report:hrefs', `only ${every.size} destinations were produced — too few to be a real sweep`);
+    const ids = new Set(activities.map((a) => a.id));
+    const lessons = new Set(Object.keys(LESSONS));
+    for (const h of every) {
+      cases++;
+      const m = h.match(/^\/(books|games|learn)\/([a-z0-9-]+)\/$/);
+      if (!m) { fail('report:href', `"${h}" is not a shape this site serves`); continue; }
+      const ok = m[1] === 'learn' ? lessons.has(m[2]) : ids.has(m[2]);
+      if (!ok) fail('report:href', `"${h}" points at nothing that exists`);
+      if (m[1] !== 'learn') {
+        const a = activities.find((x) => x.id === m[2]);
+        if (a && (a.kind === 'game' ? 'games' : 'books') !== m[1])
+          fail('report:href', `"${h}" files a ${a.kind} under /${m[1]}/`);
+      }
+    }
+  }
+
+  /* An empty profile must produce an empty report and not a crash, because that
+     is what most readers of this page have. */
+  {
+    const r = reportFor({ activities, progress: {} });
+    is('nothing played means nothing seen', r.seen, 0);
+    is('and no grades to report', r.grades.length, 0);
+    is('and nothing to do next', r.next.length, 0);
+    is('and no stale-data notice', r.legacy, false);
+    cases++;
+    if (r.totals.asked !== 0 || r.totals.right !== 0) fail('report:empty', 'invented totals out of nothing');
+  }
+
+  /* A strand's verdict is its activities POOLED, not the best or worst of them:
+     three items right out of five twice over is six out of ten, and a parent
+     reading one line about a strand needs it to mean the strand. */
+  {
+    const strand = g1.find((a) => a.kind === 'book').strand;
+    const inStrand = g1.filter((a) => a.strand === strand).slice(0, 2);
+    cases++;
+    if (inStrand.length < 2) fail('report:pool', `strand "${strand}" has one activity, so pooling cannot be tested`);
+    else {
+      const r = reportFor({ activities, progress: Object.fromEntries([
+        rec(inStrand[0].id, { plays: 1, rightTotal: 20, askedTotal: 20 }),   // solid alone
+        rec(inStrand[1].id, { plays: 1, rightTotal: 2, askedTotal: 20 }),    // dire alone
+      ]) });
+      const row = r.grades[0].strands.find((x) => x.strand === strand);
+      is('a strand pools its activities', `${row?.counts.right}/${row?.counts.asked}`, '22/40');
+      is('and is judged on the pool', row?.verdict.id, 'hand');
+    }
+  }
+
+  /* `nextSteps` is exported separately, so it must not need a report to work —
+     that is what lets a future page reuse the advice without the table. */
+  cases++;
+  if (nextSteps([], []).length) fail('report:nextSteps', 'invented advice from no rows');
+
+  if (!cases) fail('report', 'no cases ran — an empty result is not a pass');
+  console.log(`  ${cases} report cases over ${activities.length} activities · bands ${
+    readingOrder.join(' > ')} · floor ${FLOOR} items · solid at ${SOLID_AT}, coming at ${COMING_AT}`);
+}
+
 console.log(`\n=== distribution ===`);
 for (const g of GRADES) {
   const l = activities.filter((a) => a.grade === g);
